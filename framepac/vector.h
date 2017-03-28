@@ -1,0 +1,270 @@
+/****************************** -*- C++ -*- *****************************/
+/*									*/
+/* FramepaC-ng								*/
+/* Version 0.01, last edit 2017-03-28					*/
+/*	by Ralf Brown <ralf@cs.cmu.edu>					*/
+/*									*/
+/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/*	This program may be redistributed and/or modified under the	*/
+/*	terms of the GNU General Public License, version 3, or an	*/
+/*	alternative license agreement as detailed in the accompanying	*/
+/*	file LICENSE.  You should also have received a copy of the	*/
+/*	GPL (file COPYING) along with this program.  If not, see	*/
+/*	http://www.gnu.org/licenses/					*/
+/*									*/
+/*	This program is distributed in the hope that it will be		*/
+/*	useful, but WITHOUT ANY WARRANTY; without even the implied	*/
+/*	warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR		*/
+/*	PURPOSE.  See the GNU General Public License for more details.	*/
+/*									*/
+/************************************************************************/
+
+#ifndef __FrVECTOR_H_INCLUDED
+#define __FrVECTOR_H_INCLUDED
+
+#include "framepac/object.h"
+
+namespace Fr {
+
+/************************************************************************/
+/************************************************************************/
+
+template <typename ValT>
+class Vector : public Object
+   {
+   public:
+      // export the template type parameter for use in other templates that may not have
+      //   an explicit parameter giving this type because they inferred the vector type
+      typedef ValT value_type ;
+
+      static Vector* create(size_t numelts) ;
+
+      double length() const { return m_length >= 0.0 ? m_length : vectorLength() ; }
+
+      // support for iterating through elements for e.g. vector similarity functions
+      size_t numElements() const { return m_size ; }
+      ValT elementValue(size_t N) const { return m_values[N] ; }
+      size_t elementIndex(size_t N) const { return N ; }
+   protected:
+      ValT*  m_values ;
+      double m_length ;   // vector length (L2-norm)
+      size_t m_size ;	  // number of elements in vector
+   protected: // creation/destruction
+      Vector() ;
+      Vector(const Vector&) ;
+      ~Vector() { delete [] m_values ; m_size = 0 ; }
+      Vector& operator= (const Vector&) ;
+
+   protected: // implementation functions for virtual methods
+      friend class FramepaC::Object_VMT<Vector> ;
+
+      double vectorLength() ;
+
+      // type determination predicates
+      static bool isVector_(const Object *) { return true ; }
+
+      // *** copying ***
+      static ObjectPtr clone_(const Object *) ;
+      static Object *shallowCopy_(const Object *obj) { return clone_(obj) ; }
+      static ObjectPtr subseq_int(const Object *,size_t start, size_t stop) ;
+      static ObjectPtr subseq_iter(const Object *,ObjectIter start, ObjectIter stop) ;
+
+      // *** destroying ***
+      static void free_(Object *obj) { delete static_cast<Vector*>(obj) ; }
+      // use shallowFree() on a shallowCopy()
+      static void shallowFree_(Object *obj) { delete static_cast<Vector*>(obj) ; }
+
+      // *** I/O ***
+      // generate printed representation into a buffer
+      static size_t cStringLength_(const Object *,size_t wrap_at, size_t indent) ;
+      static bool toCstring_(const Object *,char *buffer, size_t buflen,
+			     size_t wrap_at, size_t indent) ;
+      static size_t jsonStringLength_(const Object *, bool wrap, size_t indent) ;
+      static bool toJSONString_(const Object *, char *buffer, size_t buflen, bool wrap,
+				size_t indent) ;
+
+      // *** standard info functions ***
+      static size_t size_(const Object *obj) { return static_cast<const Vector*>(obj)->size() ; }
+      static bool empty_(const Object *obj) { return static_cast<const Vector*>(obj)->empty() ; }
+
+      // *** standard access functions ***
+      static Object *front_(Object *obj) { return obj ; }
+      static const Object *front_const(const Object *obj) { return obj ; }
+      static const char *stringValue_(const Object *) { return nullptr ; }
+
+      // *** comparison functions ***
+      static bool equal_(const Object *obj, const Object *other) ;
+      static int compare_(const Object *obj, const Object *other) ;
+      static int lessThan_(const Object *obj, const Object *other) ;
+
+      // *** iterator support ***
+      static Object* next_(const Object *) { return nullptr ; }
+      static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
+   } ;
+
+//----------------------------------------------------------------------------
+//   we have a bunch of template functions that define a
+//   more-efficient specialization for the case of two dense vectors
+//   and a generic version for the other combinations of dense and
+//   sparce vectors.  To get the proper template inference,
+//   SparseVector can't be a derivative of the dense vector type, so
+//   we have a common base type from which both DenseVector and
+//   SparseVector derive, and make that base class a dense vector in
+//   all but name.
+
+template <typename ValT>
+class DenseVector : public Vector<ValT>
+   {
+   public:
+      static DenseVector* create(size_t numelts) ;
+
+   protected: // creation/destruction
+      DenseVector() : Vector<ValT>() {}
+      DenseVector(const Vector<ValT>&v) : Vector<ValT>(v) {}
+      ~DenseVector() {}
+      DenseVector& operator= (const DenseVector&) ;
+
+   protected: // implementation functions for virtual methods
+      friend class FramepaC::Object_VMT<DenseVector> ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+class SparseVector : public Vector<ValT>
+   {
+   public:
+      static SparseVector* create(size_t numelts) ;
+
+      // support for iterating through elements for e.g. vector similarity functions
+      size_t elementIndex(size_t N) const { return (size_t)m_indices[N] ; }
+   protected: // creation/destruction
+      SparseVector() ;
+      SparseVector(const SparseVector&) ;
+      ~SparseVector() { delete [] m_indices ; }
+      SparseVector& operator= (const SparseVector&) ;
+
+   protected: // implementation functions for virtual methods
+      friend class FramepaC::Object_VMT<SparseVector> ;
+
+      // type determination predicates
+      static bool isSparseVector_(const Object *) { return true ; }
+
+      // *** copying ***
+      static ObjectPtr clone_(const Object *) ;
+      static Object *shallowCopy_(const Object *obj) { return clone_(obj) ; }
+      static ObjectPtr subseq_int(const Object *,size_t start, size_t stop) ;
+      static ObjectPtr subseq_iter(const Object *,ObjectIter start, ObjectIter stop) ;
+
+      // *** destroying ***
+      static void free_(Object *obj) { delete static_cast<SparseVector*>(obj) ; }
+      // use shallowFree() on a shallowCopy()
+      static void shallowFree_(Object *obj) { delete static_cast<SparseVector*>(obj) ; }
+
+      // *** I/O ***
+      // generate printed representation into a buffer
+      static size_t cStringLength_(const Object *,size_t wrap_at, size_t indent) ;
+      static bool toCstring_(const Object *,char *buffer, size_t buflen,
+			     size_t wrap_at, size_t indent) ;
+      static size_t jsonStringLength_(const Object *, bool wrap, size_t indent) ;
+      static bool toJSONString_(const Object *, char *buffer, size_t buflen, bool wrap,
+				size_t indent) ;
+
+      // *** standard info functions ***
+      static size_t size_(const Object *obj) { return static_cast<const SparseVector*>(obj)->size() ; }
+      static bool empty_(const Object *obj) { return static_cast<const SparseVector*>(obj)->empty() ; }
+
+      // *** standard access functions ***
+      static Object *front_(Object *obj) { return obj ; }
+      static const Object *front_const(const Object *obj) { return obj ; }
+      static const char *stringValue_(const Object *) { return nullptr ; }
+
+      // *** comparison functions ***
+      static bool equal_(const Object *obj, const Object *other) ;
+      static int compare_(const Object *obj, const Object *other) ;
+      static int lessThan_(const Object *obj, const Object *other) ;
+
+      // *** iterator support ***
+      static Object* next_(const Object *) { return nullptr ; }
+      static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
+
+   protected:
+      IdxT*  m_indices ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+class OneHotVector : public Vector<ValT>
+   {
+   public:
+      static OneHotVector* create(size_t numelts) ;
+
+   protected:
+      OneHotVector(IdxT index, ValT value = (ValT)1) ;
+      OneHotVector(const OneHotVector&) ;
+      ~OneHotVector() { m_value = (ValT)0 ; }
+      OneHotVector& operator= (const OneHotVector&) ;
+
+   protected: // implementation functions for virtual methods
+      friend class FramepaC::Object_VMT<OneHotVector> ;
+
+      // *** copying ***
+      static ObjectPtr clone_(const Object *) ;
+      static Object *shallowCopy_(const Object *obj) { return clone_(obj) ; }
+      static ObjectPtr subseq_int(const Object *,size_t start, size_t stop) ;
+      static ObjectPtr subseq_iter(const Object *,ObjectIter start, ObjectIter stop) ;
+
+      // *** destroying ***
+      static void free_(Object *obj) { delete static_cast<OneHotVector*>(obj) ; }
+      // use shallowFree() on a shallowCopy()
+      static void shallowFree_(Object *obj) { delete static_cast<OneHotVector*>(obj) ; }
+
+      // *** standard info functions ***
+      static size_t size_(const Object *obj) { return static_cast<const OneHotVector*>(obj)->size() ; }
+      static bool empty_(const Object *obj) { return static_cast<const OneHotVector*>(obj)->empty() ; }
+
+      // *** standard access functions ***
+      static Object *front_(Object *obj) { return obj ; }
+      static const Object *front_const(const Object *obj) { return obj ; }
+      static const char *stringValue_(const Object *) { return nullptr ; }
+
+      // *** comparison functions ***
+      static bool equal_(const Object *obj, const Object *other) ;
+      static int compare_(const Object *obj, const Object *other) ;
+      static int lessThan_(const Object *obj, const Object *other) ;
+
+      // *** iterator support ***
+      static Object* next_(const Object *) { return nullptr ; }
+      static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
+
+   private:
+      IdxT m_index ;
+      ValT m_value ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+class TermCountVector : public SparseVector<uint32_t,uint32_t>
+   {
+   public:
+
+   private:
+
+   } ;
+
+//----------------------------------------------------------------------------
+
+class TermVector : public SparseVector<uint32_t,float>
+   {
+   public:
+
+   private:
+
+   } ;
+
+} ; // end of namespace Fr
+
+#endif /* !__FrVECTOR_H_INCLUDED */
+
+// end of vector.h //

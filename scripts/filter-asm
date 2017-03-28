@@ -1,0 +1,2 @@
+#!/bin/bash
+sed -e '/^	[.]/d' -e '/^[.]L[ABEFHLVdet]/d' -e '/^[.]LCOLD/d' $* | c++filt
