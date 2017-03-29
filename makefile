@@ -241,9 +241,9 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) charget$(OBJ) cfile$(OBJ) \
 	cluster$(OBJ) cluster_growseed$(OBJ) cluster_kmeans$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) filename$(OBJ) \
-	float$(OBJ) frame$(OBJ) init$(OBJ) \
+	float$(OBJ) frame$(OBJ) init$(OBJ) random$(OBJ) \
 	integer$(OBJ) jsonreader$(OBJ) list$(OBJ) map$(OBJ) matrix$(OBJ) \
-	mmapfile$(OBJ) number$(OBJ) nybbletrie$(OBJ) \
+	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
 	object$(OBJ) objreader$(OBJ) rational$(OBJ) slab$(OBJ) \
 	slabgroup$(OBJ) \
 	sparsematrix$(OBJ) string$(OBJ) \
@@ -381,11 +381,13 @@ jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/hashtable.h frame
 list$(OBJ):		list$(C) framepac/list.h framepac/init.h
 map$(OBJ):		map$(C) framepac/map.h
 matrix$(OBJ):		matrix$(C) framepac/matrix.h
+message$(OBJ):		message$(C) framepac/message.h
 mmapfile$(OBJ):		mmapfile$(C) framepac/mmapfile.h framepac/file.h
 number$(OBJ):		number$(C) framepac/bignum.h framepac/rational.h
 object$(OBJ):		object$(C) framepac/object.h
 objreader$(OBJ):	objreader$(C) framepac/objreader.h framepac/symbol.h framepac/bignum.h framepac/rational.h \
 			framepac/list.h framepac/builder.h
+random$(OBJ):		random$(C) framepac/random.h
 rational$(OBJ):		rational$(C) framepac/rational.h
 slab$(OBJ):		slab$(C) framepac/memory.h
 slabgroup$(OBJ):	slabgroup$(C) framepac/memory.h

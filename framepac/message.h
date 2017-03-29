@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-03-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -30,46 +30,54 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
+#define _attr_printf_ [[gnu::format(gnu_printf,1,0)]]
+
 class SystemMessage
    {
    public:
       SystemMessage() ;
-      ~SystemMessage() ;
+      virtual ~SystemMessage() ;
 
-      SystemMessage& instance() ;
-      bool setInstance(SystemMessage& inst) ;
+      static SystemMessage& instance() ;
+      static bool setInstance(SystemMessage& inst) ;
 
-      bool modal(const char* fmt, ...) ;
-      bool confirmation(const char* fmt, ...) ;
-      bool status(const char* fmt, ...) ;
-      bool warning(const char* fmt, ...) ;
-      bool error(const char* fmt, ...) ;
-      bool fatal(const char* fmt, ...) ;
-      bool prog_error(const char* fmt, ...) ;
-      bool missed_case(const char* fmt, ...) ;
-      bool no_memory(const char* msg) ;
+      _attr_printf_ static bool modal(const char* fmt, ...) ;
+      _attr_printf_ static bool confirmation(const char* fmt, ...) ;
+      _attr_printf_ static bool status(const char* fmt, ...) ;
+      _attr_printf_ static bool warning(const char* fmt, ...) ;
+      _attr_printf_ static bool error(const char* fmt, ...) ;
+      _attr_printf_ static bool fatal(const char* fmt, ...) ;
+      _attr_printf_ static bool prog_error(const char* fmt, ...) ;
+      _attr_printf_ static bool missed_case(const char* fmt, ...) ;
+      static bool no_memory(const char* msg) ;
    protected:
       virtual bool showModal(const char *msg) = 0 ;
       virtual bool showConfirmation(const char *msg) = 0 ;
       virtual bool showMessage(const char *msg) = 0 ;
+      virtual bool showWarning(const char *msg) = 0 ;
+      virtual bool showError(const char *msg) = 0 ;
+      virtual bool showFatal(const char *msg) = 0 ;
 
+      static SystemMessage* m_instance ;
+   } ;
 
-      static SystemMessage& m_instance ;
-   }
+#undef _attr_printf_
 
 //----------------------------------------------------------------------------
 
-class ConsoleSystemMessage
+class ConsoleSystemMessage : public SystemMessage
    {
    public:
       ConsoleSystemMessage() : SystemMessage() {}
-      ~ConsoleSystemMessage() {}
+      virtual ~ConsoleSystemMessage() {}
    protected:
       virtual bool showModal(const char *msg) ;
       virtual bool showConfirmation(const char *msg) ;
       virtual bool showMessage(const char *msg) ;
+      virtual bool showWarning(const char *msg) ;
+      virtual bool showError(const char *msg) ;
       virtual bool showFatal(const char *msg) ;
-   }
+   } ;
 
 //----------------------------------------------------------------------------
 

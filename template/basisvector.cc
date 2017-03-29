@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-03-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -28,9 +28,9 @@ namespace Fr
 {
 
 template <typename IdxT>
-bool BasisVector::generateRandomBasis(size_t num_plus, size_t num_minus)
+bool BasisVector<IdxT>::generateRandomBasis(size_t num_plus, size_t num_minus)
 {
-   if (num_plus + num_minus > size())
+   if (num_plus + num_minus > this->size())
       return false ;
 
    return true ;

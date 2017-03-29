@@ -48,6 +48,10 @@ class BasisVector : public SparseVector<IdxT,int8_t>
 
    } ;
 
+//----------------------------------------------------------------------------
+
+} // end namespace Fr
+
 #endif /* !__FrBASISVECTOR_H_INCLUDED */
 
 // end of file basisvector.h

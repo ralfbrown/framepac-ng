@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-03-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -38,7 +38,8 @@ class CFile
    public:
       enum { default_options = 0,
 	     safe_rewrite = 1,
-	     fail_if_exists = 2
+	     fail_if_exists = 2,
+	     binary = 4
            } ;
    public:
       CFile(const char *filename, bool writing, int options = default_options) ;
@@ -49,13 +50,30 @@ class CFile
       operator bool () const { return m_file != nullptr ; }
 
       void writeComplete() { m_complete = true ; }
+      FILE* fp() const { return m_file ; }
+      bool eof() const { return m_file ? feof(m_file) : true ; }
       bool good() const ;
       int error() const ;
       bool filtered() const { return m_piped ; }
       FILE* operator* () const { return m_file ; }
-      size_t read(char *buf, size_t buflen) ;
-      size_t write(const char *buf, size_t buflen) ;
+      size_t read(char* buf, size_t buflen) ;
+      size_t read(void* buf, size_t itemsize, size_t itemcount) ;
+      size_t write(const char* buf, size_t buflen) ;
+      size_t write(const void* buf, size_t itemsize, size_t itemcount) ;
+      int getc() { return fgetc(m_file) ; }
+      int ungetc(int c) { return std::ungetc(c,m_file) ; }
+      bool gets(char* buf, size_t buflen) { return m_file ? fgets(buf,buflen,m_file) != nullptr : false ; }
+      void putc(char c) { fputc(c,m_file) ; }
+      void puts(const char* s) { fputs(s,m_file) ; }
+      [[gnu::format(gnu_printf,2,0)]] bool printf(const char* fmt, ...) ;
+      off_t tell() const { return ftell(m_file) ; }
+      off_t seek(off_t loc, int whence) { return fseek(m_file,loc,whence) ; }
+      void flush() { fflush(m_file) ; }
       bool close() ;
+
+   protected: // methods
+      bool openRead(const char *filename, int options) ;
+      bool openWrite(const char *filenmae, int options) ;
 
    protected: // data
       FILE *m_file ;
@@ -64,10 +82,6 @@ class CFile
       int   m_errcode = 0 ;
       bool  m_piped = false ;
       bool  m_complete = false ; // have we successfully finished writing?
-
-   protected: // methods
-      bool openRead(const char *filename, int options) ;
-      bool openWrite(const char *filenmae, int options) ;
    } ;
 
 //----------------------------------------------------------------------------

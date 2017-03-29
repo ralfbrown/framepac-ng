@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-03-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -18,6 +18,9 @@
 /*	PURPOSE.  See the GNU General Public License for more details.	*/
 /*									*/
 /************************************************************************/
+
+#ifndef _Fr_MAP_H_INCLUDED
+#define _Fr_MAP_H_INCLUDED
 
 #include <map>
 #include "framepac/object.h"
@@ -146,5 +149,7 @@ namespace FramepaC
 extern template class FramepaC::Object_VMT<Fr::Map> ;
 
 } ; // end namespace FramepaC
+
+#endif /* !_Fr_MAP_H_INCLUDED */
 
 // end of file map.h //

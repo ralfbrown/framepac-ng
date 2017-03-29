@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-03-28					*/
+/*  Version 0.01, last edit 2017-03-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File synchevent.C		synchronization events			*/
@@ -81,7 +81,7 @@ void SynchEvent::set()
    if (m_event.m_waiters.load())
       {
       m_event.m_waiters.store(false) ;
-      sys_futex(this, FUTEX_WAKE_PRIVATE, INT_MAX, NULL, NULL, 0) ;
+      sys_futex(this, FUTEX_WAKE_PRIVATE, INT_MAX, nullptr, nullptr, 0) ;
       }
    return ;
 }
@@ -94,7 +94,7 @@ void SynchEvent::wait()
       {
       m_event.m_waiters.store(true) ;
       // wait as long as m_set is still false and m_waiters is still true
-      sys_futex(this, FUTEX_WAIT_PRIVATE, 1, NULL, NULL, 0) ;
+      sys_futex(this, FUTEX_WAIT_PRIVATE, 1, nullptr, nullptr, 0) ;
       }
    return ;
 }
@@ -139,7 +139,7 @@ void SynchEventCounted::set()
    if ((status & m_mask_set) == 0 && status > 0)
       {
       // event hasn't triggered yet, but there are waiters, so wake them up
-      sys_futex(&m_futex_val, FUTEX_WAKE_PRIVATE, INT_MAX, NULL, NULL, 0) ;
+      sys_futex(&m_futex_val, FUTEX_WAKE_PRIVATE, INT_MAX, nullptr, nullptr, 0) ;
       }
    return ;
 }
@@ -153,7 +153,7 @@ void SynchEventCounted::wait()
       {
       size_t wait_while { m_futex_val.load() & ~m_mask_set };
       // wait as long as 'set' bit is still false and numWaiters is unchanged
-      sys_futex(&m_futex_val, FUTEX_WAIT_PRIVATE, wait_while, NULL, NULL, 0) ;
+      sys_futex(&m_futex_val, FUTEX_WAIT_PRIVATE, wait_while, nullptr, nullptr, 0) ;
       --m_futex_val ;
       }
    // we're done waiting
@@ -194,7 +194,7 @@ void SynchEventCountdown::consumeAll()
    if (m_futex_val.exchange(0) & 1)
       {
       // someone is waiting, so wake all the waiters
-      sys_futex(this, FUTEX_WAKE_PRIVATE, INT_MAX,NULL, NULL, 0) ;
+      sys_futex(this, FUTEX_WAKE_PRIVATE, INT_MAX,nullptr, nullptr, 0) ;
       }
    return ;
 }
@@ -213,7 +213,7 @@ void SynchEventCountdown::wait()
       if (counter > 1)
 	 {
 	 // wait as long as 'waiting' bit is still set and count > 0
-	 sys_futex(this, FUTEX_WAIT_PRIVATE, (counter|1), NULL, NULL, 0) ;
+	 sys_futex(this, FUTEX_WAIT_PRIVATE, (counter|1), nullptr, nullptr, 0) ;
 	 }
       }
    return ;
@@ -240,7 +240,7 @@ void SynchEventCountdown::wait()
 /************************************************************************/
 
 SynchEvent::SynchEvent()
-   : m_eventhandle(CreateEvent(NULL, true, false, NULL))
+   : m_eventhandle(CreateEvent(nullptr, true, false, nullptr))
 {
    return ;
 }

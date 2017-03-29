@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-03-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -25,7 +25,7 @@ namespace Fr
 {
 
 // request explicit instantiation
-template class BasisVector<uint32> ;
+template class BasisVector<uint32_t> ;
 
 } // end namespace Fr
 

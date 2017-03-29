@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-03-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -223,7 +223,9 @@ bool CFile::openRead(const char *filename, int options)
    CompressionType comp(check_file_signature(filename)) ;
    if (comp == CompressionType::unknown)
       {
-      m_file = fopen(filename,"rb") ;
+      // on Unix-like systems, the 'b' modifier is a no-op, but on DOS/Windows, it tells the lib
+      //   not to drop CRs
+      m_file = fopen(filename,(options&binary) ? "rb" : "r") ;
       }
    else
       {
@@ -272,7 +274,9 @@ bool CFile::openWrite(const char *filename, int options)
       }
    else
       {
-      m_file = fopen(filename,"wb") ;
+      // on Unix-like systems, the 'b' modifier is a no-op, but on DOS/Windows, it tells the lib
+      //   not to convert NL to CRLF
+      m_file = fopen(filename,(options&binary) ? "wb" : "w") ;
       }
    return m_file != nullptr ;
 }
@@ -339,10 +343,30 @@ size_t CFile::read(char *buf, size_t buflen)
 
 //----------------------------------------------------------------------------
 
+size_t CFile::read(void *buf, size_t itemsize, size_t itemcount)
+{
+   if (m_file)
+      return fread(buf,itemsize,itemcount,m_file) ;
+   else
+      return (size_t)EOF ;
+}
+
+//----------------------------------------------------------------------------
+
 size_t CFile::write(const char *buf, size_t buflen)
 {
    if (m_file)
       return fwrite(buf,sizeof(char),buflen,m_file) ;
+   else
+      return 0 ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t CFile::write(const void *buf, size_t itemcount, size_t itemsize)
+{
+   if (m_file)
+      return fwrite(buf,itemsize,itemcount,m_file) ;
    else
       return 0 ;
 }
