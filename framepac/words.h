@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-03-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -44,7 +44,7 @@ class WordSplitter
    public:
       WordSplitter(class CharGetter&) ;
       WordSplitter(const WordSplitter&) = default ;
-      ~WordSplitter() ;
+      virtual ~WordSplitter() ;
       WordSplitter& operator= (const WordSplitter&) = default ;
 
       StringPtr nextWord() ;

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-03-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -40,6 +40,7 @@ Allocator<Rational> Rational::s_allocator(&rational_vmt) ;
 /************************************************************************/
 
 Rational::Rational(const char *value)
+   : m_value(0)
 {
    //FIXME
    (void)value ;

@@ -253,7 +253,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	vecsim_u32_dbl$(OBJ) vecsim_u32_flt$(OBJ) \
 	vector_obj_dbl$(OBJ) vector_obj_flt$(OBJ) \
 	vector_u32_dbl$(OBJ) vector_u32_flt$(OBJ) \
-	basisvector_u32$(OBJ) \
+	basisvector_u32$(OBJ) progress$(OBJ) \
 	wordcorpus_u32u32$(OBJ) wordcorpus_u32u40$(OBJ) \
 	wordsplit$(OBJ)
 
@@ -300,8 +300,6 @@ clean:
 #	$(RM) $(LIBRARY)
 
 veryclean: clean
-	(cd framepac; $(MAKE) clean)
-	(cd wordclus; $(MAKE) clean)
 	$(RM) *.BAK
 	$(RM) *.CKP *~
 	$(RM) "#*#"
@@ -384,6 +382,7 @@ matrix$(OBJ):		matrix$(C) framepac/matrix.h
 message$(OBJ):		message$(C) framepac/message.h
 mmapfile$(OBJ):		mmapfile$(C) framepac/mmapfile.h framepac/file.h
 number$(OBJ):		number$(C) framepac/bignum.h framepac/rational.h
+progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
 object$(OBJ):		object$(C) framepac/object.h
 objreader$(OBJ):	objreader$(C) framepac/objreader.h framepac/symbol.h framepac/bignum.h framepac/rational.h \
 			framepac/list.h framepac/builder.h
@@ -480,6 +479,9 @@ framepac/objreader.h:	framepac/object.h framepac/charget.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/perthread.h:	framepac/config.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/progress.h:	framepac/atomic.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/rational.h:	framepac/number.h

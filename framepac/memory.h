@@ -106,7 +106,7 @@ class Slab
 	    uint16_t         m_objcount ;
 	    uint16_t         m_slab_id ;
 	 public:
-	    SlabHeader() = default ;
+	    //SlabHeader() = default ;
 	    ~SlabHeader() = default ;
          } ;
       // group together all the footer fields, so that we can use a single sizeof()

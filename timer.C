@@ -21,6 +21,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <iostream>
 #include "framepac/timer.h"
 
 using namespace std ;
@@ -143,7 +144,7 @@ char *CpuTimer::formattedTime(bool use_colons) const
 
 double ElapsedTimer::seconds() const
 {
-   auto time_now = std::chrono::steady_clock::now() ;
+   auto time_now = currTime() ;
    std::chrono::duration<double> elapsed = time_now - m_start ;
    return elapsed.count() ;
 }

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-03-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -22,7 +22,7 @@
 #ifndef _Fr_PROGRESS_H_INCLUDED
 #define _Fr_PROGRESS_H_INCLUDED
 
-#include "framepac/config.h"
+#include "framepac/atomic.h"
 
 namespace Fr
 {
@@ -34,16 +34,29 @@ class ProgressIndicator
    {
    public:
       ProgressIndicator(size_t interval, size_t limit) ;
-      ~ProgressIndicator() ;
+      virtual ~ProgressIndicator() ;
+      ProgressIndicator(const ProgressIndicator&) = delete ;
+      ProgressIndicator& operator= (const ProgressIndicator&) = delete ;
 
-      ProgressIndicator& operator += (size_t add) ;
-      ProgressIndicator& operator++ () ;
+      // configuration
+      void showElapsedTime(bool show) { m_show_elapsed = show ; }
+      void showRemainingTime(bool show) { m_show_estimated = show ; }
+
+      void incr(size_t add = 1) ;
+      ProgressIndicator& operator+= (size_t add) { incr(add) ; return *this ; }
+      ProgressIndicator& operator++ () { incr() ; return *this ; }
 
    protected:
-      size_t   m_limit ;
-      size_t   m_interval ;
-      size_t   m_count ;
-      size_t   m_since_update ;
+      virtual void updateDisplay(size_t curr) = 0 ;
+
+   protected:
+      class ElapsedTimer* m_timer ;
+      size_t          m_limit ;
+      size_t          m_interval ;
+      Atomic<size_t>  m_count ;
+      Atomic<size_t>  m_prev_update ;
+      bool            m_show_elapsed ;
+      bool	      m_show_estimated ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -52,27 +65,44 @@ class NullProgressIndicator : public ProgressIndicator
    {
    public:
       NullProgressIndicator() : ProgressIndicator(0,0) {}
-      ~NullProgressIndicator() {}
+      virtual ~NullProgressIndicator() {}
+      NullProgressIndicator(const NullProgressIndicator&) = delete ;
+      NullProgressIndicator& operator= (const NullProgressIndicator&) = delete ;
 
-      NullProgressIndicator& operator += (size_t) { return *this ; }
-      NullProgressIndicator& operator++ () { return *this ; }
+      NullProgressIndicator& operator+= (size_t add) { incr(add) ; return *this ; }
+      NullProgressIndicator& operator++ () { incr() ; return *this ; }
+
+   protected:
+      virtual void updateDisplay(size_t) { return ; }
+
    protected:
 
    } ;
 
 //----------------------------------------------------------------------------
 
-class ConsoleProgressIndicator
+class ConsoleProgressIndicator : public ProgressIndicator
    {
    public:
       ConsoleProgressIndicator(size_t interval, size_t limit, size_t per_line,
 			       const char *first_prefix, const char *rest_prefix) ;
-      ~ConsoleProgressIndicator() ;
+      virtual ~ConsoleProgressIndicator() ;
+      ConsoleProgressIndicator(const ConsoleProgressIndicator&) = delete ;
+      ConsoleProgressIndicator& operator= (const ConsoleProgressIndicator&) = delete ;
 
-      ConsoleProgressIndicator& operator += (size_t) ;
-      ConsoleProgressIndicator& operator++ () ;
+      ConsoleProgressIndicator& operator+= (size_t add) { incr(add) ; return *this ; }
+      ConsoleProgressIndicator& operator++ () { incr() ; return *this ; }
+
    protected:
+      virtual void updateDisplay(size_t curr) ;
 
+   protected:
+      double m_prevfrac ;
+      char*  m_firstprefix ;
+      char*  m_restprefix ;
+      size_t m_per_line ;
+      size_t m_linewidth ;
+      size_t m_lastupdate ;
    } ;
 
 //----------------------------------------------------------------------------

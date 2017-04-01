@@ -63,6 +63,7 @@ class Atomic
       T v ;
    public:
       Atomic() {}
+      Atomic(T value) { v = value ; }
       ~Atomic() {}
 
       T operator= (T newval) { v = newval ; return newval ; }
@@ -253,6 +254,8 @@ class Atomic : public std::atomic<T>
       // no data members
    public:
       Atomic() : std::atomic<T>()
+	 {}
+      Atomic(T value) : std::atomic<T>(value)
 	 {}
       ~Atomic() = default ;
 

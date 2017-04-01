@@ -45,6 +45,7 @@ class CFile
       CFile(const char *filename, bool writing, int options = default_options) ;
       CFile(String *filename, bool writing, int options = default_options) ;
       CFile(const CFile&) = delete ;
+      CFile(FILE*) ;
       ~CFile() ;
       void operator= (const CFile&) = delete ;
       operator bool () const { return m_file != nullptr ; }
@@ -65,7 +66,7 @@ class CFile
       bool gets(char* buf, size_t buflen) { return m_file ? fgets(buf,buflen,m_file) != nullptr : false ; }
       void putc(char c) { fputc(c,m_file) ; }
       void puts(const char* s) { fputs(s,m_file) ; }
-      [[gnu::format(gnu_printf,2,0)]] bool printf(const char* fmt, ...) ;
+      [[gnu::format(gnu_printf,2,0)]] bool printf(const char* fmt, ...) const ;
       off_t tell() const { return ftell(m_file) ; }
       off_t seek(off_t loc, int whence) { return fseek(m_file,loc,whence) ; }
       void flush() { fflush(m_file) ; }

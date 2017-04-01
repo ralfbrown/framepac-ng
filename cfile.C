@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include <cstdarg>
 #include <cstdio>
 #include <cstring>
 #include <errno.h>
@@ -168,6 +169,14 @@ CFile::CFile(String *filename, bool writing, int options)
       openWrite(filename->c_str(),options) ;
    else
       openRead(filename->c_str(),options) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+CFile::CFile(FILE* fileptr)
+   : m_file(fileptr), m_tempname(nullptr), m_finalname(nullptr)
+{
    return ;
 }
 
@@ -369,6 +378,19 @@ size_t CFile::write(const void *buf, size_t itemcount, size_t itemsize)
       return fwrite(buf,itemsize,itemcount,m_file) ;
    else
       return 0 ;
+}
+
+//----------------------------------------------------------------------------
+
+bool CFile::printf(const char* fmt, ...) const
+{
+   if (!m_file)
+      return false ;
+   va_list args ;
+   va_start(args,fmt) ;
+   vfprintf(m_file,fmt,args) ;
+   va_end(args) ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------

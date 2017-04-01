@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-03-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -29,12 +29,16 @@ namespace FramepaC
 /************************************************************************/
 /************************************************************************/
 
-SlabGroup* SlabGroup::s_grouplist_fwd = 0 ;
-SlabGroup* SlabGroup::s_grouplist_rev = 0 ;
+SlabGroup* SlabGroup::s_grouplist_fwd = nullptr ;
+SlabGroup* SlabGroup::s_grouplist_rev = nullptr ;
 mutex SlabGroup::s_mutex ;
 
 /************************************************************************/
 /************************************************************************/
+
+// -Weffc++ warns about not setting m_next in the initializer list, but we can't safely
+//   set it until we've locked the mutex in the ctor's body....
+#pragma GCC diagnostic ignored "-Weffc++"
 
 SlabGroup::SlabGroup()
 {
@@ -85,7 +89,7 @@ Slab* SlabGroup::allocateSlab()
    //!!!SlabGroup* sg = new SlabGroup ;
    //!!!m_numfree-- ;
 
-   return 0 ; //FIXME
+   return nullptr ; //FIXME
 }
 
 //----------------------------------------------------------------------------

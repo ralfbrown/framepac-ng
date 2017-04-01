@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-03-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -71,15 +71,16 @@ class ElapsedTimer : public TimerBase
    {
    typedef std::chrono::steady_clock Clock ;
    public:
-      ElapsedTimer() : m_start(Clock::now()) {}
+      ElapsedTimer() : m_start(currTime()) {}
       ~ElapsedTimer() {}
 
-      void restart() { m_start = Clock::now() ; }
+      void restart() { m_start = currTime() ; }
       double seconds() const ;
       using TimerBase::elapsedTime ;
       bool elapsedTime(unsigned &days, unsigned &hours, unsigned &minutes, unsigned &secs, double &fraction) const ;
       using TimerBase::formattedTime ;
       char *formattedTime(bool use_colons = false) const ;
+      std::chrono::time_point<Clock> currTime() const { return Clock::now() ; }
 
    private:
       std::chrono::time_point<Clock> m_start ;
@@ -90,7 +91,7 @@ class ElapsedTimer : public TimerBase
 class Timer
    {
    public:
-      Timer() : m_cputime(), m_elapsed() {}
+      Timer() : m_elapsed(), m_cputime() {}
       ~Timer() {}
 
       void restart() ;
@@ -101,15 +102,15 @@ class Timer
       std::ostream& showTimes(std::ostream& out) const ;
 
    protected:
-      CpuTimer     m_cputime ;
       ElapsedTimer m_elapsed ;
+      CpuTimer     m_cputime ;
    } ;
+
+} // end namespace Fr
 
 //----------------------------------------------------------------------------
 
-std::ostream& operator << (const Timer& tmr, std::ostream& out) { return tmr.showTimes(out) ; }
-
-} // end namespace Fr
+inline std::ostream& operator << (std::ostream& out, const Fr::Timer& tmr) { return tmr.showTimes(out) ; }
 
 #endif /* !_Fr_TIMER_H_INCLUDED */
 
