@@ -332,13 +332,13 @@ class Atomic : public std::atomic<T>
 
 // bool doesn't support fetch_or or fetch_and, so we need specific specialization
 template <>
-bool Atomic<bool>::test_and_set_mask(bool mask)
+inline bool Atomic<bool>::test_and_set_mask(bool mask)
 {
    return mask ? exchange(mask) : false ;
 }
 
 template <>
-bool Atomic<bool>::test_and_clear_mask(bool mask)
+inline bool Atomic<bool>::test_and_clear_mask(bool mask)
 {
    return mask ? exchange(false) : false ;
 }
@@ -347,7 +347,7 @@ bool Atomic<bool>::test_and_clear_mask(bool mask)
 // generic functionality built on top of the atomic primitives
 
 template <typename T>
-void Atomic<T>::push(T node)
+inline void Atomic<T>::push(T node)
 {
    T list ;
    do {
@@ -357,7 +357,7 @@ void Atomic<T>::push(T node)
 }
 
 template <typename T>
-void Atomic<T>::push(T nodes, T tail)
+inline void Atomic<T>::push(T nodes, T tail)
 {
    T list ;
    do {
@@ -367,7 +367,7 @@ void Atomic<T>::push(T nodes, T tail)
 }
 
 template <typename T>
-T Atomic<T>::pop()
+inline T Atomic<T>::pop()
 {
    T head ;
    T rest ;

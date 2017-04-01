@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-03-28					*/
+/*  Version 0.01, last edit 2017-03-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File synchevent.h		synchronization events			*/
@@ -68,7 +68,7 @@ class SynchEvent
 	    } m_event ;
          } ;
    public:
-      SynchEvent() { clearAll() ; }
+      SynchEvent() : m_futex_val(0) {}
       ~SynchEvent() { set() ; }
       void clearAll() { m_futex_val.store(0U) ; }
 #elif defined(__WINDOWS__)
@@ -105,7 +105,7 @@ class SynchEventCounted
    private:
       bool m_set ;
    public:
-      SynchEventCounted() { clearAll() ; }
+      SynchEventCounted() : m_set(false) {}
       ~SynchEventCounted() { waitForWaiters() ; }
 
       bool isSet() const { return m_set ; }
@@ -122,7 +122,7 @@ class SynchEventCounted
    {
    private:
 #ifdef __linux__
-      atom_uint m_futex_val ;
+      atom_uint m_futex_val { 0 };
       static const unsigned m_mask_set =
 	 (std::numeric_limits<unsigned>::max() - std::numeric_limits<int>::max()) ;
 //(UINT_MAX - INT_MAX) ;
@@ -131,7 +131,7 @@ class SynchEventCounted
       //FIXME: implementations for other platforms
 #endif /* __linux__ */
    public:
-      SynchEventCounted() { clearAll() ; }
+      SynchEventCounted() {}
       ~SynchEventCounted() { waitForWaiters() ; } // release any waiters
 
       bool isSet() const ;
@@ -175,12 +175,12 @@ class SynchEventCountdown
       // low bit indicates whether anybody is blocked on the
       //   countdown, remaining bits are the count until the event
       //   fires
-      atom_int m_futex_val ;
+      atom_int m_futex_val { 0 } ;
 #else
       //FIXME: implementation for other platforms
 #endif /* __linux__ */
    public: 
-      SynchEventCountdown() { clear() ; }
+      SynchEventCountdown() {}
       ~SynchEventCountdown() { consumeAll() ; }
 
 #ifdef __linux__
