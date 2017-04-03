@@ -26,6 +26,7 @@
 #include <cstdint>
 #include <climits>
 #include <iostream>
+#include <type_traits>
 #include "framepac/list.h"
 #include "framepac/synchevent.h"
 #include <cassert>
@@ -589,8 +590,14 @@ class HashTable : public Object
 	 bool reclaimDeletions() ;
 
 	 // special support for Fr::SymbolTableX
-	 [[gnu::hot]] KeyT addKey(size_t hashval, const char *name, size_t namelen,
-				  bool *already_existed = 0) ;
+	 template <typename RetT = KeyT>
+	 typename std::enable_if<std::is_base_of<Fr::Symbol,KeyT>::value,RetT>::type
+	 addKey(size_t hashval, const char* name, size_t namelen, bool* already_existed = 0) ;
+	 // (default no-op version for non-Symbol hash tables, selected by SFINAE)
+	 template <typename RetT = KeyT>
+	 typename std::enable_if<!std::is_base_of<Fr::Symbol,KeyT>::value,RetT>::type
+	 addKey(size_t /*hashval*/, const char* /*name*/, size_t /*namelen*/, bool* /*already_existed*/ = 0) ;
+
 	 // special support for Fr::SymbolTable
 	 [[gnu::hot]] bool contains(size_t hashval, const char *name, size_t namelen) const ;
 	 // special support for Fr::SymbolTableX

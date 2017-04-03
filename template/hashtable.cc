@@ -25,6 +25,7 @@
 #include <cstring>
 #include <iomanip>
 #include <thread>
+#include <type_traits>
 #include "framepac/hashtable.h"
 #include "framepac/list.h"
 #include "framepac/number.h"
@@ -1608,11 +1609,29 @@ bool HashTable<KeyT,ValT>::Table::reclaimDeletions()
 
 //----------------------------------------------------------------------------
 
+template <bool cond, typename T>
+using resolvedType = typename std::enable_if< cond, T>::type ;
+
+#if 1
+// generic version for non-Object keys
+template <typename KeyT, typename ValT> //, typename = void>
+template <typename RetT>
+typename std::enable_if<!std::is_base_of<Fr::Symbol,KeyT>::value, RetT>::type
+HashTable<KeyT,ValT>::Table::addKey(size_t /*hashval*/, const char* /*name*/, size_t /*namelen*/,
+					 bool* /*already_existed*/)
+{
+   return (KeyT)0 ;
+}
+#endif
+
 // special support for Fr::SymbolTableX
 template <typename KeyT, typename ValT>
-KeyT HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char *name, size_t namelen,
-					 bool *already_existed)
+template <typename RetT>
+typename std::enable_if<std::is_base_of<Fr::Symbol,KeyT>::value, RetT>::type
+HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char* name, size_t namelen,
+				    bool* already_existed)
 {
+   if (sizeof(KeyT) < sizeof(Symbol*)) return (KeyT)0 ;
    if (!already_existed)
       {
       // since only gensym() is interested in whether the key was already
@@ -1624,7 +1643,6 @@ KeyT HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char *name, size_
       }
    INCR_COUNT(insert) ;
    size_t bucketnum = hashval % m_size ;
-   KeyT key ;
    while (true)
       {
       FORWARD(addKey(hashval,name,namelen,already_existed),nexttab,insert_forwarded) ;
@@ -1650,17 +1668,16 @@ KeyT HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char *name, size_
 	 }
       // when we get here, we know that the item is not yet in the
       //   hash table, so try to add it
-      key = Fr_allocate_symbol(reinterpret_cast<Fr::SymbolTable*>(m_container),name,namelen) ;
+      KeyT key = (KeyT)Fr_allocate_symbol(reinterpret_cast<Fr::SymbolTable*>(m_container),name,namelen) ;
       // if the insertKey fails, someone else beat us to
       //    creating the symbol, so abandon this copy
       //    (temporarily leaks at bit of memory until the
       //    hash table is destroyed) and return the other one
       //    when we loop back to the top
       if (insertKey(bucketnum,firstoffset,key,(ValT)0))
-	 break ;
+	 return key ;
       unannounceBucketNumber() ;
       }
-   return key ;
 }
 
 //----------------------------------------------------------------------------
