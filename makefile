@@ -243,7 +243,8 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	cluster$(OBJ) cluster_growseed$(OBJ) cluster_kmeans$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) filename$(OBJ) \
 	float$(OBJ) frame$(OBJ) \
-	hashset_u32$(OBJ) hashtable_u32u32$(OBJ) \
+	hashset_u32$(OBJ) \
+	hashtable_objobj$(OBJ) hashtable_objsz$(OBJ) hashtable_u32u32$(OBJ) \
 	init$(OBJ) random$(OBJ) \
 	integer$(OBJ) jsonreader$(OBJ) list$(OBJ) map$(OBJ) matrix$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
@@ -376,6 +377,8 @@ filename$(OBJ):		filename$(C) framepac/file.h
 float$(OBJ):		float$(C) framepac/number.h
 frame$(OBJ):		frame$(C) framepac/frame.h
 hashset_u32(OBJ):	hashset_u32(C) template/hashtable.cc
+hashtable_objobj$(OBJ):	hashtable_objobj$(C) template/hashtable.cc
+hashtable_objsz$(OBJ):	hashtable_objsz$(C) template/hashtable.cc
 hashtable_u32u32$(OBJ):	hashtable_u32u32$(C) template/hashtable.cc
 init$(OBJ):		init$(C) framepac/init.h
 integer$(OBJ):		integer$(C) framepac/number.h

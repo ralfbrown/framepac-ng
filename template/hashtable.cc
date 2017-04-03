@@ -2456,7 +2456,10 @@ inline bool HashTable<const Symbol*,NullObject>::isEqualFull(const Symbol* key1,
 
 /************************************************************************/
 
+extern template class HashTable<Object*,Object*> ;
 typedef HashTable<Object*,Object*> ObjHashTable ;
+
+extern template class HashTable<Object*,size_t> ;
 typedef HashTable<Object*,size_t> ObjCountHashTable ;
 
 FrMAKE_SYMBOL_HASHTABLE_CLASS(SymHashTable,Object*) ;

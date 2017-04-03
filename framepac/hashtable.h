@@ -385,7 +385,7 @@ class HashTable : public Object
 	 KeyT copyName() const { return copy(m_key) ; }
 	 ValT getValue() const { return (numValues() > 0) ? m_value[0] : 0 ; }
 	 //const ValT *getValuePtr() const { return (numValues() > 0) ? &m_value[0] : (ValT*)nullptr ; }
-	 ValT *getValuePtr() const { return (numValues() > 0) ? (ValT*)&m_value[0] : (ValT*)nullptr ; }
+	 ValT* getValuePtr() const { return (numValues() > 0) ? (ValT*)&m_value[0] : (ValT*)nullptr ; }
 #if defined(FrSINGLE_THREADED)
 	 ValT swapValue(ValT new_value)
 	    {
@@ -395,7 +395,7 @@ class HashTable : public Object
 	    }
 #else
 	 ValT swapValue(ValT new_value)
-	    { return getValuePtr()->exchange(new_value) ; }
+	    { return Atomic<ValT>::ref(*getValuePtr()).exchange(new_value) ; }
 #endif /* FrSINGLE_THREADED */
 	 ALWAYS_INLINE static KeyT UNUSED() {return (KeyT)~0UL ; } 
 	 ALWAYS_INLINE static KeyT DELETED() {return (KeyT)~1UL ; } 
