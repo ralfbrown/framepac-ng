@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -32,6 +32,7 @@ class Number : public Object
    {
    public:
       static Number *create(long) ;
+      static Number *create(uint32_t) ;
       static Number *create(double) ;
       static Number *create(const Number *) ;
       static Number *create(const char *) ;
@@ -91,18 +92,19 @@ class Integer : public Number
    {
    public:
       static Integer *create(long val = 0) { return new Integer(val) ; }
+      static Number *create(uint32_t val) { return new Integer((long)val) ; }
       static Integer *create(double val) { return new Integer((long)val) ; }
       static Integer *create(const Object *obj) { return new Integer(obj->intValue()) ; }
       static Integer *create(const Integer *obj) { return new Integer(obj->m_value) ; }
       static Integer *create(const char *val, int radix = 0) { return new Integer(val,radix) ; }
 
+      void *operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
    private: // static members
       static Allocator<Integer> s_allocator ;
    private:
       long int m_value ;
    protected: // creation/destruction
-      void *operator new(size_t) { return s_allocator.allocate() ; }
-      void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
       Integer(long value = 0) : m_value(value) {}
       Integer(const char *value, unsigned radix = 0) ;
       ~Integer() {}

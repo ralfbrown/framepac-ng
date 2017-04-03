@@ -27,6 +27,7 @@
 #include <thread>
 #include "framepac/hashtable.h"
 #include "framepac/list.h"
+#include "framepac/number.h"
 #include "framepac/symbol.h"
 
 #if DYNAMIC_ANNOTATIONS_ENABLED != 0
@@ -39,20 +40,25 @@
 
 #define FrNAP_TIME std::chrono::microseconds(250)
 
-#define FrNewN(T,N) ((T*)::malloc(sizeof(T)*N))
-#define FrFree(P) (::free(P))
+namespace Fr {
+
+#define FrNewN(T,N) ((T*)std::malloc(sizeof(T)*N))
+#define FrFree(P) (std::free(P))
 #define unlikely(X) (X)
 #define expected(X) (X)
 #define FrSPIN_COUNT 20
 #define FrYIELD_COUNT 50
-#define FramepaC_initial_indent 0
 #define FramepaC_display_width 132
 void FrWarning(const char*) ;
 void FrNoMemory(const char*) ;
+void pushlist(Object*,List*) ;
 #define _mm_pause() 
 #define Fr_cacheline_size 64
 
+size_t FramepaC_initial_indent = 0 ;
 size_t FramepaC_small_primes[] = { 2, 3, 5, 7, 11, 13, 17 } ;  //FIXME
+
+} // end namespace Fr
 
 /************************************************************************/
 /*	Manifest Constants						*/
@@ -855,23 +861,23 @@ bool HashTable<KeyT,ValT>::Table::unlinkEntry(size_t entrynum)
       return false ; // need to retry
       }
    announceBucketNumber(bucketnum) ;
-   Link* prevptr = chainHeadPtr(bucketnum) ;
-   Link offset = Atomic<Link>::ref(*prevptr).load() ;
+   Atomic<Link>* prevptr = chainHeadPtr(bucketnum) ;
+   Link offset = prevptr->load() ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
-      Link* nextptr = chainNextPtr(pos) ;
+      Atomic<Link>* nextptr = chainNextPtr(pos) ;
       if (pos == entrynum)
 	 {
 	 // we found the entry, now try to unlink it
-	 Link nxt = Atomic<Link>::ref(*nextptr).load() ;
-	 if (unlikely(!Atomic<Link>::ref(*prevptr).compare_exchange_strong(offset,nxt)))
+	 Link nxt = nextptr->load() ;
+	 if (unlikely(!prevptr->compare_exchange_strong(offset,nxt)))
 	    {
 	    // uh oh, someone else messed with the chain!
 	    // restart from the beginning of the chain
 	    INCR_COUNT(CAS_coll) ;
 	    prevptr = chainHeadPtr(bucketnum) ;
-	    offset = Atomic<Link>::ref(*prevptr).load() ;
+	    offset = prevptr->load() ;
 	    continue ;
 	    }
 	 // mark the entry as not belonging to any chain anymore
@@ -883,7 +889,7 @@ bool HashTable<KeyT,ValT>::Table::unlinkEntry(size_t entrynum)
 	 {
 	 prevptr = nextptr ;
 	 }
-      offset = Atomic<Link>::ref(*nextptr).load() ;
+      offset = nextptr->load() ;
       }
    unannounceBucketNumber() ;
 #endif /* FrSINGLE_THREADED */
@@ -971,28 +977,28 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum, size_t &min_rec
       //   claim success ourselves
       return true ;
       }
-   Link* prevptr = chainHeadPtr(bucketnum) ;
-   Link offset = Atomic<Link>::ref(*prevptr).load() ;
+   Atomic<Link>* prevptr = chainHeadPtr(bucketnum) ;
+   Link offset = prevptr->load() ;
    bool reclaimed = false ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
-      Link* nextptr = chainNextPtr(pos) ;
+      Atomic<Link>* nextptr = chainNextPtr(pos) ;
       // while the additional check of the key just below is not strictly necessary, it
       //   permits us to avoid the expensive CAS except when an entry is actually deleted
       KeyT key = getKey(pos) ;
-      Link nxt = Atomic<Link>::ref(*nextptr).load() ;
+      Link nxt = nextptr->load() ;
       if (key == Entry::DELETED() && updateKey(pos,Entry::DELETED(),Entry::RECLAIMING()))
 	 {
 	 // we grabbed a deleted entry; now try to unlink it
-	 if (unlikely(!Atomic<Link>::ref(*prevptr).compare_exchange_strong(offset,nxt)))
+	 if (unlikely(!prevptr->compare_exchange_strong(offset,nxt)))
 	    {
 	    // uh oh, someone else messed with the chain!
 	    setKey(pos,Entry::DELETED()) ;
 	    // restart from the beginning of the chain
 	    INCR_COUNT(CAS_coll) ;
 	    prevptr = chainHeadPtr(bucketnum) ;
-	    offset = Atomic<Link>::ref(*prevptr).load() ;
+	    offset = prevptr->load() ;
 	    continue ;
 	    }
 	 // mark the entry as not belonging to any chain anymore
@@ -1007,7 +1013,7 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum, size_t &min_rec
 	 {
 	 prevptr = nextptr ;
 	 }
-      offset = Atomic<Link>::ref(*nextptr).load() ;
+      offset = nextptr->load() ;
       }
    return reclaimed;
 #endif /* FrSINGLE_THREADED */
@@ -1066,7 +1072,7 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
    Table* newtable = m_container->allocTable() ;
    newtable->init(newsize,m_container->m_maxfill) ;
    newtable->onRemove(m_container->onRemoveFunc()) ;
-   newtable->m_container.store(m_container) ;
+   newtable->m_container = m_container ;
    bool success = true ;
    if (expected(newtable->good()))
       {
@@ -1644,7 +1650,7 @@ KeyT HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char *name, size_
 	 }
       // when we get here, we know that the item is not yet in the
       //   hash table, so try to add it
-      key = Fr_allocate_symbol(static_cast<Fr::SymbolTable*>(m_container),name,namelen) ;
+      key = Fr_allocate_symbol(reinterpret_cast<Fr::SymbolTable*>(m_container),name,namelen) ;
       // if the insertKey fails, someone else beat us to
       //    creating the symbol, so abandon this copy
       //    (temporarily leaks at bit of memory until the
@@ -1938,15 +1944,23 @@ bool HashTable<KeyT,ValT>::Table::iterateAndModifyVA(HashKeyPtrFunc* func, std::
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
+Object* HashTable<KeyT,ValT>::Table::makeObject(KeyT key)
+{
+   return key ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
 List* HashTable<KeyT,ValT>::Table::allKeys() const
 {
-   Fr::List* keys = nullptr ;
+   List* keys = nullptr ;
    for (size_t i = 0 ; i < m_size ; ++i)
       {
       if (activeEntry(i))
 	 {
 	 KeyT name = m_entries[i].copyName() ;
-	 pushlist(name,keys) ;
+	 pushlist(makeObject(name),keys) ;
 	 }
       }
    return keys ;
@@ -1960,7 +1974,7 @@ bool HashTable<KeyT,ValT>::Table::verify() const
    bool success = true ;
    for (size_t i = 0 ; i < m_size ; ++i)
       {
-      if (activeEntry(i) && !contains(getKey(i)))
+      if (activeEntry(i) && !contains(hashVal(getKey(i)),getKey(i)))
 	 {
 	 debug_msg("verify: missing @ %ld\n",i) ;
 	 success = false ;
@@ -2061,7 +2075,7 @@ char* HashTable<KeyT,ValT>::Table::displayValue(char* buffer) const
 template <typename KeyT, typename ValT>
 size_t HashTable<KeyT,ValT>::Table::cStringLength(size_t wrap_at, size_t indent) const
 {
-   if (wrap_at == 0) wrap_at == (size_t)~0 ;
+   if (wrap_at == 0) wrap_at = (size_t)~0 ;
    size_t dlength = indent + 4 ; // "#H(" prefix plus ")" trailer
    size_t currline = dlength ;
    for (size_t i = 0 ; i < m_size ; i++)
@@ -2281,9 +2295,8 @@ void HashTable<KeyT,ValT>::registerThread()
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-void HashTable<KeyT,ValT>::unregisterThread(void* arg)
+void HashTable<KeyT,ValT>::unregisterThread()
 {
-   (void)arg ;
 #ifndef FrSINGLE_THREADED
    s_table = nullptr ;
    if (s_thread_record.initialized())
@@ -2372,6 +2385,10 @@ inline bool HashTable<K,V>::isEqual(const K key1, const K key2) \
 \
 template <> \
 inline K HashTable<K,V>::Entry::copy(const K obj) { return obj ; } \
+\
+template <> \
+Object* HashTable<K,V>::Table::makeObject(K key) \
+{ return Integer::create(key) ; }	 \
 \
 template <> \
 inline size_t HashTable<K,V>::Table::keyDisplayLength(const K key) const	\

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -168,10 +168,16 @@ namespace Fr
 class NullObject
    {
    public:
+      NullObject() {}
       NullObject(int) {}
       operator bool() { return false ; }
+
+      NullObject& operator = (const NullObject) { return *this ; }
+      NullObject& operator += (const NullObject) { return *this ; }
+      NullObject exchange(NullObject& other) { return other ; }
    } ;
 } // end namespace Fr
+
 
 #endif /* !__Fr_CONFIG_H_INCLUDED */
 

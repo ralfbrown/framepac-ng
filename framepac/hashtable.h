@@ -217,10 +217,10 @@ struct HashPtrHead
    // the following two fields need to be adjacent so that we
    //   can CAS them together in insertKey(), so we define
    //   this struct just for that purpose
-      Link	          first ; // offset of first entry in hash bucket
+      Fr::Atomic<Link>    first ; // offset of first entry in hash bucket
       Fr::Atomic<uint8_t> status ;// is someone messing with this bucket's chain?
    public:
-      HashPtrHead() : first(0), status() { status.store(0) ; }
+      HashPtrHead() : first(0), status(0) { status.store(0) ; }
    } ;	    
 
 /************************************************************************/
@@ -448,6 +448,8 @@ class HashTable : public Object
 	 bool good() const { return m_entries != nullptr ifnot_INTERLEAVED(&& m_ptrs != nullptr) && m_size > 0 ; }
 	 bool superseded() const { return m_next_table.load() != nullptr ; }
 	 bool resizingDone() const { return m_resizedone.load() ; }
+	 size_t currentSize() const { return m_currsize.load() ; }
+	 void setSize(size_t newsz) { m_currsize.store(newsz) ; }
 	 Table *next() const { return m_next_table.load() ; }
 	 Table *nextFree() const { return m_next_free.load() ; }
 	 KeyT getKey(size_t N) const { return m_entries[N].m_key.load() ; }
@@ -475,6 +477,11 @@ class HashTable : public Object
 		  return ;
 	    }
 	 static size_t normalizeSize(size_t sz) ;
+	 size_t resizeThreshold(size_t sz)
+	    {
+	       size_t thresh = (size_t)(sz * m_container->m_maxfill + 0.5) ;
+	       return (thresh >= sz) ? sz-1 : thresh ;
+	    }
       protected:
 	 // the following three functions are defined *after* the declaration of HashTable
 	 //   due to the circular dependency of declarations....
@@ -501,20 +508,15 @@ class HashTable : public Object
 	    }
 
 	 Link chainHead(size_t N) const { return ANNOTATE_UNPROTECTED_READ(bucketPtr(N)->head.first) ; }
-	 Link *chainHeadPtr(size_t N) const { return &bucketPtr(N)->head.first ; }
+	 Atomic<Link>* chainHeadPtr(size_t N) const { return &bucketPtr(N)->head.first ; }
 	 Link chainNext(size_t N) const { return ANNOTATE_UNPROTECTED_READ(bucketPtr(N)->next) ; }
-	 Link *chainNextPtr(size_t N) const { return &bucketPtr(N)->next ; }
+	 Atomic<Link>* chainNextPtr(size_t N) const { return &bucketPtr(N)->next ; }
 	 Link chainOwner(size_t N) const { return bucketPtr(N)->offset.load() ; }
 	 void setChainNext(size_t N, Link nxt) { bucketPtr(N)->next.store(nxt) ; }
 	 void setChainOwner(size_t N, Link ofs) { bucketPtr(N)->offset.store(ofs) ; }
 	 void markCopyDone(size_t N) { bucketPtr(N)->markCopyDone() ; }
 	 size_t bucketContaining(size_t N) const
 	    { Link owner = chainOwner(N) ; return (owner == FramepaC::NULLPTR) ? NULLPOS : N - owner ; }
-	 size_t resizeThreshold(size_t sz)
-	    {
-	       size_t thresh = (size_t)(sz * m_container->m_maxfill + 0.5) ;
-	       return (thresh >= sz) ? sz-1 : thresh ;
-	    }
 	 size_t sizeForCapacity(size_t capacity) const
 	    {
 	       return (size_t)(capacity / m_container->m_maxfill + 0.99) ;
@@ -562,6 +564,8 @@ class HashTable : public Object
 	 size_t recycleDeletedEntry(size_t bucketnum, KeyT new_key) ;
 	 bool reclaimChain(size_t bucketnum, size_t &min_reclaimed, size_t &max_reclaimed) ;
 	 bool assistResize() ;
+
+	 static Object* makeObject(KeyT key) ;
 
       public:
 	 void onRemove(HashKVFunc *func) { remove_fn = func ; }
@@ -700,7 +704,7 @@ class HashTable : public Object
 	    {
 	       m_table = ht ;
 	       m_pos = bucketnum ;
-	       m_lock->store(ht->bucketPtr(bucketnum)->statusPtr()) ;
+	       m_lock = reinterpret_cast<Atomic<uint8_t>*>(ht->bucketPtr(bucketnum)->statusPtr()) ;
 	       INCR_COUNTstat(chain_lock_count) ;
 	       uint8_t oldval = m_lock->test_and_set_mask((uint8_t)HashPtr::lock_mask) ;
 	       if ((oldval & HashPtr::lock_mask) == 0)
@@ -753,8 +757,8 @@ class HashTable : public Object
 
    protected: // members
       Atomic<Table*>   	  m_table ;	// pointer to currently-active m_tables[] entry
-      Atomic<Table*>	  m_oldtables ;	// start of list of currently-live hash arrays
-      Atomic<Table*>	  m_freetables ;
+      Atomic<Table*>	  m_oldtables { nullptr } ;  // start of list of currently-live hash arrays
+      Atomic<Table*>	  m_freetables { nullptr } ;
       Table		  m_tables[FrHT_NUM_TABLES] ;// hash array, chains, and associated data
       HashKeyValueFunc   *cleanup_fn ;	// invoke on destruction of obj
       HashKVFunc         *remove_fn ; 	// invoke on removal of entry/value
@@ -817,7 +821,7 @@ class HashTable : public Object
       //   entries and hash arrays, as well as an on-exit callback
       //   to clear that info
       static void registerThread() ;
-      static void unregisterThread(void *arg) ;
+      static void unregisterThread() ;
 
       size_t maxSize() const { return m_table.load()->m_size ; }
       static inline size_t hashVal(KeyT key)
@@ -857,7 +861,7 @@ class HashTable : public Object
 	    init(ht.maxSize(),ht.m_maxfill) ;
 	    Table *table = m_table.load() ;
 	    Table *othertab = ht.m_table.load() ;
-	    table->m_currsize.store(ht.currentSize()) ;
+	    table->setSize(ht.currentSize()) ;
 	    for (size_t i = 0 ; i < table->m_size ; i++)
 	       {
 	       table->copyEntry(i,othertab) ;
@@ -946,13 +950,13 @@ class HashTable : public Object
       // ============== The public API for HashTable ================
    public:
       HashTable(size_t initial_size = 1031, double max_fill = 0.0)
-	 : m_table(nullptr), m_oldtables(nullptr), m_freetables(nullptr)
+	 : Object(), m_table(nullptr)
 	 {
 	    init(initial_size,max_fill) ;
 	    return ;
 	 }
       HashTable(const HashTable &ht)
-	 : m_table(nullptr), m_oldtables(nullptr), m_freetables(nullptr)
+	 : Object(), m_table(nullptr)
 	 {
 	    if (&ht == nullptr)
 	       return ;
@@ -1087,7 +1091,7 @@ class HashTable : public Object
       void setMaxFill(double fillfactor) ;
 
       // access to internal state
-      size_t currentSize() const { DELEGATE(m_currsize.load()) }
+      size_t currentSize() const { DELEGATE(currentSize()) }
       size_t maxCapacity() const { DELEGATE(m_size) }
       bool isPacked() const { return false ; }  // backwards compatibility
       HashKeyValueFunc *cleanupFunc() const { return cleanup_fn ; }

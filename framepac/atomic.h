@@ -266,11 +266,12 @@ class Atomic : public std::atomic<T>
 	 {}
       Atomic(T value) : std::atomic<T>(value)
 	 {}
-      Atomic(const Atomic<T>& value)
-	 { this->store(value.load()) ; }
+      Atomic(const Atomic<T>& value) : std::atomic<T>(value.load()) {}
       ~Atomic() = default ;
 
-      Atomic& operator= (const Atomic<T>& value) { this->store(value.load()) ; return *this ; }
+      Atomic& operator= (const Atomic& value) { this->store(value.load()) ; return *this ; }
+      Atomic& operator= (const T& value) { this->store(value) ; return *this ; }
+      T operator+= (const T& value) ;
 
       // additional operations
       bool test_and_set_bit( unsigned bitnum )
@@ -356,7 +357,26 @@ inline bool Atomic<bool>::test_and_clear_mask(bool mask)
 {
    return mask ? exchange(false) : false ;
 }
-   
+
+// NullObject requires special handling
+template <>
+inline Atomic<NullObject>& Atomic<NullObject>::operator= (const NullObject&)
+{
+   return *this ;
+}
+
+template <>
+inline NullObject Atomic<NullObject>::operator+= (const NullObject&)
+{
+   NullObject n ;
+   return n ;
+}
+
+template <typename T>
+inline T Atomic<T>::operator+= (const T& value)
+{
+   return this->fetch_add(value) + value ; 
+}
 
 // generic functionality built on top of the atomic primitives
 
