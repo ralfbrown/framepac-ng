@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-03-28					*/
+/*  Version 0.01, last edit 2017-04-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File atomic.h		atomic operations on simple variables	*/
@@ -202,17 +202,26 @@ class Atomic
       T pop() ;
 
       // various kinds of barriers
-      void memoryBarrier() [[gnu::always_inline]] {}
-      void loadBarrier() [[gnu::always_inline]] {}
-      void storeBarrier() [[gnu::always_inline]] {}
-      void barrier() [[gnu::always_inline]]
+      ALWAYS_INLINE void memoryBarrier() {}
+      ALWAYS_INLINE void loadBarrier() {}
+      ALWAYS_INLINE void storeBarrier() {}
+      ALWAYS_INLINE void barrier()
 	 {
 #ifdef __GNUC__
 	 asm volatile ("" : : : "memory") ;
 #endif
 	 }
 
+      static Atomic<T> ref(T& obj) { return reinterpret_cast<Atomic<T> >(obj) ; }
    } ;
+
+// memory barriers
+ALWAYS_INLINE void atomic_thread_fence( std::memory_order )
+{
+#ifdef __GNUC__
+   asm volatile ("" : : : "memory") ;
+#endif
+}
 
 // generic functionality built on top of the atomic primitives
 
@@ -328,6 +337,7 @@ class Atomic : public std::atomic<T>
 #endif
 	 }
 
+      static Atomic<T> ref(T& obj) { return reinterpret_cast<Atomic<T> >(obj) ; }
    } ;
 
 // bool doesn't support fetch_or or fetch_and, so we need specific specialization

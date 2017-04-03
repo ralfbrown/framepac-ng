@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-03-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -22,11 +22,14 @@
 #include <stdarg.h>
 #include "framepac/bidindex.h"
 
+namespace Fr
+{
+
 /************************************************************************/
 /************************************************************************/
 
 template <class keyT, typename idxT>
-idxT BidirIndex::addKey(keyT key)
+idxT BidirIndex<keyT,idxT>::addKey(keyT key)
 {
    idxT old_index ;
    if (lookup(key,&old_index))
@@ -46,7 +49,7 @@ idxT BidirIndex::addKey(keyT key)
 //----------------------------------------------------------------------------
 
 template <class keyT, typename idxT>
-void BidirIndex::addKeySilent(keyT key)
+void BidirIndex<keyT,idxT>::addKeySilent(keyT key)
 {
    if (contains(key))
       return ;
@@ -74,7 +77,7 @@ static bool make_reverse_entry(keyT key, idxT index, va_list args)
 //----------------------------------------------------------------------------
 
 template <class keyT, typename idxT>
-bool BidirIndex::finalize()
+bool BidirIndex<keyT,idxT>::finalize()
 {
    m_max_index = m_next_index.load() ;
    delete [] m_reverse_index ;
@@ -93,5 +96,8 @@ bool BidirIndex::finalize()
    return false ;
 }
 
+//----------------------------------------------------------------------------
+
+} // end namespace Fr
 
 // end of file bidindex.cc //

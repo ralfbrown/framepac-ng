@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -19,9 +19,11 @@
 /*									*/
 /************************************************************************/
 
+#include <chrono>
+#include <cmath>
+#include <cstdlib>
 #include <iomanip>
-#include <math.h>
-#include <stdlib.h>
+#include <thread>
 #include "framepac/hashtable.h"
 
 #if DYNAMIC_ANNOTATIONS_ENABLED != 0
@@ -32,13 +34,15 @@
 /*	Manifest Constants						*/
 /************************************************************************/
 
+#define FrNAP_TIME std::chrono::microseconds(250)
+
 /************************************************************************/
 /*	Manifest Constants						*/
 /************************************************************************/
 
 #if defined(FrSINGLE_THREADED)
 #define FORWARD(delegate,tab,counter)		\
-      Table *tab = next() ;			\
+      Table* tab = next() ;			\
       if (tab /*&& chainIsStale(bucketnum)*/)	\
 	 {					\
 	 return tab->delegate ;			\
@@ -47,7 +51,7 @@
 #define FORWARD_IF_STALE(delegate,counter)
 #else
 #define FORWARD(delegate,tab,counter)					\
-      Table *tab = next() ;						\
+      Table* tab = next() ;						\
       if (tab /*&& chainIsStale(bucketnum)*/)				\
 	 {								\
 	 /* ensure that our bucket has been copied to 	*/		\
@@ -60,7 +64,7 @@
 	 return tab->delegate ;						\
 	 }							
 #define FORWARD_IF_COPIED(delegate,counter)				\
-      Table *nexttab = next() ;						\
+      Table* nexttab = next() ;						\
       if (nexttab)							\
 	 {								\
 	 /* if our bucket has been fully copied to the	*/ 		\
@@ -75,7 +79,7 @@
 	    }								\
 	 }
 #define FORWARD_IF_STALE(delegate,counter)				\
-      Table *nexttab = next() ;						\
+      Table* nexttab = next() ;						\
       if (nexttab)							\
 	 {								\
 	 /* if our bucket has at least started to be copied to	*/	\
@@ -96,7 +100,12 @@
 /*	Manifest Constants						*/
 /************************************************************************/
 
-void Table::init(size_t size, double max_fill)
+/************************************************************************/
+/*	Methods for class Table						*/
+/************************************************************************/
+
+template <typename KeyT, typename ValT>
+void Table<KeyT,ValT>::init(size_t size, double max_fill)
 {
    m_size = size ;
    m_currsize.store(0) ;
@@ -221,10 +230,10 @@ bool Table::bucketsInUse(size_t startbucket, size_t endbucket) const
 #ifndef FrSINGLE_THREADED
    // can only have concurrent use when multi-threaded
    // scan the list of per-thread s_table variables
-   for (const TablePtr *tables = cs::load(s_thread_entries) ; tables ; tables = tables->m_next)
+   for (const TablePtr* tables = s_thread_entries.load() ; tables ; tables = tables->m_next)
       {
       // check whether the hazard pointer is for ourself
-      const Table *ht = tables->table() ;
+      const Table* ht = tables->table() ;
       if (this != ht)
 	 continue ;
       // check whether it's for a bucket of interest
@@ -295,7 +304,7 @@ bool Table::copyChainLocked(size_t bucketnum) _fnattr_hot
 	 }
       KeyT key = getKey(pos) ;
       size_t hashval = hashValFull(key) ;
-      Entry *element = &m_entries[pos] ;
+      Entry* element = &m_entries[pos] ;
       if (next()->reAdd(hashval,key,element->getValue()))
 	 {
 	 // duplicate, apply removal function to the value
@@ -313,7 +322,7 @@ bool Table::copyChainLocked(size_t bucketnum) _fnattr_hot
 bool Table::copyChain(size_t bucketnum) _fnattr_hot
 {
 #ifndef FrSINGLE_THREADED
-   HashPtr *bucket = bucketPtr(bucketnum) ;
+   HashPtr* bucket = bucketPtr(bucketnum) ;
    // atomically set the 'stale' bit and get the current status
    uint8_t status = bucket->markStaleGetStatus() ;
    if ((status & (HashPtr::stale_mask | HashPtr::lock_mask)) != 0)
@@ -575,8 +584,8 @@ bool Table::insertKey(size_t bucketnum, Link firstptr, KeyT key, ValT value) _fn
    //   HashPtr, since we require not only that the link
    //   be unchanged, but that the chain be neither stale
    //   nor locked
-   HashPtrInt *headptr = (HashPtrInt*)&bucketPtr(bucketnum)->head ;
-   if (unlikely(!cs::compareAndSwap(&headptr->head_int,
+   HashPtrInt* headptr = (HashPtrInt*)&bucketPtr(bucketnum)->head ;
+   if (unlikely(!&headptr->head_int.compare_exchange_strong(
 				    *((uint16_t*)&expected_head),
 				    *((uint16_t*)&new_head))))
       {
@@ -804,23 +813,23 @@ bool Table::unlinkEntry(size_t entrynum)
       return false ; // need to retry
       }
    announceBucketNumber(bucketnum) ;
-   Link *prevptr = chainHeadPtr(bucketnum) ;
-   Link offset = cs::load(*prevptr) ;
+   Link* prevptr = chainHeadPtr(bucketnum) ;
+   Link offset = prevptr->load() ;
    while (NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
-      Link *nextptr = chainNextPtr(pos) ;
+      Link* nextptr = chainNextPtr(pos) ;
       if (pos == entrynum)
 	 {
 	 // we found the entry, now try to unlink it
-	 Link nxt = cs::load(*nextptr) ;
-	 if (unlikely(!cs::compareAndSwap(prevptr,offset,nxt)))
+	 Link nxt = nextptr->load() ;
+	 if (unlikely(!prevptr.compare_exchange_strong(offset,nxt)))
 	    {
 	    // uh oh, someone else messed with the chain!
 	    // restart from the beginning of the chain
 	    INCR_COUNT(CAS_coll) ;
 	    prevptr = chainHeadPtr(bucketnum) ;
-	    offset = cs::load(*prevptr) ;
+	    offset = prevptr->load() ;
 	    continue ;
 	    }
 	 // mark the entry as not belonging to any chain anymore
@@ -832,7 +841,7 @@ bool Table::unlinkEntry(size_t entrynum)
 	 {
 	 prevptr = nextptr ;
 	 }
-      offset = cs::load(*nextptr) ;
+      offset = nextptr->load() ;
       }
    unannounceBucketNumber() ;
 #endif /* FrSINGLE_THREADED */
@@ -918,28 +927,28 @@ bool Table::reclaimChain(size_t bucketnum, size_t &min_reclaimed, size_t &max_re
       //   claim success ourselves
       return true ;
       }
-   Link *prevptr = chainHeadPtr(bucketnum) ;
-   Link offset = cs::load(*prevptr) ;
+   Link* prevptr = chainHeadPtr(bucketnum) ;
+   Link offset = prevptr->load() ;
    bool reclaimed = false ;
    while (NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
-      Link *nextptr = chainNextPtr(pos) ;
+      Link* nextptr = chainNextPtr(pos) ;
       // while the additional check of the key just below is not strictly necessary, it
       //   permits us to avoid the expensive CAS except when an entry is actually deleted
       KeyT key = getKey(pos) ;
-      Link nxt = cs::load(*nextptr) ;
+      Link nxt = nextptr->load() ;
       if (key == Entry::DELETED() && updateKey(pos,Entry::DELETED(),Entry::RECLAIMING()))
 	 {
 	 // we grabbed a deleted entry; now try to unlink it
-	 if (unlikely(!cs::compareAndSwap(prevptr,offset,nxt)))
+	 if (unlikely(!prevptr.compare_exchange_strong(offset,nxt)))
 	    {
 	    // uh oh, someone else messed with the chain!
 	    setKey(pos,Entry::DELETED()) ;
 	    // restart from the beginning of the chain
 	    INCR_COUNT(CAS_coll) ;
 	    prevptr = chainHeadPtr(bucketnum) ;
-	    offset = cs::load(*prevptr) ;
+	    offset = prevptr->load() ;
 	    continue ;
 	    }
 	 // mark the entry as not belonging to any chain anymore
@@ -954,7 +963,7 @@ bool Table::reclaimChain(size_t bucketnum, size_t &min_reclaimed, size_t &max_re
 	 {
 	 prevptr = nextptr ;
 	 }
-      offset = cs::load(*nextptr) ;
+      offset = nextptr->load() ;
       }
    return reclaimed;
 #endif /* FrSINGLE_THREADED */
@@ -1008,10 +1017,10 @@ bool Table::resize(size_t newsize, bool enlarge_only = false)
       debug_msg("resize to %ld from %ld/%ld (%4.1f%%) (thr %ld)\n",
 		newsize,currsize,m_size,100.0*currsize/m_size,my_job_id) ;
       }
-   Table *newtable = m_container->allocTable() ;
+   Table* newtable = m_container->allocTable() ;
    newtable->init(newsize,m_container->m_maxfill) ;
    newtable->onRemove(m_container->onRemoveFunc()) ;
-   cs::store(newtable->m_container,m_container) ;
+   newtable->m_container.store(m_container) ;
    bool success = true ;
    if (expected(newtable->good()))
       {
@@ -1120,7 +1129,7 @@ bool Table::add(size_t hashval, KeyT key, ValT value = 0) _fnattr_hot
 	 m_currsize++ ;
 	 // fill in the value, then the key
 	 setValue(deleted,value) ;
-	 cs::storeBarrier();
+	 atomic_thread_fence(std::memory_order_release) ;
 	 setKey(deleted,key) ;
 	 INCR_COUNT(insert_attempt) ;
 	 // Verify that we haven't been superseded while we
@@ -1189,7 +1198,7 @@ size_t Table::addCount(size_t hashval, KeyT key, ValT incr) _fnattr_hot
 	 m_currsize++ ;
 	 // fill in the value, then the key
 	 setValue(deleted,incr) ;
-	 cs::storeBarrier();
+	 atomic_thread_fence(std::memory_order_release) ;
 	 setKey(deleted,key) ;
 	 INCR_COUNT(insert_attempt) ;
 	 // Verify that we haven't been superseded while we
@@ -1270,7 +1279,7 @@ ValT Table::lookup(size_t hashval, KeyT key) const _fnattr_hot
 
 //----------------------------------------------------------------------------
 
-bool Table::lookup(size_t hashval, KeyT key, ValT *value) const _fnattr_hot
+bool Table::lookup(size_t hashval, KeyT key, ValT* value) const _fnattr_hot
 {
    if (!value)
       return false ;
@@ -1306,7 +1315,7 @@ bool Table::lookup(size_t hashval, KeyT key, ValT *value) const _fnattr_hot
 //----------------------------------------------------------------------------
 
 // NOTE: this lookup() is not entirely thread-safe if clear==true
-bool Table::lookup(size_t hashval, KeyT key, ValT *value, bool clear_entry) _fnattr_hot
+bool Table::lookup(size_t hashval, KeyT key, ValT* value, bool clear_entry) _fnattr_hot
 {
    if (!value)
       return false ;
@@ -1352,7 +1361,7 @@ bool Table::lookup(size_t hashval, KeyT key, ValT *value, bool clear_entry) _fna
 //   add() and remove() calls!  Use global synchronization if
 //   you will be using both this function and add()/remove()
 //   concurrently on the same hash table.
-ValT *Table::lookupValuePtr(size_t hashval, KeyT key) const
+ValT* Table::lookupValuePtr(size_t hashval, KeyT key) const
 {
    size_t bucketnum = hashval % m_size ;
    FORWARD_IF_COPIED(lookupValuePtr(hashval,key),lookup_forwarded) ;
@@ -1361,7 +1370,7 @@ ValT *Table::lookupValuePtr(size_t hashval, KeyT key) const
    announceBucketNumber(bucketnum) ;
    // scan the chain of items for this hash position
    Link offset = chainHead(bucketnum) ;
-   ValT *val = nullptr ; // assume "not found"
+   ValT* val = nullptr ; // assume "not found"
    while (NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
@@ -1390,8 +1399,8 @@ bool Table::remove(size_t hashval, KeyT key)
    // since nobody else can mess with the bucket chain while we're traversing it, we can
    //   just chop out the desired item and don't need to bother with marking entries as
    //   deleted and reclaiming them later
-   Link *prevptr = chainHeadPtr(bucketnum) ;
-   Link offset = *prevptr ;
+   Link* prevptr = chainHeadPtr(bucketnum) ;
+   Link offset = prevptr->load() ;
    while (NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
@@ -1410,7 +1419,7 @@ bool Table::remove(size_t hashval, KeyT key)
 	 }
       // advance to next item in chain
       prevptr = chainNextPtr(pos) ;
-      offset = *prevptr ;
+      offset = prevptr->load() ;
       }
    // item not found
    return false ;
@@ -1538,7 +1547,7 @@ bool Table::reclaimDeletions()
 
 //----------------------------------------------------------------------------
 
-// special support for FrSymbolTableX
+// special support for Fr::SymbolTableX
 KeyT Table::addKey(size_t hashval, const char *name, size_t namelen,
 		   bool *already_existed = 0) _fnattr_hot
 {
@@ -1579,7 +1588,7 @@ KeyT Table::addKey(size_t hashval, const char *name, size_t namelen,
 	 }
       // when we get here, we know that the item is not yet in the
       //   hash table, so try to add it
-      key = Fr_allocate_symbol(static_cast<FrSymbolTable*>(m_container),name,namelen) ;
+      key = Fr_allocate_symbol(static_cast<Fr::SymbolTable*>(m_container),name,namelen) ;
       // if the insertKey fails, someone else beat us to
       //    creating the symbol, so abandon this copy
       //    (temporarily leaks at bit of memory until the
@@ -1594,8 +1603,8 @@ KeyT Table::addKey(size_t hashval, const char *name, size_t namelen,
 
 //----------------------------------------------------------------------------
 
-// special support for FrSymbolTable
-bool Table::contains(size_t hashval, const char *name, size_t namelen) const _fnattr_hot
+// special support for Fr::SymbolTable
+bool Table::contains(size_t hashval, const char* name, size_t namelen) const _fnattr_hot
 {
    size_t bucketnum = hashval % m_size ;
    FORWARD_IF_COPIED(contains(hashval,name,namelen),contains_forwarded)
@@ -1623,8 +1632,8 @@ bool Table::contains(size_t hashval, const char *name, size_t namelen) const _fn
 
 //----------------------------------------------------------------------------
 
-// special support for FrSymbolTableX
-KeyT Table::lookupKey(size_t hashval, const char *name, size_t namelen) const _fnattr_hot
+// special support for Fr::SymbolTableX
+KeyT Table::lookupKey(size_t hashval, const char* name, size_t namelen) const _fnattr_hot
 {
    size_t bucketnum = hashval % m_size ;
    FORWARD_IF_COPIED(lookupKey(hashval,name,namelen),contains_forwarded)
@@ -1733,11 +1742,11 @@ size_t Table::chainLength(size_t bucketnum) const _fnattr_cold
 
 //----------------------------------------------------------------------------
 
-size_t *Table::chainLengths(size_t &max_length) const _fnattr_cold
+size_t* Table::chainLengths(size_t &max_length) const _fnattr_cold
 {
    if (next())
       return next()->chainLengths(max_length) ;
-   size_t *lengths = new size_t[2*searchrange+2] ;
+   size_t* lengths = new size_t[2*searchrange+2] ;
    for (size_t i = 0 ; i <= 2*searchrange+1 ; i++)
       {
       lengths[i] = 0 ;
@@ -1755,11 +1764,11 @@ size_t *Table::chainLengths(size_t &max_length) const _fnattr_cold
 
 //----------------------------------------------------------------------------
 
-size_t *Table::neighborhoodDensities(size_t &num_densities) const _fnattr_cold
+size_t* Table::neighborhoodDensities(size_t &num_densities) const _fnattr_cold
 {
    if (next())
       return next()->neighborhoodDensities(num_densities) ;
-   size_t *densities = new size_t[2*searchrange+2] ;
+   size_t* densities = new size_t[2*searchrange+2] ;
    num_densities = 2*searchrange+1 ;
    for (size_t i = 0 ; i <= 2*searchrange+1 ; i++)
       {
@@ -1789,7 +1798,7 @@ size_t *Table::neighborhoodDensities(size_t &num_densities) const _fnattr_cold
 
 //----------------------------------------------------------------------------
 
-bool Table::iterateVA(HashKeyValueFunc *func, va_list args) const
+bool Table::iterateVA(HashKeyValueFunc* func, va_list args) const
 {
    bool success = true ;
    for (size_t i = 0 ; i < m_size && success ; ++i)
@@ -1811,7 +1820,7 @@ bool Table::iterateVA(HashKeyValueFunc *func, va_list args) const
 
 //----------------------------------------------------------------------------
 
-bool iterateAndClearVA(HashKeyValueFunc *func, va_list args) const
+bool Table::iterateAndClearVA(HashKeyValueFunc* func, va_list args) const
 {
    bool success = true ;
    for (size_t i = 0 ; i < m_size && success ; ++i)
@@ -1835,7 +1844,7 @@ bool iterateAndClearVA(HashKeyValueFunc *func, va_list args) const
 
 //----------------------------------------------------------------------------
 
-bool Table::iterateAndModifyVA(HashKeyPtrFunc *func, va_list args) const
+bool Table::iterateAndModifyVA(HashKeyPtrFunc* func, va_list args) const
 {
    bool success = true ;
    for (size_t i = 0 ; i < m_size && success ; ++i)
@@ -1857,9 +1866,9 @@ bool Table::iterateAndModifyVA(HashKeyPtrFunc *func, va_list args) const
 
 //----------------------------------------------------------------------------
 
-FrList *Table::allKeys() const
+Fr::List* Table::allKeys() const
 {
-   FrList *keys = 0 ;
+   Fr::List* keys = 0 ;
    for (size_t i = 0 ; i < m_size ; ++i)
       {
       if (activeEntry(i))
@@ -1904,7 +1913,7 @@ size_t Table::keyDisplayLength(KeyT key) const
 
 //----------------------------------------------------------------------------
 
-char *Table::displayKeyValue(char *buffer, KeyT key) const
+char* Table::displayKeyValue(char* buffer, KeyT key) const
 {
    if (key)
       return key->displayValue(buffer) ;
@@ -1949,7 +1958,7 @@ ostream &Table::printValue(ostream &output) const
 
 //----------------------------------------------------------------------------
 
-char *Table::displayValue(char *buffer) const
+char* Table::displayValue(char* buffer) const
 {
    strcpy(buffer,"#H(") ;
    buffer += 3 ;
@@ -1971,15 +1980,24 @@ char *Table::displayValue(char *buffer) const
 // get size of buffer needed to display the string representation of the hash table
 // NOTE: will not be valid if there are any add/remove/resize calls between calling
 //   this function and using displayValue(); user must ensure locking if multithreaded
-size_t Table::displayLength() const
+size_t Table::cStringLength(size_t wrap_at, size_t indent) const
 {
-   size_t dlength = 4 ; // "#H(" prefix plus ")" trailer
+   if (wrap_at == 0) wrap_at == (size_t)~0 ;
+   size_t dlength = indent + 4 ; // "#H(" prefix plus ")" trailer
+   size_t currline = dlength ;
    for (size_t i = 0 ; i < m_size ; i++)
       {
       if (!activeEntry(i))
 	 continue ;
       KeyT key = getKey(i) ;
-      dlength += keyDisplayLength(key) + 1 ;
+      size_t len = keyDisplayLength(key) + 1 ;
+      dlength += len ;
+      currline += len ;
+      if (currline > wrap_at)
+	 {
+	 currline = 0 ;
+	 dlength += indent ;
+	 }
       }
    return dlength ;
 }
@@ -1991,29 +2009,271 @@ size_t Table::displayLength() const
 //----------------------------------------------------------------------------
 
 /************************************************************************/
-/*	Declarations for template class FrHashTable			*/
+/*	Methods for class HashTable					*/
+/************************************************************************/
+
+template <typename KeyT, typename ValT>
+void HashTable<KeyT,ValT>::init(size_t initial_size, double max_fill, Table* table = 0)
+{
+   onRemove(0) ;
+   onDelete(0) ;
+   m_table.store(0) ;
+   m_maxfill = max_fill < HashTable_MinFill ? HashTable_DefaultMaxFill : max_fill ;
+   m_oldtables.store(0) ;
+   m_freetables.store(0) ;
+   clearGlobalStats() ;
+   initial_size = Table::normalizeSize(initial_size) ;
+   for (size_t i = 0 ; i < NUM_TABLES ; i++)
+      {
+      releaseTable(&m_tables[i]) ;
+      }
+   if (!table)
+      {
+      table = allocTable() ;
+      }
+   new (table) Table(initial_size,m_maxfill) ;
+   if (expected(table->good()))
+      {
+      table->m_container = this ;
+      table->remove_fn = onRemoveFunc() ;
+      m_table.store(table) ;
+      m_oldtables.store(table) ;
+      }
+   else
+      {
+      FrNoMemory("creating HashTable") ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
+void HashTable::thread_backoff(size_t &loops)
+{
+   ++loops ;
+   // we expect the pending operation(s) to complete in
+   //   well under one microsecond, so start by just spinning
+   if (loops < FrSPIN_COUNT)
+      {
+      INCR_COUNT(spin) ;
+      _mm_pause() ;
+      _mm_pause() ;
+      }
+   else if (loops < FrSPIN_COUNT + FrYIELD_COUNT)
+      {
+      // it's taking a little bit longer, so now yield the
+      //   CPU to any suspended but ready threads
+      //debug_msg("yield\n") ;
+      INCR_COUNT(yield) ;
+      std::this_thread::yield() ;
+      }
+   else
+      {
+      // hmm, this is taking a while -- maybe an add() had
+      // to do extra work, or we are oversubscribed on
+      // threads and an operation got suspended
+      debug_msg("sleep\n") ;
+      INCR_COUNT(sleep) ;
+      size_t factor = loops - FrSPIN_COUNT - FrYIELD_COUNT + 1 ;
+      std::this_thread::sleep_for(factor * FrNAP_TIME) ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
+Table* HashTable<KeyT,ValT>::allocTable()
+{
+   // pop a table record off the freelist, if available
+   Table* tab = m_freetables.load() ;
+   while (tab)
+      {
+      Table* nxt = tab->nextFree() ;
+      if (m_freetables.compare_exchange_strong(tab,nxt))
+	 return tab ;
+      tab = m_freetables.load() ;
+      }
+   // no table records on the freelist, so create a new one
+   return new Table ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
+void HashTable<KeyT,ValT>::releaseTable(Table* t)
+{
+   t->clear() ;
+   Table* freetab ;
+   do
+      {
+      freetab = m_freetables.load() ;
+      t->m_next_free.store(freetab) ;
+      } while (!m_freetables.compare_exchange_weak(freetab,t)) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
+void HashTable<KeyT,ValT>::freeTables()
+{
+   Table* tab ;
+   while ((tab = m_freetables.load()) != 0)
+      {
+      Table* next = tab->nextFree() ;
+      m_freetables.store(next) ;
+      if (tab < &m_tables[0] || tab >= &m_tables[NUM_TABLES])
+	 {
+	 // not one of the tables inside our own instance, so
+	 //   send back to OS
+	 delete tab ;
+	 }
+      }
+   return  ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
+void HashTable<KeyT,ValT>::updateTable()
+{
+   Table* table = m_table.load() ;
+   bool updated = false ;
+   while (table && table->resizingDone() && table->next())
+      {
+      table = table->next() ;
+      updated = true ;
+      }
+   if (updated)
+      {
+      m_table.store(table) ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
+bool HashTable<KeyT,ValT>::reclaimSuperseded()
+{
+   bool freed = false ;
+   while (true)
+      {
+      Table* tab = m_oldtables.load() ;
+      assert(tab != 0) ;
+      if (tab == m_table.load() || !tab->m_resizedone.load() ||
+	  stillLive(tab))
+	 break ;
+      Table* next = tab->next() ;
+      if (unlikely(!m_oldtables.compare_exchange_strong(tab,next)))
+	 break ;	   // someone else has freed the table
+      releaseTable(tab) ; // put the emptied table on the freelist
+      freed = true ;
+      }
+   return freed ;
+}
+
+//----------------------------------------------------------------------------
+// set up the per-thread info needed for safe reclamation of
+//   entries and hash arrays, as well as an on-exit callback
+//   to clear that info
+
+template <typename KeyT, typename ValT>
+void HashTable<KeyT,ValT>::registerThread()
+{
+#ifndef FrSINGLE_THREADED
+   // check whether we've initialized the thread-local data yet
+   if (!s_thread_record.initialized())
+      {
+      cleaner.setTable(this) ;
+      // push our local-copy variable onto the list of all such variables
+      //   for use by the resizer
+      auto head = s_thread_entries ;
+      do {
+         s_thread_record.init(&s_table,&s_bucket,head) ;
+         } while (!s_thread_entries.compare_exchange_weak(head,&s_thread_record)) ;
+      /*atomic_incr*/++s_registered_threads ;
+      }
+#endif /* FrSINGLE_THREADED */
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
+void HashTable<KeyT,ValT>::unregisterThread(void* arg)
+{
+   (void)arg ;
+#ifndef FrSINGLE_THREADED
+   s_table = nullptr ;
+   if (s_thread_record.initialized())
+      {
+      // unlink from the list of all thread-local table pointers
+      //FIXME: make updates atomic to prevent list corruption
+      TablePtr* prev = nullptr ;
+      TablePtr* curr = s_thread_entries ;
+      while (curr && curr->m_table != &s_thread_record)
+	 {
+	 prev = curr ;
+	 curr = curr->m_next ;
+	 }
+      if (curr)
+	 {
+	 // found a match, so unlink it
+	 if (prev)
+	    prev->m_next = curr->m_next ;
+	 else
+	    s_thread_entries = curr->m_next ;
+	 --s_registered_threads ;
+	 }
+      s_thread_record_init(nullptr,nullptr,nullptr) ;
+      }
+#endif /* !FrSINGLE_THREADED */
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
+void HashTable<KeyT,ValT>::setMaxFill(double fillfactor)
+{
+   if (fillfactor > 0.98)
+      fillfactor = 0.98 ;
+   else if (fillfactor < FrHashTable_MinFill)
+      fillfactor = FrHashTable_MinFill ;
+   m_maxfill = fillfactor ;
+   HazardLock hl(m_table.load()) ;
+   Table *table = m_table.load() ;
+   if (table)
+      {
+      table->m_resizethresh = table->resizeThreshold(table->m_size) ;
+      }
+   return ;
+}
+
+/************************************************************************/
+/*	Declarations for template class HashTable			*/
 /************************************************************************/
 
 //----------------------------------------------------------------------
 // static members
 
 #ifndef FrSINGLE_THREADED
+namespace Fr
+{
 template <typename KeyT, typename ValT>
-thread_local typename FrHashTable<KeyT,ValT>::Table *FrHashTable<KeyT,ValT>::s_table = nullptr ;
+thread_local typename HashTable<KeyT,ValT>::Table* HashTable<KeyT,ValT>::s_table = nullptr ;
 template <typename KeyT, typename ValT>
-thread_local size_t FrHashTable<KeyT,ValT>::s_bucket = ~0UL ;
+thread_local size_t HashTable<KeyT,ValT>::s_bucket = ~0UL ;
 template <typename KeyT, typename ValT>
-FrMutex FrHashTable<KeyT,ValT>::s_mutex ;
+typename HashTable<KeyT,ValT>::TablePtr* HashTable<KeyT,ValT>::s_thread_entries = nullptr ;
 template <typename KeyT, typename ValT>
-FrThreadOnce FrHashTable<KeyT,ValT>::s_once ;
+size_t HashTable<KeyT,ValT>::s_registered_threads = 0 ;
 template <typename KeyT, typename ValT>
-FrThreadKey FrHashTable<KeyT,ValT>::s_threadkey ;
-template <typename KeyT, typename ValT>
-typename FrHashTable<KeyT,ValT>::TablePtr *FrHashTable<KeyT,ValT>::s_thread_entries = nullptr ;
-template <typename KeyT, typename ValT>
-size_t FrHashTable<KeyT,ValT>::s_registered_threads = 0 ;
-template <typename KeyT, typename ValT>
-thread_local typename FrHashTable<KeyT,ValT>::TablePtr FrHashTable<KeyT,ValT>::s_thread_record ;
+thread_local typename HashTable<KeyT,ValT>::TablePtr HashTable<KeyT,ValT>::s_thread_record ;
+} // end namespace Fr
 #endif /* !FrSINGLE_THREADED */
 
 #if defined(FrHASHTABLE_STATS)
@@ -2021,9 +2281,9 @@ template <typename KeyT, typename ValT>
 thread_local HashTable_Stats HashTable<KeyT,ValT>::s_stats ;
 #endif /* FrHASHTABLE_STATS */
 
-template <> FrReader *FrHashTable<FrObject,FrObject*>::s_reader ;
+template <> FrReader* FrHashTable<FrObject,FrObject*>::s_reader ;
 template <typename KeyT, typename ValT>
-FrReader *FrHashTable<KeyT,ValT>::s_reader = 0 ;
+FrReader* FrHashTable<KeyT,ValT>::s_reader = 0 ;
 
 //----------------------------------------------------------------------
 // specializations: integer keys
@@ -2049,40 +2309,40 @@ inline size_t HashTable<K,V>::Table::keyDisplayLength(const K key) const	\
 } \
 \
 template <> \
-inline char *HashTable<K,V>::Table::displayKeyValue(char *buffer,const K key) const \
+inline char* HashTable<K,V>::Table::displayKeyValue(char* buffer,const K key) const \
 { ultoa((size_t)key,buffer,10) ; return strchr(buffer,'\0') ; }	\
 \
 typedef HashTable<K,V> NAME ;
 
 //----------------------------------------------------------------------
-// specializations: FrSymbol* keys
+// specializations: Fr::Symbol* keys
 
 #define FrMAKE_SYMBOL_HASHTABLE_CLASS(NAME,V) \
 \
 template <> \
-inline size_t HashTable<const Symbol *,V>::hashVal(const Symbol *key) { return (size_t)key ; } \
+inline size_t HashTable<const Symbol*,V>::hashVal(const Symbol* key) { return (size_t)key ; } \
 \
 template <> \
-inline bool HashTable<const Symbol *,V>::isEqual(const Symbol *key1, const FrSymbol *key2) \
+inline bool HashTable<const Symbol*,V>::isEqual(const Symbol* key1, const Symbol* key2) \
 { return (size_t)key1 == (size_t)key2 ; }			  \
 \
 template <> \
-inline const Symbol *FrHashTable<const Symbol *,V>::Entry::copy(const Symbol *obj) { return obj ; } \
+inline const Symbol* FrHashTable<const Symbol* ,V>::Entry::copy(const Symbol* obj) { return obj ; } \
 \
-typedef HashTable<const Symbol *,V> NAME ;
+typedef HashTable<const Symbol*,V> NAME ;
 
 //----------------------------------------------------------------------
-// specializations for FrSymbolTableX not included in above macro
+// specializations for Fr::SymbolTableX not included in above macro
 
-size_t Fr_symboltable_hashvalue(const char *symname) ;
+size_t Fr_symboltable_hashvalue(const char* symname) ;
 template <>
-inline size_t HashTable<const Symbol *,NullObject>::hashValFull(const Symbol *key)
+inline size_t HashTable<const Symbol*,NullObject>::hashValFull(const Symbol* key)
 { 
    return key ? Fr_symboltable_hashvalue(key->symbolName()) : 0 ;
 }
 
 template <>
-inline bool HashTable<const Symbol *,NullObject>::isEqualFull(const Symbol *key1, const Symbol *key2)
+inline bool HashTable<const Symbol*,NullObject>::isEqualFull(const Symbol* key1, const Symbol* key2)
 { 
    if (!HashTable::isActive(key2))
       return false ;
@@ -2096,7 +2356,7 @@ inline bool HashTable<const Symbol *,NullObject>::isEqualFull(const Symbol *key1
 typedef HashTable<Object*,Object*> ObjHashTable ;
 typedef HashTable<Object*,size_t> ObjCountHashTable ;
 
-FrMAKE_SYMBOL_HASHTABLE_CLASS(SymHashTable,Object *) ;
+FrMAKE_SYMBOL_HASHTABLE_CLASS(SymHashTable,Object*) ;
 FrMAKE_SYMBOL_HASHTABLE_CLASS(SymCountHashTable,size_t) ;
 FrMAKE_SYMBOL_HASHTABLE_CLASS(SymbolTableX,NullObject) ;
 

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-03-28					*/
+/*  Version 0.01, last edit 2017-03-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File critsect.h		short-duration critical section mutex	*/
@@ -30,7 +30,6 @@
 # error This code requires C++11
 #endif
 
-#include <atomic>
 #include <stdlib.h>
 
 using namespace std ;

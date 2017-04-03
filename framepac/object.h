@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -221,6 +221,31 @@ inline ObjectIter& ObjectIter::operator++ ()
 
 // end of namespace Fr
 } ;
+
+/************************************************************************/
+/************************************************************************/
+
+namespace std
+{
+// custom specializations of std::hash to support FramepaC objects
+
+template<>
+struct hash<Fr::Object>
+{
+   std::size_t operator() (const Fr::Object& o) const
+      { return o.hashValue() ; }
+
+} ;
+
+template<>
+struct hash<Fr::ObjectPtr>
+{
+   std::size_t operator() (const Fr::ObjectPtr& o) const
+      { return o->hashValue() ; }
+
+} ;
+
+} // end namespace std
 
 #endif /* !__Fr_OBJECT_H_INCLUDED */
 

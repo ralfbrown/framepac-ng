@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-03-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -22,10 +22,10 @@
 #ifndef _Fr_BIDINDEX_H_INCLUDED
 #define _Fr_BIDINDEX_H_INCLUDED
 
-//#include "framepac/hashtable.h"
+#include "framepac/hashtable.h"
 //FIXME: until hashtable.h is fixed
-#include "framepac/symbol.h"
-#include "framepac/string.h"
+//#include "framepac/symbol.h"
+//#include "framepac/string.h"
 
 namespace Fr
 {
@@ -34,10 +34,10 @@ template <class keyT, typename idxT>
 class BidirIndex //FIXME : public HashTable<keyT,idxT>
    {
    private:
-      atomic<idxT> m_next_index ;
-      idxT         m_max_index = 0 ;
-      idxT         m_errorID = (idxT)-1 ;
-      keyT*        m_reverse_index = nullptr ;
+      atomic<idxT> m_next_index { 0 } ;
+      idxT         m_max_index { 0 } ;
+      idxT         m_errorID { (idxT)-1 } ;
+      keyT*        m_reverse_index { nullptr } ;
    public:
       //FIXME BidirIndex(size_t initial_size = 1000) : HashTable(initial_size) {}
       BidirIndex(size_t /*initial_size FIXME*/ = 1000) : m_next_index(0) {}

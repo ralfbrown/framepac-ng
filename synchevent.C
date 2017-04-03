@@ -507,7 +507,6 @@ void SynchEventCounted::waitForWaiters()
    return  ;
 }
 
-#  include "critsect-pthread.C"
 # endif /* __IMPLEMENTED__ */
 #endif /* !FrSINGLE_THREADED */
 
