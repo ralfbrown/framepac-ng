@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-02					*/
+/* Version 0.01, last edit 2017-04-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -145,6 +145,7 @@ namespace Fr
 {
    // forward declarations
    template <typename KeyT, typename ValT> class HashTable ;
+   bool equal(const Object*, const Object*) ;
 
    class List ;
    class Symbol ;
@@ -361,7 +362,7 @@ class HashTable : public Object
 	 void *operator new(size_t,void *where) { return where ; }
 	 static KeyT copy(KeyT obj)
 	    {
-	       return obj ? static_cast<KeyT>(obj->deepcopy()) : 0 ;
+	       return obj ? static_cast<KeyT>(obj->clone()) : nullKey() ;
 	    }
 	 void markUnused() { m_key = UNUSED() ; }
 	 void init()
@@ -855,7 +856,7 @@ class HashTable : public Object
       static size_t hashVal(const char *keyname, size_t *namelen) ;
       static inline bool isEqual(KeyT key1, KeyT key2)
 	 {
-	    return HashTable::isActive(key2) && ::equal(key1,key2) ;
+	    return HashTable::isActive(key2) && Fr::equal(key1,key2) ;
 	 }
       static inline bool isEqualFull(KeyT key1, KeyT key2)
 	 {
