@@ -1201,7 +1201,7 @@ bool HashTable<KeyT,ValT>::Table::add(size_t hashval, KeyT key, ValT value)
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-size_t HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, ValT incr)
+ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr)
 {
    INCR_COUNT(insert) ;
    size_t bucketnum = hashval % m_size ;
@@ -1251,21 +1251,21 @@ size_t HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, ValT incr
 	 // we managed to grab the entry for reclamation
 	 m_currsize++ ;
 	 // fill in the value, then the key
-	 setValue(deleted,incr) ;
+	 setValue(deleted,nullVal()+incr) ;
 	 atomic_thread_fence(std::memory_order_release) ;
 	 setKey(deleted,key) ;
 	 INCR_COUNT(insert_attempt) ;
 	 // Verify that we haven't been superseded while we
 	 //   were working
-	 FORWARD(add(hashval,key,incr),nexttab2,insert_forwarded) ;
+	 FORWARD(add(hashval,key,nullVal()+incr),nexttab2,insert_forwarded) ;
 	 break ;
 	 }
 #endif /* !FrSINGLE_THREADED */
       // otherwise, try to insert a new key/value entry
-      if (insertKey(bucketnum,firstoffset,key,incr))
+      if (insertKey(bucketnum,firstoffset,key,nullVal()+incr))
 	 break ;
       }
-   return incr ;
+   return nullVal()+incr ;
 }
 
 //----------------------------------------------------------------------------
@@ -1310,7 +1310,7 @@ ValT HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key) const
    announceBucketNumber(bucketnum) ;
    // scan the chain of items for this hash position
    Link offset = chainHead(bucketnum) ;
-   ValT value = 0 ;
+   ValT value = nullVal() ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
@@ -1322,7 +1322,7 @@ ValT HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key) const
 	 //   deleted the entry while we were fetching the
 	 //   value
 	 if (getKey(pos) != hkey)
-	    value = 0 ;
+	    value = nullVal() ;
 	 INCR_COUNT(lookup_found) ;
 	 break ;
 	 }
@@ -1343,7 +1343,7 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value) 
    size_t bucketnum = hashval % m_size ;
    FORWARD_IF_COPIED(lookup(hashval,key,value),lookup_forwarded) ;
    INCR_COUNT(lookup) ;
-   (*value) = 0 ;
+   (*value) = nullVal() ;
    // tell others we're using the bucket
    announceBucketNumber(bucketnum) ;
    // scan the chain of items for this hash position
@@ -1380,7 +1380,7 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value, 
    size_t bucketnum = hashval % m_size ;
    FORWARD_IF_COPIED(lookup(hashval,key,value),lookup_forwarded) ;
    INCR_COUNT(lookup) ;
-   (*value) = 0 ;
+   (*value) = nullVal() ;
    // tell others we're using the bucket
    announceBucketNumber(bucketnum) ;
    // scan the chain of items for this hash position
@@ -1393,7 +1393,7 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value, 
 	 {
 	 if (clear_entry)
 	    {
-	    (*value) = m_entries[pos].swapValue(0) ;
+	    (*value) = m_entries[pos].swapValue(nullVal()) ;
 	    }
 	 else
 	    {
@@ -1625,7 +1625,6 @@ typename std::enable_if<std::is_base_of<Fr::Symbol,KeyT>::value, RetT>::type
 HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char* name, size_t namelen,
 				    bool* already_existed)
 {
-   if (sizeof(KeyT) < sizeof(Symbol*)) return (KeyT)0 ;
    if (!already_existed)
       {
       // since only gensym() is interested in whether the key was already
@@ -1668,7 +1667,7 @@ HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char* name, size_t nam
       //    (temporarily leaks at bit of memory until the
       //    hash table is destroyed) and return the other one
       //    when we loop back to the top
-      if (insertKey(bucketnum,firstoffset,key,(ValT)0))
+      if (insertKey(bucketnum,firstoffset,key,nullVal()))
 	 return key ;
       unannounceBucketNumber() ;
       }
@@ -1923,7 +1922,7 @@ bool HashTable<KeyT,ValT>::Table::iterateAndClearVA(HashKeyValueFunc* func, std:
       success = func(key,value,argcopy) ;
       va_end(argcopy) ;
       if (success)
-	 m_entries[i].setValue(0) ;
+	 m_entries[i].setValue(nullVal()) ;
       }
    return success ;
 }

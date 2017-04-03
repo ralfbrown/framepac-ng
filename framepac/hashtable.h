@@ -348,6 +348,12 @@ class HashTable : public Object
       template <typename RetT = KeyT>
       constexpr static typename std::enable_if<!std::is_pointer<KeyT>::value, RetT>::type
       nullKey() { return (RetT)0 ; }
+      template <typename RetT = ValT>
+      constexpr static typename std::enable_if<std::is_pointer<ValT>::value, RetT>::type
+      nullVal() { return nullptr ; }
+      template <typename RetT = ValT>
+      constexpr static typename std::enable_if<!std::is_pointer<ValT>::value, RetT>::type
+      nullVal() { return (RetT)0 ; }
 
       // encapsulate a hash table entry
       class Entry
@@ -369,7 +375,7 @@ class HashTable : public Object
 	    {
 	       if_INTERLEAVED(m_info.init() ;)
 		  markUnused() ;
-	       setValue(0) ; 
+	       setValue(nullVal()) ; 
 	    }
 	 void init(const Entry &entry)
 	    {
@@ -385,15 +391,15 @@ class HashTable : public Object
 	 // variable-setting functions
 	 void setValue(ValT value)
 	    { if (numValues() > 0) m_value[0] = value ; }
-	 ValT incrCount(ValT incr)
-	    { return (numValues() > 0) ? (m_value[0] += incr) : incr ; }
-	 ValT atomicIncrCount(ValT incr)
-	    { return (numValues() > 0) ? Fr::Atomic<ValT>::ref(m_value[0]) += incr : incr ; }
+	 ValT incrCount(size_t incr)
+	    { return (numValues() > 0) ? (m_value[0] += incr) : nullVal() ; }
+	 ValT atomicIncrCount(size_t incr)
+	    { return (numValues() > 0) ? (Fr::Atomic<ValT>::ref(m_value[0]) += incr) : nullVal() ; }
 
 	 // access to internal state
 	 KeyT getKey() const { return m_key ; }
 	 KeyT copyName() const { return copy(m_key) ; }
-	 ValT getValue() const { return (numValues() > 0) ? m_value[0] : 0 ; }
+	 ValT getValue() const { return (numValues() > 0) ? m_value[0] : nullVal() ; }
 	 //const ValT *getValuePtr() const { return (numValues() > 0) ? &m_value[0] : (ValT*)nullptr ; }
 	 ValT* getValuePtr() const { return (numValues() > 0) ? (ValT*)&m_value[0] : (ValT*)nullptr ; }
 #if defined(FrSINGLE_THREADED)
@@ -539,7 +545,7 @@ class HashTable : public Object
       protected:
 	 void removeValue(Entry &element) const
 	    {
-	       ValT value = element.swapValue((ValT)0) ;
+	       ValT value = element.swapValue(nullVal()) ;
 	       if (remove_fn && value)
 		  {
 		  remove_fn(element.getKey(),value) ;
@@ -583,7 +589,7 @@ class HashTable : public Object
 	 bool resize(size_t newsize, bool enlarge_only = false) ;
 
 	 [[gnu::hot]] bool add(size_t hashval, KeyT key, ValT value = 0) ;
-	 [[gnu::hot]] size_t addCount(size_t hashval, KeyT key, ValT incr) ;
+	 [[gnu::hot]] ValT addCount(size_t hashval, KeyT key, size_t incr) ;
 
 	 [[gnu::hot]] bool contains(size_t hashval, KeyT key) const ;
 	 [[gnu::hot]] ValT lookup(size_t hashval, KeyT key) const ;
@@ -902,7 +908,7 @@ class HashTable : public Object
 		     {
 		     if (table->activeEntry(i))
 			{
-			table->replaceValue(i,0) ;
+			table->replaceValue(i,nullVal()) ;
 			}
 		     }
 		  }
@@ -1006,7 +1012,7 @@ class HashTable : public Object
       bool reclaimDeletions() { DELEGATE(reclaimDeletions()) }
 
       [[gnu::hot]] bool add(KeyT key, ValT value = 0) { DELEGATE_HASH_RECLAIM(bool,add(hashval,key,value)) }
-      [[gnu::hot]] size_t addCount(KeyT key, ValT incr) { DELEGATE_HASH_RECLAIM(size_t,addCount(hashval,key,incr)) }
+      [[gnu::hot]] ValT addCount(KeyT key, size_t incr) { DELEGATE_HASH_RECLAIM(size_t,addCount(hashval,key,incr)) }
       bool remove(KeyT key) { DELEGATE_HASH(remove(hashval,key)) }
       [[gnu::hot]] bool contains(KeyT key) const { DELEGATE_HASH(contains(hashval,key)) }
       [[gnu::hot]] ValT lookup(KeyT key) const { DELEGATE_HASH(lookup(hashval,key)) }

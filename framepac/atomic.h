@@ -272,6 +272,9 @@ class Atomic : public std::atomic<T>
       Atomic& operator= (const Atomic& value) { this->store(value.load()) ; return *this ; }
       Atomic& operator= (const T& value) { this->store(value) ; return *this ; }
       T operator+= (const T& value) ;
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      operator+= (size_t value) ;
 
       // additional operations
       bool test_and_set_bit( unsigned bitnum )
@@ -374,6 +377,14 @@ inline NullObject Atomic<NullObject>::operator+= (const NullObject&)
 
 template <typename T>
 inline T Atomic<T>::operator+= (const T& value)
+{
+   return this->fetch_add(value) + value ; 
+}
+
+template <typename T>
+template <typename RetT>
+inline typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+Atomic<T>::operator+= (size_t value)
 {
    return this->fetch_add(value) + value ; 
 }
