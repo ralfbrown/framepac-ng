@@ -266,7 +266,11 @@ class Atomic : public std::atomic<T>
 	 {}
       Atomic(T value) : std::atomic<T>(value)
 	 {}
+      Atomic(const Atomic<T>& value)
+	 { this->store(value.load()) ; }
       ~Atomic() = default ;
+
+      Atomic& operator= (const Atomic<T>& value) { this->store(value.load()) ; return *this ; }
 
       // additional operations
       bool test_and_set_bit( unsigned bitnum )
@@ -337,7 +341,7 @@ class Atomic : public std::atomic<T>
 #endif
 	 }
 
-      static Atomic<T> ref(T& obj) { return reinterpret_cast<Atomic<T> >(obj) ; }
+      static Atomic<T>& ref(T& obj) { return reinterpret_cast<Atomic<T>&>(obj) ; }
    } ;
 
 // bool doesn't support fetch_or or fetch_and, so we need specific specialization

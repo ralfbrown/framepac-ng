@@ -110,7 +110,8 @@ SHAREDLIB=-fPIC -DSHARED
 endif
 
 WARN=-Wall -Wextra -Wno-deprecated -Wshadow -Wcast-align -Wmissing-noreturn -Wmissing-format-attribute
-WARN += -Weffc++ -Wc++11-compat -Wzero-as-null-pointer-constant
+#WARN += -Weffc++ -Wc++11-compat -Wzero-as-null-pointer-constant
+WARN += -Wc++11-compat -Wzero-as-null-pointer-constant
 #WARN += -Wunused-result (not on Doha)
 #WARN += -Wno-multichar -Wpacked -Wdisabled-optimization -Wpadded
 
@@ -241,7 +242,8 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) charget$(OBJ) cfile$(OBJ) \
 	cluster$(OBJ) cluster_growseed$(OBJ) cluster_kmeans$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) filename$(OBJ) \
-	float$(OBJ) frame$(OBJ) init$(OBJ) random$(OBJ) \
+	float$(OBJ) frame$(OBJ) hashtable_u32u32$(OBJ) \
+	init$(OBJ) random$(OBJ) \
 	integer$(OBJ) jsonreader$(OBJ) list$(OBJ) map$(OBJ) matrix$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
 	object$(OBJ) objreader$(OBJ) rational$(OBJ) slab$(OBJ) \
@@ -372,6 +374,7 @@ critsect$(OBJ):		critsect$(C) framepac/critsect.h
 filename$(OBJ):		filename$(C) framepac/file.h
 float$(OBJ):		float$(C) framepac/number.h
 frame$(OBJ):		frame$(C) framepac/frame.h
+hashtable_u32u32$(OBJ):	hashtable_u32u32$(C) template/hashtable.cc
 init$(OBJ):		init$(C) framepac/init.h
 integer$(OBJ):		integer$(C) framepac/number.h
 jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/hashtable.h framepac/list.h \
@@ -410,6 +413,9 @@ wordcorpus_u32u40$(OBJ): wordcorpus_u32u40$(C) template/wordcorpus.cc
 wordsplit$(OBJ):	wordsplit$(C) framepac/words.h
 
 template/bufbuilder.cc:	framepac/builder.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/hashtable.cc:	framepac/hashtable.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/sufarray.cc:	framepac/sufarray.h framepac/bitvector.h
