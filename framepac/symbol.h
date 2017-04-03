@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -18,6 +18,9 @@
 /*	PURPOSE.  See the GNU General Public License for more details.	*/
 /*									*/
 /************************************************************************/
+
+#ifndef _Fr_SYMBOL_H_INCLUDED
+#define _Fr_SYMBOL_H_INCLUDED
 
 #include <cstring>
 #include "framepac/object.h"
@@ -235,5 +238,7 @@ extern template class FramepaC::Object_VMT<Fr::Symbol> ;
 extern template class FramepaC::Object_VMT<Fr::SymbolTable> ;
 
 } ; // end namespace FramepaC
+
+#endif /* !_Fr_SYMBOL_H_INCLUDED */
 
 // end of file symbol.h //

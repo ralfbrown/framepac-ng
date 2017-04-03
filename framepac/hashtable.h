@@ -28,6 +28,7 @@
 #include <iostream>
 #include <type_traits>
 #include "framepac/list.h"
+#include "framepac/symbol.h"
 #include "framepac/synchevent.h"
 #include <cassert>
 
@@ -338,6 +339,14 @@ class HashTable : public Object
       typedef FramepaC::Link Link ;
       typedef FramepaC::HashPtr HashPtr ;
       typedef FramepaC::HashTable_Stats HashTable_Stats ;
+
+      // avoid 0-as-null-pointer warnings from compiler
+      template <typename RetT = KeyT>
+      constexpr static typename std::enable_if<std::is_pointer<KeyT>::value, RetT>::type
+      nullKey() { return nullptr ; }
+      template <typename RetT = KeyT>
+      constexpr static typename std::enable_if<!std::is_pointer<KeyT>::value, RetT>::type
+      nullKey() { return (RetT)0 ; }
 
       // encapsulate a hash table entry
       class Entry
@@ -704,7 +713,7 @@ class HashTable : public Object
 	 bool		 m_stale ;
       public:
 #ifdef FrSINGLE_THREADED
-	 ScopedChainLock(class HashTable::Table *, size_t, bool) { m_locked = m_stale = false ; }
+	 ScopedChainLock(Table *, size_t, bool) { m_locked = m_stale = false ; }
 	 ~ScopedChainLock() {}
 #else
 	 ScopedChainLock(Table *ht, size_t bucketnum)
@@ -1039,7 +1048,7 @@ class HashTable : public Object
       [[gnu::hot]] KeyT lookupKey(const char *name) const
          {
 	    if (!name)
-	       return 0 ;
+	       return nullptr ;
 	    size_t namelen ;
 	    size_t hashval = hashVal(name,&namelen) ;
 	    DELEGATE(lookupKey(hashval,name,namelen))
@@ -1220,6 +1229,88 @@ class HashTable : public Object
       [[gnu::cold]] bool verify() const { DELEGATE(verify()) }
 
    } ;
+
+//----------------------------------------------------------------------
+// specializations: integer keys
+
+#define FrMAKE_INTEGER_HASHTABLE_CLASS(NAME,K,V) \
+\
+template <> \
+inline size_t HashTable<K,V>::hashVal(const K key) { return (size_t)key ; } \
+\
+template <> \
+inline bool HashTable<K,V>::isEqual(const K key1, const K key2) \
+{ return key1 == key2 ; } \
+\
+template <> \
+inline K HashTable<K,V>::Entry::copy(const K obj) { return obj ; } \
+\
+template <> \
+Object* HashTable<K,V>::Table::makeObject(K key) \
+{ return Integer::create(key) ; }	 \
+\
+template <> \
+inline size_t HashTable<K,V>::Table::keyDisplayLength(const K key) const	\
+{ return snprintf(nullptr,0,"%ld%c",(size_t)key,(char)'\0') ; }		\
+\
+template <> \
+inline char* HashTable<K,V>::Table::displayKeyValue(char* buffer,const K key) const \
+{ return buffer + snprintf(buffer,50,"%ld%c",(size_t)key,(char)'\0') ; }	\
+\
+extern template class HashTable<K,V> ; \
+typedef HashTable<K,V> NAME ;
+
+//----------------------------------------------------------------------
+// specializations: Fr::Symbol* keys
+
+#define FrMAKE_SYMBOL_HASHTABLE_CLASS(NAME,V) \
+\
+template <> \
+inline size_t HashTable<const Symbol*,V>::hashVal(const Symbol* key) { return (size_t)key ; } \
+\
+template <> \
+inline bool HashTable<const Symbol*,V>::isEqual(const Symbol* key1, const Symbol* key2) \
+{ return (size_t)key1 == (size_t)key2 ; }			  \
+\
+template <> \
+inline const Symbol* HashTable<const Symbol* ,V>::Entry::copy(const Symbol* obj) { return obj ; } \
+\
+extern template class HashTable<const Symbol*,V> ; \
+typedef HashTable<const Symbol*,V> NAME ;
+
+//----------------------------------------------------------------------
+// specializations for Fr::SymbolTableX not included in the FrMAKE_SYMBOL_HASHTABLE_CLASS macro
+
+size_t Fr_symboltable_hashvalue(const char* symname) ;
+template <>
+inline size_t HashTable<const Symbol*,NullObject>::hashValFull(const Symbol* key)
+{ 
+   return key ? Fr_symboltable_hashvalue(key->name()) : 0 ;
+}
+
+template <>
+inline bool HashTable<const Symbol*,NullObject>::isEqualFull(const Symbol* key1, const Symbol* key2)
+{ 
+   if (!HashTable::isActive(key2))
+      return false ;
+   if (key1 == key2)
+      return true ;
+   return (key1 && key2 && strcmp(key1->name(),key2->name()) == 0) ;
+}
+
+/************************************************************************/
+
+extern template class HashTable<Object*,Object*> ;
+typedef HashTable<Object*,Object*> ObjHashTable ;
+
+extern template class HashTable<Object*,size_t> ;
+typedef HashTable<Object*,size_t> ObjCountHashTable ;
+
+FrMAKE_SYMBOL_HASHTABLE_CLASS(SymHashTable,Object*) ;
+FrMAKE_SYMBOL_HASHTABLE_CLASS(SymCountHashTable,size_t) ;
+FrMAKE_SYMBOL_HASHTABLE_CLASS(SymbolTableX,NullObject) ;
+
+//----------------------------------------------------------------------------
 
 } // end namespace Fr
 

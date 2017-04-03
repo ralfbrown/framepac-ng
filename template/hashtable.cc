@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-02					*/
+/* Version 0.01, last edit 2017-04-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -29,7 +29,6 @@
 #include "framepac/hashtable.h"
 #include "framepac/list.h"
 #include "framepac/number.h"
-#include "framepac/symbol.h"
 
 #if DYNAMIC_ANNOTATIONS_ENABLED != 0
 #  include "dynamic_annotations.h"
@@ -1609,10 +1608,6 @@ bool HashTable<KeyT,ValT>::Table::reclaimDeletions()
 
 //----------------------------------------------------------------------------
 
-template <bool cond, typename T>
-using resolvedType = typename std::enable_if< cond, T>::type ;
-
-#if 1
 // generic version for non-Object keys
 template <typename KeyT, typename ValT> //, typename = void>
 template <typename RetT>
@@ -1620,9 +1615,8 @@ typename std::enable_if<!std::is_base_of<Fr::Symbol,KeyT>::value, RetT>::type
 HashTable<KeyT,ValT>::Table::addKey(size_t /*hashval*/, const char* /*name*/, size_t /*namelen*/,
 					 bool* /*already_existed*/)
 {
-   return (KeyT)0 ;
+   return nullKey() ;
 }
-#endif
 
 // special support for Fr::SymbolTableX
 template <typename KeyT, typename ValT>
@@ -1736,7 +1730,7 @@ KeyT HashTable<KeyT,ValT>::Table::lookupKey(size_t hashval, const char* name, si
       offset = chainNext(pos) ;
       }
    unannounceBucketNumber() ;
-   return 0 ;	// not found
+   return nullKey() ; // not found
 }
 
 //----------------------------------------------------------------------------
@@ -1963,7 +1957,7 @@ bool HashTable<KeyT,ValT>::Table::iterateAndModifyVA(HashKeyPtrFunc* func, std::
 template <typename KeyT, typename ValT>
 Object* HashTable<KeyT,ValT>::Table::makeObject(KeyT key)
 {
-   return key ;
+   return (Object*)key ;
 }
 
 //----------------------------------------------------------------------------
@@ -2014,7 +2008,7 @@ ostream &HashTable<KeyT,ValT>::Table::printKeyValue(ostream &output, KeyT key) c
 template <typename KeyT, typename ValT>
 size_t HashTable<KeyT,ValT>::Table::keyDisplayLength(KeyT key) const
 {
-   return key ? key->displayLength() + 1 : 3 ;
+   return key ? key->cStringLength() + 1 : 3 ;
 }
 
 //----------------------------------------------------------------------------
@@ -2023,7 +2017,13 @@ template <typename KeyT, typename ValT>
 char* HashTable<KeyT,ValT>::Table::displayKeyValue(char* buffer, KeyT key) const
 {
    if (key)
-      return key->displayValue(buffer) ;
+      {
+      size_t len = key->cStringLength() ;
+      if (key->toCstring(buffer,len))
+	 buffer += len ;
+      *buffer = '\0' ;
+      return buffer ;
+      }
    else
       {
       *buffer++ = 'N' ;
@@ -2387,84 +2387,6 @@ thread_local typename HashTable<KeyT,ValT>::TablePtr HashTable<KeyT,ValT>::s_thr
 template <typename KeyT, typename ValT>
 thread_local FramepaC::HashTable_Stats HashTable<KeyT,ValT>::s_stats ;
 #endif /* FrHASHTABLE_STATS */
-
-//----------------------------------------------------------------------
-// specializations: integer keys
-
-#define FrMAKE_INTEGER_HASHTABLE_CLASS(NAME,K,V) \
-\
-template <> \
-inline size_t HashTable<K,V>::hashVal(const K key) { return (size_t)key ; } \
-\
-template <> \
-inline bool HashTable<K,V>::isEqual(const K key1, const K key2) \
-{ return key1 == key2 ; } \
-\
-template <> \
-inline K HashTable<K,V>::Entry::copy(const K obj) { return obj ; } \
-\
-template <> \
-Object* HashTable<K,V>::Table::makeObject(K key) \
-{ return Integer::create(key) ; }	 \
-\
-template <> \
-inline size_t HashTable<K,V>::Table::keyDisplayLength(const K key) const	\
-{ return snprintf(nullptr,0,"%ld%c",(size_t)key,(char)'\0') ; }		\
-\
-template <> \
-inline char* HashTable<K,V>::Table::displayKeyValue(char* buffer,const K key) const \
-{ return buffer + snprintf(buffer,50,"%ld%c",(size_t)key,(char)'\0') ; }	\
-\
-typedef HashTable<K,V> NAME ;
-
-//----------------------------------------------------------------------
-// specializations: Fr::Symbol* keys
-
-#define FrMAKE_SYMBOL_HASHTABLE_CLASS(NAME,V) \
-\
-template <> \
-inline size_t HashTable<const Symbol*,V>::hashVal(const Symbol* key) { return (size_t)key ; } \
-\
-template <> \
-inline bool HashTable<const Symbol*,V>::isEqual(const Symbol* key1, const Symbol* key2) \
-{ return (size_t)key1 == (size_t)key2 ; }			  \
-\
-template <> \
-inline const Symbol* HashTable<const Symbol* ,V>::Entry::copy(const Symbol* obj) { return obj ; } \
-\
-typedef HashTable<const Symbol*,V> NAME ;
-
-//----------------------------------------------------------------------
-// specializations for Fr::SymbolTableX not included in above macro
-
-size_t Fr_symboltable_hashvalue(const char* symname) ;
-template <>
-inline size_t HashTable<const Symbol*,NullObject>::hashValFull(const Symbol* key)
-{ 
-   return key ? Fr_symboltable_hashvalue(key->name()) : 0 ;
-}
-
-template <>
-inline bool HashTable<const Symbol*,NullObject>::isEqualFull(const Symbol* key1, const Symbol* key2)
-{ 
-   if (!HashTable::isActive(key2))
-      return false ;
-   if (key1 == key2)
-      return true ;
-   return (key1 && key2 && strcmp(key1->name(),key2->name()) == 0) ;
-}
-
-/************************************************************************/
-
-extern template class HashTable<Object*,Object*> ;
-typedef HashTable<Object*,Object*> ObjHashTable ;
-
-extern template class HashTable<Object*,size_t> ;
-typedef HashTable<Object*,size_t> ObjCountHashTable ;
-
-FrMAKE_SYMBOL_HASHTABLE_CLASS(SymHashTable,Object*) ;
-FrMAKE_SYMBOL_HASHTABLE_CLASS(SymCountHashTable,size_t) ;
-FrMAKE_SYMBOL_HASHTABLE_CLASS(SymbolTableX,NullObject) ;
 
 } // end namespace Fr
 
