@@ -1122,7 +1122,7 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
       }
    else
       {
-      SystemMessage:warning("unable to resize hash table--will continue") ;
+      SystemMessage::warning("unable to resize hash table--will continue") ;
       // bump up the resize threshold so that we can
       //   (hopefully) store a few more before
       //   (hopefully successfully) retrying the resize

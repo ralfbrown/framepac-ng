@@ -529,7 +529,7 @@ framepac/vecsim.h:	framepac/vector.h
 framepac/vector.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/words.h:	framepac/bidindex.h framepac/file.h
+framepac/words.h:	framepac/bidindex.h framepac/file.h framepac/string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/wordcorpus.h:	framepac/bidindex.h framepac/builder.h framepac/byteorder.h \

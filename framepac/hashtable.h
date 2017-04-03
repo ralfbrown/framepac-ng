@@ -1056,7 +1056,7 @@ class HashTable : public Object
       [[gnu::hot]] KeyT lookupKey(const char *name) const
          {
 	    if (!name)
-	       return nullptr ;
+	       return nullKey() ;
 	    size_t namelen ;
 	    size_t hashval = hashVal(name,&namelen) ;
 	    DELEGATE(lookupKey(hashval,name,namelen))

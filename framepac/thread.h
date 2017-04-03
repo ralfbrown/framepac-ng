@@ -39,14 +39,15 @@ void thread_main(C closure)
       }
    catch (const std::exception& e)
       {
-      // perform thread cleanup, then re-throw
+      // perform thread cleanup and then re-throw
       ThreadCleanup() ;
-      throw e ;
+      throw ;
       }
    catch (...)
       {
-      // perform thread cleanup
+      // perform thread cleanup and then re-throw
       ThreadCleanup() ;
+      throw ;
       }
    //finally
       {
