@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-02					*/
+/* Version 0.01, last edit 2017-04-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -158,6 +158,18 @@ const int STRING_LEN_GRAN = 8 ;
 #else
 #define ALWAYS_INLINE inline
 #endif
+
+/************************************************************************/
+/************************************************************************/
+
+#if __cplusplus < 201700
+namespace std {
+   // cache line size
+   constexpr size_t hardware_destructive_interference_size = 64 ;
+}
+#else
+#  include <cstddef>
+#endif /* < C++17 */
 
 /************************************************************************/
 /************************************************************************/

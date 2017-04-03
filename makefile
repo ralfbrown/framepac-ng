@@ -411,7 +411,7 @@ suffixarray$(OBJ):	suffixarray$(C) framepac/config.h
 symbol$(OBJ):		symbol$(C) framepac/symbol.h
 symboltable$(OBJ):	symboltable$(C) framepac/symbol.h
 synchevent$(OBJ):	synchevent$(C) framepac/synchevent.h
-threadpool$(OBJ):	threadpool$(C) framepac/threadpool.h
+threadpool$(OBJ):	threadpool$(C) framepac/threadpool.h framepac/thread.h
 timer$(OBJ):		timer$(C) framepac/timer.h
 trie$(OBJ):		trie$(C) framepac/trie.h
 vecsim_u32_dbl$(OBJ):	vecsim_u32_dbl$(C) template/vecsim.cc
@@ -427,7 +427,7 @@ wordsplit$(OBJ):	wordsplit$(C) framepac/words.h
 template/bufbuilder.cc:	framepac/builder.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/hashtable.cc:	framepac/hashtable.h
+template/hashtable.cc:	framepac/hashtable.h framepac/message.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/sufarray.cc:	framepac/sufarray.h framepac/bitvector.h
@@ -469,7 +469,7 @@ framepac/file.h:	framepac/config.h
 framepac/frame.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/hashtable.h:	framepac/synchevent.h
+framepac/hashtable.h:	framepac/list.h framepac/number.h framepac/symbol.h framepac/synchevent.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/list.h:	framepac/object.h
@@ -512,6 +512,9 @@ framepac/symbol.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/synchevent.h:	framepac/atomic.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/thread.h:	framepac/init.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/threadpool.h:	framepac/atomic.h

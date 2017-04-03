@@ -27,8 +27,7 @@
 #include <thread>
 #include <type_traits>
 #include "framepac/hashtable.h"
-#include "framepac/list.h"
-#include "framepac/number.h"
+#include "framepac/message.h"
 
 #if DYNAMIC_ANNOTATIONS_ENABLED != 0
 #  include "dynamic_annotations.h"
@@ -40,22 +39,17 @@
 
 #define FrNAP_TIME std::chrono::microseconds(250)
 
-namespace std {
-   // cache line size
-   constexpr size_t hardware_destructive_interference_size = 64 ;
-}
-
 namespace Fr {
 
-#define FrNewN(T,N) ((T*)std::malloc(sizeof(T)*N))
-#define FrFree(P) (std::free(P))
+template <typename T>
+inline T* New(size_t N = 1) { return (T*)std::malloc(sizeof(T)*N) ; }
+
+inline void Free(void* p) { std::free(p) ; }
+
 #define unlikely(X) (X)
-#define expected(X) (X)
 #define FrSPIN_COUNT 20
 #define FrYIELD_COUNT 50
 #define FramepaC_display_width 132
-void FrWarning(const char*) ;
-void FrNoMemory(const char*) ;
 void pushlist(Object*,List*) ;
 #define _mm_pause() 
 
@@ -159,8 +153,8 @@ inline void HashTable<KeyT,ValT>::Table::init(size_t size, double max_fill)
    remove_fn = nullptr ;
    if (size > 0)
       {
-      m_entries = FrNewN(Entry,size) ;
-      ifnot_INTERLEAVED(m_ptrs = FrNewN(HashPtr,size) ;)
+      m_entries = New<Entry>(size) ;
+      ifnot_INTERLEAVED(m_ptrs = New<HashPtr>(size) ;)
 	 if (m_entries
 	     ifnot_INTERLEAVED(&& m_ptrs)
 	    )
@@ -173,8 +167,8 @@ inline void HashTable<KeyT,ValT>::Table::init(size_t size, double max_fill)
 	    }
 	 else
 	    {
-	    FrFree(m_entries) ;
-	    ifnot_INTERLEAVED(FrFree(m_ptrs) ;)
+	    Free(m_entries) ;
+	    ifnot_INTERLEAVED(Free(m_ptrs) ;)
 	    m_entries = nullptr ;
 	    ifnot_INTERLEAVED(m_ptrs = nullptr ;)
 	    m_size = 0 ;
@@ -188,8 +182,8 @@ inline void HashTable<KeyT,ValT>::Table::init(size_t size, double max_fill)
 template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::Table::clear()
 {
-   FrFree(m_entries) ;
-   ifnot_INTERLEAVED(FrFree(m_ptrs) ;)
+   Free(m_entries) ;
+   ifnot_INTERLEAVED(Free(m_ptrs) ;)
    m_entries = nullptr ;
    ifnot_INTERLEAVED(m_ptrs = nullptr ;)
    m_currsize.store(0) ;
@@ -512,7 +506,7 @@ FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, Ke
       return FramepaC::NULLPTR ;
       }
    // is the given position free?
-   if (expected(claimEmptySlot(bucketnum,key)))
+   if (claimEmptySlot(bucketnum,key))
       return 0 ;
    size_t sz = m_size ;
    // compute the extent of the cache line containing
@@ -1079,7 +1073,7 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
    newtable->onRemove(m_container->onRemoveFunc()) ;
    newtable->m_container = m_container ;
    bool success = true ;
-   if (expected(newtable->good()))
+   if (newtable->good())
       {
       // link in the new table; this also makes
       //   operations on the current table start to
@@ -1096,7 +1090,7 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
       //   concurrent reclaim/hopscotch/remove() calls
       size_t first_incomplete = m_first_incomplete.load() ;
       size_t last_incomplete = m_last_incomplete.load() ;
-      size_t loops = FrSPIN_COUNT ;
+      size_t loops = FrSPIN_COUNT ;  // jump right to yielding the CPU on backoff
       while (first_incomplete <= last_incomplete)
 	 {
 	 INCR_COUNT(resize_cleanup) ;
@@ -1128,7 +1122,7 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
       }
    else
       {
-      FrWarning("unable to resize hash table--will continue") ;
+      SystemMessage:warning("unable to resize hash table--will continue") ;
       // bump up the resize threshold so that we can
       //   (hopefully) store a few more before
       //   (hopefully successfully) retrying the resize
@@ -1508,7 +1502,7 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
       if (isEqual(key,keyval))
 	 {
 	 ValT value = getValue(pos) ;
-	 if (expected(updateKey(pos,keyval,Entry::DELETED())))
+	 if (updateKey(pos,keyval,Entry::DELETED()))
 	    {
 	    // update count of items in table
 	    m_currsize-- ;
@@ -2146,7 +2140,7 @@ void HashTable<KeyT,ValT>::init(size_t initial_size, double max_fill, Table* tab
       table = allocTable() ;
       }
    new (table) Table(initial_size,m_maxfill) ;
-   if (expected(table->good()))
+   if (table->good())
       {
       table->m_container = this ;
       table->remove_fn = onRemoveFunc() ;
@@ -2155,7 +2149,7 @@ void HashTable<KeyT,ValT>::init(size_t initial_size, double max_fill, Table* tab
       }
    else
       {
-      FrNoMemory("creating HashTable") ;
+      SystemMessage::no_memory("creating HashTable") ;
       }
    return ;
 }
@@ -2281,7 +2275,7 @@ bool HashTable<KeyT,ValT>::reclaimSuperseded()
 	  stillLive(tab))
 	 break ;
       Table* nxt = tab->next() ;
-      if (unlikely(!m_oldtables.compare_exchange_strong(tab,nxt)))
+      if (!m_oldtables.compare_exchange_strong(tab,nxt))
 	 break ;	   // someone else has freed the table
       releaseTable(tab) ; // put the emptied table on the freelist
       freed = true ;

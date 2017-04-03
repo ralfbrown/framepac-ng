@@ -20,8 +20,7 @@
 /************************************************************************/
 
 #include <chrono>
-#include <thread>
-
+#include "framepac/thread.h"
 #include "framepac/threadpool.h"
 using namespace std ;
 
@@ -76,7 +75,7 @@ ThreadPool::ThreadPool(unsigned num_threads)
       }
    for (unsigned i = 0 ; i < num_threads ; i++)
       {
-      m_pool[i] = new thread(work_function,this,i) ;
+      m_pool[i] = new_thread(work_function,this,i) ;
       }
 #endif /* FrSINGLE_THREADED */
    return ;
