@@ -25,8 +25,8 @@ namespace Fr
 {
 
 // request explicit instantiation
-template class HashTable<uint32_t,NullObject> ;
+template class HashTable<const Symbol*,NullObject> ;
 
 } // end namespace Fr
 
-// end of file hashset_u32.C //
+// end of file hashset_obj.C //

@@ -40,6 +40,11 @@
 
 #define FrNAP_TIME std::chrono::microseconds(250)
 
+namespace std {
+   // cache line size
+   constexpr size_t hardware_destructive_interference_size = 64 ;
+}
+
 namespace Fr {
 
 #define FrNewN(T,N) ((T*)std::malloc(sizeof(T)*N))
@@ -53,7 +58,6 @@ void FrWarning(const char*) ;
 void FrNoMemory(const char*) ;
 void pushlist(Object*,List*) ;
 #define _mm_pause() 
-#define Fr_cacheline_size 64
 
 size_t FramepaC_initial_indent = 0 ;
 size_t FramepaC_small_primes[] = { 2, 3, 5, 7, 11, 13, 17 } ;  //FIXME
@@ -513,12 +517,13 @@ FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, Ke
    size_t sz = m_size ;
    // compute the extent of the cache line containing
    //   the offset-0 entry for the bucket
-   uintptr_t CLstart_addr = ((uintptr_t)(bucketPtr(bucketnum))) & ~(Fr_cacheline_size-1) ;
+   constexpr size_t CL_len = std::hardware_destructive_interference_size ;
+   uintptr_t CLstart_addr = ((uintptr_t)(bucketPtr(bucketnum))) & ~(CL_len-1) ;
    if (CLstart_addr < (uintptr_t)bucketPtr(0))
       CLstart_addr = (uintptr_t)bucketPtr(0) ;
    size_t itemsize = (uintptr_t)bucketPtr(1) - (uintptr_t)bucketPtr(0) ;
    size_t CL_start = (CLstart_addr - (uintptr_t)bucketPtr(0)) / itemsize ;
-   size_t CL_end = (CLstart_addr - (uintptr_t)bucketPtr(0) + Fr_cacheline_size) / itemsize ;
+   size_t CL_end = (CLstart_addr - (uintptr_t)bucketPtr(0) + CL_len) / itemsize ;
    // search for a free slot on the same cache line as the bucket header
    for (size_t i = CL_start ; i < CL_end && i < sz ; ++i)
       {
@@ -1257,7 +1262,7 @@ ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr
 	 INCR_COUNT(insert_attempt) ;
 	 // Verify that we haven't been superseded while we
 	 //   were working
-	 FORWARD(add(hashval,key,nullVal()+incr),nexttab2,insert_forwarded) ;
+	 FORWARD(addCount(hashval,key,incr),nexttab2,insert_forwarded) ;
 	 break ;
 	 }
 #endif /* !FrSINGLE_THREADED */

@@ -28,6 +28,7 @@
 #include <iostream>
 #include <type_traits>
 #include "framepac/list.h"
+#include "framepac/number.h"
 #include "framepac/symbol.h"
 #include "framepac/synchevent.h"
 #include <cassert>
@@ -363,12 +364,12 @@ class HashTable : public Object
       public: // members
 	 if_INTERLEAVED(HashPtr  m_info ;)
 	 Fr::Atomic<KeyT>  m_key ;
-	 ValT              m_value[(sizeof(ValT) < 2) ? 0 : 1] ;
+	 ValT              m_value[std::is_empty<ValT>::value ? 0 : 1] ;
       public: // methods
 	 void *operator new(size_t,void *where) { return where ; }
 	 static KeyT copy(KeyT obj)
 	    {
-	       return obj ? static_cast<KeyT>(obj->clone()) : nullKey() ;
+	       return obj ? static_cast<KeyT>((Object*)obj->clone()) : nullKey() ;
 	    }
 	 void markUnused() { m_key = UNUSED() ; }
 	 void init()
@@ -1315,7 +1316,13 @@ typedef HashTable<Object*,size_t> ObjCountHashTable ;
 
 FrMAKE_SYMBOL_HASHTABLE_CLASS(SymHashTable,Object*) ;
 FrMAKE_SYMBOL_HASHTABLE_CLASS(SymCountHashTable,size_t) ;
+
+// Hash Sets: hash tables with keys but no associated values
+extern template class HashTable<Object*,NullObject> ;
+typedef HashTable<Object*,NullObject> ObjHashSet ;
+
 FrMAKE_SYMBOL_HASHTABLE_CLASS(SymbolTableX,NullObject) ;
+FrMAKE_INTEGER_HASHTABLE_CLASS(HashSet_U32,uint32_t,NullObject) ;
 
 //----------------------------------------------------------------------------
 
