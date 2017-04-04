@@ -38,6 +38,15 @@ typedef void ThreadPoolWorkFunc(const void *input, void *output) ;
 
 class WorkOrder ;
 
+class FreeWorkOrder
+   {
+   public:
+      FreeWorkOrder* next { nullptr } ;
+   public:
+      FreeWorkOrder(FreeWorkOrder* nxt = nullptr) { next = nxt ; }
+      ~FreeWorkOrder() {}
+   } ;
+
 /************************************************************************/
 /************************************************************************/
 
@@ -60,6 +69,7 @@ class ThreadPool
       bool dispatch(ThreadPoolWorkFunc* fn, const void* input, void* output) ;
       bool dispatch(ThreadPoolWorkFunc* fn, void* in_out)
 	 { return dispatch(fn, in_out, in_out) ; }
+      void discardRecycledOrders() ;
 
       // status
       bool idle() const { return idleThreads() >= availThreads() ; }
@@ -69,9 +79,11 @@ class ThreadPool
 
       // functions called by worker threads
       WorkOrder* nextOrder(unsigned index) ;
+      void recycle(WorkOrder*) ;
       void threadExiting(unsigned index) ;
 
    protected:
+      WorkOrder* makeWorkOrder(ThreadPoolWorkFunc* fn, const void* in, void* out) ;
       bool dispatch(WorkOrder* order) ;
 
    private:
@@ -81,7 +93,7 @@ class ThreadPool
       unsigned	 m_next_thread { 0 } ;	// next thread to which to try to assign a request
       thread**   m_pool { nullptr } ;	// the actual thread objects
       class WorkQueue* m_queues { nullptr } ;	// work queues, one per worker thread
-
+      FreeWorkOrder* m_freeorders { nullptr } ;
 #endif /* !FrSINGLE_THREADED */
    } ;
 

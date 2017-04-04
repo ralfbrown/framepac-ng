@@ -87,13 +87,15 @@ static void work_function(ThreadPool* pool, unsigned thread_index)
       {
       WorkOrder* order = pool->nextOrder(thread_index) ;
       ThreadPoolWorkFunc* fn = order->worker() ;
-      if (fn)
-	 fn(order->input(),order->output()); 
-      else
+      const void* in = order->input() ;
+      void* out = order->output() ;
+      pool->recycle(order) ;
+      if (!fn)
 	 {
 	 pool->threadExiting(thread_index) ;
 	 return ;
 	 }
+      fn(in,out); 
       }
    return ;
 }
@@ -223,7 +225,7 @@ ThreadPool::~ThreadPool()
    // tell each thread to terminate by sending it a request with a special termination function
    for (unsigned i = 0 ; i < numThreads() ; i++)
       {
-      WorkOrder *order = new WorkOrder(nullptr,nullptr,nullptr) ;
+      WorkOrder *order = makeWorkOrder(nullptr,nullptr,nullptr) ;
       while (!m_queues[i].push(order))
 	 {
 	 this_thread::sleep_for(std::chrono::milliseconds(1)) ;
@@ -241,6 +243,52 @@ ThreadPool::~ThreadPool()
    delete [] m_queues ;
 #endif /* !FrSINGLE_THREADED */
    m_numthreads = 0 ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+WorkOrder* ThreadPool::makeWorkOrder(ThreadPoolWorkFunc* fn, const void* in, void* out)
+{
+   if (m_freeorders)
+      {
+      //FIXME: next two lines must be locked
+      WorkOrder* order = (WorkOrder*)m_freeorders ;
+      m_freeorders = m_freeorders->next ;
+
+      new (order) WorkOrder(fn,in,out) ;
+      return order ;
+      }
+   else
+      return new WorkOrder(fn,in,out) ;
+}
+
+//----------------------------------------------------------------------------
+
+void ThreadPool::recycle(WorkOrder* order)
+{
+   if (order)
+      {
+      FreeWorkOrder* fo = (FreeWorkOrder*)order ;
+      //FIXME: must be locked
+      fo->next = m_freeorders ;
+      m_freeorders = fo ;
+      }
+   return  ;
+}
+
+//----------------------------------------------------------------------------
+
+void ThreadPool::discardRecycledOrders()
+{
+   FreeWorkOrder* orders = m_freeorders ;
+   m_freeorders = nullptr ;  //FIXME: make an atomic exchange
+   while (orders)
+      {
+      WorkOrder* order = (WorkOrder*)m_freeorders ;
+      m_freeorders = m_freeorders->next ;
+      delete order ;
+      }
    return ;
 }
 
@@ -318,7 +366,7 @@ bool ThreadPool::dispatch(WorkOrder* order)
 bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* output)
 {
    if (fn == nullptr) return false ;
-   WorkOrder* order = new WorkOrder(fn,input,output) ;
+   WorkOrder* order = makeWorkOrder(fn,input,output) ;
    return dispatch(order) ;
 }
 
@@ -327,6 +375,7 @@ bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* outpu
 void ThreadPool::waitUntilIdle()
 {
 //FIXME
+   discardRecycledOrders() ;		// keep memory use from growing excessively
    return ;
 }
 
