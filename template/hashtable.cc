@@ -26,6 +26,7 @@
 #include <iomanip>
 #include <thread>
 #include <type_traits>
+#include <x86intrin.h>
 #include "framepac/hashtable.h"
 #include "framepac/message.h"
 
@@ -51,7 +52,6 @@ inline void Free(void* p) { std::free(p) ; }
 #define FrYIELD_COUNT 50
 #define FramepaC_display_width 132
 void pushlist(Object*,List*) ;
-#define _mm_pause() 
 
 size_t FramepaC_initial_indent = 0 ;
 size_t FramepaC_small_primes[] = { 2, 3, 5, 7, 11, 13, 17 } ;  //FIXME

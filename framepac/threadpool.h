@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-04					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -27,54 +27,16 @@ namespace Fr {
 /************************************************************************/
 /************************************************************************/
 
-// size of request queue for each worker thread in pool
+// size of request queue for each worker thread in pool; should be power of 2
 // workers can steal from another's queue if theirs is empty
-#define FrWORKQUEUE_SIZE 256
+#define FrWORKQUEUE_SIZE 512
 
 /************************************************************************/
 /************************************************************************/
 
 typedef void ThreadPoolWorkFunc(const void *input, void *output) ;
 
-class WorkOrder
-   {
-   public:
-      WorkOrder() ;
-      WorkOrder(ThreadPoolWorkFunc* fn, const void* in, void* out)
-	 : m_func(fn), m_input(in), m_output(out), m_inprogress(false), m_complete(false) {}
-      WorkOrder(const WorkOrder&) ;
-      ~WorkOrder() ;
-      WorkOrder& operator= (const WorkOrder&) ;
-
-      ThreadPoolWorkFunc* worker() const { return m_func ; }
-      const void* input() const { return m_input ; }
-      void* output() const { return m_output ; }
-
-   private:
-      ThreadPoolWorkFunc* m_func ;	// function to call
-      const void* m_input ;
-      void*       m_output ;
-      atomic_bool m_inprogress ;
-      atomic_bool m_complete ;
-   } ;
-
-/************************************************************************/
-/************************************************************************/
-
-class WorkQueue
-   {
-   public:
-      WorkQueue() ;
-      WorkQueue(const WorkQueue&) ;
-      ~WorkQueue() ;
-      WorkQueue& operator= (const WorkQueue&) ;
-
-   private:
-      WorkOrder* m_orders[FrWORKQUEUE_SIZE] ;
-      unsigned   m_start ;
-      unsigned   m_head ;
-      unsigned   m_tail ;
-   } ;
+class WorkOrder ;
 
 /************************************************************************/
 /************************************************************************/
@@ -95,10 +57,9 @@ class ThreadPool
 
       // manipulators
       bool limitThreads(unsigned N) ;
-      bool dispatch(WorkOrder* order) ;
+      bool dispatch(ThreadPoolWorkFunc* fn, const void* input, void* output) ;
       bool dispatch(ThreadPoolWorkFunc* fn, void* in_out)
 	 { return dispatch(fn, in_out, in_out) ; }
-      bool dispatch(ThreadPoolWorkFunc* fn, const void* input, void* output) ;
 
       // status
       bool idle() const { return idleThreads() >= availThreads() ; }
@@ -110,13 +71,16 @@ class ThreadPool
       WorkOrder* nextOrder(unsigned index) ;
       void threadExiting(unsigned index) ;
 
+   protected:
+      bool dispatch(WorkOrder* order) ;
+
    private:
       unsigned   m_numthreads ;		// total number of worker threads
       unsigned   m_availthreads ;	// number of threads allowed to work
 #ifndef FrSINGLE_THREADED
-      unsigned	 m_next_thread ;	// next thread to which to try to assign a request
-      thread**   m_pool ;		// the actual thread objects
-      WorkQueue* m_queues ;		// work queues, one per worker thread
+      unsigned	 m_next_thread { 0 } ;	// next thread to which to try to assign a request
+      thread**   m_pool { nullptr } ;	// the actual thread objects
+      class WorkQueue* m_queues { nullptr } ;	// work queues, one per worker thread
 
 #endif /* !FrSINGLE_THREADED */
    } ;
