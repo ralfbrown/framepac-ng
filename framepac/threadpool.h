@@ -21,6 +21,7 @@
 
 #include <thread>
 #include "framepac/atomic.h"
+#include "framepac/critsect.h"
 
 namespace Fr {
 
@@ -36,16 +37,10 @@ namespace Fr {
 
 typedef void ThreadPoolWorkFunc(const void *input, void *output) ;
 
+// classes used internally by ThreadPool
 class WorkOrder ;
-
-class FreeWorkOrder
-   {
-   public:
-      FreeWorkOrder* next { nullptr } ;
-   public:
-      FreeWorkOrder(FreeWorkOrder* nxt = nullptr) { next = nxt ; }
-      ~FreeWorkOrder() {}
-   } ;
+class WorkBatch  ;
+class WorkQueue ;
 
 /************************************************************************/
 /************************************************************************/
@@ -90,11 +85,13 @@ class ThreadPool
       unsigned   m_numthreads ;		// total number of worker threads
       unsigned   m_availthreads ;	// number of threads allowed to work
 #ifndef FrSINGLE_THREADED
-      unsigned	 m_next_thread { 0 } ;	// next thread to which to try to assign a request
       thread**   m_pool { nullptr } ;	// the actual thread objects
-      class WorkQueue* m_queues { nullptr } ;	// work queues, one per worker thread
-      FreeWorkOrder* m_freeorders { nullptr } ;
 #endif /* !FrSINGLE_THREADED */
+      unsigned	 m_next_thread { 0 } ;	// next thread to which to try to assign a request
+      WorkQueue* m_queues { nullptr } ;	// work queues, one per worker thread
+      WorkBatch* m_batches { nullptr } ;
+      WorkOrder* m_freeorders { nullptr } ;
+      CriticalSection m_flguard ;	// critical section for guarding the work-order freelist
    } ;
 
 

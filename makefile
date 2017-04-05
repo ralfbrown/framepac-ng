@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4+ under Unix/Linux
-# Last change: 03apr2017
+# Last change: 04apr2017
 
 #########################################################################
 # define the locations of all the files
@@ -517,7 +517,7 @@ framepac/synchevent.h:	framepac/atomic.h
 framepac/thread.h:	framepac/init.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/threadpool.h:	framepac/atomic.h
+framepac/threadpool.h:	framepac/atomic.h framepac/critsect.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/trie.h:	framepac/config.h

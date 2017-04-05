@@ -20,9 +20,19 @@
 /************************************************************************/
 
 #include <chrono>
+#include <mutex>
 #include "framepac/thread.h"
 #include "framepac/threadpool.h"
 using namespace std ;
+
+/************************************************************************/
+/*	Manifest Constants						*/
+/************************************************************************/
+
+#define BATCH_SIZE 511
+
+/************************************************************************/
+/************************************************************************/
 
 namespace Fr
 {
@@ -44,12 +54,46 @@ class WorkOrder
       const void* input() const { return m_input ; }
       void* output() const { return m_output ; }
 
+      // free-list management
+      WorkOrder* next() const { return m_next ; }
+      void next(WorkOrder* nxt) { m_next = nxt ; }
+
    private:
-      ThreadPoolWorkFunc* m_func ;	// function to call
+      union {
+	 ThreadPoolWorkFunc* m_func ;	// function to call
+	 WorkOrder*          m_next ;   // next item in free list
+      } ;
       const void* m_input ;
       void*       m_output ;
       atomic_bool m_inprogress { false } ;
       atomic_bool m_complete { false } ;
+   } ;
+
+/************************************************************************/
+/************************************************************************/
+
+class WorkBatch
+   {
+   public:
+      WorkBatch(WorkBatch* nxt = nullptr) { m_next = nxt ; }
+      WorkBatch(const WorkBatch&) = delete ;
+      WorkBatch& operator= (const WorkBatch&) = delete ;
+      ~WorkBatch() {}
+
+      WorkBatch* next() const { return m_next ; }
+      void addToFreeList(WorkOrder*& freelist)
+	 {
+	    m_orders[0].next(freelist) ;
+	    for (size_t i = 1 ; i < BATCH_SIZE ; i++)
+	       {
+	       m_orders[i].next(&m_orders[i-1]) ;
+	       }
+	    freelist = &m_orders[BATCH_SIZE-1] ;
+	 }
+
+   protected:
+      WorkOrder  m_orders[BATCH_SIZE] ;
+      WorkBatch* m_next ;
    } ;
 
 /************************************************************************/
@@ -250,17 +294,22 @@ ThreadPool::~ThreadPool()
 
 WorkOrder* ThreadPool::makeWorkOrder(ThreadPoolWorkFunc* fn, const void* in, void* out)
 {
-   if (m_freeorders)
+   if (!m_freeorders)
       {
-      //FIXME: next two lines must be locked
-      WorkOrder* order = (WorkOrder*)m_freeorders ;
-      m_freeorders = m_freeorders->next ;
-
-      new (order) WorkOrder(fn,in,out) ;
-      return order ;
+      static std::mutex mtx ;
+      // allocate a batch of WorkOrder
+      std::lock_guard<std::mutex> lock(mtx) ;
+      WorkBatch* batch = new WorkBatch(m_batches) ;
+      m_batches = batch ;
+      m_flguard.lock() ;
+      batch->addToFreeList(m_freeorders) ;
+      m_flguard.unlock() ;
       }
-   else
-      return new WorkOrder(fn,in,out) ;
+   m_flguard.lock() ;
+   WorkOrder* order = (WorkOrder*)m_freeorders ;
+   m_freeorders = m_freeorders->next() ;
+   m_flguard.unlock() ;
+   return new (order) WorkOrder(fn,in,out) ;
 }
 
 //----------------------------------------------------------------------------
@@ -269,10 +318,10 @@ void ThreadPool::recycle(WorkOrder* order)
 {
    if (order)
       {
-      FreeWorkOrder* fo = (FreeWorkOrder*)order ;
-      //FIXME: must be locked
-      fo->next = m_freeorders ;
-      m_freeorders = fo ;
+      m_flguard.lock() ;
+      order->next(m_freeorders) ;
+      m_freeorders = order ;
+      m_flguard.unlock() ;
       }
    return  ;
 }
@@ -281,13 +330,14 @@ void ThreadPool::recycle(WorkOrder* order)
 
 void ThreadPool::discardRecycledOrders()
 {
-   FreeWorkOrder* orders = m_freeorders ;
    m_freeorders = nullptr ;  //FIXME: make an atomic exchange
-   while (orders)
+   WorkBatch* batches = m_batches ;
+   m_batches = nullptr ;
+   while (batches)
       {
-      WorkOrder* order = (WorkOrder*)m_freeorders ;
-      m_freeorders = m_freeorders->next ;
-      delete order ;
+      WorkBatch* batch = batches ;
+      batches = batches->next() ;
+      delete batch ;
       }
    return ;
 }
