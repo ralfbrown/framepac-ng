@@ -56,16 +56,19 @@ class ThreadPool
 
       // accessors
       unsigned numThreads() const { return m_numthreads ; }
-      unsigned idleThreads() const ;
+      unsigned idleThreads() const ;  //TODO
+
+      ThreadPool* defaultPool() ;
 
       // manipulators
       bool dispatch(ThreadPoolWorkFunc* fn, const void* input, void* output) ;
       bool dispatch(ThreadPoolWorkFunc* fn, void* in_out)
 	 { return dispatch(fn, in_out, in_out) ; }
-      void discardRecycledOrders() ;
+
+      void defaultPool(ThreadPool*) ;
 
       // status
-      //bool idle() const ;
+      bool idle() const ;  //TODO
 
       // synchronization
       void waitUntilIdle() ;
@@ -79,8 +82,10 @@ class ThreadPool
    protected:
       WorkOrder* makeWorkOrder(ThreadPoolWorkFunc* fn, const void* in, void* out) ;
       bool dispatch(WorkOrder* order) ;
+      void discardRecycledOrders() ;
 
    private:
+      static ThreadPool* s_defaultpool ;
       unsigned   m_numthreads ;		// total number of worker threads
 #ifndef FrSINGLE_THREADED
       thread**   m_pool { nullptr } ;	// the actual thread objects

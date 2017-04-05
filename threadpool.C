@@ -152,6 +152,12 @@ class WorkQueue
    } ;
 
 /************************************************************************/
+/*	Global variables						*/
+/************************************************************************/
+
+ThreadPool* ThreadPool::s_defaultpool = nullptr ;
+
+/************************************************************************/
 /************************************************************************/
 
 static void work_function(ThreadPool* pool, unsigned thread_index)
@@ -351,6 +357,32 @@ ThreadPool::~ThreadPool()
    delete [] m_queues ;
 #endif /* !FrSINGLE_THREADED */
    m_numthreads = 0 ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ThreadPool* ThreadPool::defaultPool()
+{
+   if (!s_defaultpool)
+      {
+      // we haven't yet set the default thread pool, so construct one now
+      unsigned threads = 0 ;
+#ifndef FrSINGLE_THREADED
+      threads = std::thread::hardware_concurrency() ;
+      if (threads < 2) threads = 2 ;
+#endif /* FrSINGLE_THREADED */
+      s_defaultpool = new ThreadPool(threads) ;
+      }
+   return s_defaultpool ;
+}
+
+//----------------------------------------------------------------------------
+
+void ThreadPool::defaultPool(ThreadPool* pool)
+{
+   delete s_defaultpool ;
+   s_defaultpool = pool ;
    return ;
 }
 
