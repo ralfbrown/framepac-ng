@@ -31,7 +31,12 @@ using namespace std ;
 /*	Manifest Constants						*/
 /************************************************************************/
 
-#define BATCH_SIZE 511
+// size of request queue for each worker thread in pool; should be power of 2
+// workers can steal from another's queue if theirs is empty
+#define FrWORKQUEUE_SIZE 512
+
+// increment in which we allocate WorkOrder records
+#define BATCH_SIZE 250
 
 /************************************************************************/
 /************************************************************************/
@@ -107,9 +112,9 @@ class WorkQueue
    {
    public:
       WorkQueue() {}
-      WorkQueue(const WorkQueue&) ;
-      ~WorkQueue() ;
-      WorkQueue& operator= (const WorkQueue&) ;
+      WorkQueue(const WorkQueue&) = delete ;
+      ~WorkQueue() { clear() ; }
+      WorkQueue& operator= (const WorkQueue&) = delete ;
 
       bool enabled() const { return m_enabled ; }
       bool empty() const { return m_head >= m_tail.load() ; }
@@ -128,16 +133,16 @@ class WorkQueue
 	 {
 	    {
 	    std::unique_lock<std::mutex> lock(m_mutex) ;
-	    m_idle = false ;
-	    } // release the lock
+	    m_posted = true ;
+	    } // release the lock so that the awakened thread doesn't block on the mutex
 	    m_cond.notify_one() ;
 	 }
       void wait()
 	 {
 	    std::unique_lock<std::mutex> lock(m_mutex) ;
-	    while (m_idle)
+	    while (!m_posted)
 	       m_cond.wait(lock) ;
-	    m_idle = true ;
+	    m_posted = false ;		// reset for the next time before we unlock
 	 }
 
    protected:
@@ -147,7 +152,7 @@ class WorkQueue
       size_t             m_head { 0 } ;
       Atomic<WorkOrder*> m_orders[FrWORKQUEUE_SIZE] = { nullptr } ;
       Atomic<size_t>     m_tail { 0 } ;
-      bool		 m_idle { false } ;
+      bool		 m_posted { false } ;
       bool		 m_enabled { true } ;
    } ;
 
@@ -191,22 +196,6 @@ static void work_function(ThreadPool* pool, unsigned thread_index)
 /************************************************************************/
 /*	Methods for class WorkQueue					*/
 /************************************************************************/
-
-WorkQueue::WorkQueue(const WorkQueue&)
-{
-   //FIXME
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-WorkQueue::~WorkQueue()
-{
-   clear() ;
-   return;
-}
-
-//----------------------------------------------------------------------------
 
 WorkOrder* WorkQueue::fastPop()
 {
@@ -323,6 +312,7 @@ ThreadPool::ThreadPool(unsigned num_threads)
       m_numthreads = 0 ;
       return ;
       }
+   allocateWorkOrders() ;
    for (unsigned i = 0 ; i < num_threads ; i++)
       {
       m_pool[i] = new_thread(work_function,this,i) ;
@@ -388,16 +378,34 @@ void ThreadPool::defaultPool(ThreadPool* pool)
 
 //----------------------------------------------------------------------------
 
+void ThreadPool::allocateWorkOrders()
+{
+   if (m_freeorders)
+      return ;
+   // pre-allocate up to 1,000,000 WorkOrder instances or enough to
+   //   fill all of the work queues plus extras for worker commands
+   //   and blocked insertions, whichever is less
+   size_t desired = std::min(1000000U, (FrWORKQUEUE_SIZE+3) * numThreads()) ;
+   size_t num_batches = (desired + BATCH_SIZE) / BATCH_SIZE ;
+   for (size_t i = 0 ; i < num_batches ; i++)
+      {
+      WorkBatch *batch = new WorkBatch(m_batches) ;
+      m_batches = batch ;
+      batch->addToFreeList(m_freeorders) ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 WorkOrder* ThreadPool::makeWorkOrder(ThreadPoolWorkFunc* fn, const void* in, void* out)
 {
    if (!m_freeorders)
       {
-      static std::mutex mtx ;
       // allocate a batch of WorkOrder
-      std::lock_guard<std::mutex> lock(mtx) ;
+      m_flguard.lock() ;
       WorkBatch* batch = new WorkBatch(m_batches) ;
       m_batches = batch ;
-      m_flguard.lock() ;
       batch->addToFreeList(m_freeorders) ;
       m_flguard.unlock() ;
       }
@@ -426,9 +434,11 @@ void ThreadPool::recycle(WorkOrder* order)
 
 void ThreadPool::discardRecycledOrders()
 {
-   m_freeorders = nullptr ;  //FIXME: make an atomic exchange
+   m_flguard.lock() ;
+   m_freeorders = nullptr ;
    WorkBatch* batches = m_batches ;
    m_batches = nullptr ;
+   m_flguard.unlock() ;
    while (batches)
       {
       WorkBatch* batch = batches ;
@@ -442,7 +452,7 @@ void ThreadPool::discardRecycledOrders()
 
 unsigned ThreadPool::idleThreads() const
 {
-   //FIXME
+   //TODO
    return 0 ;
 }
 

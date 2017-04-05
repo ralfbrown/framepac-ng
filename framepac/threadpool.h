@@ -29,10 +29,6 @@ namespace Fr {
 /************************************************************************/
 /************************************************************************/
 
-// size of request queue for each worker thread in pool; should be power of 2
-// workers can steal from another's queue if theirs is empty
-#define FrWORKQUEUE_SIZE 512
-
 /************************************************************************/
 /************************************************************************/
 
@@ -80,6 +76,7 @@ class ThreadPool
       void ack(unsigned index) ;
 
    protected:
+      void allocateWorkOrders() ;
       WorkOrder* makeWorkOrder(ThreadPoolWorkFunc* fn, const void* in, void* out) ;
       bool dispatch(WorkOrder* order) ;
       void discardRecycledOrders() ;
