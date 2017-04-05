@@ -57,14 +57,14 @@ class ThreadPool
       unsigned numThreads() const { return m_numthreads ; }
       unsigned idleThreads() const ;  //TODO
 
-      ThreadPool* defaultPool() ;
+      static ThreadPool* defaultPool() ;
 
       // manipulators
       bool dispatch(ThreadPoolWorkFunc* fn, const void* input, void* output) ;
       bool dispatch(ThreadPoolWorkFunc* fn, void* in_out)
 	 { return dispatch(fn, in_out, in_out) ; }
 
-      void defaultPool(ThreadPool*) ;
+      static void defaultPool(ThreadPool*) ;
 
       // status
       bool idle() const ;  //TODO
