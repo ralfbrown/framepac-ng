@@ -116,11 +116,7 @@ class WorkQueue
       ~WorkQueue() { clear() ; }
       WorkQueue& operator= (const WorkQueue&) = delete ;
 
-      bool enabled() const { return m_enabled ; }
       bool empty() const { return m_head >= m_tail.load() ; }
-
-      void enable() { m_enabled = true ; }
-      void disable() { m_enabled = false ; }
 
       WorkOrder* fastPop() ;		// canonly be called by queue's owner
       WorkOrder* pop(bool block = true) ; // can only be called by queue's owner
@@ -153,7 +149,6 @@ class WorkQueue
       Atomic<WorkOrder*> m_orders[FrWORKQUEUE_SIZE] = { nullptr } ;
       Atomic<size_t>     m_tail { 0 } ;
       bool		 m_posted { false } ;
-      bool		 m_enabled { true } ;
    } ;
 
 /************************************************************************/
@@ -262,7 +257,7 @@ WorkOrder* WorkQueue::steal()
 
 bool WorkQueue::push(WorkOrder* order)
 {
-   if (!order || !enabled())
+   if (!order)
       return false ;			// nothing to push
    size_t tail = m_tail.load() ;
    size_t head = m_head ;
@@ -476,7 +471,7 @@ bool ThreadPool::dispatch(WorkOrder* order)
       do {
          // atomically attempt to insert the request in the queue; this can fail if there
          //   was only one free entry and another thread beat us to the punch, in addition
-         //   to failing if the queue is already full or the worker has been disabled
+         //   to failing if the queue is already full
          if (m_queues[m_next_thread].push(order))
 	    {
 	    m_next_thread = threadnum ;
@@ -510,7 +505,6 @@ void ThreadPool::waitUntilIdle()
    //   their queue
    for (size_t i = 0 ; i < numThreads() ; ++i)
       {
-      m_queues[i].enable() ;
       WorkOrder* wo = makeWorkOrder(nullptr,&request_ack,nullptr) ;
       while (!m_queues[i].push(wo))
 	 {
