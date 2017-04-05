@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include <chrono>
+#include <condition_variable>
 #include <mutex>
 #include "framepac/thread.h"
 #include "framepac/threadpool.h"
@@ -36,6 +37,10 @@ using namespace std ;
 
 namespace Fr
 {
+
+// some addresses to pass to get specific actions from the worker thread
+static bool request_ack ;
+static bool request_exit ;
 
 /************************************************************************/
 /************************************************************************/
@@ -107,22 +112,43 @@ class WorkQueue
       ~WorkQueue() ;
       WorkQueue& operator= (const WorkQueue&) ;
 
+      bool enabled() const { return m_enabled ; }
       bool empty() const { return m_head >= m_tail.load() ; }
 
-      WorkOrder* pop() ;		// can only be called by queue's owner
+      void enable() { m_enabled = true ; }
+      void disable() { m_enabled = false ; }
+
+      WorkOrder* pop(bool block = true) ; // can only be called by queue's owner
       bool push(WorkOrder* order) ;	// can be called by any thread
       WorkOrder* steal() ;		// can be called by any thread
       void clear() ;			// remove all entries from queue
 
       // inter-thread synchronization
-      void post() { (void)m_jobs.post() ; }
-      void wait() { (void)m_jobs.wait() ; }
+      void post()
+	 {
+	    {
+	    std::unique_lock<std::mutex> lock(m_mutex) ;
+	    m_idle = false ;
+	    } // release the lock
+	    m_cond.notify_one() ;
+	 }
+      void wait()
+	 {
+	    std::unique_lock<std::mutex> lock(m_mutex) ;
+	    while (m_idle)
+	       m_cond.wait(lock) ;
+	    m_idle = true ;
+	 }
 
    protected:
+      std::mutex	 m_mutex ;
+      std::condition_variable m_cond ;
       Semaphore		 m_jobs { 0 } ;
       size_t             m_head { 0 } ;
       Atomic<WorkOrder*> m_orders[FrWORKQUEUE_SIZE] = { nullptr } ;
       Atomic<size_t>     m_tail { 0 } ;
+      bool		 m_idle { false } ;
+      bool		 m_enabled { true } ;
    } ;
 
 /************************************************************************/
@@ -141,8 +167,15 @@ static void work_function(ThreadPool* pool, unsigned thread_index)
       pool->recycle(order) ;
       if (!fn)
 	 {
-	 pool->threadExiting(thread_index) ;
-	 return ;
+	 if (in == &request_exit)
+	    {
+	    pool->threadExiting(thread_index) ;
+	    return ;
+	    }
+	 else if (in == &request_ack)
+	    {
+//FIXME
+	    }
 	 }
       fn(in,out); 
       }
@@ -169,7 +202,7 @@ WorkQueue::~WorkQueue()
 
 //----------------------------------------------------------------------------
 
-WorkOrder* WorkQueue::pop()
+WorkOrder* WorkQueue::pop(bool block)
 {
    size_t tail = m_tail.load() ;
    while (m_head < tail)
@@ -185,6 +218,10 @@ WorkOrder* WorkQueue::pop()
       // someone stole the next task, so loop until we
       //   get a non-null pointer, or m_head reaches m_tail
       tail = m_tail.load() ;
+      }
+   if (block)
+      {
+      wait() ;
       }
    return nullptr ;	// queue is empty
 }
@@ -210,10 +247,11 @@ WorkOrder* WorkQueue::steal()
 
 bool WorkQueue::push(WorkOrder* order)
 {
-   if (!order)
+   if (!order || !enabled())
       return false ;			// nothing to push
    size_t tail = m_tail.load() ;
-   if (tail - m_head >= FrWORKQUEUE_SIZE)
+   size_t head = m_head ;
+   if (tail - head >= FrWORKQUEUE_SIZE)
       return false ;			// queue is full
    for ( ; ; )
       {
@@ -224,6 +262,7 @@ bool WorkQueue::push(WorkOrder* order)
       //   added a task, so retry
       tail = m_tail.load() ;
       } while (order) ;
+   post() ;				// signal worker to restart if it was waiting
    return true ;
 }
 
@@ -232,7 +271,7 @@ bool WorkQueue::push(WorkOrder* order)
 void WorkQueue::clear()
 {
 //FIXME
-   m_tail.store(0) ;
+   m_tail = 0 ;
    m_head = 0 ;
    return ;
 }
@@ -274,7 +313,7 @@ ThreadPool::~ThreadPool()
    // tell each thread to terminate by sending it a request with a special termination function
    for (unsigned i = 0 ; i < numThreads() ; i++)
       {
-      WorkOrder *order = makeWorkOrder(nullptr,nullptr,nullptr) ;
+      WorkOrder *order = makeWorkOrder(nullptr,&request_exit,nullptr) ;
       while (!m_queues[i].push(order))
 	 {
 	 this_thread::sleep_for(std::chrono::milliseconds(1)) ;
@@ -441,11 +480,13 @@ WorkOrder* ThreadPool::nextOrder(unsigned index)
    if (index < numThreads())
       {
       WorkOrder* order ;
-      while ((order = m_queues[index].pop()) == nullptr)
+      while ((order = m_queues[index].pop(false)) == nullptr)
 	 {
-	 this_thread::sleep_for(std::chrono::milliseconds(1)) ;
-//FIXME: wait until something is pushed
+	 //FIXME: try to steal something from another queue
+
+	 return m_queues[index].pop() ;  // block until a work order is available
 	 }
+      return order ;
       }
    return nullptr ;
 }

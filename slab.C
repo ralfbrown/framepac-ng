@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-31					*/
+/* Version 0.01, last edit 2017-04-04					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -51,7 +51,7 @@ void* Slab::allocObject()
       return nullptr ;
    alloc_size_t* obj = (alloc_size_t*)(((char*)this) + free) ;
    m_footer.f.m_numfree-- ;
-   m_footer.f.m_firstfree.store(*obj) ;
+   m_footer.f.m_firstfree = *obj ;
    return obj ;
 }
 
@@ -65,7 +65,7 @@ void Slab::releaseObject(void* obj)
    alloc_size_t* nextptr = ((alloc_size_t*)obj) ;
    *nextptr = m_footer.f.m_firstfree.load() ;
    m_footer.f.m_numfree++ ;
-   m_footer.f.m_firstfree.store(freeobj) ;
+   m_footer.f.m_firstfree = freeobj ;
    return ;
 }
 

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-03-31					*/
+/*  Version 0.01, last edit 2017-04-04					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File synchevent.C		synchronization events			*/
@@ -69,7 +69,7 @@ bool SynchEvent::isSet() const
 
 void SynchEvent::clear()
 {
-   m_event.m_set.store(false) ;
+   m_event.m_set = false ;
    return ;
 }
 
@@ -77,10 +77,10 @@ void SynchEvent::clear()
 
 void SynchEvent::set()
 {
-   m_event.m_set.store(true) ;
+   m_event.m_set = true ;
    if (m_event.m_waiters.load())
       {
-      m_event.m_waiters.store(false) ;
+      m_event.m_waiters = false ;
       sys_futex(this, FUTEX_WAKE_PRIVATE, INT_MAX, nullptr, nullptr, 0) ;
       }
    return ;
@@ -92,7 +92,7 @@ void SynchEvent::wait()
 {
    while (!m_event.m_set.load())
       {
-      m_event.m_waiters.store(true) ;
+      m_event.m_waiters = true ;
       // wait as long as m_set is still false and m_waiters is still true
       sys_futex(this, FUTEX_WAIT_PRIVATE, 1, nullptr, nullptr, 0) ;
       }
