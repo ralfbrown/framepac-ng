@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-29					*/
+/* Version 0.01, last edit 2017-04-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -64,6 +64,8 @@ class CFile
       int getc() { return fgetc(m_file) ; }
       int ungetc(int c) { return std::ungetc(c,m_file) ; }
       bool gets(char* buf, size_t buflen) { return m_file ? fgets(buf,buflen,m_file) != nullptr : false ; }
+      class Fr::String* getline(size_t maxline = (size_t)~0) ; // result must be freed
+      char* getCLine(size_t maxline = (size_t)~0) ; // result must be freed
       void putc(char c) { fputc(c,m_file) ; }
       void puts(const char* s) { fputs(s,m_file) ; }
       [[gnu::format(gnu_printf,2,0)]] bool printf(const char* fmt, ...) const ;

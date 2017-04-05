@@ -19,49 +19,32 @@
 /*									*/
 /************************************************************************/
 
-#ifndef _Fr_BUILDER_H_INCLUDED
-#define _Fr_BUILDER_H_INCLUDED
+#ifndef _Fr_STRINGBUILDER_H_INCLUDED
+#define _Fr_STRINGBUILDER_H_INCLUDED
 
-#include "framepac/config.h"
+#include "framepac/builder.h"
+#include "framepac/string.h"
 
 /************************************************************************/
 /************************************************************************/
 
 namespace Fr {
 
-template <typename T, size_t minsize = 200>
-class BufferBuilder
+//----------------------------------------------------------------------------
+
+class StringBuilder : public BufferBuilder<char>
    {
    private:
-      T        *m_buffer = m_localbuf ;
-      size_t	m_alloc = minsize ;
-      size_t	m_currsize = 0 ;
-      T		m_localbuf[minsize] ;
    public:
-      BufferBuilder() {}
-      BufferBuilder(const BufferBuilder&) = delete ;
-      ~BufferBuilder() ;
-      void operator= (const BufferBuilder&) = delete ;
-
-      bool preallocate(size_t newsize) ;
-      void clear() ;
-
-      void append(T value) ;
-
-
-      size_t currentLength() const { return m_currsize ; }
-      T *currentBuffer() const { return m_buffer ; }
-      T *finalize() const ;
-
-      // operator overloads
-      T *operator * () const { return m_buffer ; }
-      BufferBuilder &operator += (T value) { append(value) ; return *this ; }
+      StringBuilder() {}
+      StringBuilder(class Fr::CFile*, size_t maxlen = (size_t)~0) ;
+      ~StringBuilder() {}
+      String *string() const { return String::create(currentBuffer(),currentLength()) ; }
+      char* cstring() const ;
    } ;
-
-extern template class BufferBuilder<char> ;
 
 } // end namespace Fr
 
-#endif /* !_Fr_BUILDER_H_INCLUDED */
+#endif /* !_Fr_STRINGBUILDER_H_INCLUDED */
 
-// end of file builder.h //
+// end of file stringbuilder.h //

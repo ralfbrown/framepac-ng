@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4+ under Unix/Linux
-# Last change: 04apr2017
+# Last change: 05apr2017
 
 #########################################################################
 # define the locations of all the files
@@ -252,7 +252,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
 	object$(OBJ) objreader$(OBJ) rational$(OBJ) slab$(OBJ) \
 	slabgroup$(OBJ) \
-	sparsematrix$(OBJ) string$(OBJ) \
+	sparsematrix$(OBJ) string$(OBJ) stringbuilder$(OBJ) \
 	sufarray_u32u32$(OBJ) \
 	symbol$(OBJ) symboltable$(OBJ) synchevent$(OBJ) \
 	threadpool$(OBJ) timer$(OBJ) trie$(OBJ) \
@@ -367,7 +367,7 @@ bitvector$(OBJ):	bitvector$(C) framepac/bitvector.h
 bufbuilder_char$(OBJ):	bufbuilder_char$(C) template/bufbuilder.cc
 bwt$(OBJ):		bwt$(C) framepac/config.h
 charget$(OBJ):		charget$(C) framepac/charget.h
-cfile$(OBJ):		cfile$(C) framepac/file.h framepac/string.h
+cfile$(OBJ):		cfile$(C) framepac/file.h framepac/stringbuilder.h
 cluster$(OBJ):		cluster$(C) framepac/cluster.h
 cluster_agglom$(OBJ):	cluster_agglom$(C) framepac/cluster.h
 cluster_growseed$(OBJ):	cluster_growseed$(C) framepac/cluster.h
@@ -407,6 +407,7 @@ slab$(OBJ):		slab$(C) framepac/memory.h
 slabgroup$(OBJ):	slabgroup$(C) framepac/memory.h
 sparsematrix$(OBJ):	sparsematrix$(C) framepac/matrix.h
 string$(OBJ):		string$(C) framepac/string.h
+stringbuilder$(OBJ):	stringbuilder$(C) framepac/stringbuilder.h framepac/file.h
 suffixarray$(OBJ):	suffixarray$(C) framepac/config.h
 symbol$(OBJ):		symbol$(C) framepac/symbol.h
 symboltable$(OBJ):	symboltable$(C) framepac/symbol.h
@@ -451,7 +452,7 @@ framepac/bignum.h:	framepac/number.h
 framepac/bitvector.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/builder.h:	framepac/string.h
+framepac/builder.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/bwt.h:		framepac/config.h
@@ -509,6 +510,9 @@ framepac/semaphore.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/string.h:	framepac/object.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/stringbuilder.h:	framepac/builder.h framepac/string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/symbol.h:	framepac/object.h

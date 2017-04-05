@@ -26,7 +26,7 @@
 #include <string>
 #include <unistd.h>
 #include "framepac/file.h"
-#include "framepac/string.h"
+#include "framepac/stringbuilder.h"
 
 namespace Fr
 {
@@ -358,6 +358,26 @@ size_t CFile::read(void *buf, size_t itemsize, size_t itemcount)
       return fread(buf,itemsize,itemcount,m_file) ;
    else
       return (size_t)EOF ;
+}
+
+//----------------------------------------------------------------------------
+
+String* CFile::getline(size_t maxline)
+{
+   if (!m_file)
+      return nullptr ;
+   StringBuilder str(this,maxline) ;
+   return str.string() ;
+}
+
+//----------------------------------------------------------------------------
+
+char* CFile::getCLine(size_t maxline)
+{
+   if (!m_file)
+      return nullptr ;
+   StringBuilder str(this,maxline) ;
+   return str.cstring() ;
 }
 
 //----------------------------------------------------------------------------

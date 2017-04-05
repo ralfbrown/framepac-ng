@@ -84,7 +84,7 @@ class WorkOrder
 class WorkQueue
    {
    public:
-      WorkQueue() ;
+      WorkQueue() {}
       WorkQueue(const WorkQueue&) = delete ;
       ~WorkQueue() ;
       WorkQueue& operator= (const WorkQueue&) = delete ;
@@ -191,13 +191,6 @@ static void work_function(ThreadPool* pool, unsigned thread_index)
 /************************************************************************/
 /*	Methods for class WorkQueue					*/
 /************************************************************************/
-
-WorkQueue::WorkQueue()
-{
-   return  ;
-}
-
-//----------------------------------------------------------------------------
 
 WorkQueue::~WorkQueue()
 {

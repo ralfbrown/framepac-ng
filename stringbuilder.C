@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-05					*/
+/* Version 0.01, last edit 2017-03-28					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -19,49 +19,49 @@
 /*									*/
 /************************************************************************/
 
-#ifndef _Fr_BUILDER_H_INCLUDED
-#define _Fr_BUILDER_H_INCLUDED
+#include <memory.h>
+#include "framepac/file.h"
+#include "framepac/stringbuilder.h"
 
-#include "framepac/config.h"
+namespace Fr
+{
 
 /************************************************************************/
+/*	Methods for class StringBuilder					*/
 /************************************************************************/
 
-namespace Fr {
+// constructor that builds a line by reading the given file
+StringBuilder::StringBuilder(CFile* file, size_t maxline)
+{
+   if (!file || file->eof())
+      return ;
+   size_t count = 0 ;
+   int c ;
+   for ( c = file->getc() ; c != EOF && c != '\r' && c != '\n' && count < maxline ; c = file->getc())
+      {
+      append((char)c) ;
+      }
+   if (c == '\r')
+      {
+      // check for CRLF sequence
+      c = file->getc() ;
+      if (c != EOF && c != '\n')
+	 file->ungetc(c) ;
+      }
+   return ;
+}
 
-template <typename T, size_t minsize = 200>
-class BufferBuilder
-   {
-   private:
-      T        *m_buffer = m_localbuf ;
-      size_t	m_alloc = minsize ;
-      size_t	m_currsize = 0 ;
-      T		m_localbuf[minsize] ;
-   public:
-      BufferBuilder() {}
-      BufferBuilder(const BufferBuilder&) = delete ;
-      ~BufferBuilder() ;
-      void operator= (const BufferBuilder&) = delete ;
+//----------------------------------------------------------------------------
 
-      bool preallocate(size_t newsize) ;
-      void clear() ;
-
-      void append(T value) ;
-
-
-      size_t currentLength() const { return m_currsize ; }
-      T *currentBuffer() const { return m_buffer ; }
-      T *finalize() const ;
-
-      // operator overloads
-      T *operator * () const { return m_buffer ; }
-      BufferBuilder &operator += (T value) { append(value) ; return *this ; }
-   } ;
-
-extern template class BufferBuilder<char> ;
+char* StringBuilder::cstring() const
+{
+   size_t len = currentLength() ;
+   char* s = new char[len+1] ;
+   memcpy(s,currentBuffer(),len) ;
+   s[len] = '\0' ;
+   return s ;
+}
 
 } // end namespace Fr
 
-#endif /* !_Fr_BUILDER_H_INCLUDED */
-
-// end of file builder.h //
+// end of file stringbuilder.C //
