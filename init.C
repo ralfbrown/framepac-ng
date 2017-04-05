@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -129,6 +129,14 @@ bool ThreadInit()
    // call any registered thread-initialization functions
 //FIXME
 #endif /* FrSINGLE_THREADED */
+}
+
+//----------------------------------------------------------------------------
+
+bool ThreadCleanup()
+{
+//FIXME
+   return true ;
 }
 
 //----------------------------------------------------------------------------

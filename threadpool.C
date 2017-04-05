@@ -54,11 +54,11 @@ static bool request_exit ;
 class WorkOrder
    {
    public:
-      WorkOrder() ;
+      WorkOrder() {}
       WorkOrder(ThreadPoolWorkFunc* fn, const void* in, void* out)
 	 : m_func(fn), m_input(in), m_output(out) {}
       WorkOrder(const WorkOrder&) = delete ;
-      ~WorkOrder() ;
+      ~WorkOrder() {}
       WorkOrder& operator= (const WorkOrder&) = delete ;
 
       ThreadPoolWorkFunc* worker() const { return m_func ; }
@@ -81,39 +81,12 @@ class WorkOrder
 /************************************************************************/
 /************************************************************************/
 
-class WorkBatch
-   {
-   public:
-      WorkBatch(WorkBatch* nxt = nullptr) { m_next = nxt ; }
-      WorkBatch(const WorkBatch&) = delete ;
-      WorkBatch& operator= (const WorkBatch&) = delete ;
-      ~WorkBatch() {}
-
-      WorkBatch* next() const { return m_next ; }
-      void addToFreeList(WorkOrder*& freelist)
-	 {
-	    m_orders[0].next(freelist) ;
-	    for (size_t i = 1 ; i < BATCH_SIZE ; i++)
-	       {
-	       m_orders[i].next(&m_orders[i-1]) ;
-	       }
-	    freelist = &m_orders[BATCH_SIZE-1] ;
-	 }
-
-   protected:
-      WorkOrder  m_orders[BATCH_SIZE] ;
-      WorkBatch* m_next ;
-   } ;
-
-/************************************************************************/
-/************************************************************************/
-
 class WorkQueue
    {
    public:
-      WorkQueue() {}
+      WorkQueue() ;
       WorkQueue(const WorkQueue&) = delete ;
-      ~WorkQueue() { clear() ; }
+      ~WorkQueue() ;
       WorkQueue& operator= (const WorkQueue&) = delete ;
 
       bool empty() const { return m_head >= m_tail.load() ; }
@@ -149,6 +122,33 @@ class WorkQueue
       Atomic<WorkOrder*> m_orders[FrWORKQUEUE_SIZE] = { nullptr } ;
       Atomic<size_t>     m_tail { 0 } ;
       bool		 m_posted { false } ;
+   } ;
+
+/************************************************************************/
+/************************************************************************/
+
+class WorkBatch
+   {
+   public:
+      WorkBatch(WorkBatch* nxt = nullptr) { m_next = nxt ; }
+      WorkBatch(const WorkBatch&) = delete ;
+      WorkBatch& operator= (const WorkBatch&) = delete ;
+      ~WorkBatch() {}
+
+      WorkBatch* next() const { return m_next ; }
+      void addToFreeList(WorkOrder*& freelist)
+	 {
+	    m_orders[0].next(freelist) ;
+	    for (size_t i = 1 ; i < BATCH_SIZE ; i++)
+	       {
+	       m_orders[i].next(&m_orders[i-1]) ;
+	       }
+	    freelist = &m_orders[BATCH_SIZE-1] ;
+	 }
+
+   protected:
+      WorkOrder  m_orders[BATCH_SIZE] ;
+      WorkBatch* m_next ;
    } ;
 
 /************************************************************************/
@@ -191,6 +191,21 @@ static void work_function(ThreadPool* pool, unsigned thread_index)
 /************************************************************************/
 /*	Methods for class WorkQueue					*/
 /************************************************************************/
+
+WorkQueue::WorkQueue()
+{
+   return  ;
+}
+
+//----------------------------------------------------------------------------
+
+WorkQueue::~WorkQueue()
+{
+   clear() ;
+   return  ;
+}
+
+//----------------------------------------------------------------------------
 
 WorkOrder* WorkQueue::fastPop()
 {
@@ -502,6 +517,8 @@ bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* outpu
 
 void ThreadPool::waitUntilIdle()
 {
+   if (numThreads() == 0)
+      return ;				// all jobs were handled immediately
    // tell all the workers to post when they've finished everything currently in
    //   their queue
    for (size_t i = 0 ; i < numThreads() ; ++i)
