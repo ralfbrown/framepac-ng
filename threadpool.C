@@ -340,6 +340,7 @@ ThreadPool::~ThreadPool()
       }
    delete [] m_pool ;
    delete [] m_queues ;
+   discardRecycledOrders() ;
 #endif /* !FrSINGLE_THREADED */
    m_numthreads = 0 ;
    return ;
@@ -518,7 +519,6 @@ void ThreadPool::waitUntilIdle()
       m_ack.wait() ;
       }
 //FIXME
-   discardRecycledOrders() ;		// keep memory use from growing excessively
    return ;
 }
 

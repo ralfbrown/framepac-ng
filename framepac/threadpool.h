@@ -19,6 +19,9 @@
 /*									*/
 /************************************************************************/
 
+#ifndef _Fr_THREADPOOL_H_INCLUDED
+#define _Fr_THREADPOOL_H_INCLUDED
+
 #include <thread>
 #include "framepac/atomic.h"
 #include "framepac/critsect.h"
@@ -46,9 +49,9 @@ class ThreadPool
    {
    public:
       ThreadPool(unsigned num_threads) ;
-      ThreadPool(const ThreadPool&) ;
+      ThreadPool(const ThreadPool&) = delete ;
       ~ThreadPool() ;
-      ThreadPool& operator= (const ThreadPool&) ;
+      ThreadPool& operator= (const ThreadPool&) = delete ;
 
       // accessors
       unsigned numThreads() const { return m_numthreads ; }
@@ -97,5 +100,7 @@ class ThreadPool
 
 
 } // end namespace Fr
+
+#endif /* !_Fr_THREADPOOL_H_INCLUDED */
 
 // end of file threadpool.h //
