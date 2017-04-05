@@ -254,6 +254,12 @@ WorkOrder* WorkQueue::steal()
       //   pointer because we didn't actually steal anything
       ++m_tail ;
       }
+   else if (!order->worker())
+      {
+      // we're not allowed to steal commands to the worker
+      push(order) ;
+      return nullptr ;
+      }
    return order ;
 }
 
@@ -429,7 +435,7 @@ bool ThreadPool::dispatch(WorkOrder* order)
          // atomically attempt to insert the request in the queue; this can fail if there
          //   was only one free entry and another thread beat us to the punch, in addition
          //   to failing if the queue is already full or the worker has been disabled
-         if (m_queues[m_next_thread]->push(order))
+         if (m_queues[m_next_thread].push(order))
 	    {
 	    m_next_thread = threadnum ;
 	    return true ;
@@ -491,8 +497,15 @@ WorkOrder* ThreadPool::nextOrder(unsigned index)
    bool block = false ;
    while ((wo = m_queues[index].pop(block)) == nullptr)
       {
-      //FIXME: try to steal something from another queue
-
+      // try to steal something from another queue
+      // TODO: be more sophisticated than a simple round-robin scan
+      unsigned nt = numThreads() ;
+      for (unsigned next = (index+1)%nt ; next != index ; next = (next+1)%nt)
+	 {
+	 wo = m_queues[next].steal() ;
+	 if (wo)
+	    return wo ;
+	 }
       // couldn't steal anything, so try again, but this time, block until
       //   something gets added to the queue
       block = true ;
