@@ -22,6 +22,7 @@
 #include <thread>
 #include "framepac/atomic.h"
 #include "framepac/critsect.h"
+#include "framepac/semaphore.h"
 
 namespace Fr {
 
@@ -92,6 +93,10 @@ class ThreadPool
       WorkBatch* m_batches { nullptr } ;
       WorkOrder* m_freeorders { nullptr } ;
       CriticalSection m_flguard ;	// critical section for guarding the work-order freelist
+      Semaphore  m_workavail { 0 } ;
+      Semaphore  m_idle { 0 } ;
+      Semaphore  m_paused { 0 } ;
+      Semaphore  m_jobs { 1 } ;
    } ;
 
 

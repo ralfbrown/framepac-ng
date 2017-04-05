@@ -505,6 +505,9 @@ framepac/progress.h:	framepac/atomic.h
 framepac/rational.h:	framepac/number.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+framepac/semaphore.h:	framepac/config.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 framepac/string.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
@@ -517,7 +520,7 @@ framepac/synchevent.h:	framepac/atomic.h
 framepac/thread.h:	framepac/init.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/threadpool.h:	framepac/atomic.h framepac/critsect.h
+framepac/threadpool.h:	framepac/atomic.h framepac/critsect.h framepac/semaphore.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/trie.h:	framepac/config.h

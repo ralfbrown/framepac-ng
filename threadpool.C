@@ -108,13 +108,18 @@ class WorkQueue
       WorkQueue& operator= (const WorkQueue&) ;
 
       bool empty() const { return m_head >= m_tail.load() ; }
-      void clear() ;
 
       WorkOrder* pop() ;		// can only be called by queue's owner
       bool push(WorkOrder* order) ;	// can be called by any thread
       WorkOrder* steal() ;		// can be called by any thread
+      void clear() ;			// remove all entries from queue
 
-   private:
+      // inter-thread synchronization
+      void post() { (void)m_jobs.post() ; }
+      void wait() { (void)m_jobs.wait() ; }
+
+   protected:
+      Semaphore		 m_jobs { 0 } ;
       size_t             m_head { 0 } ;
       Atomic<WorkOrder*> m_orders[FrWORKQUEUE_SIZE] = { nullptr } ;
       Atomic<size_t>     m_tail { 0 } ;
