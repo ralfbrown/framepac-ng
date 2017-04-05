@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-04					*/
+/* Version 0.01, last edit 2017-04-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -56,19 +56,16 @@ class ThreadPool
 
       // accessors
       unsigned numThreads() const { return m_numthreads ; }
-      unsigned availThreads() const { return m_availthreads ; }
-      unsigned inactiveThreads() const { return numThreads() - availThreads() ; }
       unsigned idleThreads() const ;
 
       // manipulators
-      bool limitThreads(unsigned N) ;
       bool dispatch(ThreadPoolWorkFunc* fn, const void* input, void* output) ;
       bool dispatch(ThreadPoolWorkFunc* fn, void* in_out)
 	 { return dispatch(fn, in_out, in_out) ; }
       void discardRecycledOrders() ;
 
       // status
-      bool idle() const { return idleThreads() >= availThreads() ; }
+      //bool idle() const ;
 
       // synchronization
       void waitUntilIdle() ;
@@ -77,6 +74,7 @@ class ThreadPool
       WorkOrder* nextOrder(unsigned index) ;
       void recycle(WorkOrder*) ;
       void threadExiting(unsigned index) ;
+      void ack(unsigned index) ;
 
    protected:
       WorkOrder* makeWorkOrder(ThreadPoolWorkFunc* fn, const void* in, void* out) ;
@@ -84,7 +82,6 @@ class ThreadPool
 
    private:
       unsigned   m_numthreads ;		// total number of worker threads
-      unsigned   m_availthreads ;	// number of threads allowed to work
 #ifndef FrSINGLE_THREADED
       thread**   m_pool { nullptr } ;	// the actual thread objects
 #endif /* !FrSINGLE_THREADED */
@@ -93,10 +90,7 @@ class ThreadPool
       WorkBatch* m_batches { nullptr } ;
       WorkOrder* m_freeorders { nullptr } ;
       CriticalSection m_flguard ;	// critical section for guarding the work-order freelist
-      Semaphore  m_workavail { 0 } ;
-      Semaphore  m_idle { 0 } ;
-      Semaphore  m_paused { 0 } ;
-      Semaphore  m_jobs { 1 } ;
+      Semaphore  m_ack { 0 } ;
    } ;
 
 

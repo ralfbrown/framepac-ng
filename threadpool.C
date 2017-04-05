@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-04					*/
+/* Version 0.01, last edit 2017-04-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include <cassert>
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
@@ -70,8 +71,6 @@ class WorkOrder
       } ;
       const void* m_input ;
       void*       m_output ;
-      atomic_bool m_inprogress { false } ;
-      atomic_bool m_complete { false } ;
    } ;
 
 /************************************************************************/
@@ -118,6 +117,7 @@ class WorkQueue
       void enable() { m_enabled = true ; }
       void disable() { m_enabled = false ; }
 
+      WorkOrder* fastPop() ;		// canonly be called by queue's owner
       WorkOrder* pop(bool block = true) ; // can only be called by queue's owner
       bool push(WorkOrder* order) ;	// can be called by any thread
       WorkOrder* steal() ;		// can be called by any thread
@@ -174,7 +174,7 @@ static void work_function(ThreadPool* pool, unsigned thread_index)
 	    }
 	 else if (in == &request_ack)
 	    {
-//FIXME
+	    pool->ack(thread_index) ;
 	    }
 	 }
       fn(in,out); 
@@ -196,8 +196,22 @@ WorkQueue::WorkQueue(const WorkQueue&)
 
 WorkQueue::~WorkQueue()
 {
-   //FIXME
+   clear() ;
    return;
+}
+
+//----------------------------------------------------------------------------
+
+WorkOrder* WorkQueue::fastPop()
+{
+   // implement the fast-path retrieval of the next task, for the case where the
+   //   queue is non-empty and the entry pointed at by m_head has not been stolen
+   if (m_head < m_tail.load())
+      {
+      size_t idx = (m_head++) % FrWORKQUEUE_SIZE ;
+      return m_orders[idx].exchange(nullptr) ;
+      }
+   return nullptr ;
 }
 
 //----------------------------------------------------------------------------
@@ -281,7 +295,7 @@ void WorkQueue::clear()
 /************************************************************************/
 
 ThreadPool::ThreadPool(unsigned num_threads)
-   : m_numthreads(num_threads), m_availthreads(0)
+   : m_numthreads(num_threads)
 {
 #ifdef FrSINGLE_THREADED
    m_numthreads = 0 ;
@@ -317,7 +331,7 @@ ThreadPool::~ThreadPool()
       while (!m_queues[i].push(order))
 	 {
 	 this_thread::sleep_for(std::chrono::milliseconds(1)) ;
-//FIXME: use wait() instead of sleeping
+//FIXME: can we use wait() instead of sleeping?
 	 }
       }
    // join all the worker threads and then delete them
@@ -396,34 +410,10 @@ unsigned ThreadPool::idleThreads() const
 
 //----------------------------------------------------------------------------
 
-bool ThreadPool::limitThreads(unsigned numthreads)
-{
-   if (numthreads > m_numthreads)
-      return false ;
-//FIXME
-   return true ;
-}
-
-//----------------------------------------------------------------------------
-
-static bool insert_request(WorkQueue& queue, WorkOrder* order)
-{
-   bool was_empty = queue.empty() ;
-   bool success = queue.push(order) ;
-   if (success && was_empty)
-      {
-      // if the request queue was empty and the thread is paused, wake it up
-//FIXME
-      }
-   return success ;
-}
-
-//----------------------------------------------------------------------------
-
 bool ThreadPool::dispatch(WorkOrder* order)
 {
    if (!order) return false ;
-   if (availThreads() == 0)
+   if (numThreads() == 0)
       {
       // we don't have any worker threads enabled, so directly invoke the worker function
       if (order->worker())
@@ -438,14 +428,14 @@ bool ThreadPool::dispatch(WorkOrder* order)
       do {
          // atomically attempt to insert the request in the queue; this can fail if there
          //   was only one free entry and another thread beat us to the punch, in addition
-         //   to failing if the queue is already full
-         if (insert_request(m_queues[m_next_thread],order))
+         //   to failing if the queue is already full or the worker has been disabled
+         if (m_queues[m_next_thread]->push(order))
 	    {
 	    m_next_thread = threadnum ;
 	    return true ;
 	    }
          threadnum++ ;
-	 if (threadnum >= m_availthreads)
+	 if (threadnum >= numThreads())
 	    threadnum = 0 ;
          } while (threadnum != start_thread) ;
       // if all of the queues are full, go to sleep until a request is completed
@@ -468,6 +458,23 @@ bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* outpu
 
 void ThreadPool::waitUntilIdle()
 {
+   // tell all the workers to post when they've finished everything currently in
+   //   their queue
+   for (size_t i = 0 ; i < numThreads() ; ++i)
+      {
+      m_queues[i].enable() ;
+      WorkOrder* wo = makeWorkOrder(nullptr,&request_ack,nullptr) ;
+      while (!m_queues[i].push(wo))
+	 {
+	 // queue was full, so retry in a little bit
+	 this_thread::yield() ;
+	 }
+      }
+   // wait until all of the workers have responded
+   for (size_t i = 0 ; i < numThreads() ; ++i)
+      {
+      m_ack.wait() ;
+      }
 //FIXME
    discardRecycledOrders() ;		// keep memory use from growing excessively
    return ;
@@ -477,28 +484,37 @@ void ThreadPool::waitUntilIdle()
 
 WorkOrder* ThreadPool::nextOrder(unsigned index)
 {
-   if (index < numThreads())
+   assert(index < numThreads()) ;
+   WorkOrder* wo = m_queues[index].fastPop() ;
+   if (wo)
+      return wo ;
+   bool block = false ;
+   while ((wo = m_queues[index].pop(block)) == nullptr)
       {
-      WorkOrder* order ;
-      while ((order = m_queues[index].pop(false)) == nullptr)
-	 {
-	 //FIXME: try to steal something from another queue
+      //FIXME: try to steal something from another queue
 
-	 return m_queues[index].pop() ;  // block until a work order is available
-	 }
-      return order ;
+      // couldn't steal anything, so try again, but this time, block until
+      //   something gets added to the queue
+      block = true ;
       }
-   return nullptr ;
+   return wo ;
+}
+
+//----------------------------------------------------------------------------
+
+void ThreadPool::ack(unsigned /*index*/)
+{
+   m_ack.post() ;
+   return  ;
 }
 
 //----------------------------------------------------------------------------
 
 void ThreadPool::threadExiting(unsigned index)
 {
-   if (index < numThreads())
-      {
+   assert(index < numThreads()) ;
+
 //FIXME
-      }
    return ;
 }
 
