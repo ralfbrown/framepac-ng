@@ -130,6 +130,12 @@ class CFile
 	    return writeValue(ofs) ;
 	 }
 
+      CFile& operator<< (char c) { putc(c) ; return *this ; }
+      CFile& operator<< (const char* s) { puts(s) ; return *this ; }
+      CFile& operator<< (long i) { printf("%ld",i) ; return *this ; }
+      CFile& operator<< (size_t u) { printf("%lu",u) ; return *this ; }
+      CFile& operator<< (double d) { printf("%g",d) ; return *this ; }
+
    protected: // methods
       bool openRead(const char *filename, int options) ;
       bool openWrite(const char *filenmae, int options) ;

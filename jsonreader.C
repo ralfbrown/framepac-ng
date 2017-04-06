@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -84,6 +84,30 @@ static Object *read_json_array(const ObjectReader *reader, CharGetter &getter)
    return *array ;
 }
 
+//----------------------------------------------------------------------------
+
+static Object *read_json_number(const ObjectReader *reader, CharGetter &getter)
+{
+   (void)reader; (void)getter ;
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+static Object *read_json_number_negative(const ObjectReader *reader, CharGetter &getter)
+{
+   (void)reader; (void)getter ;
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+static Object *read_json_string(const ObjectReader *reader, CharGetter &getter)
+{
+   (void)reader; (void)getter ;
+   return nullptr ;
+}
+
 /************************************************************************/
 /************************************************************************/
 
@@ -91,6 +115,12 @@ JSONReader::JSONReader()
 {
    registerDispatcher('{',read_json_map) ;
    registerDispatcher('[',read_json_array) ;
+   registerDispatcher('"',read_json_string) ;
+   registerDispatcher('\'',read_json_string) ;
+   for (char c = '0' ; c <= '9' ; ++c)
+      registerDispatcher(c,read_json_number) ;
+   registerDispatcher('+',read_json_number) ;
+   registerDispatcher('-',read_json_number_negative) ;
    return ;
 }
 
