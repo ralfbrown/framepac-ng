@@ -25,6 +25,7 @@
 #define _Fr_ATOMIC_H_INCLUDED
 
 #include <atomic>
+#include <type_traits>
 #include "framepac/config.h"
 
 /************************************************************************/

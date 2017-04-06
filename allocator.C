@@ -101,6 +101,22 @@ SlabFreelist *stealPendingFrees()
 
 //----------------------------------------------------------------------------
 
+SlabFreelist* AllocatorBase::reclaimPending(Atomic<SlabFreelist*>& )
+{
+   //TODO
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+SlabFreelist* AllocatorBase::stealPendingFrees()
+{
+   //TODO
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
 bool AllocatorBase::reclaim_foreign_frees()
 {
    //FIXME

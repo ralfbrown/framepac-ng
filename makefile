@@ -242,7 +242,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) charget$(OBJ) cfile$(OBJ) \
 	cluster$(OBJ) cluster_growseed$(OBJ) cluster_kmeans$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
-	float$(OBJ) frame$(OBJ) \
+	float$(OBJ) frame$(OBJ) hazardptr$(OBJ) \
 	hashset_obj$(OBJ) hashset_sym$(OBJ) hashset_u32$(OBJ) \
 	hashtable_objobj$(OBJ) hashtable_objsz$(OBJ) \
 	hashtable_symnul$(OBJ) hashtable_symobj$(OBJ) hashtable_symsz$(OBJ) \
@@ -389,6 +389,7 @@ hashtable_symnul$(OBJ):	hashtable_symnul$(C) template/hashtable.cc
 hashtable_symobj$(OBJ):	hashtable_symobj$(C) template/hashtable.cc
 hashtable_symsz$(OBJ):	hashtable_symsz$(C) template/hashtable.cc
 hashtable_u32u32$(OBJ):	hashtable_u32u32$(C) template/hashtable.cc
+hazardptr$(OBJ):	hazardptr$(C) framepac/atomic.h
 init$(OBJ):		init$(C) framepac/init.h
 integer$(OBJ):		integer$(C) framepac/number.h
 jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/builder.h framepac/bignum.h framepac/list.h \

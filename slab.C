@@ -71,6 +71,30 @@ void Slab::releaseObject(void* obj)
 
 //----------------------------------------------------------------------------
 
+void Slab::linkSlab(Slab*& /*listhead*/)
+{
+   //TODO
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void Slab::unlinkSlab(Slab*& /*listhead*/)
+{
+   //TODO
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void* Slab::initFreelist(unsigned /*listhead*/)
+{
+   //TODO
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
 } // end namespace FramepaC
 
 // end of file slab.C //
