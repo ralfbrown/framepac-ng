@@ -32,6 +32,8 @@ namespace Fr
 
 static ConsoleSystemMessage default_console_message ;
 
+SystemMessage* SystemMessage::s_instance = &default_console_message ;
+
 /************************************************************************/
 /************************************************************************/
 
@@ -72,16 +74,16 @@ SystemMessage::~SystemMessage()
 
 SystemMessage& SystemMessage::instance()
 {
-   if (!m_instance)
+   if (!s_instance)
       setInstance(default_console_message) ;
-   return *m_instance ;
+   return *s_instance ;
 }
 
 //----------------------------------------------------------------------------
 
 bool SystemMessage::setInstance(SystemMessage& inst)
 {
-   m_instance = &inst ;
+   s_instance = &inst ;
    return true ;
 }
 

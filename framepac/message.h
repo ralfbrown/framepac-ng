@@ -58,7 +58,7 @@ class SystemMessage
       virtual bool showError(const char *msg) = 0 ;
       virtual bool showFatal(const char *msg) = 0 ;
 
-      static SystemMessage* m_instance ;
+      static SystemMessage* s_instance ;
    } ;
 
 #undef _attr_printf_

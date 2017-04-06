@@ -75,6 +75,60 @@ class CFile
       void flush() { fflush(m_file) ; }
       bool close() ;
 
+      template <typename T>
+      bool readValue(T* val, size_t count = 1)
+	 {
+	    if (!val || count == 0) return true ; // trivially successful
+	    val = Fr::New<T>(count) ;
+	    if (!val) return false ;
+	    return read(val,sizeof(T),count) == count ;
+	 }
+
+      template <typename T>
+      bool readVarsAt(T* val, size_t count = 1)
+	 {
+	    if (!val || count == 0) return true ; // trivially successful
+	    uint64_t offset = (uint64_t)val ;
+	    val = Fr::New<T>(count) ;
+	    if (!val) return false ;
+	    seek(offset,SEEK_SET) ;
+	    return read(val,sizeof(T),count) == count ;
+	 }
+
+      template <typename T>
+      bool readOffset(T** var)
+	 {
+	    uint64_t offset ;
+	    bool status ;
+	    *var = (status = readValue(&offset)) ? reinterpret_cast<T*>(offset) : nullptr ;
+	    return status ;
+	 }
+
+      template <typename T>
+      bool writeValue(T& val)
+	 {
+	    return write(&val,sizeof(T),1) == 1 ;
+	 }
+
+      template <typename T>
+      bool writeValues(T* val, size_t count = 1)
+	 {
+	    if (!val || count == 0) return true ; // trivially successful
+	    return write(val,sizeof(T),count) == count ;
+	 }
+
+      template <typename T>
+      bool writeOffset(T* array, size_t count, uint64_t& offset)
+	 {
+	    uint64_t ofs(0) ;
+	    if (array)
+	       {
+	       ofs = offset ;
+	       offset += count * sizeof(T) ;
+	       }
+	    return writeValue(ofs) ;
+	 }
+
    protected: // methods
       bool openRead(const char *filename, int options) ;
       bool openWrite(const char *filenmae, int options) ;
