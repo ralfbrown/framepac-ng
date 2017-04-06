@@ -362,6 +362,18 @@ size_t CFile::read(void *buf, size_t itemsize, size_t itemcount)
 
 //----------------------------------------------------------------------------
 
+int CFile::getc_nonws()
+{
+   int c ;
+   while ((c = getc()) != EOF && isspace(c))
+      {
+      // discard the char
+      }
+   return c;
+}
+
+//----------------------------------------------------------------------------
+
 size_t CFile::skipLines(size_t maxskip)
 {
    size_t skipped = 0 ;
@@ -389,7 +401,7 @@ size_t CFile::skipLines(size_t maxskip)
 
 String* CFile::getline(size_t maxline)
 {
-   if (!m_file)
+   if (!m_file || feof(m_file))
       return nullptr ;
    StringBuilder str(this,maxline) ;
    return str.string() ;
@@ -399,7 +411,7 @@ String* CFile::getline(size_t maxline)
 
 char* CFile::getCLine(size_t maxline)
 {
-   if (!m_file)
+   if (!m_file || feof(m_file))
       return nullptr ;
    StringBuilder str(this,maxline) ;
    return str.cstring() ;

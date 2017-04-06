@@ -62,6 +62,7 @@ class CFile
       size_t write(const char* buf, size_t buflen) ;
       size_t write(const void* buf, size_t itemsize, size_t itemcount) ;
       int getc() { return fgetc(m_file) ; }
+      int getc_nonws() ;
       int ungetc(int c) { return std::ungetc(c,m_file) ; }
       bool gets(char* buf, size_t buflen) { return m_file ? fgets(buf,buflen,m_file) != nullptr : false ; }
       size_t skipLines(size_t maxskip = 1) ;
