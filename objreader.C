@@ -20,12 +20,13 @@
 /************************************************************************/
 
 #include <istream>
-#include "framepac/objreader.h"
-#include "framepac/symbol.h"
+#include "framepac/bignum.h"
 #include "framepac/builder.h"
+#include "framepac/objreader.h"
 #include "framepac/list.h"
 #include "framepac/rational.h"
-#include "framepac/bignum.h"
+#include "framepac/string.h"
+#include "framepac/symbol.h"
 
 namespace Fr {
 

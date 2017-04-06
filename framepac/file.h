@@ -64,6 +64,7 @@ class CFile
       int getc() { return fgetc(m_file) ; }
       int ungetc(int c) { return std::ungetc(c,m_file) ; }
       bool gets(char* buf, size_t buflen) { return m_file ? fgets(buf,buflen,m_file) != nullptr : false ; }
+      size_t skipLines(size_t maxskip = 1) ;
       class Fr::String* getline(size_t maxline = (size_t)~0) ; // result must be freed
       char* getCLine(size_t maxline = (size_t)~0) ; // result must be freed
       void putc(char c) { fputc(c,m_file) ; }

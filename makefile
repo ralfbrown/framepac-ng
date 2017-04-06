@@ -255,6 +255,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	sparsematrix$(OBJ) string$(OBJ) stringbuilder$(OBJ) \
 	sufarray_u32u32$(OBJ) \
 	symbol$(OBJ) symboltable$(OBJ) synchevent$(OBJ) \
+	texttransforms$(OBJ) \
 	threadpool$(OBJ) timer$(OBJ) trie$(OBJ) \
 	vecsim_u32_dbl$(OBJ) vecsim_u32_flt$(OBJ) \
 	vector_obj_dbl$(OBJ) vector_obj_flt$(OBJ) \
@@ -389,8 +390,8 @@ hashtable_symsz$(OBJ):	hashtable_symsz$(C) template/hashtable.cc
 hashtable_u32u32$(OBJ):	hashtable_u32u32$(C) template/hashtable.cc
 init$(OBJ):		init$(C) framepac/init.h
 integer$(OBJ):		integer$(C) framepac/number.h
-jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/hashtable.h framepac/list.h \
-			framepac/map.h
+jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/builder.h framepac/bignum.h framepac/list.h \
+			framepac/rational.h framepac/string.h framepac/symbol.h
 list$(OBJ):		list$(C) framepac/list.h framepac/init.h
 map$(OBJ):		map$(C) framepac/map.h
 matrix$(OBJ):		matrix$(C) framepac/matrix.h
@@ -412,6 +413,7 @@ suffixarray$(OBJ):	suffixarray$(C) framepac/config.h
 symbol$(OBJ):		symbol$(C) framepac/symbol.h
 symboltable$(OBJ):	symboltable$(C) framepac/symbol.h
 synchevent$(OBJ):	synchevent$(C) framepac/synchevent.h
+texttransforms$(OBJ):	texttransforms$(C) framepac/texttransforms.h
 threadpool$(OBJ):	threadpool$(C) framepac/threadpool.h framepac/thread.h
 timer$(OBJ):		timer$(C) framepac/timer.h
 trie$(OBJ):		trie$(C) framepac/trie.h

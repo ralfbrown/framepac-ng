@@ -362,6 +362,31 @@ size_t CFile::read(void *buf, size_t itemsize, size_t itemcount)
 
 //----------------------------------------------------------------------------
 
+size_t CFile::skipLines(size_t maxskip)
+{
+   size_t skipped = 0 ;
+   while (!eof() && skipped < maxskip)
+      {
+      // skip a line
+      int c ;
+      for (c = getc() ; c != EOF && c != '\r' && c != '\n' ; c = getc())
+	 {
+	 // ignore the character
+	 }
+      if (c == '\r')
+	 {
+	 // check for CRLF sequence
+	 c = getc() ;
+	 if (c != EOF && c != '\n')
+	    ungetc(c) ;
+	 }
+      skipped++ ;
+      }
+   return skipped ;
+}
+
+//----------------------------------------------------------------------------
+
 String* CFile::getline(size_t maxline)
 {
    if (!m_file)
