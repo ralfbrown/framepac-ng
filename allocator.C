@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -31,6 +31,19 @@ using namespace FramepaC ;
 
 namespace Fr
 {
+
+thread_local SlabFreelist* AllocatorBase::m_freelist ;
+thread_local Atomic<SlabFreelist*> AllocatorBase::m_pending ;
+thread_local Slab* AllocatorBase::m_hazard ;
+HazardPointerList AllocatorBase::m_hazardlist ;
+Slab* AllocatorBase::m_slabs ;
+
+//----------------------------------------------------------------------------
+
+AllocatorBase::~AllocatorBase()
+{
+   return ;
+}
 
 //----------------------------------------------------------------------------
 

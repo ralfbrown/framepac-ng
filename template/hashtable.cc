@@ -42,12 +42,6 @@
 
 namespace Fr {
 
-template <typename T>
-inline T* New(size_t N = 1) { return (T*)std::malloc(sizeof(T)*N) ; }
-
-inline void Free(void* p) { std::free(p) ; }
-
-#define unlikely(X) (X)
 #define FrSPIN_COUNT 20
 #define FrYIELD_COUNT 50
 #define FramepaC_display_width 132

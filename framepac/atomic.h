@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-04-02					*/
+/*  Version 0.01, last edit 2017-04-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File atomic.h		atomic operations on simple variables	*/
@@ -484,9 +484,9 @@ class HazardPointer
 class HazardPointerList
    {
    public:
-      HazardPointerList() ;
+      HazardPointerList() {}
       HazardPointerList(const HazardPointerList&) = delete ;
-      ~HazardPointerList() ;
+      ~HazardPointerList() {}
 
       HazardPointerList& operator= (const HazardPointerList&) = delete ;
 
@@ -496,8 +496,8 @@ class HazardPointerList
       bool hasHazard(void *object) const ;
 
    protected: // data
-      HazardPointerList *m_next ;
-      void *m_pointers[7] ;
+      HazardPointerList *m_next { nullptr } ;
+      void *m_pointers[7] { nullptr } ;
 
    protected: // methods
    } ;

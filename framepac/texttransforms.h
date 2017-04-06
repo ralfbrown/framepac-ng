@@ -22,11 +22,16 @@
 #ifndef _Fr_TEXTTRANSFORMS_H_INCLUDED
 #define _Fr_TEXTTRANSFORMS_H_INCLUDED
 
+#include <locale>
+
 namespace Fr
 {
 
 void lowercase_string(char*) ;
 void uppercase_string(char*) ;
+
+void lowercase_string(char*, std::locale&) ;
+void uppercase_string(char*, std::locale&) ;
 
 
 } // end namespace Fr

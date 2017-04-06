@@ -23,6 +23,7 @@
 #define __Fr_CONFIG_H_INCLUDED
 
 #include <cstdint>
+#include <cstdlib>
 #include <sys/types.h>
 
 using namespace std ;
@@ -190,6 +191,29 @@ class NullObject
    } ;
 } // end namespace Fr
 
+/************************************************************************/
+/*	Some compatibility declarations, will be moved later		*/
+/************************************************************************/
+
+namespace Fr
+{
+
+template <typename T>
+inline T* New(size_t N = 1) { return (T*)std::malloc(sizeof(T)*N) ; }
+
+template <typename T>
+inline T* NewC(size_t N = 1) { return (T*)std::calloc(sizeof(T),N) ; }
+
+template <typename T>
+inline T* NewR(T* old, size_t N = 1) { return (T*)std::realloc(old,sizeof(T)*N) ; }
+
+inline void Free(void* p) { std::free(p) ; }
+
+#ifndef unlikely
+#define unlikely(X) (X)
+#endif
+
+} // end namespace Fr
 
 #endif /* !__Fr_CONFIG_H_INCLUDED */
 

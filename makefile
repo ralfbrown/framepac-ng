@@ -241,7 +241,7 @@ RELEASE=0.01
 OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) charget$(OBJ) cfile$(OBJ) \
 	cluster$(OBJ) cluster_growseed$(OBJ) cluster_kmeans$(OBJ) \
-	complex$(OBJ) critsect$(OBJ) filename$(OBJ) \
+	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
 	float$(OBJ) frame$(OBJ) \
 	hashset_obj$(OBJ) hashset_sym$(OBJ) hashset_u32$(OBJ) \
 	hashtable_objobj$(OBJ) hashtable_objsz$(OBJ) \
@@ -376,6 +376,7 @@ cluster_incr$(OBJ):	cluster_incr$(C) framepac/cluster.h
 cluster_kmeans$(OBJ):	cluster_kmeans$(C) framepac/cluster.h
 complex$(OBJ):		complex$(C) framepac/complex.h
 critsect$(OBJ):		critsect$(C) framepac/critsect.h
+cstring$(OBJ):		cstring$(C) framepac/cstring.h
 filename$(OBJ):		filename$(C) framepac/file.h
 float$(OBJ):		float$(C) framepac/number.h
 frame$(OBJ):		frame$(C) framepac/frame.h
