@@ -1,4 +1,36 @@
+/****************************** -*- C++ -*- *****************************/
+/*									*/
+/* FramepaC-ng								*/
+/* Version 0.01, last edit 2017-04-06					*/
+/*	by Ralf Brown <ralf@cs.cmu.edu>					*/
+/*									*/
+/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/*	This program may be redistributed and/or modified under the	*/
+/*	terms of the GNU General Public License, version 3, or an	*/
+/*	alternative license agreement as detailed in the accompanying	*/
+/*	file LICENSE.  You should also have received a copy of the	*/
+/*	GPL (file COPYING) along with this program.  If not, see	*/
+/*	http://www.gnu.org/licenses/					*/
+/*									*/
+/*	This program is distributed in the hope that it will be		*/
+/*	useful, but WITHOUT ANY WARRANTY; without even the implied	*/
+/*	warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR		*/
+/*	PURPOSE.  See the GNU General Public License for more details.	*/
+/*									*/
+/************************************************************************/
+
+#include "framepac/object.h"
+#include "framepac/list.h"
+#include "framepac/string.h"
+#include "framepac/file.h"
+
 //FIXME FIXME
+
+namespace Fr
+{
+
+/************************************************************************/
+/************************************************************************/
 
 //----------------------------------------------------------------------
 
@@ -36,34 +68,34 @@ static void write_json_item(CFile& outfp, const Object* item, int indent)
 {
    if (!item)
       outfp.printf("%*snull",(2*indent)," ") ;
-   else if (item->numberp())
+   else if (item->isNumber())
       {
-      if (item->floatp())
+      if (item->isFloat())
 	 outfp << item->floatValue() ;
       else
 	 outfp << item->intValue() ;
       }
-   else if (item->symbolp() || item->stringp())
+   else if (item->isSymbol() || item->isString())
       {
-      write_json_string(outfp,item->printableName()) ;
+      write_json_string(outfp,item->stringValue()) ;
       }
-   else if (item->consp())
+   else if (item->isList())
       {
       List *list = (List*)item ;
-      if (list->first() && list->first()->consp()
-	  && ((List*)list->first())->first()
-	  && ((List*)list->first())->first()->stringp())
+      if (list->front() && list->front()->isList()
+	  && ((List*)list->front())->front()
+	  && ((List*)list->front())->front()->isString())
 	 {
-	 write_json(outfp,list,indent+1,true) ;
+	 outfp.writeJSON(list,indent+1,true) ;
 	 }
       else
 	 {
 	 // it's a plain list, not a map
 	 outfp << "[" ;
-	 for ( ; list ; list = list->rest())
+	 for ( ; list ; list = list->next())
 	    {
-	    write_json_item(outfp,list->first(),indent) ;
-	    if (list->rest())
+	    write_json_item(outfp,list->front(),indent) ;
+	    if (list->next())
 	       outfp << "," ;
 	    }
 	 outfp << "]" ;
@@ -74,48 +106,57 @@ static void write_json_item(CFile& outfp, const Object* item, int indent)
 
 //----------------------------------------------------------------------
 
-void write_json(CFile& outfp, const List *json, int indent, bool recursive)
+/************************************************************************/
+/*	Methods for class CFile						*/
+/************************************************************************/
+
+void CFile::writeJSON(const List *json, int indent, bool recursive)
 {
-   if (outfp.eof())
+   if (eof())
       return  ;
-   if (!json || !json->consp())
+   if (!json || !json->isList())
       {
-      write_json_item(outfp,json,indent) ;
+      write_json_item(*this,json,indent) ;
       return ;
       }
    if (!recursive)
-      outfp.printf("%*s{\n",(2*indent),"") ;
+      printf("%*s{\n",(2*indent),"") ;
    else
-      outfp << "{\n" ;
+      (*this) << "{\n" ;
    indent++ ;
-   for ( ; json ; json = json->rest())
+   for ( ; json ; json = json->next())
       {
-      List *field = (List*)json->first() ;
-      String *fieldname = (String*)field->first() ;
-      List *value = field->rest() ;
-      outfp.printf("%*s\"%s\": ",(2*indent)," ",fieldname->printableName()) ;
-      if (value->simplelistlength() > 1)
+      List *field = (List*)json->front() ;
+      String *fieldname = (String*)field->front() ;
+      List *value = field->next() ;
+      printf("%*s\"%s\": ",(2*indent)," ",fieldname->stringValue()) ;
+      if (value->size() > 1)
 	 {
-	 outfp << "[" ;
-	 for ( ; value ; value = value->rest())
+	 (*this) << "[" ;
+	 for ( ; value ; value = value->next())
 	    {
-	    write_json_item(outfp,value->first(),indent) ;
-	    if (value->rest())
-	       outfp << "," ;
+	    write_json_item((*this),value->front(),indent) ;
+	    if (value->next())
+	       (*this) << "," ;
 	    }
-	 outfp << "]," ;
+	 (*this) << "]," ;
 	 }
       else
 	 {
-	 write_json_item(outfp,value->first(),indent) ;
-	 outfp << "," ;
+	 write_json_item((*this),value->front(),indent) ;
+	 (*this) << "," ;
 	 }
-      outfp << '\n' ;
+      (*this) << '\n' ;
       }
    indent-- ;
-   outfp.printf("%*s}",(2*indent),"") ;
+   printf("%*s}",(2*indent),"") ;
 //   if (!recursive)
 //      outfp << '\n' ;
    return ;
 }
+
+
+} // end namespace Fr
+
+// end of file jsonwriter.C //
 

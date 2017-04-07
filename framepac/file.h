@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-05					*/
+/* Version 0.01, last edit 2017-04-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -75,6 +75,8 @@ class CFile
       off_t seek(off_t loc, int whence) { return fseek(m_file,loc,whence) ; }
       void flush() { fflush(m_file) ; }
       bool close() ;
+
+      void writeJSON(const class Fr::List*, int indent, bool recursive) ;
 
       template <typename T>
       bool readValue(T* val, size_t count = 1)

@@ -394,6 +394,7 @@ init$(OBJ):		init$(C) framepac/init.h
 integer$(OBJ):		integer$(C) framepac/number.h
 jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/builder.h framepac/bignum.h framepac/list.h \
 			framepac/rational.h framepac/string.h framepac/symbol.h
+jsonwriter$(OBJ):	jsonwriter$(C) framepac/file.h framepac/list.h
 list$(OBJ):		list$(C) framepac/list.h framepac/init.h
 map$(OBJ):		map$(C) framepac/map.h
 matrix$(OBJ):		matrix$(C) framepac/matrix.h
