@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -27,8 +27,8 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-template <typename ID, typename Index>
-WordCorpusT<ID,Index>::WordCorpusT(const char *filename, bool readonly)
+template <typename IdT, typename IdxT>
+WordCorpusT<IdT,IdxT>::WordCorpusT(const char *filename, bool readonly)
    : m_wordmap(),
      m_wordbuf(),
      m_fwdindex(),
@@ -43,8 +43,8 @@ WordCorpusT<ID,Index>::WordCorpusT(const char *filename, bool readonly)
 
 //----------------------------------------------------------------------------
 
-template <typename ID, typename Index>
-WordCorpusT<ID,Index>::WordCorpusT(CFile &fp, bool readonly)
+template <typename IdT, typename IdxT>
+WordCorpusT<IdT,IdxT>::WordCorpusT(CFile &fp, bool readonly)
    : m_wordmap(),
      m_wordbuf(),
      m_fwdindex(),
@@ -59,8 +59,17 @@ WordCorpusT<ID,Index>::WordCorpusT(CFile &fp, bool readonly)
 
 //----------------------------------------------------------------------------
 
-template <typename ID, typename Index>
-bool WordCorpusT<ID,Index>::load(CFile &fp)
+template <typename IdT, typename IdxT>
+WordCorpusT<IdT,IdxT>::~WordCorpusT()
+{
+   //TODO
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::load(CFile &fp)
 {
    (void)fp ;
 
@@ -69,8 +78,8 @@ bool WordCorpusT<ID,Index>::load(CFile &fp)
 
 //----------------------------------------------------------------------------
 
-template <typename ID, typename Index>
-bool WordCorpusT<ID,Index>::load(const char *filename)
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::load(const char *filename)
 {
    CInputFile fp(filename) ;
    return fp ? load(fp) : false ;
@@ -78,8 +87,28 @@ bool WordCorpusT<ID,Index>::load(const char *filename)
 
 //----------------------------------------------------------------------------
 
-template <typename ID, typename Index>
-bool WordCorpusT<ID,Index>::save(CFile &fp) const
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::loadContextEquivs(const char* filename, bool force_lowercase)
+{
+   (void)filename; (void)force_lowercase;
+//FIXME
+   return false ; 
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+size_t WordCorpusT<IdT,IdxT>::loadAttributes(const char* filename, unsigned attr_bit, bool add_words)
+{
+   (void)filename; (void)attr_bit; (void)add_words;
+//FIXME
+   return 0 ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::save(CFile &fp) const
 {
    (void)fp ;
 
@@ -88,8 +117,8 @@ bool WordCorpusT<ID,Index>::save(CFile &fp) const
 
 //----------------------------------------------------------------------------
 
-template <typename ID, typename Index>
-bool WordCorpusT<ID,Index>::save(const char *filename) const
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::save(const char *filename) const
 {
    COutputFile fp(filename) ;
    return fp ? save(fp) : false ;
@@ -97,6 +126,103 @@ bool WordCorpusT<ID,Index>::save(const char *filename) const
 
 //----------------------------------------------------------------------------
 
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::discardText()
+{
+   return false ;//FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::discardAttributes()
+{
+   return false ;//FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::discardContextEquivs()
+{
+   return false ;//FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdxT WordCorpusT<IdT,IdxT>::corpusSize() const
+{
+   return 0 ;//FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdT WordCorpusT<IdT,IdxT>::vocabSize() const
+{
+   return 0 ;//FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdT WordCorpusT<IdT,IdxT>::findID(const char* word) const
+{
+   return 0 ;//FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdT WordCorpusT<IdT,IdxT>::findOrAddID(const char* word)
+{
+   return 0 ;//FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdT WordCorpusT<IdT,IdxT>::addWord(const char* word)
+{
+   return 0 ;//FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::addWord(IdT word)
+{
+   return 0 ;//FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::addNewline()
+{
+   return 0 ;//FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::setAttributeIf(unsigned attr_bit, WordCorpusT<IdT,IdxT>::AttrCheckFunc *fn)
+{
+   bool set_any = false ;
+   for (size_t i = 0 ; i < vocabSize() ; ++i)
+      {
+      if (fn(getWord(i)))
+	 {
+	 set_any = true ;
+	 setAttribute(i,attr_bit) ;
+	 }
+      }
+   return set_any ;
+}
+
+//----------------------------------------------------------------------------
+
 } // end namespace Fr
 
-// end of file wordcorpus.C //
+// end of file wordcorpus.cc //
