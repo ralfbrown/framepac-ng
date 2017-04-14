@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -29,6 +29,12 @@
 #include "framepac/array.h"
 #include "framepac/list.h"
 #include "framepac/map.h"
+#include "framepac/progress.h"
+#include "framepac/texttransforms.h"
+#include "framepac/threadpool.h"
+#include "framepac/timer.h"
+#include "framepac/vector.h"
+#include "framepac/wordcorpus.h"
 
 #endif /* __Fr_FRAMEPAC_H_INCLUDED */
 

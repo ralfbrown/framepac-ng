@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-06					*/
+/* Version 0.01, last edit 2017-04-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -29,7 +29,40 @@ namespace Fr
 {
 
 // forward declaration
+class List ;
 class String ;
+
+//----------------------------------------------------------------------------
+
+class LineBatch
+   {
+   public:
+      LineBatch(size_t init_capacity = 0) ;
+      ~LineBatch() ;
+
+      size_t capacity() const { return m_capacity ; }
+      size_t size() const { return m_count ; }
+
+      const char** begin() const { return const_cast<const char**>(m_lines) ; }
+      const char** cbegin() const { return const_cast<const char**>(m_lines) ; }
+      const char** end() const { return const_cast<const char**>(m_lines + m_count) ; }
+      const char** cend() const { return const_cast<const char**>(m_lines + m_count) ; }
+
+      void clear() ;
+      bool append(char* line) ;
+      LineBatch& operator+= (char* line) { (void)append(line) ; return *this ; }
+
+      const char* line(size_t N) const { return (N < size()) ?  m_lines[N] : nullptr ; }
+      const char* operator[] (size_t N) const { return m_lines[N] ; }
+
+   protected:
+      bool expandTo(size_t newsize) ;
+
+   protected:
+      size_t m_capacity ;
+      size_t m_count ;
+      char** m_lines ;
+   } ;
 
 //----------------------------------------------------------------------------
 
@@ -68,15 +101,17 @@ class CFile
       size_t skipLines(size_t maxskip = 1) ;
       class Fr::String* getline(size_t maxline = (size_t)~0) ; // result must be freed
       char* getCLine(size_t maxline = (size_t)~0) ; // result must be freed
+      LineBatch* getlines(size_t batchsize = 0) ;
       void putc(char c) { fputc(c,m_file) ; }
       void puts(const char* s) { fputs(s,m_file) ; }
+      void putlines(const LineBatch* batch) ;
       [[gnu::format(gnu_printf,2,0)]] bool printf(const char* fmt, ...) const ;
       off_t tell() const { return ftell(m_file) ; }
       off_t seek(off_t loc, int whence) { return fseek(m_file,loc,whence) ; }
       void flush() { fflush(m_file) ; }
       bool close() ;
 
-      void writeJSON(const class Fr::List*, int indent, bool recursive) ;
+      void writeJSON(const class List*, int indent, bool recursive) ;
 
       template <typename T>
       bool readValue(T* val, size_t count = 1)

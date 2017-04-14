@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4+ under Unix/Linux
-# Last change: 05apr2017
+# Last change: 14apr2017
 
 #########################################################################
 # define the locations of all the files
@@ -247,7 +247,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	hashtable_objobj$(OBJ) hashtable_objsz$(OBJ) \
 	hashtable_symnul$(OBJ) hashtable_symobj$(OBJ) hashtable_symsz$(OBJ) \
 	hashtable_u32u32$(OBJ) \
-	init$(OBJ) random$(OBJ) \
+	init$(OBJ) linebatch$(OBJ) random$(OBJ) \
 	integer$(OBJ) jsonreader$(OBJ) list$(OBJ) map$(OBJ) matrix$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
 	object$(OBJ) objreader$(OBJ) rational$(OBJ) slab$(OBJ) \
@@ -395,6 +395,7 @@ integer$(OBJ):		integer$(C) framepac/number.h
 jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/builder.h framepac/bignum.h framepac/list.h \
 			framepac/rational.h framepac/string.h framepac/symbol.h
 jsonwriter$(OBJ):	jsonwriter$(C) framepac/file.h framepac/list.h
+linebatch$(OBJ):	linebatch$(C) framepac/file.h
 list$(OBJ):		list$(C) framepac/list.h framepac/init.h
 map$(OBJ):		map$(C) framepac/map.h
 matrix$(OBJ):		matrix$(C) framepac/matrix.h
