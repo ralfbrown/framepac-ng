@@ -53,16 +53,25 @@ class ArgParser
 class ArgOptBase
    {
    public;
-      ArgOptBase(ArgParser&, const char* shortname const char* fullname) ;
+      ArgOptBase(ArgParser&, const char* shortname const char* fullname, const char* desc) ;
       ~ArgOptBase() ;
 
       bool parse(int& argc, char**& argv) = 0 ;
 
+      ArgOptBase* next() const { return m_next ; }
+      void next(ArgOptBase* nxt) { m_next = nxt ; }
+
+      const char* shortName() const { return m_shortname ; }
+      const char* fullName() const { return m_fullname ; }
+      const char* description() const { return m_description ; }
+
    protected:
       virtual bool parseValue(const char* arg) = 0 ;
    protected:
-      char* m_shortname ;
-      char* m_fullname ;
+      ArgOptBase* m_next ;
+      char*       m_shortname ;
+      char*       m_fullname ;
+      char*       m_description ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -71,15 +80,15 @@ template <T>
 class ArgOpt : public ArgOptBase
    {
    public:
-      ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname)
-	 : ArgOptBase(parser,shortname,fullname), m_value(var)
+      ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, const char* desc)
+	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var)
 	 {}
-      ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, T def_value)
-	 : ArgOptBase(parser,shortname,fullname), m_value(var), m_defvalue(def_value), m_have_defvalue(true)
+      ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, const char* desc, T def_value)
+	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_have_defvalue(true)
 	 {}
-      ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, T def_value,
+      ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, const char* desc, T def_value,
 	     T min_value, T max_value)
-	 : ArgOptBase(parser,shortname,fullname), m_value(var), m_defvalue(def_value), m_minvalue(min_value),
+	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_minvalue(min_value),
 	   m_maxvalue(max_value), m_have_defvalue(true), m_have_minmax(true)
 	 {}
       ~ArgOpt()
@@ -103,8 +112,8 @@ class ArgOpt : public ArgOptBase
 class ArgFlag : public ArgOptBase
    {
    public:
-      ArgFlag(ArgParser&, bool& flag, const char* shortname, const char*fullname) ;
-      ArgFlag(ArgParser&, bool& flag, const char* shortname, const char*fullname, bool def_value) ;
+      ArgFlag(ArgParser&, bool& flag, const char* shortname, const char*fullname, const char* desc) ;
+      ArgFlag(ArgParser&, bool& flag, const char* shortname, const char*fullname, const char* desc, bool def_value) ;
       ~ArgFlag() ;
 
    protected:
@@ -113,6 +122,26 @@ class ArgFlag : public ArgOptBase
       bool& m_value ;
       bool  m_defvalue { false } ;
       bool  m_have_defvalue { false } ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+class ArgHelp : public ArgOptBase
+   {
+   public:
+      ArgHelp(ArgParser&, const char* shortname, const char* fullname, const char* desc, bool long = false) ;
+      ArgHelp(ArgParser&, bool& flag, const char* shortname, const char* fullname, const char* desc, bool long = false) ;
+      ~ArgHelp() ;
+
+      bool isLongHelp() const { return m_long ; }
+      bool defer() const { return m_defer ; }
+
+   protected:
+      virtual bool parseValue(const char* argv) ;
+   protected:
+      bool* m_flag ;
+      bool  m_long  ;
+      bool  m_defer ;
    } ;
 
 //----------------------------------------------------------------------------

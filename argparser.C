@@ -108,17 +108,21 @@ bool ArgParser::parseArgs(int& argc, char**& argv)
 /*	Methods for class ArgOptBase					*/
 /************************************************************************/
 
-ArgOptBase::ArgOptBase(ArgParser& parser, const char* shortname, const char* fullname)
+ArgOptBase::ArgOptBase(ArgParser& parser, const char* shortname, const char* fullname, const char* desc)
 {
    parser.addOpt(this) ;
    if (!shortname) shortname = "" ;
    if (!fullname) fullname = "" ;
+   if (!desc) desc = "" ;
    size_t len = strlen(shortname) ;
    m_shortname = new char[len+1] ;
    memcpy(m_shortname,shortname,len+1) ;
    len = strlen(fullname) ;
    m_fullname = new char[len+1] ;
    memcpy(m_fullname,fullname,len+1) ;
+   len = strlen(desc) ;
+   m_description = new char[len+1] ;
+   memcpy(m_description,desc,len+1) ;
    return ;
 }
 
@@ -128,6 +132,7 @@ ArgOptBase::~ArgOptBase()
 {
    delete[] m_shortname ;  m_shortname = nullptr ;
    delete[] m_fullname ;   m_fullname = nullptr ;
+   delete[] m_description ; m_description = nullptr ;
    return ;
 }
 
@@ -192,16 +197,17 @@ bool ArgOpt<T>::parseValue(const char* arg)
 /*	Methods for class ArgFlag					*/
 /************************************************************************/
 
-ArgFlag::ArgFlag(ArgParser& parser, bool& var, const char* shortname, const char* fullname)
-   : ArgOptBase(parser,shortname,fullname), m_value(var)
+ArgFlag::ArgFlag(ArgParser& parser, bool& var, const char* shortname, const char* fullname, const char* desc)
+   : ArgOptBase(parser,shortname,fullname,desc), m_value(var)
 {
    return ;
 }
 
 //----------------------------------------------------------------------------
 
-ArgFlag::ArgFlag(ArgParser& parser, bool& var, const char* shortname, const char* fullname, bool def_value)
-   : ArgOptBase(parser,shortname,fullname), m_value(var), m_defvalue(def_value), m_have_defvalue(true)
+ArgFlag::ArgFlag(ArgParser& parser, bool& var, const char* shortname, const char* fullname,
+		 const char* desc, bool def_value)
+   : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_have_defvalue(true)
 {
    return ;
 }
@@ -214,6 +220,25 @@ bool ArgFlag::parseValue(const char* arg)
    (void)arg;
 
    return false ;
+}
+
+/************************************************************************/
+/*	Methods for class ArgHelp					*/
+/************************************************************************/
+
+ArgHelp::ArgHelp(ArgParser& parser, const char* shortname, const char* fullname, const char* desc, bool long)
+   : ArgOptBase(parser,shortname,fullname,desc), m_flag(nullptr), m_long(long), m_defer(false)
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ArgHelp::ArgHelp(ArgParser& parser, bool& var, const char* shortname, const char* fullname, const char* desc,
+		 bool long)
+   : ArgOptBase(parser,shortname,fullname,desc), m_flag(&var), m_long(long), m_defer(true)
+{
+   return ;
 }
 
 // end of file argparser.C //
