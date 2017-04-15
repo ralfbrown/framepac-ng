@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -33,8 +33,35 @@ using namespace std ;
 FilePath::FilePath(const char *pathname)
    : m_directory(nullptr), m_root(nullptr), m_extension(nullptr), m_path(nullptr), m_basename(nullptr)
 {
-   (void)pathname; //FIXME
-
+   if (!pathname) pathname = "" ;
+   const char *last_slash = strrchr(pathname,'/') ;
+   if (last_slash)
+      {
+      size_t len = last_slash - pathname + 1 ;
+      m_directory = new char[len + 1] ;
+      memcpy(m_directory,pathname,len) ;
+      if (len > 1) --len ;  // swallow trailing slash
+      m_directory[len] = '\0' ;
+      pathname = last_slash + 1 ;
+      }
+   const char *last_period = strrchr(pathname,'.') ;
+   if (last_period)
+      {
+      size_t len = last_period - pathname ;
+      m_root = new char[len+1] ;
+      memcpy(m_root,pathname,len) ;
+      m_root[len] = '\0' ;
+      len = strlen(last_period) ;
+      m_extension = new char[len+1] ;
+      memcpy(m_extension,last_period,len) ;
+      m_extension[len] = '\0' ;
+      }
+   else
+      {
+      size_t len = strlen(pathname) ;
+      m_root = new char[len+1] ;
+      strncpy(m_root,pathname,len+1) ;
+      }
    return ;
 }
 

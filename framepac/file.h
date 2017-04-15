@@ -49,8 +49,8 @@ class LineBatch
       const char** cend() const { return const_cast<const char**>(m_lines + m_count) ; }
 
       void clear() ;
-      bool append(char* line) ;
-      LineBatch& operator+= (char* line) { (void)append(line) ; return *this ; }
+      bool append(char* ln) ;
+      LineBatch& operator+= (char* ln) { (void)append(ln) ; return *this ; }
 
       const char* line(size_t N) const { return (N < size()) ?  m_lines[N] : nullptr ; }
       const char* operator[] (size_t N) const { return m_lines[N] ; }
@@ -222,6 +222,8 @@ class FilePath
       const char *basename() const { return m_basename ? m_basename : generateBasename() ; }
       const char *root() const { return m_root ; }
       const char *extension() const { return m_extension ; }
+
+      bool pathOnly() const { return m_root == nullptr && m_extension == nullptr ; }
 
       bool forceDirectory(const char *new_path) ;
       bool forceExtension(const char *new_extension) ;

@@ -64,9 +64,9 @@ LineBatch::~LineBatch()
 
 void LineBatch::clear()
 {
-   for (auto line : *this)
+   for (auto ln : *this)
       {
-      Free(line) ;
+      Free((char*)ln) ;
       }
    m_count = 0 ;
    return ;
@@ -90,7 +90,7 @@ bool LineBatch::expandTo(size_t newsize)
 
 //----------------------------------------------------------------------------
 
-bool LineBatch::append(char* line)
+bool LineBatch::append(char* ln)
 {
    if (size() >= capacity())
       {
@@ -99,7 +99,7 @@ bool LineBatch::append(char* line)
       if (!expandTo(newsize))
 	 return false ;
       }
-   m_lines[m_count++] = line ;
+   m_lines[m_count++] = ln ;
    return true ;
 }
 

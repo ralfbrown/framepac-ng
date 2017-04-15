@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-06					*/
+/* Version 0.01, last edit 2017-04-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -98,7 +98,7 @@ bool WordCorpusT<IdT,IdxT>::loadContextEquivs(const char* filename, bool force_l
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-size_t WordCorpusT<IdT,IdxT>::loadAttributes(const char* filename, unsigned attr_bit, bool add_words)
+size_t WordCorpusT<IdT,IdxT>::loadAttribute(const char* filename, unsigned attr_bit, bool add_words)
 {
    (void)filename; (void)attr_bit; (void)add_words;
 //FIXME
@@ -153,7 +153,7 @@ bool WordCorpusT<IdT,IdxT>::discardContextEquivs()
 template <typename IdT, typename IdxT>
 IdxT WordCorpusT<IdT,IdxT>::corpusSize() const
 {
-   return 0 ;//FIXME
+   return 0UL ;//FIXME
 }
 
 //----------------------------------------------------------------------------
@@ -169,6 +169,7 @@ IdT WordCorpusT<IdT,IdxT>::vocabSize() const
 template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::findID(const char* word) const
 {
+   (void)word;
    return 0 ;//FIXME
 }
 
@@ -177,6 +178,7 @@ IdT WordCorpusT<IdT,IdxT>::findID(const char* word) const
 template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::findOrAddID(const char* word)
 {
+   (void)word;
    return 0 ;//FIXME
 }
 
@@ -185,6 +187,7 @@ IdT WordCorpusT<IdT,IdxT>::findOrAddID(const char* word)
 template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::addWord(const char* word)
 {
+   (void)word;
    return 0 ;//FIXME
 }
 
@@ -193,6 +196,7 @@ IdT WordCorpusT<IdT,IdxT>::addWord(const char* word)
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::addWord(IdT word)
 {
+   (void)word;
    return 0 ;//FIXME
 }
 
