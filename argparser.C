@@ -257,11 +257,6 @@ bool ArgOpt<T>::parseValue(const char* arg) const
 //----------------------------------------------------------------------------
 
 template <>
-bool ArgOpt<int>::parseValue(const char* arg) const ;
-
-//----------------------------------------------------------------------------
-
-template <>
 bool ArgOpt<char*>::parseValue(const char* arg) const
 {
    if (arg == nullptr)
@@ -280,6 +275,17 @@ bool ArgOpt<char*>::parseValue(const char* arg) const
    m_value = duplicate_string(arg) ;
    return true ;
 }
+
+//----------------------------------------------------------------------------
+
+// explicit instantiations of the common types
+template class ArgOpt<int> ;
+template class ArgOpt<unsigned> ;
+template class ArgOpt<long> ;
+template class ArgOpt<size_t> ;
+template class ArgOpt<float> ;
+template class ArgOpt<double> ;
+template class ArgOpt<const char*> ;
 
 /************************************************************************/
 /*	Methods for class ArgFlag					*/
@@ -347,6 +353,13 @@ ArgHelp::ArgHelp(ArgParser& parser, const char* shortname, const char* fullname,
 ArgHelp::ArgHelp(ArgParser& parser, bool& var, const char* shortname, const char* fullname, const char* desc,
 		 bool longhelp)
    : ArgOptBase(parser,shortname,fullname,desc), m_flag(&var), m_long(longhelp), m_defer(true)
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ArgHelp::~ArgHelp()
 {
    return ;
 }

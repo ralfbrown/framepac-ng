@@ -221,7 +221,7 @@ endif
 #########################################################################
 # define the default compile rule
 
-$(C)$(OBJ): ; $(CC) $(CFLAGS) -c $<
+$(C)$(OBJ): ; $(CC) $(CFLAGS) -c -o $@ $<
 
 .cpp.C: ; ln -s $< $@
 
@@ -264,6 +264,8 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	basisvector_u32$(OBJ) progress$(OBJ) \
 	wordcorpus_u32u32$(OBJ) wordcorpus_u32u40$(OBJ) \
 	wordsplit$(OBJ)
+
+TESTS = bin/argparser$(EXE)
 
 # the header files needed by applications using this library
 HEADERS = 
@@ -356,10 +358,13 @@ $(LIBINSTDIR)/$(LIBRARY): $(LIBRARY)
 ## the dependencies for each module of the full package
 
 $(TESTPROG)$(OBJ):
-	echo FIXME
+	$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $(TESTOBJS) $(LIBRARY) $(USELIBS)
 
 $(TESTPROG)$(C):
 	echo FIXME: $(TOUCH) $@ \$(BITBUCKET)
+
+bin/argparser$(EXE):	tests/argparser$(OBJ) $(LIBRARY)
+	$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
 allocator$(OBJ):	allocator$(C) framepac/memory.h
 argparser$(OBJ):	argparser$(C) framepac/argparser.h
@@ -553,5 +558,7 @@ framepac/wordcorpus.h:	framepac/bidindex.h framepac/builder.h framepac/byteorder
 
 FramepaC.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
+
+tests/argparser$(OBJ):	tests/argparser$(C) framepac/argparser.h
 
 # End of Makefile #

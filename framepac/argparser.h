@@ -135,13 +135,14 @@ class ArgOpt : public ArgOptBase
       bool m_have_minmax { false } ;
    } ;
 
-template<> bool ArgOpt<int>::parseValue(const char* arg) const ;
-template <> bool ArgOpt<unsigned>::parseValue(const char* arg) const ;
-template <> bool ArgOpt<long>::parseValue(const char* arg) const ;
-template <> bool ArgOpt<std::size_t>::parseValue(const char* arg) const ;
-template <> bool ArgOpt<float>::parseValue(const char* arg) const ;
-template <> bool ArgOpt<double>::parseValue(const char* arg) const ;
-template <> bool ArgOpt<char*>::parseValue(const char* arg) const ;
+
+extern template class ArgOpt<int> ;
+extern template class ArgOpt<long> ;
+extern template class ArgOpt<unsigned> ;
+extern template class ArgOpt<size_t> ;
+extern template class ArgOpt<float> ;
+extern template class ArgOpt<double> ;
+extern template class ArgOpt<const char*> ;
 
 //----------------------------------------------------------------------------
 
