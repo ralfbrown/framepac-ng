@@ -153,6 +153,14 @@ bool ArgParser::parseArgs(int& argc, char**& argv)
 	 success = false ;
 	 break  ;
 	 }
+      if (strcmp(argv[1],"-\t") == 0)
+	 {
+	 // special value which indicates an option which has already
+	 //   been processed in a previous pass
+	 argc-- ;
+	 argv++ ;
+	 continue ;
+	 }
       ArgOptBase* opt = matchingArg(argv[1]) ;
       if (!opt)
 	 {
@@ -450,6 +458,7 @@ bool ArgOpt<T>::parseValue(const char* arg) const
 //----------------------------------------------------------------------------
 
 // explicit instantiations of the common types
+template class ArgOpt<bool> ;
 template class ArgOpt<int> ;
 template class ArgOpt<unsigned> ;
 template class ArgOpt<long> ;
