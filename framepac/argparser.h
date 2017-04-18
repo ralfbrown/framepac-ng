@@ -124,6 +124,7 @@ class ArgOpt : public ArgOptBase
 	 }
 
    protected:
+      static T convert(const char* arg) ;
       virtual bool parseValue(const char* arg) const ;
       virtual bool optional() const { return m_have_defvalue ; }
    protected:
@@ -136,12 +137,20 @@ class ArgOpt : public ArgOptBase
    } ;
 
 
+// library provides instantiations for the common variable types
+template<> int ArgOpt<int>::convert(const char*);
 extern template class ArgOpt<int> ;
+template<> long ArgOpt<long>::convert(const char*);
 extern template class ArgOpt<long> ;
+template<> unsigned ArgOpt<unsigned>::convert(const char*);
 extern template class ArgOpt<unsigned> ;
+template<> size_t ArgOpt<size_t>::convert(const char*);
 extern template class ArgOpt<size_t> ;
+template<> float ArgOpt<float>::convert(const char*);
 extern template class ArgOpt<float> ;
+template<> double ArgOpt<double>::convert(const char*);
 extern template class ArgOpt<double> ;
+template<> const char* ArgOpt<const char*>::convert(const char*);
 extern template class ArgOpt<const char*> ;
 
 //----------------------------------------------------------------------------

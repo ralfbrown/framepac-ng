@@ -29,6 +29,7 @@ namespace Fr
 
 using namespace std ;
 
+#if 0
 static char* duplicate_string(const char* s)
 {
    if (!s) s = "" ;
@@ -37,6 +38,7 @@ static char* duplicate_string(const char* s)
    memcpy(dup,s,len+1) ;
    return dup ;
 }
+#endif
 
 /************************************************************************/
 /*	Methods for class ArgParser					*/
@@ -233,6 +235,52 @@ bool ArgOptBase::parse(int& argc, char**& argv) const
 /*	Methods for class ArgOpt					*/
 /************************************************************************/
 
+//----------------------------------------------------------------------------
+
+template <>
+int ArgOpt<int>::convert(const char* arg)
+{
+   return atoi(arg) ;
+}
+
+template <>
+unsigned ArgOpt<unsigned>::convert(const char* arg)
+{
+   return (unsigned)strtoul(arg,nullptr,0) ;
+}
+
+template <>
+long ArgOpt<long>::convert(const char* arg)
+{
+   return strtol(arg,nullptr,0) ;
+}
+
+template <>
+size_t ArgOpt<size_t>::convert(const char* arg)
+{
+   return strtoul(arg,nullptr,0) ;
+}
+
+template <>
+float ArgOpt<float>::convert(const char* arg)
+{
+   return (float)strtod(arg,nullptr) ;
+}
+
+template <>
+double ArgOpt<double>::convert(const char* arg)
+{
+   return strtod(arg,nullptr) ;
+}
+
+template <>
+const char* ArgOpt<const char*>::convert(const char* arg)
+{
+   return arg ;
+}
+
+//----------------------------------------------------------------------------
+
 template <typename T>
 bool ArgOpt<T>::parseValue(const char* arg) const
 {
@@ -249,30 +297,16 @@ bool ArgOpt<T>::parseValue(const char* arg) const
 	 return false ;
 	 }
       }
-//FIXME
-
-   return false ;
-}
-
-//----------------------------------------------------------------------------
-
-template <>
-bool ArgOpt<char*>::parseValue(const char* arg) const
-{
-   if (arg == nullptr)
+   T value = convert(arg) ;
+   if (m_have_minmax)
       {
-      if (m_have_defvalue)
+      if (value < m_minvalue || value > m_maxvalue)
 	 {
-	 m_value = duplicate_string(m_defvalue) ;
-	 return true ;
-	 }
-      else
-	 {
-	 //TODO: error message: no default value
+	 //TODO: error messsage
 	 return false ;
 	 }
       }
-   m_value = duplicate_string(arg) ;
+   m_value = value ;
    return true ;
 }
 
