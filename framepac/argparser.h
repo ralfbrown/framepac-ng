@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-14					*/
+/* Version 0.01, last edit 2017-04-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -19,9 +19,10 @@
 /*									*/
 /************************************************************************/
 
-
 #ifndef _Fr_ARGPARSER_H_INCLUDED
 #define _Fr_ARGPARSER_H_INCLUDED
+
+#include <cstdint>
 
 namespace Fr
 {
@@ -39,6 +40,9 @@ class ArgParser
       void addOpt(ArgOptBase* opt) ;
       bool parseArgs(int& argc, char**& argv) ;
 
+      bool unknownOption(const char *name) const ;
+      bool showHelp(bool longhelp = false) const ;
+
    protected:
       void init() ;
       ArgOptBase* matchingArg(const char* arg) const ;
@@ -52,11 +56,11 @@ class ArgParser
 
 class ArgOptBase
    {
-   public;
-      ArgOptBase(ArgParser&, const char* shortname const char* fullname, const char* desc) ;
+   public:
+      ArgOptBase(ArgParser&, const char* shortname, const char* fullname, const char* desc) ;
       ~ArgOptBase() ;
 
-      bool parse(int& argc, char**& argv) = 0 ;
+      bool parse(int& argc, char**& argv) const ;
 
       ArgOptBase* next() const { return m_next ; }
       void next(ArgOptBase* nxt) { m_next = nxt ; }
@@ -66,17 +70,40 @@ class ArgOptBase
       const char* description() const { return m_description ; }
 
    protected:
-      virtual bool parseValue(const char* arg) = 0 ;
+      virtual bool parseValue(const char* arg) const = 0 ;
+      virtual bool optional() const { return false ; } ;
    protected:
       ArgOptBase* m_next ;
-      char*       m_shortname ;
-      char*       m_fullname ;
-      char*       m_description ;
+      const char* m_shortname ;
+      const char* m_fullname ;
+      const char* m_description ;
    } ;
 
 //----------------------------------------------------------------------------
 
-template <T>
+template <typename Callable>
+class ArgOptFunc : public ArgOptBase
+   {
+   public:
+      ArgOptFunc(ArgParser& parser, Callable& fn, const char* shortname, const char* fullname, const char* desc)
+	 : ArgOptBase(parser,shortname,fullname,desc), m_func(fn)
+	 {
+	 m_func = fn ; 
+	 }
+      ~ArgOptFunc() {}
+
+   protected:
+      virtual bool parseValue(const char* arg) const
+	 {
+	    return m_func(arg) ;
+	 }
+   protected:
+      Callable&  m_func ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+template <typename T>
 class ArgOpt : public ArgOptBase
    {
    public:
@@ -97,7 +124,8 @@ class ArgOpt : public ArgOptBase
 	 }
 
    protected:
-      virtual bool parseValue(const char* arg) ;
+      virtual bool parseValue(const char* arg) const ;
+      virtual bool optional() const { return m_have_defvalue ; }
    protected:
       T& m_value ;
       T m_defvalue { } ;
@@ -106,6 +134,14 @@ class ArgOpt : public ArgOptBase
       bool m_have_defvalue { false } ;
       bool m_have_minmax { false } ;
    } ;
+
+template<> bool ArgOpt<int>::parseValue(const char* arg) const ;
+template <> bool ArgOpt<unsigned>::parseValue(const char* arg) const ;
+template <> bool ArgOpt<long>::parseValue(const char* arg) const ;
+template <> bool ArgOpt<std::size_t>::parseValue(const char* arg) const ;
+template <> bool ArgOpt<float>::parseValue(const char* arg) const ;
+template <> bool ArgOpt<double>::parseValue(const char* arg) const ;
+template <> bool ArgOpt<char*>::parseValue(const char* arg) const ;
 
 //----------------------------------------------------------------------------
 
@@ -117,7 +153,8 @@ class ArgFlag : public ArgOptBase
       ~ArgFlag() ;
 
    protected:
-      virtual bool parseValue(const char* argv) ;
+      virtual bool parseValue(const char* argv) const ;
+      virtual bool optional() const { return true ; }
    protected:
       bool& m_value ;
       bool  m_defvalue { false } ;
@@ -129,15 +166,16 @@ class ArgFlag : public ArgOptBase
 class ArgHelp : public ArgOptBase
    {
    public:
-      ArgHelp(ArgParser&, const char* shortname, const char* fullname, const char* desc, bool long = false) ;
-      ArgHelp(ArgParser&, bool& flag, const char* shortname, const char* fullname, const char* desc, bool long = false) ;
+      ArgHelp(ArgParser&, const char* shortname, const char* fullname, const char* desc, bool longhelp = false) ;
+      ArgHelp(ArgParser&, bool& flag, const char* shortname, const char* fullname, const char* desc, bool longhelp = false) ;
       ~ArgHelp() ;
 
       bool isLongHelp() const { return m_long ; }
       bool defer() const { return m_defer ; }
 
    protected:
-      virtual bool parseValue(const char* argv) ;
+      virtual bool parseValue(const char* arg) const ;
+      virtual bool optional() const { return true ; }
    protected:
       bool* m_flag ;
       bool  m_long  ;

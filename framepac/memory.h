@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -260,25 +260,25 @@ class Allocator : public AllocatorBase
 
 //----------------------------------------------------------------------------
 
-template <typename T, size_t SZ = 1024>
-class LocalArray
+template <typename T, size_t SZ = 512>
+class LocalAlloc
    {
    private:
       T  m_localbuffer[SZ] ;
       T* m_buffer ;
 
    public:
-      LocalArray(size_t alloc)
+      LocalAlloc(size_t alloc)
 	 {
 	 m_buffer = (alloc > SZ) ? new T[alloc] : m_localbuffer ;
 	 }
-      LocalArray(size_t alloc, bool)
+      LocalAlloc(size_t alloc, bool clear)
 	 {
 	 m_buffer = (alloc > SZ) ? new T[alloc] : m_localbuffer ;
-	 if (m_buffer)
+	 if (m_buffer && clear)
 	    memset(m_buffer,'\0',sizeof(T)*alloc) ;
 	 }
-      ~LocalArray()
+      ~LocalAlloc()
 	 {
 	 if (m_buffer != m_localbuffer) delete [] m_buffer ;
 	 }
@@ -286,6 +286,7 @@ class LocalArray
       T* base() const { return m_buffer ; }
       T& operator [] (size_t idx) { return m_buffer[idx] ; }
       const T& operator [] (size_t idx) const { return m_buffer[idx] ; }
+      operator T* () { return m_buffer ; }
    } ;
 
 #endif /* !__Fr_MEMORY_H_INCLUDED */

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-14					*/
+/* Version 0.01, last edit 2017-04-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -19,8 +19,24 @@
 /*									*/
 /************************************************************************/
 
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 #include "framepac/argparser.h"
 
+namespace Fr
+{
+
+using namespace std ;
+
+static char* duplicate_string(const char* s)
+{
+   if (!s) s = "" ;
+   size_t len = strlen(s) ;
+   char* dup = new char[len+1] ;
+   memcpy(dup,s,len+1) ;
+   return dup ;
+}
 
 /************************************************************************/
 /*	Methods for class ArgParser					*/
@@ -84,17 +100,23 @@ bool ArgParser::parseArgs(int& argc, char**& argv)
    init() ;
    while (argc > 1 && argv[1] != nullptr && argv[1][0] == '-')
       {
+      if (strcmp(argv[1],"--") == 0)
+	 {
+	 // special flag which indicates that everything after it is a
+	 //   non-flag option even if it starts with a dash
+	 argc-- ;
+	 argv++ ;
+	 break  ;
+	 }
       ArgOptBase* opt = matchingArg(argv[1]) ;
       if (!opt)
 	 {
-	 // TODO: report unknown option
-
+	 unknownOption(argv[1]) ;
 	 return false ;
 	 }
       if (!opt->parse(argc, argv))
 	 {
-	 // TODO: report invalid value for option
-
+	 // parse function reported invalid value for option, so we can just return
 	 return false ;
 	 }
       // consume the commandline argument
@@ -102,6 +124,27 @@ bool ArgParser::parseArgs(int& argc, char**& argv)
       argv++ ;
       }
    return true ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ArgParser::unknownOption(const char*name) const
+{
+   cerr << "unknown option " << name << endl ; //TODO: better message
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ArgParser::showHelp(bool longhelp) const
+{
+   if (longhelp)
+      {
+      }
+   else
+      {
+      }
+   return false ;
 }
 
 /************************************************************************/
@@ -114,15 +157,9 @@ ArgOptBase::ArgOptBase(ArgParser& parser, const char* shortname, const char* ful
    if (!shortname) shortname = "" ;
    if (!fullname) fullname = "" ;
    if (!desc) desc = "" ;
-   size_t len = strlen(shortname) ;
-   m_shortname = new char[len+1] ;
-   memcpy(m_shortname,shortname,len+1) ;
-   len = strlen(fullname) ;
-   m_fullname = new char[len+1] ;
-   memcpy(m_fullname,fullname,len+1) ;
-   len = strlen(desc) ;
-   m_description = new char[len+1] ;
-   memcpy(m_description,desc,len+1) ;
+   m_shortname = shortname ;
+   m_fullname = fullname ;
+   m_description = desc ;
    return ;
 }
 
@@ -130,15 +167,12 @@ ArgOptBase::ArgOptBase(ArgParser& parser, const char* shortname, const char* ful
 
 ArgOptBase::~ArgOptBase()
 {
-   delete[] m_shortname ;  m_shortname = nullptr ;
-   delete[] m_fullname ;   m_fullname = nullptr ;
-   delete[] m_description ; m_description = nullptr ;
    return ;
 }
 
 //----------------------------------------------------------------------------
 
-bool ArgOptBase::parse(int& argc, char**& argv)
+bool ArgOptBase::parse(int& argc, char**& argv) const
 {
    if (argv[1][0] != '-')
       return false ;
@@ -149,6 +183,13 @@ bool ArgOptBase::parse(int& argc, char**& argv)
       arg = strchr(argv[1],'=') ;  // is it --longflag=value ?
       if (arg)
 	 arg++ ;
+      else if (optional())
+	 {
+	 // optional values can't be separated by blanks, since we
+	 //   can't tell whether the next element of argv[] is the
+	 //   value or a non-flag argument
+	 arg = nullptr ;
+	 }
       else if (argc > 1)
 	 {
 	 argc-- ;
@@ -169,6 +210,13 @@ bool ArgOptBase::parse(int& argc, char**& argv)
 	 {
 	 // got the value, nothing to do
 	 }
+      else if (optional())
+	 {
+	 // optional values can't be separated by blanks, since we
+	 //   can't tell whether the next element of argv[] is the
+	 //   value or a non-flag argument
+	 arg = nullptr ;
+	 }
       else if (argc > 1)
 	 {
 	 argc-- ;
@@ -185,12 +233,52 @@ bool ArgOptBase::parse(int& argc, char**& argv)
 /*	Methods for class ArgOpt					*/
 /************************************************************************/
 
-template <T>
-bool ArgOpt<T>::parseValue(const char* arg)
+template <typename T>
+bool ArgOpt<T>::parseValue(const char* arg) const
 {
+   if (arg == nullptr)
+      {
+      if (m_have_defvalue)
+	 {
+	 m_value = m_defvalue ;
+	 return true ;
+	 }
+      else
+	 {
+	 //TODO: error message: no default value
+	 return false ;
+	 }
+      }
 //FIXME
-   (void)arg;
+
    return false ;
+}
+
+//----------------------------------------------------------------------------
+
+template <>
+bool ArgOpt<int>::parseValue(const char* arg) const ;
+
+//----------------------------------------------------------------------------
+
+template <>
+bool ArgOpt<char*>::parseValue(const char* arg) const
+{
+   if (arg == nullptr)
+      {
+      if (m_have_defvalue)
+	 {
+	 m_value = duplicate_string(m_defvalue) ;
+	 return true ;
+	 }
+      else
+	 {
+	 //TODO: error message: no default value
+	 return false ;
+	 }
+      }
+   m_value = duplicate_string(arg) ;
+   return true ;
 }
 
 /************************************************************************/
@@ -214,11 +302,33 @@ ArgFlag::ArgFlag(ArgParser& parser, bool& var, const char* shortname, const char
 
 //----------------------------------------------------------------------------
 
-bool ArgFlag::parseValue(const char* arg)
+bool ArgFlag::parseValue(const char* arg) const
 {
-//FIXME
-   (void)arg;
-
+   if (arg == nullptr)
+      {
+      // toggle the flag if no value given
+      m_value = !m_value ;
+      return true ;
+      }
+   else if (*arg == '+' || strcasecmp(arg,"yes") == 0 || strcasecmp(arg,"true") == 0 || *arg == '1')
+      {
+      m_value = true ;
+      return true ;
+      }
+   else if (*arg == '-' || strcasecmp(arg,"no") == 0 || strcasecmp(arg,"false") == 0 || *arg == '0')
+      {
+      m_value = false ;
+      return true ;
+      }
+   else if (*arg == '=' || strcasecmp(arg,"default") == 0)
+      {
+      if (m_have_defvalue)
+	 {
+	 m_value = m_defvalue ;
+	 return true ;
+	 }
+      }
+   //TODO: error message: invalid value
    return false ;
 }
 
@@ -226,8 +336,8 @@ bool ArgFlag::parseValue(const char* arg)
 /*	Methods for class ArgHelp					*/
 /************************************************************************/
 
-ArgHelp::ArgHelp(ArgParser& parser, const char* shortname, const char* fullname, const char* desc, bool long)
-   : ArgOptBase(parser,shortname,fullname,desc), m_flag(nullptr), m_long(long), m_defer(false)
+ArgHelp::ArgHelp(ArgParser& parser, const char* shortname, const char* fullname, const char* desc, bool longhelp)
+   : ArgOptBase(parser,shortname,fullname,desc), m_flag(nullptr), m_long(longhelp), m_defer(false)
 {
    return ;
 }
@@ -235,10 +345,24 @@ ArgHelp::ArgHelp(ArgParser& parser, const char* shortname, const char* fullname,
 //----------------------------------------------------------------------------
 
 ArgHelp::ArgHelp(ArgParser& parser, bool& var, const char* shortname, const char* fullname, const char* desc,
-		 bool long)
-   : ArgOptBase(parser,shortname,fullname,desc), m_flag(&var), m_long(long), m_defer(true)
+		 bool longhelp)
+   : ArgOptBase(parser,shortname,fullname,desc), m_flag(&var), m_long(longhelp), m_defer(true)
 {
    return ;
 }
+
+//----------------------------------------------------------------------------
+
+bool ArgHelp::parseValue(const char* arg) const
+{
+   if (arg != nullptr)
+      {
+      }
+//TODO
+   return true ;
+}
+
+
+} // end namespace Fr
 
 // end of file argparser.C //
