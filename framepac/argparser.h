@@ -29,30 +29,7 @@ namespace Fr
 
 //----------------------------------------------------------------------------
 
-class ArgOptBase ;
-
-class ArgParser
-   {
-   public:
-      ArgParser() ;
-      ~ArgParser() ;
-
-      void addOpt(ArgOptBase* opt) ;
-      bool parseArgs(int& argc, char**& argv) ;
-
-      bool unknownOption(const char *name) const ;
-      bool showHelp(bool longhelp = false) const ;
-
-   protected:
-      void init() ;
-      ArgOptBase* matchingArg(const char* arg) const ;
-
-   protected:
-      ArgOptBase* m_options ;
-      ArgParser*  m_self ;
-   } ;
-
-//----------------------------------------------------------------------------
+class ArgParser ;
 
 class ArgOptBase
    {
@@ -64,6 +41,9 @@ class ArgOptBase
 
       ArgOptBase* next() const { return m_next ; }
       void next(ArgOptBase* nxt) { m_next = nxt ; }
+
+      void mustDelete(bool del) { m_must_delete = del ; }
+      bool mustDelete() const { return m_must_delete ; }
 
       const char* shortName() const { return m_shortname ; }
       const char* fullName() const { return m_fullname ; }
@@ -77,6 +57,7 @@ class ArgOptBase
       const char* m_shortname ;
       const char* m_fullname ;
       const char* m_description ;
+      bool        m_must_delete ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -113,6 +94,11 @@ class ArgOpt : public ArgOptBase
       ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, const char* desc, T def_value)
 	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_have_defvalue(true)
 	 {}
+      ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, const char* desc,
+	     T min_value, T max_value)
+	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_minvalue(min_value),
+	   m_maxvalue(max_value), m_have_defvalue(false), m_have_minmax(true)
+	 {}
       ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, const char* desc, T def_value,
 	     T min_value, T max_value)
 	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_minvalue(min_value),
@@ -124,7 +110,7 @@ class ArgOpt : public ArgOptBase
 	 }
 
    protected:
-      static T convert(const char* arg) ;
+      static bool convert(const char* arg, T& value) ;
       virtual bool parseValue(const char* arg) const ;
       virtual bool optional() const { return m_have_defvalue ; }
    protected:
@@ -138,38 +124,23 @@ class ArgOpt : public ArgOptBase
 
 
 // library provides instantiations for the common variable types
-template<> int ArgOpt<int>::convert(const char*);
+template<> bool ArgOpt<bool>::convert(const char*, bool&) ;
+template<> bool ArgOpt<bool>::parseValue(const char*) const ;
+extern template class ArgOpt<bool> ;
+template<> bool ArgOpt<int>::convert(const char*, int&) ;
 extern template class ArgOpt<int> ;
-template<> long ArgOpt<long>::convert(const char*);
+template<> bool ArgOpt<long>::convert(const char*, long&) ;
 extern template class ArgOpt<long> ;
-template<> unsigned ArgOpt<unsigned>::convert(const char*);
+template<> bool ArgOpt<unsigned>::convert(const char*, unsigned&) ;
 extern template class ArgOpt<unsigned> ;
-template<> size_t ArgOpt<size_t>::convert(const char*);
+template<> bool ArgOpt<size_t>::convert(const char*, size_t&) ;
 extern template class ArgOpt<size_t> ;
-template<> float ArgOpt<float>::convert(const char*);
+template<> bool ArgOpt<float>::convert(const char*, float&) ;
 extern template class ArgOpt<float> ;
-template<> double ArgOpt<double>::convert(const char*);
+template<> bool ArgOpt<double>::convert(const char*, double&) ;
 extern template class ArgOpt<double> ;
-template<> const char* ArgOpt<const char*>::convert(const char*);
+template<> bool ArgOpt<const char*>::convert(const char*, const char*&) ;
 extern template class ArgOpt<const char*> ;
-
-//----------------------------------------------------------------------------
-
-class ArgFlag : public ArgOptBase
-   {
-   public:
-      ArgFlag(ArgParser&, bool& flag, const char* shortname, const char*fullname, const char* desc) ;
-      ArgFlag(ArgParser&, bool& flag, const char* shortname, const char*fullname, const char* desc, bool def_value) ;
-      ~ArgFlag() ;
-
-   protected:
-      virtual bool parseValue(const char* argv) const ;
-      virtual bool optional() const { return true ; }
-   protected:
-      bool& m_value ;
-      bool  m_defvalue { false } ;
-      bool  m_have_defvalue { false } ;
-   } ;
 
 //----------------------------------------------------------------------------
 
@@ -190,6 +161,43 @@ class ArgHelp : public ArgOptBase
       bool* m_flag ;
       bool  m_long  ;
       bool  m_defer ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+class ArgParser
+   {
+   public:
+      ArgParser() ;
+      ~ArgParser() ;
+
+      ArgParser& add(bool& var, const char* shortname, const char* fullname, const char* desc) ;
+      ArgParser& add(bool& var, const char* shortname, const char* fullname, const char* desc, bool def_value) ;
+      template <typename T>
+      ArgParser& add(T& var, const char* shortname, const char* fullname, const char* desc) ;
+      template <typename T>
+      ArgParser& add(T& var, const char* shortname, const char* fullname, const char* desc, T defvalue) ;
+      template <typename T>
+      ArgParser& add(T& var, const char* shortname, const char* fullname, const char* desc,
+		     T min_value, T max_value) ;
+      template <typename T>
+      ArgParser& add(T& var, const char* shortname, const char* fullname, const char* desc, T defvalue,
+		     T min_value, T max_value) ;
+      ArgParser& add(const char* shortname, const char* fullname, const char* desc, bool longhelp = false) ;
+
+      void addOpt(ArgOptBase* opt, bool must_delete = false) ;
+      bool parseArgs(int& argc, char**& argv) ;
+
+      bool unknownOption(const char *name) const ;
+      bool showHelp(bool longhelp = false) const ;
+
+   protected:
+      void init() ;
+      ArgOptBase* matchingArg(const char* arg) const ;
+
+   protected:
+      ArgOptBase* m_options ;
+      ArgParser*  m_self ;
    } ;
 
 //----------------------------------------------------------------------------

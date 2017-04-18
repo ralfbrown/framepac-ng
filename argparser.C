@@ -77,10 +77,11 @@ void ArgParser::init()
 
 //----------------------------------------------------------------------------
 
-void ArgParser::addOpt(ArgOptBase* opt)
+void ArgParser::addOpt(ArgOptBase* opt, bool must_delete)
 {
    init() ;
    opt->next(m_options) ;
+   opt->mustDelete(must_delete) ;
    m_options = opt ;
    return ;
 }
@@ -238,45 +239,120 @@ bool ArgOptBase::parse(int& argc, char**& argv) const
 //----------------------------------------------------------------------------
 
 template <>
-int ArgOpt<int>::convert(const char* arg)
+bool ArgOpt<bool>::convert(const char* arg, bool& value)
 {
-   return atoi(arg) ;
+   if (!arg || !*arg)
+      return false ;
+   if (strcmp(arg,"0") == 0 || strcasecmp(arg,"n") == 0 || strcasecmp(arg,"no") == 0
+       || strcasecmp(arg,"f") == 0 || strcasecmp(arg,"false") == 0)
+      {
+      value = false ;
+      return true ;
+      }
+   if (strcmp(arg,"1") == 0 || strcasecmp(arg,"y") == 0 || strcasecmp(arg,"yes") == 0
+       || strcasecmp(arg,"t") == 0 || strcasecmp(arg,"true") == 0)
+      {
+      value = true ;
+      return true ;
+      }
+   return false ;
 }
 
 template <>
-unsigned ArgOpt<unsigned>::convert(const char* arg)
+bool ArgOpt<int>::convert(const char* arg, int& value)
 {
-   return (unsigned)strtoul(arg,nullptr,0) ;
+   char* endptr = const_cast<char*>(arg) ;
+   value = (int)strtol(arg,&endptr,0) ;
+   return endptr != arg ;
 }
 
 template <>
-long ArgOpt<long>::convert(const char* arg)
+bool ArgOpt<unsigned>::convert(const char* arg, unsigned& value)
 {
-   return strtol(arg,nullptr,0) ;
+   char* endptr = const_cast<char*>(arg) ;
+   value = (unsigned)strtoul(arg,&endptr,0) ;
+   return endptr != arg ;
 }
 
 template <>
-size_t ArgOpt<size_t>::convert(const char* arg)
+bool ArgOpt<long>::convert(const char* arg, long& value)
 {
-   return strtoul(arg,nullptr,0) ;
+   char* endptr = const_cast<char*>(arg) ;
+   value = strtol(arg,&endptr,0) ;
+   return endptr != arg ;
 }
 
 template <>
-float ArgOpt<float>::convert(const char* arg)
+bool ArgOpt<size_t>::convert(const char* arg, size_t& value)
 {
-   return (float)strtod(arg,nullptr) ;
+   char* endptr = const_cast<char*>(arg) ;
+   value = strtoul(arg,&endptr,0) ;
+   return endptr != arg ;
 }
 
 template <>
-double ArgOpt<double>::convert(const char* arg)
+bool ArgOpt<float>::convert(const char* arg, float& value)
 {
-   return strtod(arg,nullptr) ;
+   char* endptr = const_cast<char*>(arg) ;
+   value = (float)strtod(arg,&endptr) ;
+   return endptr != arg ;
 }
 
 template <>
-const char* ArgOpt<const char*>::convert(const char* arg)
+bool ArgOpt<double>::convert(const char* arg, double& value)
 {
-   return arg ;
+   char* endptr = const_cast<char*>(arg) ;
+   value = strtod(arg,&endptr) ;
+   return endptr != arg ;
+}
+
+template <>
+bool ArgOpt<const char*>::convert(const char* arg, const char*& value)
+{
+   value = arg ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <>
+bool ArgOpt<bool>::parseValue(const char* arg) const
+{
+   if (arg == nullptr)
+      {
+      // toggle the flag if no value given
+      m_value = !m_value ;
+      return true ;
+      }
+   else if (*arg == '=' || strcasecmp(arg,"default") == 0)
+      {
+      if (m_have_defvalue)
+	 {
+	 m_value = m_defvalue ;
+	 return true ;
+	 }
+      }
+   else if (*arg == '+' || strcasecmp(arg,"yes") == 0 || strcasecmp(arg,"true") == 0 || *arg == '1')
+      {
+      m_value = true ;
+      return true ;
+      }
+   else if (*arg == '-' || strcasecmp(arg,"no") == 0 || strcasecmp(arg,"false") == 0 || *arg == '0')
+      {
+      m_value = false ;
+      return true ;
+      }
+   else if (*arg)
+      {
+      bool value ;
+      if (convert(arg,value))
+	 {
+	 m_value = value ;
+	 return true ;
+	 }
+      }
+   //TODO: error message: invalid value
+   return false ;
 }
 
 //----------------------------------------------------------------------------
@@ -297,7 +373,12 @@ bool ArgOpt<T>::parseValue(const char* arg) const
 	 return false ;
 	 }
       }
-   T value = convert(arg) ;
+   T value ;
+   if (!convert(arg,value))
+      {
+      //TODO: error message
+      return false ;
+      }
    if (m_have_minmax)
       {
       if (value < m_minvalue || value > m_maxvalue)
@@ -320,57 +401,6 @@ template class ArgOpt<size_t> ;
 template class ArgOpt<float> ;
 template class ArgOpt<double> ;
 template class ArgOpt<const char*> ;
-
-/************************************************************************/
-/*	Methods for class ArgFlag					*/
-/************************************************************************/
-
-ArgFlag::ArgFlag(ArgParser& parser, bool& var, const char* shortname, const char* fullname, const char* desc)
-   : ArgOptBase(parser,shortname,fullname,desc), m_value(var)
-{
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-ArgFlag::ArgFlag(ArgParser& parser, bool& var, const char* shortname, const char* fullname,
-		 const char* desc, bool def_value)
-   : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_have_defvalue(true)
-{
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-bool ArgFlag::parseValue(const char* arg) const
-{
-   if (arg == nullptr)
-      {
-      // toggle the flag if no value given
-      m_value = !m_value ;
-      return true ;
-      }
-   else if (*arg == '+' || strcasecmp(arg,"yes") == 0 || strcasecmp(arg,"true") == 0 || *arg == '1')
-      {
-      m_value = true ;
-      return true ;
-      }
-   else if (*arg == '-' || strcasecmp(arg,"no") == 0 || strcasecmp(arg,"false") == 0 || *arg == '0')
-      {
-      m_value = false ;
-      return true ;
-      }
-   else if (*arg == '=' || strcasecmp(arg,"default") == 0)
-      {
-      if (m_have_defvalue)
-	 {
-	 m_value = m_defvalue ;
-	 return true ;
-	 }
-      }
-   //TODO: error message: invalid value
-   return false ;
-}
 
 /************************************************************************/
 /*	Methods for class ArgHelp					*/
