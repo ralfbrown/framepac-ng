@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-17					*/
+/* Version 0.01, last edit 2017-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -34,6 +34,7 @@ class ArgParser ;
 class ArgOptBase
    {
    public:
+      ArgOptBase(const char* shortname, const char* fullname, const char* desc) ;
       ArgOptBase(ArgParser&, const char* shortname, const char* fullname, const char* desc) ;
       ~ArgOptBase() ;
 
@@ -88,16 +89,32 @@ template <typename T>
 class ArgOpt : public ArgOptBase
    {
    public:
+      ArgOpt(T& var, const char* shortname, const char* fullname, const char* desc)
+	 : ArgOptBase(shortname,fullname,desc), m_value(var)
+	 {}
       ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, const char* desc)
 	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var)
 	 {}
+      ArgOpt(T& var, const char* shortname, const char* fullname, const char* desc, T def_value)
+	 : ArgOptBase(shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_have_defvalue(true)
+	 {}
       ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, const char* desc, T def_value)
 	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_have_defvalue(true)
+	 {}
+      ArgOpt(T& var, const char* shortname, const char* fullname, const char* desc,
+	     T min_value, T max_value)
+	 : ArgOptBase(shortname,fullname,desc), m_value(var), m_minvalue(min_value),
+	   m_maxvalue(max_value), m_have_defvalue(false), m_have_minmax(true)
 	 {}
       ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, const char* desc,
 	     T min_value, T max_value)
 	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_minvalue(min_value),
 	   m_maxvalue(max_value), m_have_defvalue(false), m_have_minmax(true)
+	 {}
+      ArgOpt(T& var, const char* shortname, const char* fullname, const char* desc, T def_value,
+	     T min_value, T max_value)
+	 : ArgOptBase(shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_minvalue(min_value),
+	   m_maxvalue(max_value), m_have_defvalue(true), m_have_minmax(true)
 	 {}
       ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, const char* desc, T def_value,
 	     T min_value, T max_value)
@@ -147,7 +164,9 @@ extern template class ArgOpt<const char*> ;
 class ArgHelp : public ArgOptBase
    {
    public:
+      ArgHelp(const char* shortname, const char* fullname, const char* desc, bool longhelp = false) ;
       ArgHelp(ArgParser&, const char* shortname, const char* fullname, const char* desc, bool longhelp = false) ;
+      ArgHelp(bool& flag, const char* shortname, const char* fullname, const char* desc, bool longhelp = false) ;
       ArgHelp(ArgParser&, bool& flag, const char* shortname, const char* fullname, const char* desc, bool longhelp = false) ;
       ~ArgHelp() ;
 
@@ -171,19 +190,26 @@ class ArgParser
       ArgParser() ;
       ~ArgParser() ;
 
-      ArgParser& add(bool& var, const char* shortname, const char* fullname, const char* desc) ;
-      ArgParser& add(bool& var, const char* shortname, const char* fullname, const char* desc, bool def_value) ;
+      ArgParser& add(bool& var, const char* shortname, const char* fullname, const char* desc)
+	 { addOpt(new ArgOpt<bool>(var,shortname,fullname,desc),true) ; return *this ; }
+      ArgParser& add(bool& var, const char* shortname, const char* fullname, const char* desc, bool def_value)
+	 { addOpt(new ArgOpt<bool>(var,shortname,fullname,desc,def_value),true) ; return *this ; }
       template <typename T>
-      ArgParser& add(T& var, const char* shortname, const char* fullname, const char* desc) ;
+      ArgParser& add(T& var, const char* shortname, const char* fullname, const char* desc)
+	 { addOpt(new ArgOpt<T>(var,shortname,fullname,desc),true) ; return *this ; }
       template <typename T>
-      ArgParser& add(T& var, const char* shortname, const char* fullname, const char* desc, T defvalue) ;
+      ArgParser& add(T& var, const char* shortname, const char* fullname, const char* desc, T def_value)
+	 { addOpt(new ArgOpt<T>(var,shortname,fullname,desc,def_value),true) ; return *this ; }
       template <typename T>
       ArgParser& add(T& var, const char* shortname, const char* fullname, const char* desc,
-		     T min_value, T max_value) ;
+		     T min_value, T max_value)
+	 { addOpt(new ArgOpt<T>(var,shortname,fullname,desc,min_value,max_value),true) ; return *this ; }
       template <typename T>
-      ArgParser& add(T& var, const char* shortname, const char* fullname, const char* desc, T defvalue,
-		     T min_value, T max_value) ;
-      ArgParser& add(const char* shortname, const char* fullname, const char* desc, bool longhelp = false) ;
+      ArgParser& add(T& var, const char* shortname, const char* fullname, const char* desc, T def_value,
+		     T min_value, T max_value)
+	 { addOpt(new ArgOpt<T>(var,shortname,fullname,desc,def_value,min_value,max_value),true) ; return *this ; }
+      ArgParser& addHelp(const char* shortname, const char* fullname, const char* desc, bool longhelp = false)
+	 { addOpt(new ArgHelp(shortname,fullname,desc,longhelp),true) ; return *this ; }
 
       void addOpt(ArgOptBase* opt, bool must_delete = false) ;
       bool parseArgs(int& argc, char**& argv) ;

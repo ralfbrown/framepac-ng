@@ -28,32 +28,34 @@ using namespace std ;
 
 int int_option ;
 long long_option ;
-size_t sizet_option ;
-double double_option ;
 const char* string_option ;
 
 ArgParser cmdline ;
 ArgOpt<int> i_flag(cmdline,int_option,"i","int","set integer variable, default = 5, min = -2, max = 10",
        5,-2,10) ;
-ArgOpt<long> l_flag(cmdline,long_option,"l","long","set long variable, default = 7, min = -6, max = 12",
-       7L,-6L,12L) ;
-ArgOpt<size_t> L_flag(cmdline,sizet_option,"L","ulong","set size_t variable, default = 9, min = 1, max = 17",
-       9UL,1UL,17UL) ;
-ArgOpt<double> d_flag(cmdline,double_option,"d","double","set double variable, default = 1.23, min = -12.8, max = 19.01",
-       1.23,-12.8,19.01) ;
-ArgOpt<const char*> s_flag(cmdline,string_option,"s","string","set char* variable, default=Default","Default") ;
 ArgHelp h_flag(cmdline,"h","","show brief help") ;
-ArgHelp longhelp_flag(cmdline,"","longhelp", "show detailed help") ;
-
 
 int main(int argc, char** argv)
 {
+   size_t sizet_option = 1 ;
+   double double_option = 0.1 ;
+   cmdline
+      .add(long_option,"l","long","set long variable, default = 7, min = -6, max = 12",7L,-6L,12L)
+      .add(sizet_option,"L","ulong","set size_t variable, default = 9, min = 1, max = 17",9UL,1UL,17UL)
+      .add(double_option,"d","double","set double variable, default = 1.23, min = -12.8, max = 19.01",
+	   1.23,-12.8,19.01)
+      .add(string_option,"s","string","set char* variable, default=Default","Default")
+      .addHelp("","longhelp", "show detailed help") ;
    bool success = cmdline.parseArgs(argc,argv) ;
    cout << "parse status = " << success << endl ;
    cout << "int value = " << int_option << endl ;
    cout << "long value = " << long_option << endl ;
    cout << "size_t value = " << sizet_option << endl ;
    cout << "double value = " << double_option << endl ;
-   cout << "char* value = "  << string_option << endl ;
+   cout << "char* value = "  << (string_option ? string_option : "(null)") << endl ;
+   for (int i = 1 ; i < argc ; ++i)
+      {
+      cout << "argv[" << i << "] = " << argv[i] << endl ;
+      }
    return success ? 0 : 1 ;
 }

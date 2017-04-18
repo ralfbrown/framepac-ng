@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-17					*/
+/* Version 0.01, last edit 2017-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -92,7 +92,47 @@ ArgOptBase* ArgParser::matchingArg(const char* arg) const
 {
    if (!arg)
       return nullptr ;
-//FIXME
+   // is this a long or a short flag name?
+   if (arg[1] != '-')
+      {
+      arg++ ; // drop the leading hyphen
+      // do we have an exact match of a short flag name? (implies that the value is in the next argv[] element)
+      for (ArgOptBase* opt = m_options ; opt ; opt = opt->next())
+	 {
+	 if (strcmp(opt->shortName(),arg) == 0)
+	    return opt ;
+	 }
+      // otherwise, find the longest matching short name
+      size_t longest = 0 ;
+      ArgOptBase* match = nullptr ;
+      for (ArgOptBase* opt = m_options ; opt ; opt = opt->next())
+	 {
+	 const char* name = opt->shortName() ;
+	 size_t matchlen = 0 ;
+	 for ( ; name[matchlen] && arg[matchlen] ; ++matchlen)
+	    {
+	    if (name[matchlen] != arg[matchlen]) break ;
+	    }
+	 if (name[matchlen] == '\0' && matchlen > longest)
+	    {
+	    longest = matchlen ;
+	    match = opt ;
+	    }
+	 }
+      return match ;
+      }
+   else
+      {
+      // it's a long flag name, so check whether the name matches minus the optional "=value"
+      const char* equal = strchr(arg,'=') ;
+      size_t len = strlen(arg+2) ;
+      if (equal) len = (equal - arg - 2) ;
+      for (ArgOptBase* opt = m_options ; opt ; opt = opt->next())
+	 {
+	 if (strncmp(opt->fullName(),arg+2,len) == 0)
+	    return opt ;
+	 }
+      }
    return nullptr ;
 }
 
@@ -101,7 +141,8 @@ ArgOptBase* ArgParser::matchingArg(const char* arg) const
 bool ArgParser::parseArgs(int& argc, char**& argv)
 {
    init() ;
-   while (argc > 1 && argv[1] != nullptr && argv[1][0] == '-')
+   bool success = true ;
+   while (success && argc > 1 && argv[1] != nullptr && argv[1][0] == '-')
       {
       if (strcmp(argv[1],"--") == 0)
 	 {
@@ -109,24 +150,26 @@ bool ArgParser::parseArgs(int& argc, char**& argv)
 	 //   non-flag option even if it starts with a dash
 	 argc-- ;
 	 argv++ ;
+	 success = false ;
 	 break  ;
 	 }
       ArgOptBase* opt = matchingArg(argv[1]) ;
       if (!opt)
 	 {
 	 unknownOption(argv[1]) ;
-	 return false ;
+	 success = false ;
 	 }
-      if (!opt->parse(argc, argv))
+      else if (!opt->parse(argc, argv))
 	 {
 	 // parse function reported invalid value for option, so we can just return
-	 return false ;
+	 success = false ;
+	 break ;
 	 }
       // consume the commandline argument
       argc-- ;
       argv++ ;
       }
-   return true ;
+   return success ;
 }
 
 //----------------------------------------------------------------------------
@@ -157,6 +200,19 @@ bool ArgParser::showHelp(bool longhelp) const
 ArgOptBase::ArgOptBase(ArgParser& parser, const char* shortname, const char* fullname, const char* desc)
 {
    parser.addOpt(this) ;
+   if (!shortname) shortname = "" ;
+   if (!fullname) fullname = "" ;
+   if (!desc) desc = "" ;
+   m_shortname = shortname ;
+   m_fullname = fullname ;
+   m_description = desc ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ArgOptBase::ArgOptBase(const char* shortname, const char* fullname, const char* desc)
+{
    if (!shortname) shortname = "" ;
    if (!fullname) fullname = "" ;
    if (!desc) desc = "" ;
@@ -408,6 +464,23 @@ template class ArgOpt<const char*> ;
 
 ArgHelp::ArgHelp(ArgParser& parser, const char* shortname, const char* fullname, const char* desc, bool longhelp)
    : ArgOptBase(parser,shortname,fullname,desc), m_flag(nullptr), m_long(longhelp), m_defer(false)
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ArgHelp::ArgHelp(const char* shortname, const char* fullname, const char* desc, bool longhelp)
+   : ArgOptBase(shortname,fullname,desc), m_flag(nullptr), m_long(longhelp), m_defer(false)
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ArgHelp::ArgHelp(bool& var, const char* shortname, const char* fullname, const char* desc,
+		 bool longhelp)
+   : ArgOptBase(shortname,fullname,desc), m_flag(&var), m_long(longhelp), m_defer(true)
 {
    return ;
 }
