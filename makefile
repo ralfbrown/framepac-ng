@@ -369,6 +369,9 @@ bin/argparser$(EXE):	tests/argparser$(OBJ) $(LIBRARY)
 bin/parhash$(EXE):	tests/parhash$(OBJ) $(LIBRARY)
 	$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
+bin/tpool$(EXE):	tests/tpool$(OBJ) $(LIBRARY)
+	$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
+
 allocator$(OBJ):	allocator$(C) framepac/memory.h
 argparser$(OBJ):	argparser$(C) framepac/argparser.h
 array$(OBJ):		array$(C) framepac/array.h
@@ -564,5 +567,6 @@ FramepaC.h:	framepac/config.h
 
 tests/argparser$(OBJ):	tests/argparser$(C) framepac/argparser.h
 tests/parhash$(OBJ):	tests/parhash$(C) framepac/hashtable.h framepac/timer.h
+tests/tpool$(OBJ):	tests/tpool$(C) framepac/threadpool.h
 
 # End of Makefile #
