@@ -23,6 +23,9 @@
 #define _Fr_ARGPARSER_H_INCLUDED
 
 #include <cstdint>
+#include <cstring>
+#include <string>
+#include <sstream>
 
 namespace Fr
 {
@@ -40,6 +43,8 @@ class ArgOptBase
 
       bool parse(int& argc, char**& argv) const ;
 
+      void invalidValue(const char* opt) const ;
+
       ArgOptBase* next() const { return m_next ; }
       void next(ArgOptBase* nxt) { m_next = nxt ; }
 
@@ -50,11 +55,17 @@ class ArgOptBase
       const char* fullName() const { return m_fullname ; }
       const char* description() const { return m_description ; }
 
+      void setParser(ArgParser* p) { m_parser = p ; }
+      ArgParser* getParser() const { return m_parser ; }
+
    protected:
       virtual bool parseValue(const char* arg) const = 0 ;
       virtual bool optional() const { return false ; } ;
+      virtual char* describeDefault() const { return nullptr ; }
+      virtual char* describeRange() const { return nullptr ; }
    protected:
-      ArgOptBase* m_next ;
+      ArgParser*  m_parser { nullptr } ;
+      ArgOptBase* m_next { nullptr } ;
       const char* m_shortname ;
       const char* m_fullname ;
       const char* m_description ;
@@ -70,7 +81,12 @@ class ArgOptFunc : public ArgOptBase
       ArgOptFunc(ArgParser& parser, Callable& fn, const char* shortname, const char* fullname, const char* desc)
 	 : ArgOptBase(parser,shortname,fullname,desc), m_func(fn)
 	 {
-	 m_func = fn ; 
+	 m_func = &fn ; 
+	 }
+      ArgOptFunc(Callable& fn, const char* shortname, const char* fullname, const char* desc)
+	 : ArgOptBase(shortname,fullname,desc), m_func(fn)
+	 {
+	 m_func = &fn ; 
 	 }
       ~ArgOptFunc() {}
 
@@ -80,7 +96,7 @@ class ArgOptFunc : public ArgOptBase
 	    return m_func(arg) ;
 	 }
    protected:
-      Callable&  m_func ;
+      Callable* m_func ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -130,13 +146,35 @@ class ArgOpt : public ArgOptBase
       static bool convert(const char* arg, T& value) ;
       virtual bool parseValue(const char* arg) const ;
       virtual bool optional() const { return m_have_defvalue ; }
+      virtual char* describeDefault() const
+	 {
+	    if (!m_have_defvalue) return nullptr ;
+	    std::ostringstream s ;
+	    s << m_defvalue ;
+	    const char* str = s.str().c_str() ;
+	    size_t len = std::strlen(str) ;
+	    char* result = new char[len+1] ;
+	    std::memcpy(result,str,len+1) ;
+	    return result ;
+	 }
+      virtual char* describeRange() const
+	 { 
+	    if (!m_have_minmax) return nullptr ;
+	    std::ostringstream s ;
+	    s << m_minvalue << " to " << m_maxvalue ;
+	    const char* str = s.str().c_str() ;
+	    size_t len = std::strlen(str) ;
+	    char* result = new char[len+1] ;
+	    std::memcpy(result,str,len+1) ;
+	    return result ;
+	 }
    protected:
-      T& m_value ;
-      T m_defvalue { } ;
-      T m_minvalue { } ;
-      T m_maxvalue { } ;
-      bool m_have_defvalue { false } ;
-      bool m_have_minmax { false } ;
+      T&         m_value ;
+      T          m_defvalue { } ;
+      T          m_minvalue { } ;
+      T          m_maxvalue { } ;
+      bool       m_have_defvalue { false } ;
+      bool       m_have_minmax { false } ;
    } ;
 
 
@@ -171,7 +209,6 @@ class ArgHelp : public ArgOptBase
       ~ArgHelp() ;
 
       bool isLongHelp() const { return m_long ; }
-      bool defer() const { return m_defer ; }
 
    protected:
       virtual bool parseValue(const char* arg) const ;
@@ -179,7 +216,6 @@ class ArgHelp : public ArgOptBase
    protected:
       bool* m_flag ;
       bool  m_long  ;
-      bool  m_defer ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -210,11 +246,14 @@ class ArgParser
 	 { addOpt(new ArgOpt<T>(var,shortname,fullname,desc,def_value,min_value,max_value),true) ; return *this ; }
       ArgParser& addHelp(const char* shortname, const char* fullname, const char* desc, bool longhelp = false)
 	 { addOpt(new ArgHelp(shortname,fullname,desc,longhelp),true) ; return *this ; }
+      template <typename Callable>
+      ArgParser& addFunc(Callable& fn, const char* shortname, const char* fullname, const char* desc)
+	 { addOpt(new ArgOptFunc<Callable>(fn,shortname,fullname,desc),true) ; return *this ; }
 
       void addOpt(ArgOptBase* opt, bool must_delete = false) ;
-      bool parseArgs(int& argc, char**& argv) ;
+      bool parseArgs(int& argc, char**& argv, bool show_help_on_error = false) ;
 
-      bool unknownOption(const char *name) const ;
+      bool unknownOption(const char* name) const ;
       bool showHelp(bool longhelp = false) const ;
 
    protected:

@@ -35,6 +35,16 @@ ArgOpt<int> i_flag(cmdline,int_option,"i","int","set integer variable, default =
        5,-2,10) ;
 ArgHelp h_flag(cmdline,"h","","show brief help") ;
 
+//----------------------------------------------------------------------------
+
+static bool parse_flag(const char* arg)
+{
+   cerr << "parse_flag("<<arg<<")"<<endl ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
 int main(int argc, char** argv)
 {
    size_t sizet_option = 1 ;
@@ -47,6 +57,7 @@ int main(int argc, char** argv)
 	   -12.8,19.01)
       .add(string_option,"s","string","set char* variable, default=Default","Default")
       .add(bool_option,"b","bool","set boolean flag")
+      .addFunc(parse_flag,"p","parse","pass value to function to parse")
       .addHelp("","longhelp", "show detailed help") ;
    bool success = cmdline.parseArgs(argc,argv) ;
    cout << "parse status = " << (success ? "OK" : "error") << endl ;

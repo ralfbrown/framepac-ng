@@ -82,6 +82,7 @@ void ArgParser::addOpt(ArgOptBase* opt, bool must_delete)
    init() ;
    opt->next(m_options) ;
    opt->mustDelete(must_delete) ;
+   opt->setParser(this) ;
    m_options = opt ;
    return ;
 }
@@ -138,7 +139,7 @@ ArgOptBase* ArgParser::matchingArg(const char* arg) const
 
 //----------------------------------------------------------------------------
 
-bool ArgParser::parseArgs(int& argc, char**& argv)
+bool ArgParser::parseArgs(int& argc, char**& argv, bool show_help_on_error)
 {
    init() ;
    bool success = true ;
@@ -150,8 +151,7 @@ bool ArgParser::parseArgs(int& argc, char**& argv)
 	 //   non-flag option even if it starts with a dash
 	 argc-- ;
 	 argv++ ;
-	 success = false ;
-	 break  ;
+	 return true ;
 	 }
       if (strcmp(argv[1],"-\t") == 0)
 	 {
@@ -165,6 +165,8 @@ bool ArgParser::parseArgs(int& argc, char**& argv)
       if (!opt)
 	 {
 	 unknownOption(argv[1]) ;
+	 if (show_help_on_error)
+	    showHelp() ;
 	 success = false ;
 	 }
       else if (!opt->parse(argc, argv))
@@ -293,7 +295,37 @@ bool ArgOptBase::parse(int& argc, char**& argv) const
       else
 	 return false ;
       }
-   return parseValue(arg) ;
+   bool success = parseValue(arg) ;
+   if (!success)
+      {
+      invalidValue(arg) ;
+      }
+   return success ;
+}
+
+//----------------------------------------------------------------------------
+
+void ArgOptBase::invalidValue(const char* opt) const
+{
+   cerr << "Invalid value '" << opt << "' for " ;
+   if (shortName())
+      {
+      cerr << "-" << shortName() ;
+      if (fullName())
+	 {
+	 cerr << " (--" << fullName() << ")" ;
+	 }
+      }
+   else
+      cerr << "--" << fullName() ;
+   cerr << endl ;
+   char* range = describeRange() ;
+   if (range)
+      {
+      cerr << "valid range is " << range << endl ;
+      delete[] range ;
+      }
+   return ;
 }
 
 /************************************************************************/
@@ -472,7 +504,7 @@ template class ArgOpt<const char*> ;
 /************************************************************************/
 
 ArgHelp::ArgHelp(ArgParser& parser, const char* shortname, const char* fullname, const char* desc, bool longhelp)
-   : ArgOptBase(parser,shortname,fullname,desc), m_flag(nullptr), m_long(longhelp), m_defer(false)
+   : ArgOptBase(parser,shortname,fullname,desc), m_flag(nullptr), m_long(longhelp)
 {
    return ;
 }
@@ -480,7 +512,7 @@ ArgHelp::ArgHelp(ArgParser& parser, const char* shortname, const char* fullname,
 //----------------------------------------------------------------------------
 
 ArgHelp::ArgHelp(const char* shortname, const char* fullname, const char* desc, bool longhelp)
-   : ArgOptBase(shortname,fullname,desc), m_flag(nullptr), m_long(longhelp), m_defer(false)
+   : ArgOptBase(shortname,fullname,desc), m_flag(nullptr), m_long(longhelp)
 {
    return ;
 }
@@ -489,7 +521,7 @@ ArgHelp::ArgHelp(const char* shortname, const char* fullname, const char* desc, 
 
 ArgHelp::ArgHelp(bool& var, const char* shortname, const char* fullname, const char* desc,
 		 bool longhelp)
-   : ArgOptBase(shortname,fullname,desc), m_flag(&var), m_long(longhelp), m_defer(true)
+   : ArgOptBase(shortname,fullname,desc), m_flag(&var), m_long(longhelp)
 {
    return ;
 }
@@ -498,7 +530,7 @@ ArgHelp::ArgHelp(bool& var, const char* shortname, const char* fullname, const c
 
 ArgHelp::ArgHelp(ArgParser& parser, bool& var, const char* shortname, const char* fullname, const char* desc,
 		 bool longhelp)
-   : ArgOptBase(parser,shortname,fullname,desc), m_flag(&var), m_long(longhelp), m_defer(true)
+   : ArgOptBase(parser,shortname,fullname,desc), m_flag(&var), m_long(longhelp)
 {
    return ;
 }

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-04-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -48,7 +48,10 @@ static char* vaprintf(const char *fmt, va_list args)
    size_t len = vsnprintf(nullptr,0,fmt,argcopy) ;
    char* buf = new char[len+1] ;
    if (buf)
+      {
+      va_copy(argcopy,args) ;
       vsnprintf(buf,len+1,fmt,args) ;
+      }
    return buf ;
 }
 
@@ -270,4 +273,4 @@ bool ConsoleSystemMessage::showFatal(const char* msg)
 
 } // end namespace Fr
 
-// end of file vector_u32_dbl.C //
+// end of file message.C //
