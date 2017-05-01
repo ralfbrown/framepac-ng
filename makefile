@@ -566,7 +566,7 @@ FramepaC.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 tests/argparser$(OBJ):	tests/argparser$(C) framepac/argparser.h
-tests/parhash$(OBJ):	tests/parhash$(C) framepac/hashtable.h framepac/timer.h
-tests/tpool$(OBJ):	tests/tpool$(C) framepac/threadpool.h
+tests/parhash$(OBJ):	tests/parhash$(C) framepac/argparser.h framepac/hashtable.h framepac/timer.h
+tests/tpool$(OBJ):	tests/tpool$(C) framepac/argparser.h framepac/random.h framepac/threadpool.h framepac/timer.h
 
 # End of Makefile #
