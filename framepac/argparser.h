@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-18					*/
+/* Version 0.01, last edit 2017-05-01					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -180,6 +180,7 @@ class ArgOpt : public ArgOptBase
 
 // library provides instantiations for the common variable types
 template<> bool ArgOpt<bool>::convert(const char*, bool&) ;
+template<> bool ArgOpt<bool>::optional() const ;
 template<> bool ArgOpt<bool>::parseValue(const char*) const ;
 extern template class ArgOpt<bool> ;
 template<> bool ArgOpt<int>::convert(const char*, int&) ;

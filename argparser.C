@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-18					*/
+/* Version 0.01, last edit 2017-05-01					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -484,6 +484,14 @@ bool ArgOpt<T>::parseValue(const char* arg) const
 	 }
       }
    m_value = value ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <>
+bool ArgOpt<bool>::optional() const
+{
    return true ;
 }
 
