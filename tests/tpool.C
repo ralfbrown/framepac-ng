@@ -31,10 +31,12 @@ using namespace Fr ;
 /************************************************************************/
 /************************************************************************/
 
-static void null_function(const void*, void*)
+static void null_work(const void*, void*)
 {
    return ;
 }
+
+void (*null_function)(const void*,void*) = &null_work ;
 
 //----------------------------------------------------------------------------
 
