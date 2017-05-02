@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-03					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -40,6 +40,13 @@
 
 #define FrNAP_TIME std::chrono::microseconds(250)
 
+namespace FramepaC
+{
+extern size_t small_primes[] ;
+extern size_t num_small_primes ;
+
+} // end namespace FramepaC //
+
 namespace Fr {
 
 #define FrSPIN_COUNT 20
@@ -48,8 +55,6 @@ namespace Fr {
 void pushlist(Object*,List*) ;
 
 size_t FramepaC_initial_indent = 0 ;
-size_t FramepaC_small_primes[] = { 2, 3, 5, 7, 11, 13, 17 } ;  //FIXME
-
 } // end namespace Fr
 
 /************************************************************************/
@@ -200,9 +205,9 @@ size_t HashTable<KeyT,ValT>::Table::normalizeSize(size_t sz)
    size_t pre_bump ;
    do {
    pre_bump = sz ;
-   for (size_t i = 0 ; FramepaC_small_primes[i] ; ++i)
+   for (size_t i = 0 ; i < FramepaC::num_small_primes ; ++i)
       {
-      if (sz % FramepaC_small_primes[i] == 0)
+      if (sz % FramepaC::small_primes[i] == 0)
 	 sz += 2 ;
       }
    } while (sz != pre_bump) ;

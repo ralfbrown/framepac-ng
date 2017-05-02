@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-03					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -565,7 +565,7 @@ class HashTable : public Object
 	 [[gnu::hot]] void copyChains(size_t bucketnum, size_t endpos) ;
 	 // a separate version of add() for resizing, because Fr::SymbolTable needs to
 	 //   look at the full key->hashValue(), not just 'key' itself
-	 bool reAdd(size_t hashval, KeyT key, ValT value = 0) ;
+	 bool reAdd(size_t hashval, KeyT key, ValT value = (ValT)0) ;
 
 	 [[gnu::hot]] bool claimEmptySlot(size_t pos, KeyT key) ;
 	 [[gnu::hot]] Link locateEmptySlot(size_t bucketnum, KeyT key, bool &got_resized);
@@ -589,7 +589,8 @@ class HashTable : public Object
 	 void onRemove(HashKVFunc *func) { remove_fn = func ; }
 	 bool resize(size_t newsize, bool enlarge_only = false) ;
 
-	 [[gnu::hot]] bool add(size_t hashval, KeyT key, ValT value = 0) ;
+	 [[gnu::hot]] bool add(size_t hashval, KeyT key, ValT value) ;
+	 [[gnu::hot]] bool add(size_t hashval, KeyT key) { return add(hashval,key,(ValT)0) ; }
 	 [[gnu::hot]] ValT addCount(size_t hashval, KeyT key, size_t incr) ;
 
 	 [[gnu::hot]] bool contains(size_t hashval, KeyT key) const ;
@@ -609,11 +610,11 @@ class HashTable : public Object
 	 // special support for Fr::SymbolTableX
 	 template <typename RetT = KeyT>
 	 typename std::enable_if<std::is_base_of<Fr::Symbol,KeyT>::value,RetT>::type
-	 addKey(size_t hashval, const char* name, size_t namelen, bool* already_existed = 0) ;
+	 addKey(size_t hashval, const char* name, size_t namelen, bool* already_existed = nullptr) ;
 	 // (default no-op version for non-Symbol hash tables, selected by SFINAE)
 	 template <typename RetT = KeyT>
 	 typename std::enable_if<!std::is_base_of<Fr::Symbol,KeyT>::value,RetT>::type
-	 addKey(size_t /*hashval*/, const char* /*name*/, size_t /*namelen*/, bool* /*already_existed*/ = 0) ;
+	 addKey(size_t /*hashval*/, const char* /*name*/, size_t /*namelen*/, bool* /*already_existed*/ = nullptr) ;
 
 	 // special support for Fr::SymbolTable
 	 [[gnu::hot]] bool contains(size_t hashval, const char *name, size_t namelen) const ;
@@ -1012,7 +1013,8 @@ class HashTable : public Object
 
       bool reclaimDeletions() { DELEGATE(reclaimDeletions()) }
 
-      [[gnu::hot]] bool add(KeyT key, ValT value = 0) { DELEGATE_HASH_RECLAIM(bool,add(hashval,key,value)) }
+      [[gnu::hot]] bool add(KeyT key) { DELEGATE_HASH_RECLAIM(bool,add(hashval,key)) }
+      [[gnu::hot]] bool add(KeyT key, ValT value) { DELEGATE_HASH_RECLAIM(bool,add(hashval,key,value)) }
       [[gnu::hot]] ValT addCount(KeyT key, size_t incr) { DELEGATE_HASH_RECLAIM(size_t,addCount(hashval,key,incr)) }
       bool remove(KeyT key) { DELEGATE_HASH(remove(hashval,key)) }
       [[gnu::hot]] bool contains(KeyT key) const { DELEGATE_HASH(contains(hashval,key)) }
@@ -1036,7 +1038,7 @@ class HashTable : public Object
 	    return m_table.load()->add(hashval,key,value) ;
 	 }
       // special support for Fr::SymbolTableX
-      [[gnu::hot]] KeyT addKey(const char *name, bool *already_existed = 0)
+      [[gnu::hot]] KeyT addKey(const char *name, bool *already_existed = nullptr)
 	 {
 	    size_t namelen ;
 	    size_t hashval = hashVal(name,&namelen) ;
@@ -1254,7 +1256,7 @@ template <> \
 inline K HashTable<K,V>::Entry::copy(const K obj) { return obj ; } \
 \
 template <> \
-Object* HashTable<K,V>::Table::makeObject(K key) \
+inline Object* HashTable<K,V>::Table::makeObject(K key) \
 { return Integer::create(key) ; }	 \
 \
 template <> \

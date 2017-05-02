@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-26					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2015,2017 Carnegie Mellon University			*/
@@ -19,7 +19,13 @@
 /*									*/
 /************************************************************************/
 
+#include <iomanip>
+#include "framepac/argparser.h"
 #include "framepac/hashtable.h"
+#include "framepac/message.h"
+#include "framepac/random.h"
+#include "framepac/symbol.h"
+#include "framepac/threadpool.h"
 #include "framepac/timer.h"
 
 using namespace Fr ;
@@ -42,6 +48,9 @@ using namespace Fr ;
 /*	Type declarations						*/
 /************************************************************************/
 
+extern Symbol* findSymbol(const char* /*name*/) ; //FIXME
+
+
 enum Operation
 {
    Op_GENSYM,
@@ -62,30 +71,28 @@ typedef void HashRequestFunc(class HashRequestOrder *) ;
 class HashRequestOrder
    {
    public:
-      Operation	op ;
-      size_t	size ;
-      size_t	cycles ;
-      size_t	id ;
-      size_t	threads ;
-      size_t	slice_start ;
-      size_t	slice_size ;
-      size_t	current_cycle ;
-      size_t	total_ops ;
-      bool	m_verbose ;
-      bool      m_terse ;
-      bool	strict ;		// check results?
-      unsigned	extra_arg ;
-      uint32_t *randnums ;
-      HashRequestFunc *func ;
-      void     *ht ;
-      FrSymbol **syms ;
-      FrThreadPool *pool ;
+      Operation	  op ;
+      size_t	  size ;
+      size_t	  cycles ;
+      size_t	  id ;
+      size_t	  threads ;
+      size_t	  slice_start ;
+      size_t	  slice_size ;
+      size_t	  current_cycle ;
+      size_t	  total_ops ;
+      bool	  m_verbose ;
+      atom_bool   m_terse ;
+      bool	  strict ;		// check results?
+      unsigned	  extra_arg ;
+      uint32_t*   randnums ;
+      HashRequestFunc* func ;
+      void*       ht ;
+      Symbol**    syms ;
+      ThreadPool* pool ;
    public:
       HashRequestOrder() { current_cycle = 0 ; }
       ~HashRequestOrder() {}
    } ;
-
-FrMAKE_INTEGER_HASHTABLE_CLASS(IntHashTable,INTEGER_TYPE,FrNullObject) ;
 
 /************************************************************************/
 /*	Syntactic sugar for conditional compilation			*/
@@ -107,7 +114,7 @@ FrMAKE_INTEGER_HASHTABLE_CLASS(IntHashTable,INTEGER_TYPE,FrNullObject) ;
 /*	Members for class HashRequestOrder				*/
 /************************************************************************/
 
-extern FrPER_THREAD size_t my_job_id ;
+extern thread_local size_t my_job_id ;
 
 /************************************************************************/
 /*	Helper functions						*/
@@ -165,11 +172,11 @@ static void hash_gensym(HashRequestOrder *order)
 {
    my_job_id = order->id ;
    size_t slice_end = order->slice_start + order->slice_size ;
-   FrSymbol **syms = order->syms ;
+   Symbol **syms = order->syms ;
    // generate the symbols in multiple interleaved passes so that we
    //   don't end up with strictly increasing (and thus well-cached)
    //   hash keys during insertion
-   FrSymbolTable *symtab = FrSymbolTable::current() ;
+   SymbolTable *symtab = SymbolTable::current() ;
    size_t passes = 53 ;
    for (size_t pass = 0 ; pass < passes ; ++pass)
       {
@@ -177,8 +184,7 @@ static void hash_gensym(HashRequestOrder *order)
 	 {
 	 // generate our own unique symbol to avoid contention in gensym()
 	 char name[100] ;
-	 name[0] = 'A' + (order->id % 26) ;
-	 ultoa(i,name+1,10) ;
+	 snprintf(name,sizeof(name),"%c%lu%c",(char)('A' + (order->id % 26)),i,'\0') ;
 	 syms[i] = symtab->add(name) ;
 	 }
       }
@@ -241,14 +247,17 @@ static void hash_check(HashRequestOrder *order)
 
 //----------------------------------------------------------------------
 
-static bool find_Symbol(const FrSymbol *sym)
+static bool find_Symbol(const Symbol *sym)
 {
-   return sym ? findSymbol(sym->symbolName()) != nullptr : false;
+//FIXME   return sym ? findSymbol(sym->symbolName()) != nullptr : false;
+   (void)sym;
+   return false ;
 }
 
 static bool find_Symbol(INTEGER_TYPE) { return false ; }
 
-static const char *sym_name(const FrSymbol *sym) { return sym->symbolName() ; }
+//static const char *sym_name(const Symbol *sym) { return sym->symbolName() ; }
+static const char *sym_name(const Symbol * /*sym*/) { return nullptr ; } //FIXME
 
 static const char *sym_name(INTEGER_TYPE) { return nullptr ; }
 
@@ -358,7 +367,7 @@ static void hash_dispatch(const void *input, void * /*output*/ )
    HashRequestOrder *order = (HashRequestOrder*)input ;
    my_job_id = order->id ;
    order->current_cycle = 1 ;
-   HashT::registerThread() ;
+//FIXME   HashT::registerThread() ;
    HashT::clearPerThreadStats() ;
    while (order->current_cycle <= order->cycles)
       {
@@ -367,7 +376,7 @@ static void hash_dispatch(const void *input, void * /*output*/ )
       }
    // keep ThreadSanitizer happy by using an atomic read, even though
    //   it isn't actually necessary
-   if (!FrCriticalSection::load(order->m_terse) && order->current_cycle > order->cycles)
+   if (!order->m_terse.load() && order->current_cycle > order->cycles)
       {
       // try to ensure that the message doesn't get interleaved with
       //   other completion messages by generating a single string
@@ -382,11 +391,11 @@ static void hash_dispatch(const void *input, void * /*output*/ )
 //----------------------------------------------------------------------
 
 template <class HashT, typename KeyT>
-static void hash_test(FrThreadPool *user_pool, ostream &out, size_t threads, size_t cycles, HashT *ht,
+static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_t cycles, HashT *ht,
 		      size_t maxsize, KeyT *syms, enum Operation op, bool terse, bool strict = true,
 		      uint32_t *randnums = nullptr)
 {
-   FrThreadPool *tpool = user_pool ? user_pool : new FrThreadPool(threads) ;
+   ThreadPool *tpool = user_pool ? user_pool : new ThreadPool(threads) ;
    bool must_wait = (threads != 0) ;
    if (threads == 0) threads = 1 ;
    HashRequestOrder *hashorders = NewC<HashRequestOrder>(threads) ;
@@ -397,13 +406,13 @@ static void hash_test(FrThreadPool *user_pool, ostream &out, size_t threads, siz
       ht->clearGlobalStats() ;
       ht->clearPerThreadStats() ;
       }
-   FrTimer timer ;
+   Timer timer ;
    for (size_t i = 0 ; i < threads ; ++i)
       {
       hashorders[i].op = op ;
       hashorders[i].size = maxsize ;
       hashorders[i].ht = (void*)ht ;
-      hashorders[i].syms = (FrSymbol**)syms ;
+      hashorders[i].syms = (Symbol**)syms ;
       hashorders[i].randnums = randnums ;
       hashorders[i].strict = strict ;
       hashorders[i].m_verbose = false ;
@@ -456,9 +465,9 @@ static void hash_test(FrThreadPool *user_pool, ostream &out, size_t threads, siz
 	    hashorders[i].func = hash_random_add<HashT,KeyT> ;
 	    break ;
 	 default:
-	    FrMissedCase("hash_test") ;
+	    SystemMessage::missed_case("hash_test") ;
 	 }
-      tpool->dispatch(&hash_dispatch<HashT>,&hashorders[i],0) ;
+      tpool->dispatch(&hash_dispatch<HashT>,&hashorders[i],nullptr) ;
       }
    if (must_wait)
       {
@@ -484,14 +493,13 @@ static void hash_test(FrThreadPool *user_pool, ostream &out, size_t threads, siz
       ops = 0 ;
       for (size_t i = 0 ; i < threads ; ++i)
 	 {
-	 FrCriticalSection::increment(ops,hashorders[i].total_ops) ;
+	 ops += hashorders[i].total_ops ;
 	 }
       }
    delete[] hashorders ;
-   walltime = (round(10000*walltime)/10000) ;
    if (time <= 0.0) time = 0.00001 ;
    if (walltime <= 0.0) walltime = 0.00001 ;
-   out << "  Time: " << walltime << "s, " << time << "s CPU (" << 100.0*(time/walltime) << "%), " ;
+   out << "  Time: " << timer << ", " ;
    pretty_print((size_t)(ops / walltime),out) ;
    out << " ops/sec" << endl ;
    if (op == Op_REMOVE)
@@ -691,7 +699,7 @@ static void run_tests(size_t threads, size_t startsize, size_t maxsize,
    if_SHOW_NEIGHBORS(size_t max_neighbors[5]) ;
 
    HashT *ht = new HashT(startsize) ;
-   FrThreadPool tpool(threads) ;
+   ThreadPool tpool(threads) ;
    out << "Filling hash table      " << endl ;
    hash_test(&tpool,out,threads,1,ht,maxsize,keys,Op_ADD,terse) ;
    if_SHOW_CHAINS(chains[0] = ht->chainLengths(max_chain[0]));
@@ -778,29 +786,31 @@ static void run_tests(size_t threads, size_t startsize, size_t maxsize,
 
 //----------------------------------------------------------------------
 
-void hash_command(ostream &out, istream &in, int threads, bool terse, uint32_t* randnums,
+void hash_command(ostream &out, int threads, bool terse, uint32_t* randnums,
 		  size_t startsize, size_t maxsize, size_t cycles)
 {
    out << "Parallel (threaded) Object Hash Table operations" << endl << endl ;
-   Symbol **keys = New<FrSymbol*>(2*maxsize) ;
+   Symbol **keys = New<Symbol*>(2*maxsize) ;
    out << "Preparing symbols       " << endl ;
    // speed up symbol creation and avoid memory fragmentation by
    //  expanding the symbol table to hold all the symbols we will
    //  create
-   size_t needed = FrSymbolTable::current()->sizeForCapacity(2*maxsize) ;
+//FIXME   SymbolTable* curr_symtab = SymbolTable::current() ;
+//FIXME   size_t needed = curr_symtab->sizeForCapacity(2*maxsize) ;
+   size_t needed = 2*maxsize ;//FIXME
    needed *= 1.33 ; // gensyms tend to cluster in the table, since they are so similar in name
-   FrSymbolTable::current()->expandTo(needed+1000) ;
-   hash_test(nullptr,out,threads,1,(FrObjHashTable*)0,2*maxsize,keys,Op_GENSYM,terse) ;
+//FIXME   curr_symtab->expandTo(needed+1000) ;
+   hash_test(nullptr,out,threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_GENSYM,terse) ;
    out << "Checking symbols        " << endl ;
-   hash_test(nullptr,out,threads,1,(FrObjHashTable*)0,2*maxsize,keys,Op_CHECKSYMS,terse) ;
-   run_tests<FrObjHashTable>(threads,startsize,maxsize,cycles,keys,randnums,out,terse) ;
+   hash_test(nullptr,out,threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_CHECKSYMS,terse) ;
+   run_tests<ObjHashTable>(threads,startsize,maxsize,cycles,keys,randnums,out,terse) ;
    delete[] keys ;
    return ;
 }
 
 //----------------------------------------------------------------------
 
-void ihash_command(ostream &out, istream &in, int threads, bool terse, size_t startsize,
+void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, size_t startsize,
 		   size_t maxsize, size_t cycles, size_t order, size_t stride)
 {
    out << "Parallel (threaded) Integer Hash Table operations" << endl << endl ;
@@ -813,19 +823,14 @@ void ihash_command(ostream &out, istream &in, int threads, bool terse, size_t st
       }
    else if (order == 1 || order == 2)
       {
-      if (order == 2)
-	 FrSeedRandom(31415926) ;
+      // generate a randomly-distributed set of 32-bit integers, less the reserved values
       out << "Generating random keys" << endl ;
-      // generate a randomly-distributed set of 31-bit integers
-      //   (Park-Miller Lehmer RNG, aka MINSTD)
-      uint32_t seed = 1 ;
-      for (size_t i = 0 ; i < 2*maxsize ; i++)
+      RandomInteger rand(0xFFFFFFFC) ;
+      if (order == 2)
+	 rand.seed(31415926) ;
+      for (size_t i = 0 ; i < 2*maxsize ; ++i)
 	 {
-	 keys[i] = seed ;
-	 do {
-	 seed = ((uint64_t)seed * 48271UL) % INT32_MAX ;
-	 // skip the special reserved values, just in case we hit them
-	 } while (seed >= (uint32_t)~2) ;
+	 keys[i] = rand() ;
 	 }
       }
    else if (order == 3)
@@ -846,7 +851,7 @@ void ihash_command(ostream &out, istream &in, int threads, bool terse, size_t st
 	    }
 	 }
       }
-   run_tests<IntHashTable>(threads,startsize,maxsize,cycles,keys,randnums,out,terse) ;
+   run_tests<HashSet_U32>(threads,startsize,maxsize,cycles,keys,randnums,out,terse) ;
    delete[] keys ;
    return ;
 }
@@ -898,14 +903,15 @@ int main(int argc, char** argv)
       {
       cout << "Generating random numbers for randomized tests" << endl ;
       uint32_t *randnums = New<uint32_t>(2*grow_size) ;
-      for (size_t i = 0 ; i < 2*maxsize ; i++)
+      RandomInteger rand(grow_size) ;
+      for (size_t i = 0 ; i < 2*grow_size ; i++)
 	 {
-	 randnums[i] = FrRandomNumber(maxsize) ;
+	 randnums[i] = rand() ;
 	 }
       if (use_int_hashtable)
-	 ihash_command(cout,cin,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride) ;
+	 ihash_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride) ;
       else
-	 hash_command(cout,cin,threads,terse,randnums,start_size,grow_size,repetitions) ;
+	 hash_command(cout,threads,terse,randnums,start_size,grow_size,repetitions) ;
       delete[] randnums ;
       }
    return 0 ;

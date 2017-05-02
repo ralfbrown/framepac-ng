@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4+ under Unix/Linux
-# Last change: 01may2017
+# Last change: 02may2017
 
 #########################################################################
 # define the locations of all the files
@@ -247,7 +247,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	hashset_obj$(OBJ) hashset_sym$(OBJ) hashset_u32$(OBJ) \
 	hashtable_objobj$(OBJ) hashtable_objsz$(OBJ) \
 	hashtable_symnul$(OBJ) hashtable_symobj$(OBJ) hashtable_symsz$(OBJ) \
-	hashtable_u32u32$(OBJ) \
+	hashtable_u32u32$(OBJ) hashtable_data$(OBJ) \
 	init$(OBJ) linebatch$(OBJ) random$(OBJ) \
 	integer$(OBJ) jsonreader$(OBJ) list$(OBJ) map$(OBJ) matrix$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
@@ -387,6 +387,7 @@ frame$(OBJ):		frame$(C) framepac/frame.h
 hashset_obj$(OBJ):	hashset_obj$(C) template/hashtable.cc
 hashset_sym$(OBJ):	hashset_sym$(C) template/hashtable.cc
 hashset_u32$(OBJ):	hashset_u32$(C) template/hashtable.cc
+hashtable_data$(OBJ):	hashtable_data$(C) template/hashtable.cc
 hashtable_objobj$(OBJ):	hashtable_objobj$(C) template/hashtable.cc
 hashtable_objsz$(OBJ):	hashtable_objsz$(C) template/hashtable.cc
 hashtable_symnul$(OBJ):	hashtable_symnul$(C) template/hashtable.cc

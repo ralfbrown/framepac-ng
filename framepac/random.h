@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-29					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -41,6 +41,10 @@ class RandomInteger
       size_t get() ;
       size_t operator() () { return get() ; }
 
+      void seed() ;			// use default seed
+      void seed(size_t s) ;
+      void randomize() ;
+
    private:
       uniform_int_distribution<size_t> m_dist ;
    } ;
@@ -59,6 +63,10 @@ class RandomFloat
 
       double get() ;
       double operator() () { return get() ; }
+
+      void seed() ;			// use default seed
+      void seed(size_t s) ;
+      void randomize() ;
 
    private:
       uniform_real_distribution<double> m_dist ;

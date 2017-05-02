@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-03					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -166,6 +166,10 @@ class SymbolTable : public Object
       SymbolTable(const SymbolTable&) ;
       ~SymbolTable() ;
 
+      static SymbolTable* current() ;
+
+      Symbol* add(const char* name) ;
+      
    private: // static members
       static Allocator<SymbolTable> s_allocator ;
    private:
