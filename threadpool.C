@@ -171,19 +171,19 @@ static void work_function(ThreadPool* pool, unsigned thread_index)
       const void* in = order->input() ;
       void* out = order->output() ;
       pool->recycle(order) ;
-      if (!fn)
+      if (fn)
 	 {
-	 if (in == &request_exit)
-	    {
-	    pool->threadExiting(thread_index) ;
-	    return ;
-	    }
-	 else if (in == &request_ack)
-	    {
-	    pool->ack(thread_index) ;
-	    }
+	 fn(in,out); 
 	 }
-      fn(in,out); 
+      else if (in == &request_ack)
+	 {
+	 pool->ack(thread_index) ;
+	 }
+      else if (in == &request_exit)
+	 {
+	 pool->threadExiting(thread_index) ;
+	 return ;
+	 }
       }
    return ;
 }

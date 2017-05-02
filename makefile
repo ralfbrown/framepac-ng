@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4+ under Unix/Linux
-# Last change: 14apr2017
+# Last change: 01may2017
 
 #########################################################################
 # define the locations of all the files
@@ -276,8 +276,8 @@ DISTFILES= LICENSE COPYING makefile .gitignore *.C *.h framepac/*.h template/*.c
 # the library archive file for this module
 LIBRARY = $(PACKAGE)$(LIB)
 
-# the executable to be built for testing the package
-TESTPROG = testfp
+# the executable(s) to be built for testing the package
+TESTPROGS = $(BINDIR)/argparser$(EXE) $(BINDIR)/parhash$(EXE) $(BINDIR)/tpool$(EXE)
 
 # the object modules needed to build the test program
 TESTOBJS = $(TESTPROG)$(OBJ)
@@ -285,7 +285,7 @@ TESTOBJS = $(TESTPROG)$(OBJ)
 #########################################################################
 ## the generawl build rules
 
-all: $(BINDIR)/$(TESTPROG)$(EXE)
+all: $(TESTPROGS)
 
 help:
 	@echo "The makefile for $(PACKAGE) understands the following targets:"
@@ -306,7 +306,7 @@ lib:	$(LIBRARY)
 
 clean:
 	$(RM) *$(OBJ)
-	$(RM) $(BINDIR)/$(TESTPROG)$(EXE)
+	$(RM) $(TESTPROGS)
 #	$(RM) $(LIBRARY)
 
 veryclean: clean
@@ -318,12 +318,12 @@ install: $(BINDIR)/$(TESTPROG)$(EXE)
 	mkdir -p $(INSTALLDIR)
 	$(CP) $(SCRIPTS) $(DATAFILES) $(BINDIR)/$(TESTPROG)$(EXE) $(INSTALLDIR)
 
-system: $(BINDIR)/$(TESTPROG)$(EXE)
+system: $(TESTPROGS)
 
 bootstrap:
 
 strip:
-	strip $(BINDIR)/$(TESTPROG)$(EXE)
+	strip $(TESTPROGS)
 
 tags:
 	etags --c++ *.h *$(C) \
@@ -342,9 +342,6 @@ txz:
 	$(RM) frng-$(RELEASE).txz
 	tar -cf frng-$(RELEASE).txz --use-compress-program xz $(DISTFILES)
 
-$(BINDIR)/$(TESTPROG)$(EXE):
-	echo FIXME
-
 $(LIBRARY): $(OBJS)
 	-$(RM) $(LIBRARY)
 	$(LIBRARIAN) $(LIBFLAGS) $(LIBRARY) $(LIBOBJS)
@@ -357,20 +354,14 @@ $(LIBINSTDIR)/$(LIBRARY): $(LIBRARY)
 #########################################################################
 ## the dependencies for each module of the full package
 
-$(TESTPROG)$(OBJ):
-	$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $(TESTOBJS) $(LIBRARY) $(USELIBS)
+$(BINDIR)/argparser$(EXE):	tests/argparser$(OBJ) $(LIBRARY)
+		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
-$(TESTPROG)$(C):
-	echo FIXME: $(TOUCH) $@ \$(BITBUCKET)
+$(BINDIR)/parhash$(EXE):	tests/parhash$(OBJ) $(LIBRARY)
+		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
-bin/argparser$(EXE):	tests/argparser$(OBJ) $(LIBRARY)
-	$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
-
-bin/parhash$(EXE):	tests/parhash$(OBJ) $(LIBRARY)
-	$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
-
-bin/tpool$(EXE):	tests/tpool$(OBJ) $(LIBRARY)
-	$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
+$(BINDIR)/tpool$(EXE):		tests/tpool$(OBJ) $(LIBRARY)
+		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
 allocator$(OBJ):	allocator$(C) framepac/memory.h
 argparser$(OBJ):	argparser$(C) framepac/argparser.h
