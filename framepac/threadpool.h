@@ -81,7 +81,6 @@ class ThreadPool
    protected:
       void allocateWorkOrders() ;
       WorkOrder* makeWorkOrder(ThreadPoolWorkFunc* fn, const void* in, void* out) ;
-      bool dispatch(WorkOrder* order) ;
       void discardRecycledOrders() ;
 
    private:
@@ -91,7 +90,7 @@ class ThreadPool
 #ifndef FrSINGLE_THREADED
       thread**   m_pool { nullptr } ;	// the actual thread objects
 #endif /* !FrSINGLE_THREADED */
-      unsigned	 m_next_thread { 0 } ;	// next thread to which to try to assign a request
+      unsigned	 m_prev_thread { 0 } ;	// next thread to which to try to assign a request
       WorkQueue* m_queues { nullptr } ;	// work queues, one per worker thread
       WorkBatch* m_batches { nullptr } ;
       WorkOrder* m_freeorders { nullptr } ;

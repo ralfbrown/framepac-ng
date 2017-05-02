@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-01					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -100,9 +100,8 @@ class WorkQueue
       // inter-thread synchronization
       void prepare_wait()
 	 {
-	 if (m_spurious_wakeup.load())
+	 if (m_spurious_wakeup.exchange(false))
 	    {
-	    m_spurious_wakeup = false ;
 	    m_jobs.wait() ;		// resynchronize after a spurious wakeup
 	    }
 	 m_waiting = true ;
@@ -122,8 +121,7 @@ class WorkQueue
 	 }
       void notify()
 	 {
-	 if (!m_waiting.load()) return ;
-	 m_waiting = false ;
+	 if (!m_waiting.exchange(false)) return ;
 	 m_jobs.post() ;
 	 }
 
@@ -267,10 +265,10 @@ bool WorkQueue::push(WorkOrder* order)
 {
    if (!order)
       return false ;			// nothing to push
-   size_t tail = m_tail.load() ;
    size_t fullpos = m_head + FrWORKQUEUE_SIZE ;
    for ( ; ; )
       {
+      size_t tail = m_tail.load() ;
       if (tail >= fullpos)
 	 return false ;			// queue is full
       order = m_orders[tail % FrWORKQUEUE_SIZE].exchange(order) ;
@@ -278,7 +276,6 @@ bool WorkQueue::push(WorkOrder* order)
 	 break ;
       // if the previous value of the entry was non-null, that means someone else snuck in and
       //   added a task, so retry
-      tail = m_tail.load() ;
       }
    notify() ;				// signal worker to restart if it was waiting
    return true ;
@@ -463,44 +460,6 @@ unsigned ThreadPool::idleThreads() const
 
 //----------------------------------------------------------------------------
 
-bool ThreadPool::dispatch(WorkOrder* order)
-{
-   if (!order) return false ;
-   if (numThreads() == 0)
-      {
-      // we don't have any worker threads enabled, so directly invoke the worker function
-      if (order->worker())
-	 order->worker()(order->input(),order->output()) ;
-      return true ;
-      }
-   for ( ; ; )
-      {
-      // do a round-robin scan of the worker threads for one with space in its request queue
-      unsigned start_thread = m_next_thread ;
-      unsigned threadnum = start_thread ;
-      do {
-         // advance to next thread in pool
-         threadnum++ ;
-	 if (threadnum >= numThreads())
-	    threadnum = 0 ;
-         // atomically attempt to insert the request in the queue; this can fail if there
-         //   was only one free entry and another thread beat us to the punch, in addition
-         //   to failing if the queue is already full
-         if (m_queues[threadnum].push(order))
-	    {
-	    m_next_thread = threadnum ;
-	    return true ;
-	    }
-         } while (threadnum != start_thread) ;
-      // if all of the queues are full, go to sleep until a request is completed
-//FIXME: (Q&D: just sleep for a millisecond)
-      this_thread::sleep_for(std::chrono::milliseconds(1)) ;
-      }
-   return true ;
-}
-
-//----------------------------------------------------------------------------
-
 bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* output)
 {
    if (fn == nullptr) return false ;
@@ -511,7 +470,30 @@ bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* outpu
       return true ;
       }
    WorkOrder* order = makeWorkOrder(fn,input,output) ;
-   return dispatch(order) ;
+   if (!order) return false ;
+   for ( ; ; )
+      {
+      // do a round-robin scan of the worker threads for one with space in its request queue
+      unsigned start_thread = m_prev_thread ;
+      unsigned threadnum = start_thread ;
+      do {
+         // advance to next thread in pool
+         threadnum = (threadnum+1) % numThreads() ;
+         // atomically attempt to insert the request in the queue; this can fail if there
+         //   was only one free entry and another thread beat us to the punch, in addition
+         //   to failing if the queue is already full
+         if (m_queues[threadnum].push(order))
+	    {
+	    m_prev_thread = threadnum ;
+	    return true ;
+	    }
+         } while (threadnum != start_thread) ;
+      // if all of the queues are full, go to sleep until a request is completed
+//FIXME: (Q&D: just sleep for a millisecond)
+//      this_thread::sleep_for(std::chrono::milliseconds(1)) ;
+      this_thread::yield() ;
+      }
+   return true ;
 }
 
 //----------------------------------------------------------------------------
@@ -554,14 +536,15 @@ WorkOrder* ThreadPool::nextOrder(unsigned index)
       // try to steal something from another queue
       // TODO: be more sophisticated than a simple round-robin scan
       unsigned nt = numThreads() ;
-      size_t last = index ;
-      if (m_numCPUs && nt > 4 * m_numCPUs)
-	 last = (index + 4*m_numCPUs)%nt ;
-      for (unsigned next = (index+1)%nt ; next != last ; next = (next+1)%nt)
+      // if only makes sense to try to steal if our hardware threads are not massively over-subscribed
+      if (m_numCPUs == 0 || nt < 4 * m_numCPUs)
 	 {
-	 wo = m_queues[next].steal() ;
-	 if (wo)
-	    return wo ;
+	 for (unsigned next = (index+1)%nt ; next != index ; next = (next+1)%nt)
+	    {
+	    wo = m_queues[next].steal() ;
+	    if (wo)
+	       return wo ;
+	    }
 	 }
       }
    // if there were no jobs on our queue and we weren't able to steal any work,
