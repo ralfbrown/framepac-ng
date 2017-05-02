@@ -590,7 +590,7 @@ class HashTable : public Object
 	 bool resize(size_t newsize, bool enlarge_only = false) ;
 
 	 [[gnu::hot]] bool add(size_t hashval, KeyT key, ValT value) ;
-	 [[gnu::hot]] bool add(size_t hashval, KeyT key) { return add(hashval,key,(ValT)0) ; }
+	 [[gnu::hot]] bool add(size_t hashval, KeyT key) { return add(hashval,key,nullVal()) ; }
 	 [[gnu::hot]] ValT addCount(size_t hashval, KeyT key, size_t incr) ;
 
 	 [[gnu::hot]] bool contains(size_t hashval, KeyT key) const ;

@@ -19,7 +19,12 @@
 /*									*/
 /************************************************************************/
 
+
 #include <cstdlib>
+#include "framepac/hashtable.h"
+
+/************************************************************************/
+/************************************************************************/
 
 namespace FramepaC
 {
@@ -27,6 +32,33 @@ namespace FramepaC
 size_t small_primes[] =
    { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 } ;  //FIXME
 size_t num_small_primes = (sizeof(small_primes)/sizeof(small_primes[0])) ;
+
+thread_local size_t my_job_id ;
+
+} // end namespace FramepaC //
+
+/************************************************************************/
+/************************************************************************/
+
+namespace FramepaC
+{
+
+void HashTable_Stats::clear()
+{
+   insert = insert_dup = insert_attempt = insert_forwarded = insert_resize = 0 ;
+   remove = remove_found = remove_forwarded = 0 ;
+   contains = contains_found = contains_forwarded = 0 ;
+   lookup = lookup_found = lookup_forwarded = 0 ;
+   resize = resize_assist = resize_cleanup = 0 ;
+   reclaim = 0 ;
+   move = 0 ;
+   neighborhood_full = 0 ;
+   chain_lock_count = 0 ;
+   chain_lock_coll = 0 ;
+   spin = yield = sleep = none = 0 ;
+   return ;
+}
+
 
 } // end namespace FramepaC //
 

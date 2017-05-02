@@ -114,7 +114,7 @@ class HashRequestOrder
 /*	Members for class HashRequestOrder				*/
 /************************************************************************/
 
-extern thread_local size_t my_job_id ;
+using FramepaC::my_job_id ;
 
 /************************************************************************/
 /*	Helper functions						*/
