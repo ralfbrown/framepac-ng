@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-05					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -87,6 +87,7 @@ class ThreadPool
    private:
       static ThreadPool* s_defaultpool ;
       unsigned   m_numthreads ;		// total number of worker threads
+      unsigned   m_numCPUs { 0 } ;	// hardware threads, used to limit work-stealing scan
 #ifndef FrSINGLE_THREADED
       thread**   m_pool { nullptr } ;	// the actual thread objects
 #endif /* !FrSINGLE_THREADED */

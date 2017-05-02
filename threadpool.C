@@ -92,31 +92,44 @@ class WorkQueue
       bool empty() const { return m_head >= m_tail.load() ; }
 
       WorkOrder* fastPop() ;		// canonly be called by queue's owner
-      WorkOrder* pop(bool block = true) ; // can only be called by queue's owner
+      WorkOrder* pop() ;		// can only be called by queue's owner
       bool push(WorkOrder* order) ;	// can be called by any thread
       WorkOrder* steal() ;		// can be called by any thread
       void clear() ;			// remove all entries from queue
 
       // inter-thread synchronization
-      void post()
+      void prepare_wait()
 	 {
+	 if (m_spurious_wakeup.load())
 	    {
-	    std::unique_lock<std::mutex> lock(m_mutex) ;
-	    m_posted = true ;
-	    } // release the lock so that the awakened thread doesn't block on the mutex
-	    m_cond.notify_one() ;
+	    m_spurious_wakeup = false ;
+	    m_jobs.wait() ;		// resynchronize after a spurious wakeup
+	    }
+	 m_waiting = true ;
 	 }
-      void wait()
+      void cancel_wait()
 	 {
-	    std::unique_lock<std::mutex> lock(m_mutex) ;
-	    while (!m_posted)
-	       m_cond.wait(lock) ;
-	    m_posted = false ;		// reset for the next time before we unlock
+	 m_spurious_wakeup = true ;
+	 if (m_waiting.load())
+	    {
+	    m_spurious_wakeup = false ;
+	    m_waiting = false ;
+	    }
+	 }
+      void commit_wait()
+	 {
+	 m_jobs.wait() ;
+	 }
+      void notify()
+	 {
+	 if (!m_waiting.load()) return ;
+	 m_waiting = false ;
+	 m_jobs.post() ;
 	 }
 
    protected:
-      std::mutex	 m_mutex ;
-      std::condition_variable m_cond ;
+      atom_bool		 m_waiting ;
+      atom_bool		 m_spurious_wakeup ;
       Semaphore		 m_jobs { 0 } ;
       size_t             m_head { 0 } ;
       Atomic<WorkOrder*> m_orders[FrWORKQUEUE_SIZE] = { nullptr } ;
@@ -214,7 +227,7 @@ WorkOrder* WorkQueue::fastPop()
 
 //----------------------------------------------------------------------------
 
-WorkOrder* WorkQueue::pop(bool block)
+WorkOrder* WorkQueue::pop()
 {
    while (m_head < m_tail.load())
       {
@@ -228,10 +241,6 @@ WorkOrder* WorkQueue::pop(bool block)
 	 }
       // someone stole the next task, so loop until we
       //   get a non-null pointer, or m_head reaches m_tail
-      }
-   if (block)
-      {
-      wait() ;
       }
    return nullptr ;	// queue is empty
 }
@@ -271,7 +280,7 @@ bool WorkQueue::push(WorkOrder* order)
       //   added a task, so retry
       tail = m_tail.load() ;
       }
-   post() ;				// signal worker to restart if it was waiting
+   notify() ;				// signal worker to restart if it was waiting
    return true ;
 }
 
@@ -295,6 +304,7 @@ ThreadPool::ThreadPool(unsigned num_threads)
 #ifdef FrSINGLE_THREADED
    m_numthreads = 0 ;
 #else
+   m_numCPUs = std::thread::hardware_concurrency() ;
    m_queues = new WorkQueue[num_threads] ;
    m_pool = new thread*[num_threads] ;
    if (!m_queues || !m_pool)
@@ -535,24 +545,44 @@ void ThreadPool::waitUntilIdle()
 WorkOrder* ThreadPool::nextOrder(unsigned index)
 {
    assert(index < numThreads()) ;
-   WorkOrder* wo = m_queues[index].fastPop() ;
+   WorkQueue& q = m_queues[index] ;
+   WorkOrder* wo = q.fastPop() ;
    if (wo)
       return wo ;
-   bool block = false ;
-   while ((wo = m_queues[index].pop(block)) == nullptr)
+   if ((wo = q.pop()) == nullptr)
       {
       // try to steal something from another queue
       // TODO: be more sophisticated than a simple round-robin scan
       unsigned nt = numThreads() ;
-      for (unsigned next = (index+1)%nt ; next != index ; next = (next+1)%nt)
+      size_t last = index ;
+      if (m_numCPUs && nt > 4 * m_numCPUs)
+	 last = (index + 4*m_numCPUs)%nt ;
+      for (unsigned next = (index+1)%nt ; next != last ; next = (next+1)%nt)
 	 {
 	 wo = m_queues[next].steal() ;
 	 if (wo)
 	    return wo ;
 	 }
-      // couldn't steal anything, so try again, but this time, block until
-      //   something gets added to the queue
-      block = true ;
+      }
+   // if there were no jobs on our queue and we weren't able to steal any work,
+   //   we should go to sleep until work is available
+   if (!wo)
+      {
+      // two-stage commit to avoid the need for a condition variable
+      // 1a. announce that we will be blocking
+      q.prepare_wait() ;
+      // 1b. verify whether the queue is still empty
+      if ((wo = q.pop()) == nullptr)
+	 {
+	 // 2(usual). actually block until something is added to the queue 
+	 q.commit_wait() ;
+	 return nextOrder(index) ;
+	 }
+      else
+	 {
+	 // 2(alt). someone added something to the queue already, so abort the blocking
+	 q.cancel_wait() ;
+	 }
       }
    return wo ;
 }
