@@ -216,8 +216,7 @@ WorkOrder* WorkQueue::fastPop()
 
 WorkOrder* WorkQueue::pop(bool block)
 {
-   size_t tail = m_tail.load() ;
-   while (m_head < tail)
+   while (m_head < m_tail.load())
       {
       // figure out the index of the next task
       size_t idx = (m_head++) % FrWORKQUEUE_SIZE ;
@@ -229,7 +228,6 @@ WorkOrder* WorkQueue::pop(bool block)
 	 }
       // someone stole the next task, so loop until we
       //   get a non-null pointer, or m_head reaches m_tail
-      tail = m_tail.load() ;
       }
    if (block)
       {
@@ -242,18 +240,10 @@ WorkOrder* WorkQueue::pop(bool block)
 
 WorkOrder* WorkQueue::steal()
 {
-   return nullptr; //FIXME: have temporarily disabled stealing
-   size_t tail = --m_tail ;
-   // try to grab a task
+   size_t tail = m_tail.load() ;
+   // try to grab a task by atomically swapping the pointer for the last item in the queue
    WorkOrder* order = m_orders[tail%FrWORKQUEUE_SIZE].exchange(nullptr) ;
-   if (!order)
-      {
-      // someone else already claimed the last task on the queue (as
-      //   of the time we started this call), so re-increment the tail
-      //   pointer because we didn't actually steal anything
-      ++m_tail ;
-      }
-   else if (!order->worker())
+   if (order && !order->worker())
       {
       // we're not allowed to steal commands to the worker
       push(order) ;
