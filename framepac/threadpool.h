@@ -64,6 +64,15 @@ class ThreadPool
       bool dispatch(ThreadPoolWorkFunc* fn, void* in_out)
 	 { return dispatch(fn, in_out, in_out) ; }
 
+      // limitation: no other threads are allowed to dispatch jobs until dispatchBatch() returns; that
+      //   especially includes worker functions dispatching additional work
+      template <typename InT, typename OutT>
+      bool dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, const InT* input, OutT* output)
+	 { return dispatchBatch(fn,count,sizeof(InT),input,sizeof(OutT),output) ; }
+      template <typename InOutT>
+      bool dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, InOutT* in_out)
+	 { return dispatchBatch(fn,count,sizeof(InOutT),in_out,sizeof(InOutT),in_out) ; }
+
       static void defaultPool(ThreadPool*) ;
 
       // status
@@ -74,30 +83,31 @@ class ThreadPool
 
       // functions called by worker threads
       WorkOrder* nextOrder(unsigned index) ;
+      WorkOrder* makeWorkOrder(ThreadPoolWorkFunc* fn, const void* in, void* out) ;
       void recycle(WorkOrder*) ;
       void threadExiting(unsigned index) ;
       void ack(unsigned index) ;
 
    protected:
       void allocateWorkOrders() ;
-      WorkOrder* makeWorkOrder(ThreadPoolWorkFunc* fn, const void* in, void* out) ;
       void discardRecycledOrders() ;
+      bool dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, size_t insize, const void* input,
+			 size_t outsize, void* output) ;
 
    private:
       static ThreadPool* s_defaultpool ;
       unsigned   m_numthreads ;		// total number of worker threads
       unsigned   m_numCPUs { 0 } ;	// hardware threads, used to limit work-stealing scan
-#ifndef FrSINGLE_THREADED
-      thread**   m_pool { nullptr } ;	// the actual thread objects
-#endif /* !FrSINGLE_THREADED */
       unsigned	 m_prev_thread { 0 } ;	// next thread to which to try to assign a request
       WorkQueue* m_queues { nullptr } ;	// work queues, one per worker thread
       WorkBatch* m_batches { nullptr } ;
       WorkOrder* m_freeorders { nullptr } ;
       CriticalSection m_flguard ;	// critical section for guarding the work-order freelist
       Semaphore  m_ack { 0 } ;
+#ifndef FrSINGLE_THREADED
+      thread**   m_pool { nullptr } ;	// the actual thread objects
+#endif /* !FrSINGLE_THREADED */
    } ;
-
 
 } // end namespace Fr
 

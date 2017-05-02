@@ -64,7 +64,7 @@ static void variable_sleep(const void* data, void*)
 
 //----------------------------------------------------------------------------
 
-static void run_null(size_t numthreads, size_t task_count)
+static void run_null(size_t numthreads, size_t task_count, bool batch_mode)
 {
    ThreadPool tp(numthreads) ;
    Timer timer1 ;
@@ -74,9 +74,17 @@ static void run_null(size_t numthreads, size_t task_count)
       }
    cout << "Single-threaded: " << timer1 << endl ;
    Timer timer2 ;
-   for (size_t i = 0 ; i < task_count ; ++i)
+   if (batch_mode)
       {
-      tp.dispatch(null_function,nullptr,nullptr) ;
+      cout << "Running in batch mode" << endl ;
+      tp.dispatchBatch<char*,char*>(null_function,task_count,nullptr,nullptr) ;
+      }
+   else
+      {
+      for (size_t i = 0 ; i < task_count ; ++i)
+	 {
+	 tp.dispatch(null_function,nullptr,nullptr) ;
+	 }
       }
    tp.waitUntilIdle() ;
    cout << "Thread pool: " << timer2 << endl ;
@@ -85,7 +93,7 @@ static void run_null(size_t numthreads, size_t task_count)
 
 //----------------------------------------------------------------------------
 
-static void run_work(size_t numthreads, size_t task_count, size_t max_count)
+static void run_work(size_t numthreads, size_t task_count, size_t max_count, bool batch_mode)
 {
    ThreadPool tp(numthreads) ;
    size_t* jobsizes = New<size_t>(task_count) ;
@@ -102,9 +110,17 @@ static void run_work(size_t numthreads, size_t task_count, size_t max_count)
       }
    cout << "Single-threaded: " << timer1 << endl ;
    Timer timer2 ;
-   for (size_t i = 0 ; i < task_count ; ++i)
+   if (batch_mode)
       {
-      tp.dispatch(variable_work,&jobsizes[i],&dummy) ;
+      cout << "Running in batch mode" << endl ;
+      tp.dispatchBatch(variable_work,task_count,jobsizes,jobsizes) ;
+      }
+   else
+      {
+      for (size_t i = 0 ; i < task_count ; ++i)
+	 {
+	 tp.dispatch(variable_work,&jobsizes[i],&dummy) ;
+	 }
       }
    tp.waitUntilIdle() ;
    cout << "Thread pool: " << timer2 << endl ;
@@ -113,7 +129,7 @@ static void run_work(size_t numthreads, size_t task_count, size_t max_count)
 
 //----------------------------------------------------------------------------
 
-static void run_sleep(size_t numthreads, size_t task_count, size_t max_sleep)
+static void run_sleep(size_t numthreads, size_t task_count, size_t max_sleep, bool batch_mode)
 {
    ThreadPool tp(numthreads) ;
    size_t* jobsizes = New<size_t>(task_count) ;
@@ -130,9 +146,17 @@ static void run_sleep(size_t numthreads, size_t task_count, size_t max_sleep)
       }
    cout << "Single-threaded: " << timer1 << endl ;
    Timer timer2 ;
-   for (size_t i = 0 ; i < task_count ; ++i)
+   if (batch_mode)
       {
-      tp.dispatch(variable_sleep,&jobsizes[i],&dummy) ;
+      cout << "Running in batch mode" << endl ;
+      tp.dispatchBatch(variable_sleep,task_count,jobsizes,jobsizes) ;
+      }
+   else
+      {
+      for (size_t i = 0 ; i < task_count ; ++i)
+	 {
+	 tp.dispatch(variable_sleep,&jobsizes[i],&dummy) ;
+	 }
       }
    tp.waitUntilIdle() ;
    cout << "Thread pool: " << timer2 << endl ;
@@ -148,9 +172,11 @@ int main(int argc, char** argv)
    size_t task_count { 100 } ;
    size_t max_value { 0 } ;
    bool do_sleep { false } ;
+   bool batch_mode { false } ;
    
    ArgParser cmdline_flags ;
    cmdline_flags
+      .add(batch_mode,"b","batch","")
       .add(max_value,"c","count","")
       .add(numthreads,"j","threads","")
       .add(task_count,"n","numreps","")
@@ -168,16 +194,16 @@ int main(int argc, char** argv)
       {
       if (do_sleep)
 	 {
-	 run_sleep(numthreads,task_count,max_value) ;
+	 run_sleep(numthreads,task_count,max_value,batch_mode) ;
 	 }
       else
 	 {
-	 run_work(numthreads,task_count,max_value) ;
+	 run_work(numthreads,task_count,max_value,batch_mode) ;
 	 }
       }
    else
       {
-      run_null(numthreads,task_count) ;
+      run_null(numthreads,task_count,batch_mode) ;
       }
 #endif /* FrSINGLE_THREADED */
    return 0 ;

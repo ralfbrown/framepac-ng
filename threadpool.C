@@ -19,6 +19,8 @@
 /*									*/
 /************************************************************************/
 
+#include <iostream>
+
 #include <cassert>
 #include <chrono>
 #include <condition_variable>
@@ -96,6 +98,9 @@ class WorkQueue
       bool push(WorkOrder* order) ;	// can be called by any thread
       WorkOrder* steal() ;		// can be called by any thread
       void clear() ;			// remove all entries from queue
+
+      size_t pushMultiple(ThreadPool* pool, ThreadPoolWorkFunc* fn, size_t maxcount,
+			  size_t insize, const void* input, size_t outsize, void* output) ;
 
       // inter-thread synchronization
       void prepare_wait()
@@ -279,6 +284,28 @@ bool WorkQueue::push(WorkOrder* order)
       }
    notify() ;				// signal worker to restart if it was waiting
    return true ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t WorkQueue::pushMultiple(ThreadPool* pool, ThreadPoolWorkFunc* fn, size_t maxcount,
+			       size_t insize, const void* input, size_t outsize, void* output)
+{
+   size_t fullpos = m_head + FrWORKQUEUE_SIZE ;
+   size_t tail = m_tail.load() ;
+   size_t available = fullpos - tail ;
+   if (available == 0)
+      return 0 ;
+   if (available < maxcount)
+      maxcount = available ;
+   for (size_t i = 0 ; i < maxcount ; ++i)
+      {
+      WorkOrder* order = pool->makeWorkOrder(fn,((char*)input)+i*insize,((char*)output)+i*outsize) ;
+      m_orders[(tail + i) % FrWORKQUEUE_SIZE] = order ;
+      }
+   m_tail += maxcount ;
+   notify() ;
+   return maxcount ;
 }
 
 //----------------------------------------------------------------------------
@@ -492,6 +519,46 @@ bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* outpu
 //FIXME: (Q&D: just sleep for a millisecond)
 //      this_thread::sleep_for(std::chrono::milliseconds(1)) ;
       this_thread::yield() ;
+      }
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ThreadPool::dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, size_t insize, const void* input,
+			       size_t outsize, void* output)
+{
+   if (numThreads() == 0)
+      {
+      // we don't have any worker threads enabled, so directly invoke the worker function on each
+      //   pair of input and output
+      for (size_t i = 0 ; i < count ; ++i)
+	 {
+	 fn(((char*)input)+i*insize,((char*)output)+i*outsize) ;
+	 }
+      return true ;
+      }
+   size_t prev_item = 0 ;
+   size_t curr_item = 0 ;
+   if (input == nullptr) insize = 0 ;
+   if (output == nullptr) outsize = 0 ;
+   while (curr_item < count)
+      {
+      size_t batchsize = 1 ;
+      size_t remaining = count - curr_item ;
+      if (remaining > numThreads())
+	 batchsize = remaining / numThreads() ;
+      for (size_t t = 0 ; t < numThreads() && curr_item < count ; ++t)
+	 {
+	 curr_item += m_queues[t].pushMultiple(this,fn,batchsize,insize,((char*)input)+curr_item*insize,
+					       outsize,((char*)output)+curr_item*outsize) ;
+	 }
+      if (curr_item == prev_item)
+	 {
+	 // all queues were full, so wait a bit to allow the workers to free up space
+	 this_thread::yield() ;
+	 }
+      prev_item = curr_item ;
       }
    return true ;
 }
