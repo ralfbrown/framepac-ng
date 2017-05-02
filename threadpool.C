@@ -242,6 +242,7 @@ WorkOrder* WorkQueue::pop(bool block)
 
 WorkOrder* WorkQueue::steal()
 {
+   return nullptr; //FIXME: have temporarily disabled stealing
    size_t tail = --m_tail ;
    // try to grab a task
    WorkOrder* order = m_orders[tail%FrWORKQUEUE_SIZE].exchange(nullptr) ;
@@ -268,18 +269,18 @@ bool WorkQueue::push(WorkOrder* order)
    if (!order)
       return false ;			// nothing to push
    size_t tail = m_tail.load() ;
-   size_t head = m_head ;
-   if (tail - head >= FrWORKQUEUE_SIZE)
-      return false ;			// queue is full
+   size_t fullpos = m_head + FrWORKQUEUE_SIZE ;
    for ( ; ; )
       {
+      if (tail >= fullpos)
+	 return false ;			// queue is full
       order = m_orders[tail % FrWORKQUEUE_SIZE].exchange(order) ;
       if (!order && m_tail.compare_exchange_weak(tail,tail+1))
 	 break ;
       // if the previous value of the entry was non-null, that means someone else snuck in and
       //   added a task, so retry
       tail = m_tail.load() ;
-      } while (order) ;
+      }
    post() ;				// signal worker to restart if it was waiting
    return true ;
 }
@@ -478,17 +479,18 @@ bool ThreadPool::dispatch(WorkOrder* order)
       unsigned start_thread = m_next_thread ;
       unsigned threadnum = start_thread ;
       do {
+         // advance to next thread in pool
+         threadnum++ ;
+	 if (threadnum >= numThreads())
+	    threadnum = 0 ;
          // atomically attempt to insert the request in the queue; this can fail if there
          //   was only one free entry and another thread beat us to the punch, in addition
          //   to failing if the queue is already full
-         if (m_queues[m_next_thread].push(order))
+         if (m_queues[threadnum].push(order))
 	    {
 	    m_next_thread = threadnum ;
 	    return true ;
 	    }
-         threadnum++ ;
-	 if (threadnum >= numThreads())
-	    threadnum = 0 ;
          } while (threadnum != start_thread) ;
       // if all of the queues are full, go to sleep until a request is completed
 //FIXME: (Q&D: just sleep for a millisecond)
