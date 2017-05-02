@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-04-05					*/
+/*  Version 0.01, last edit 2017-05-01					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File atomic.h		atomic operations on simple variables	*/
@@ -202,22 +202,22 @@ class Atomic
       void push(T nodes, T tail) ;
       T pop() ;
 
-      // various kinds of barriers
-      ALWAYS_INLINE void memoryBarrier() {}
-      ALWAYS_INLINE void loadBarrier() {}
-      ALWAYS_INLINE void storeBarrier() {}
-      ALWAYS_INLINE void barrier()
-	 {
-#ifdef __GNUC__
-	 asm volatile ("" : : : "memory") ;
-#endif
-	 }
-
       static Atomic<T> ref(T& obj) { return reinterpret_cast<Atomic<T> >(obj) ; }
    } ;
 
 // memory barriers
 ALWAYS_INLINE void atomic_thread_fence( std::memory_order )
+{
+#ifdef __GNUC__
+   asm volatile ("" : : : "memory") ;
+#endif
+}
+
+// various kinds of barriers
+ALWAYS_INLINE void memoryBarrier() {}
+ALWAYS_INLINE void loadBarrier() {}
+ALWAYS_INLINE void storeBarrier() {}
+ALWAYS_INLINE void barrier()
 {
 #ifdef __GNUC__
    asm volatile ("" : : : "memory") ;
@@ -321,31 +321,6 @@ class Atomic : public std::atomic<T>
       void push(T nodes, T tail) ;
       T pop() ;
 
-      // various kinds of barriers
-      [[gnu::always_inline]]
-      void memoryBarrier() 
-	 {
-	 atomic_thread_fence(std::memory_order_seq_cst) ; 
-	 }
-      [[gnu::always_inline]]
-      void loadBarrier()
-	 {
-	 atomic_thread_fence(std::memory_order_acquire) ;
-	 }
-      [[gnu::always_inline]]
-      void storeBarrier()
-	 { 
-	 atomic_thread_fence(std::memory_order_release) ;
-	 }
-      [[gnu::always_inline]]
-      void barrier()
-	 {
-	 atomic_thread_fence(std::memory_order_relaxed) ;/*FIXME*/ 
-#ifdef __GNUC__
-	 asm volatile ("" : : : "memory") ;
-#endif
-	 }
-
       static Atomic<T>& ref(T& obj) { return reinterpret_cast<Atomic<T>&>(obj) ; }
    } ;
 
@@ -425,6 +400,27 @@ inline T Atomic<T>::pop()
       } while (!this->compare_exchange_weak(head,rest)) ;
    head.next(nullptr) ;
    return head ;
+}
+
+// various kinds of barriers
+ALWAYS_INLINE void memoryBarrier() 
+{
+   atomic_thread_fence(std::memory_order_seq_cst) ; 
+}
+ALWAYS_INLINE void loadBarrier()
+{
+   atomic_thread_fence(std::memory_order_acquire) ;
+}
+ALWAYS_INLINE void storeBarrier()
+{ 
+   atomic_thread_fence(std::memory_order_release) ;
+}
+ALWAYS_INLINE void barrier()
+{
+   atomic_thread_fence(std::memory_order_relaxed) ;/*FIXME*/ 
+#ifdef __GNUC__
+   asm volatile ("" : : : "memory") ;
+#endif
 }
 
 #ifdef ERROR
