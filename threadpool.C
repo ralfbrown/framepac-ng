@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-05					*/
+/* Version 0.01, last edit 2017-05-01					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -502,6 +502,12 @@ bool ThreadPool::dispatch(WorkOrder* order)
 bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* output)
 {
    if (fn == nullptr) return false ;
+   if (numThreads() == 0)
+      {
+      // we don't have any worker threads enabled, so directly invoke the worker function
+      fn(input,output) ;
+      return true ;
+      }
    WorkOrder* order = makeWorkOrder(fn,input,output) ;
    return dispatch(order) ;
 }
