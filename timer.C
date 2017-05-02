@@ -186,7 +186,7 @@ std::ostream& Timer::showTimes(std::ostream& out) const
    cpu_sec = ((size_t)(1000*cpu_sec + 0.5)) / 1000.0 ;
    elapsed_sec = ((size_t)(1000*elapsed_sec + 0.5)) / 1000.0 ;
    // round percent utilization to tenths (with a slight upward bias)
-   percentage = ((size_t)(10*percentage + 0.75)) / 10.0 ;
+   percentage = ((size_t)(1000.0*percentage + 0.75)) / 10.0 ;
    // show the elapsed time, using XXhYYmZZs for longer times
    if (elapsed_sec < 6000) // 100 minutes
       {
