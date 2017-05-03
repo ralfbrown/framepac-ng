@@ -239,7 +239,7 @@ RELEASE=0.01
 
 # the object modules to be included in the library file
 OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
-	argparser$(OBJ) \
+	argopt$(OBJ) argopt_real$(OBJ) argparser$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) charget$(OBJ) cfile$(OBJ) \
 	cluster$(OBJ) cluster_growseed$(OBJ) cluster_kmeans$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
@@ -365,6 +365,8 @@ $(BINDIR)/tpool$(EXE):		tests/tpool$(OBJ) $(LIBRARY)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
 allocator$(OBJ):	allocator$(C) framepac/memory.h
+argopt$(OBJ):		argopt$(C) template/argopt.cc
+argopt_real$(OBJ):	argopt_real$(C) template/argopt.cc
 argparser$(OBJ):	argparser$(C) framepac/argparser.h
 array$(OBJ):		array$(C) framepac/array.h
 basisvector_u32$(OBJ):	basisvector_u32$(C) template/basisvector.cc
@@ -437,6 +439,9 @@ vector_u32_flt$(OBJ):	vector_u32_flt$(C) framepac/vector.h
 wordcorpus_u32u32$(OBJ): wordcorpus_u32u32$(C) template/wordcorpus.cc
 wordcorpus_u32u40$(OBJ): wordcorpus_u32u40$(C) template/wordcorpus.cc
 wordsplit$(OBJ):	wordsplit$(C) framepac/words.h
+
+template/argopt.cc:	framepac/argparser.h
+	$(TOUCH) $@ $(BITBUCKET)
 
 template/bufbuilder.cc:	framepac/builder.h
 	$(TOUCH) $@ $(BITBUCKET)

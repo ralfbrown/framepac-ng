@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <iostream>
 #include <string>
 #include <sstream>
 
@@ -41,7 +42,7 @@ class ArgOptBase
       ArgOptBase(ArgParser&, const char* shortname, const char* fullname, const char* desc) ;
       ~ArgOptBase() ;
 
-      bool parse(int& argc, char**& argv) const ;
+      bool parse(int& argc, char**& argv) ;
 
       void invalidValue(const char* opt) const ;
 
@@ -54,15 +55,19 @@ class ArgOptBase
       const char* shortName() const { return m_shortname ; }
       const char* fullName() const { return m_fullname ; }
       const char* description() const { return m_description ; }
+      char* describeDefault() const ;
+      char* describeRange() const ;
 
       void setParser(ArgParser* p) { m_parser = p ; }
       ArgParser* getParser() const { return m_parser ; }
 
    protected:
-      virtual bool parseValue(const char* arg) const = 0 ;
+      virtual bool convert(const char*) = 0 ;
+      virtual bool setDefaultValue() ;
+      virtual bool validateValue() = 0 ;
       virtual bool optional() const { return false ; } ;
-      virtual char* describeDefault() const { return nullptr ; }
-      virtual char* describeRange() const { return nullptr ; }
+      virtual void describeDefault(std::ostream&) const { return ; }
+      virtual void describeRange(std::ostream&) const { return ; }
    protected:
       ArgParser*  m_parser { nullptr } ;
       ArgOptBase* m_next { nullptr } ;
@@ -70,6 +75,9 @@ class ArgOptBase
       const char* m_fullname ;
       const char* m_description ;
       bool        m_must_delete ;
+      bool        m_have_defvalue { false } ;
+      bool        m_have_minmax { false } ;
+      bool	  m_value_set { false } ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -91,10 +99,9 @@ class ArgOptFunc : public ArgOptBase
       ~ArgOptFunc() {}
 
    protected:
-      virtual bool parseValue(const char* arg) const
-	 {
-	    return m_func(arg) ;
-	 }
+      virtual bool convert(const char* arg) { return m_func(arg) ; }
+      virtual bool setDefaultValue() { return false ; }
+      virtual bool validateValue() { return true ; }
    protected:
       Callable* m_func ;
    } ;
@@ -112,90 +119,70 @@ class ArgOpt : public ArgOptBase
 	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var)
 	 {}
       ArgOpt(T& var, const char* shortname, const char* fullname, const char* desc, T def_value)
-	 : ArgOptBase(shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_have_defvalue(true)
-	 {}
+	 : ArgOptBase(shortname,fullname,desc), m_value(var), m_defvalue(def_value)
+	 { m_have_defvalue = true ; }
       ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, const char* desc, T def_value)
-	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_have_defvalue(true)
-	 {}
+	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_defvalue(def_value)
+	 { m_have_defvalue = true ; }
       ArgOpt(T& var, const char* shortname, const char* fullname, const char* desc,
 	     T min_value, T max_value)
 	 : ArgOptBase(shortname,fullname,desc), m_value(var), m_minvalue(min_value),
-	   m_maxvalue(max_value), m_have_defvalue(false), m_have_minmax(true)
-	 {}
+	   m_maxvalue(max_value)
+	 { m_have_minmax = true ; }
       ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, const char* desc,
 	     T min_value, T max_value)
 	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_minvalue(min_value),
-	   m_maxvalue(max_value), m_have_defvalue(false), m_have_minmax(true)
-	 {}
+	   m_maxvalue(max_value)
+	 { m_have_minmax = true ; }
       ArgOpt(T& var, const char* shortname, const char* fullname, const char* desc, T def_value,
 	     T min_value, T max_value)
 	 : ArgOptBase(shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_minvalue(min_value),
-	   m_maxvalue(max_value), m_have_defvalue(true), m_have_minmax(true)
-	 {}
+	   m_maxvalue(max_value)
+	 { m_have_defvalue = m_have_minmax = true ; }
       ArgOpt(ArgParser& parser, T& var, const char* shortname, const char* fullname, const char* desc, T def_value,
 	     T min_value, T max_value)
 	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_minvalue(min_value),
-	   m_maxvalue(max_value), m_have_defvalue(true), m_have_minmax(true)
-	 {}
+	   m_maxvalue(max_value)
+	 { m_have_defvalue = m_have_minmax = true ; }
       ~ArgOpt()
 	 {
 	    m_have_defvalue = m_have_minmax = false ;
 	 }
 
    protected:
-      static bool convert(const char* arg, T& value) ;
-      virtual bool parseValue(const char* arg) const ;
+      virtual bool convert(const char* arg) ;
+      virtual bool setDefaultValue() ;
+      virtual bool validateValue() ;
       virtual bool optional() const { return m_have_defvalue ; }
-      virtual char* describeDefault() const
-	 {
-	    if (!m_have_defvalue) return nullptr ;
-	    std::ostringstream s ;
-	    s << m_defvalue ;
-	    const char* str = s.str().c_str() ;
-	    size_t len = std::strlen(str) ;
-	    char* result = new char[len+1] ;
-	    std::memcpy(result,str,len+1) ;
-	    return result ;
-	 }
-      virtual char* describeRange() const
-	 { 
-	    if (!m_have_minmax) return nullptr ;
-	    std::ostringstream s ;
-	    s << m_minvalue << " to " << m_maxvalue ;
-	    const char* str = s.str().c_str() ;
-	    size_t len = std::strlen(str) ;
-	    char* result = new char[len+1] ;
-	    std::memcpy(result,str,len+1) ;
-	    return result ;
-	 }
+      virtual void describeDefault(std::ostream& s) const ;
+      virtual void describeRange(std::ostream& s) const ;
    protected:
       T&         m_value ;
       T          m_defvalue { } ;
       T          m_minvalue { } ;
       T          m_maxvalue { } ;
-      bool       m_have_defvalue { false } ;
-      bool       m_have_minmax { false } ;
    } ;
 
 
 // library provides instantiations for the common variable types
-template<> bool ArgOpt<bool>::convert(const char*, bool&) ;
+template<> bool ArgOpt<bool>::convert(const char*) ;
 template<> bool ArgOpt<bool>::optional() const ;
-template<> bool ArgOpt<bool>::parseValue(const char*) const ;
+template<> bool ArgOpt<bool>::setDefaultValue() ;
+template<> bool ArgOpt<bool>::validateValue() ;
 extern template class ArgOpt<bool> ;
-template<> bool ArgOpt<int>::convert(const char*, int&) ;
+template<> bool ArgOpt<int>::convert(const char*) ;
 extern template class ArgOpt<int> ;
-template<> bool ArgOpt<long>::convert(const char*, long&) ;
+template<> bool ArgOpt<long>::convert(const char*) ;
 extern template class ArgOpt<long> ;
-template<> bool ArgOpt<unsigned>::convert(const char*, unsigned&) ;
+template<> bool ArgOpt<unsigned>::convert(const char*) ;
 extern template class ArgOpt<unsigned> ;
-template<> bool ArgOpt<size_t>::convert(const char*, size_t&) ;
+template<> bool ArgOpt<size_t>::convert(const char*) ;
 extern template class ArgOpt<size_t> ;
-template<> bool ArgOpt<float>::convert(const char*, float&) ;
+template<> bool ArgOpt<float>::convert(const char*) ;
 extern template class ArgOpt<float> ;
-template<> bool ArgOpt<double>::convert(const char*, double&) ;
+template<> bool ArgOpt<double>::convert(const char*) ;
 extern template class ArgOpt<double> ;
-template<> bool ArgOpt<const char*>::convert(const char*, const char*&) ;
+template<> bool ArgOpt<const char*>::convert(const char*) ;
 extern template class ArgOpt<const char*> ;
 
 //----------------------------------------------------------------------------
@@ -212,7 +199,9 @@ class ArgHelp : public ArgOptBase
       bool isLongHelp() const { return m_long ; }
 
    protected:
-      virtual bool parseValue(const char* arg) const ;
+      virtual bool convert(const char*) ;
+      virtual bool setDefaultValue() ;
+      virtual bool validateValue() ;
       virtual bool optional() const { return true ; }
    protected:
       bool* m_flag ;

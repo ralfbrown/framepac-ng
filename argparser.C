@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-01					*/
+/* Version 0.01, last edit 2017-05-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -29,16 +29,255 @@ namespace Fr
 
 using namespace std ;
 
-#if 0
-static char* duplicate_string(const char* s)
+/************************************************************************/
+/*	Methods for class ArgOptBase					*/
+/************************************************************************/
+
+ArgOptBase::ArgOptBase(ArgParser& parser, const char* shortname, const char* fullname, const char* desc)
 {
-   if (!s) s = "" ;
-   size_t len = strlen(s) ;
-   char* dup = new char[len+1] ;
-   memcpy(dup,s,len+1) ;
-   return dup ;
+   parser.addOpt(this) ;
+   if (!shortname) shortname = "" ;
+   if (!fullname) fullname = "" ;
+   if (!desc) desc = "" ;
+   m_shortname = shortname ;
+   m_fullname = fullname ;
+   m_description = desc ;
+   return ;
 }
-#endif
+
+//----------------------------------------------------------------------------
+
+ArgOptBase::ArgOptBase(const char* shortname, const char* fullname, const char* desc)
+{
+   if (!shortname) shortname = "" ;
+   if (!fullname) fullname = "" ;
+   if (!desc) desc = "" ;
+   m_shortname = shortname ;
+   m_fullname = fullname ;
+   m_description = desc ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ArgOptBase::~ArgOptBase()
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ArgOptBase::setDefaultValue()
+{
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ArgOptBase::parse(int& argc, char**& argv)
+{
+   if (argv[1][0] != '-')
+      return false ;
+   char* arg ;
+   if (argv[1][1] == '-')
+      {
+      // we have a long name
+      arg = strchr(argv[1],'=') ;  // is it --longflag=value ?
+      if (arg)
+	 arg++ ;
+      else if (optional())
+	 {
+	 // optional values can't be separated by blanks, since we
+	 //   can't tell whether the next element of argv[] is the
+	 //   value or a non-flag argument
+	 arg = nullptr ;
+	 }
+      else if (argc > 1)
+	 {
+	 argc-- ;
+	 argv++ ;
+	 arg = argv[1] ;
+	 }
+      else
+	 return false ;
+      }
+   else
+      {
+      // process a short name
+      size_t len = strlen(m_shortname) ;
+      if (len == 0 || strncmp(m_shortname,argv[1]+1,len) != 0)
+	 return false ;
+      arg = argv[1]+len+1 ;
+      if (*arg)
+	 {
+	 // got the value, nothing to do
+	 }
+      else if (optional())
+	 {
+	 // optional values can't be separated by blanks, since we
+	 //   can't tell whether the next element of argv[] is the
+	 //   value or a non-flag argument
+	 arg = nullptr ;
+	 }
+      else if (argc > 1)
+	 {
+	 argc-- ;
+	 argv++ ;
+	 arg = argv[1] ;
+	 }
+      else
+	 return false ;
+      }
+   if (!arg || !*arg)
+      {
+      if (setDefaultValue())
+	 {
+	 return true ;
+	 }
+      if (!m_value_set)
+	 {
+	 //FIXME: error--no default available
+	 return false ;
+	 }
+      }
+   bool success = convert(arg) ;
+   if (!success)
+      {
+      invalidValue(arg) ;
+      }
+   if (!validateValue())
+      {
+      invalidValue(arg) ;
+      success = false ;
+      }
+   return success ;
+}
+
+//----------------------------------------------------------------------------
+
+void ArgOptBase::invalidValue(const char* opt) const
+{
+   cerr << "Invalid value '" << opt << "' for " ;
+   if (shortName())
+      {
+      cerr << "-" << shortName() ;
+      if (fullName())
+	 {
+	 cerr << " (--" << fullName() << ")" ;
+	 }
+      }
+   else
+      cerr << "--" << fullName() ;
+   cerr << endl ;
+   char* range = describeRange() ;
+   if (range)
+      {
+      cerr << "valid range is " << range << endl ;
+      delete[] range ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+char* ArgOptBase::describeDefault() const
+{
+   if (!m_have_defvalue) return nullptr ;
+   std::ostringstream s ;
+   describeDefault(s) ;
+   const char* str = s.str().c_str() ;
+   size_t len = std::strlen(str) ;
+   char* result = new char[len+1] ;
+   std::memcpy(result,str,len+1) ;
+   return result ;
+}
+
+//----------------------------------------------------------------------------
+
+char* ArgOptBase::describeRange() const
+{
+   if (!m_have_minmax) return nullptr ;
+   std::ostringstream s ;
+   describeRange(s) ;
+   const char* str = s.str().c_str() ;
+   size_t len = std::strlen(str) ;
+   char* result = new char[len+1] ;
+   std::memcpy(result,str,len+1) ;
+   return result ;
+}
+
+/************************************************************************/
+/*	Methods for class ArgHelp					*/
+/************************************************************************/
+
+ArgHelp::ArgHelp(ArgParser& parser, const char* shortname, const char* fullname, const char* desc, bool longhelp)
+   : ArgOptBase(parser,shortname,fullname,desc), m_flag(nullptr), m_long(longhelp)
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ArgHelp::ArgHelp(const char* shortname, const char* fullname, const char* desc, bool longhelp)
+   : ArgOptBase(shortname,fullname,desc), m_flag(nullptr), m_long(longhelp)
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ArgHelp::ArgHelp(bool& var, const char* shortname, const char* fullname, const char* desc,
+		 bool longhelp)
+   : ArgOptBase(shortname,fullname,desc), m_flag(&var), m_long(longhelp)
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ArgHelp::ArgHelp(ArgParser& parser, bool& var, const char* shortname, const char* fullname, const char* desc,
+		 bool longhelp)
+   : ArgOptBase(parser,shortname,fullname,desc), m_flag(&var), m_long(longhelp)
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ArgHelp::~ArgHelp()
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ArgHelp::setDefaultValue()
+{
+   if (m_flag)
+      {
+      *m_flag = true ;
+      m_value_set = true ;
+      return true ;
+      }
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ArgHelp::convert(const char* arg)
+{
+   (void)arg ;
+//TODO
+   if (m_flag) *m_flag = true ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ArgHelp::validateValue()
+{
+   return true ;
+}
 
 /************************************************************************/
 /*	Methods for class ArgParser					*/
@@ -201,364 +440,6 @@ bool ArgParser::showHelp(bool longhelp) const
       {
       }
    return false ;
-}
-
-/************************************************************************/
-/*	Methods for class ArgOptBase					*/
-/************************************************************************/
-
-ArgOptBase::ArgOptBase(ArgParser& parser, const char* shortname, const char* fullname, const char* desc)
-{
-   parser.addOpt(this) ;
-   if (!shortname) shortname = "" ;
-   if (!fullname) fullname = "" ;
-   if (!desc) desc = "" ;
-   m_shortname = shortname ;
-   m_fullname = fullname ;
-   m_description = desc ;
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-ArgOptBase::ArgOptBase(const char* shortname, const char* fullname, const char* desc)
-{
-   if (!shortname) shortname = "" ;
-   if (!fullname) fullname = "" ;
-   if (!desc) desc = "" ;
-   m_shortname = shortname ;
-   m_fullname = fullname ;
-   m_description = desc ;
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-ArgOptBase::~ArgOptBase()
-{
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-bool ArgOptBase::parse(int& argc, char**& argv) const
-{
-   if (argv[1][0] != '-')
-      return false ;
-   char* arg ;
-   if (argv[1][1] == '-')
-      {
-      // we have a long name
-      arg = strchr(argv[1],'=') ;  // is it --longflag=value ?
-      if (arg)
-	 arg++ ;
-      else if (optional())
-	 {
-	 // optional values can't be separated by blanks, since we
-	 //   can't tell whether the next element of argv[] is the
-	 //   value or a non-flag argument
-	 arg = nullptr ;
-	 }
-      else if (argc > 1)
-	 {
-	 argc-- ;
-	 argv++ ;
-	 arg = argv[1] ;
-	 }
-      else
-	 return false ;
-      }
-   else
-      {
-      // process a short name
-      size_t len = strlen(m_shortname) ;
-      if (len == 0 || strncmp(m_shortname,argv[1]+1,len) != 0)
-	 return false ;
-      arg = argv[1]+len+1 ;
-      if (*arg)
-	 {
-	 // got the value, nothing to do
-	 }
-      else if (optional())
-	 {
-	 // optional values can't be separated by blanks, since we
-	 //   can't tell whether the next element of argv[] is the
-	 //   value or a non-flag argument
-	 arg = nullptr ;
-	 }
-      else if (argc > 1)
-	 {
-	 argc-- ;
-	 argv++ ;
-	 arg = argv[1] ;
-	 }
-      else
-	 return false ;
-      }
-   bool success = parseValue(arg) ;
-   if (!success)
-      {
-      invalidValue(arg) ;
-      }
-   return success ;
-}
-
-//----------------------------------------------------------------------------
-
-void ArgOptBase::invalidValue(const char* opt) const
-{
-   cerr << "Invalid value '" << opt << "' for " ;
-   if (shortName())
-      {
-      cerr << "-" << shortName() ;
-      if (fullName())
-	 {
-	 cerr << " (--" << fullName() << ")" ;
-	 }
-      }
-   else
-      cerr << "--" << fullName() ;
-   cerr << endl ;
-   char* range = describeRange() ;
-   if (range)
-      {
-      cerr << "valid range is " << range << endl ;
-      delete[] range ;
-      }
-   return ;
-}
-
-/************************************************************************/
-/*	Methods for class ArgOpt					*/
-/************************************************************************/
-
-//----------------------------------------------------------------------------
-
-template <>
-bool ArgOpt<bool>::convert(const char* arg, bool& value)
-{
-   if (!arg || !*arg)
-      return false ;
-   if (strcmp(arg,"0") == 0 || strcasecmp(arg,"n") == 0 || strcasecmp(arg,"no") == 0
-       || strcasecmp(arg,"f") == 0 || strcasecmp(arg,"false") == 0)
-      {
-      value = false ;
-      return true ;
-      }
-   if (strcmp(arg,"1") == 0 || strcasecmp(arg,"y") == 0 || strcasecmp(arg,"yes") == 0
-       || strcasecmp(arg,"t") == 0 || strcasecmp(arg,"true") == 0)
-      {
-      value = true ;
-      return true ;
-      }
-   return false ;
-}
-
-template <>
-bool ArgOpt<int>::convert(const char* arg, int& value)
-{
-   char* endptr = const_cast<char*>(arg) ;
-   value = (int)strtol(arg,&endptr,0) ;
-   return endptr != arg ;
-}
-
-template <>
-bool ArgOpt<unsigned>::convert(const char* arg, unsigned& value)
-{
-   char* endptr = const_cast<char*>(arg) ;
-   value = (unsigned)strtoul(arg,&endptr,0) ;
-   return endptr != arg ;
-}
-
-template <>
-bool ArgOpt<long>::convert(const char* arg, long& value)
-{
-   char* endptr = const_cast<char*>(arg) ;
-   value = strtol(arg,&endptr,0) ;
-   return endptr != arg ;
-}
-
-template <>
-bool ArgOpt<size_t>::convert(const char* arg, size_t& value)
-{
-   char* endptr = const_cast<char*>(arg) ;
-   value = strtoul(arg,&endptr,0) ;
-   return endptr != arg ;
-}
-
-template <>
-bool ArgOpt<float>::convert(const char* arg, float& value)
-{
-   char* endptr = const_cast<char*>(arg) ;
-   value = (float)strtod(arg,&endptr) ;
-   return endptr != arg ;
-}
-
-template <>
-bool ArgOpt<double>::convert(const char* arg, double& value)
-{
-   char* endptr = const_cast<char*>(arg) ;
-   value = strtod(arg,&endptr) ;
-   return endptr != arg ;
-}
-
-template <>
-bool ArgOpt<const char*>::convert(const char* arg, const char*& value)
-{
-   value = arg ;
-   return true ;
-}
-
-//----------------------------------------------------------------------------
-
-template <>
-bool ArgOpt<bool>::parseValue(const char* arg) const
-{
-   if (arg == nullptr)
-      {
-      // toggle the flag if no value given
-      m_value = !m_value ;
-      return true ;
-      }
-   else if (*arg == '=' || strcasecmp(arg,"default") == 0)
-      {
-      if (m_have_defvalue)
-	 {
-	 m_value = m_defvalue ;
-	 return true ;
-	 }
-      }
-   else if (*arg == '+' || strcasecmp(arg,"yes") == 0 || strcasecmp(arg,"true") == 0 || *arg == '1')
-      {
-      m_value = true ;
-      return true ;
-      }
-   else if (*arg == '-' || strcasecmp(arg,"no") == 0 || strcasecmp(arg,"false") == 0 || *arg == '0')
-      {
-      m_value = false ;
-      return true ;
-      }
-   else if (*arg)
-      {
-      bool value ;
-      if (convert(arg,value))
-	 {
-	 m_value = value ;
-	 return true ;
-	 }
-      }
-   //TODO: error message: invalid value
-   return false ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename T>
-bool ArgOpt<T>::parseValue(const char* arg) const
-{
-   if (arg == nullptr)
-      {
-      if (m_have_defvalue)
-	 {
-	 m_value = m_defvalue ;
-	 return true ;
-	 }
-      else
-	 {
-	 //TODO: error message: no default value
-	 return false ;
-	 }
-      }
-   T value ;
-   if (!convert(arg,value))
-      {
-      //TODO: error message
-      return false ;
-      }
-   if (m_have_minmax)
-      {
-      if (value < m_minvalue || value > m_maxvalue)
-	 {
-	 //TODO: error messsage
-	 return false ;
-	 }
-      }
-   m_value = value ;
-   return true ;
-}
-
-//----------------------------------------------------------------------------
-
-template <>
-bool ArgOpt<bool>::optional() const
-{
-   return true ;
-}
-
-//----------------------------------------------------------------------------
-
-// explicit instantiations of the common types
-template class ArgOpt<bool> ;
-template class ArgOpt<int> ;
-template class ArgOpt<unsigned> ;
-template class ArgOpt<long> ;
-template class ArgOpt<size_t> ;
-template class ArgOpt<float> ;
-template class ArgOpt<double> ;
-template class ArgOpt<const char*> ;
-
-/************************************************************************/
-/*	Methods for class ArgHelp					*/
-/************************************************************************/
-
-ArgHelp::ArgHelp(ArgParser& parser, const char* shortname, const char* fullname, const char* desc, bool longhelp)
-   : ArgOptBase(parser,shortname,fullname,desc), m_flag(nullptr), m_long(longhelp)
-{
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-ArgHelp::ArgHelp(const char* shortname, const char* fullname, const char* desc, bool longhelp)
-   : ArgOptBase(shortname,fullname,desc), m_flag(nullptr), m_long(longhelp)
-{
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-ArgHelp::ArgHelp(bool& var, const char* shortname, const char* fullname, const char* desc,
-		 bool longhelp)
-   : ArgOptBase(shortname,fullname,desc), m_flag(&var), m_long(longhelp)
-{
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-ArgHelp::ArgHelp(ArgParser& parser, bool& var, const char* shortname, const char* fullname, const char* desc,
-		 bool longhelp)
-   : ArgOptBase(parser,shortname,fullname,desc), m_flag(&var), m_long(longhelp)
-{
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-ArgHelp::~ArgHelp()
-{
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-bool ArgHelp::parseValue(const char* arg) const
-{
-   if (arg != nullptr)
-      {
-      }
-//TODO
-   return true ;
 }
 
 
