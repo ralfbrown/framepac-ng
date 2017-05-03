@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.01, last edit 2017-05-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -53,7 +53,6 @@ namespace Fr {
 #define FrYIELD_COUNT 50
 #define FramepaC_display_width 132
 
-size_t FramepaC_initial_indent = 0 ;
 } // end namespace Fr
 
 /************************************************************************/
@@ -2036,9 +2035,9 @@ template <typename KeyT, typename ValT>
 ostream &HashTable<KeyT,ValT>::Table::printValue(ostream &output) const
 {
    output << "#H(" ;
-   size_t orig_indent = FramepaC_initial_indent ;
-   FramepaC_initial_indent += 3 ; //strlen("#H(")
-   size_t loc = FramepaC_initial_indent ;
+   size_t orig_indent = FramepaC::initial_indent ;
+   FramepaC::initial_indent += 3 ; //strlen("#H(")
+   size_t loc = FramepaC::initial_indent ;
    bool first = true ;
    for (size_t i = 0 ; i < m_size ; ++i)
       {
@@ -2049,14 +2048,14 @@ ostream &HashTable<KeyT,ValT>::Table::printValue(ostream &output) const
       loc += len ;
       if (loc > FramepaC_display_width && !first)
 	 {
-	 output << '\n' << setw(FramepaC_initial_indent) << " " ;
-	 loc = FramepaC_initial_indent + len ;
+	 output << '\n' << setw(FramepaC::initial_indent) << " " ;
+	 loc = FramepaC::initial_indent + len ;
 	 }
       output << key << ' ' ;
       first = false ;
       }
    output << ")" ;
-   FramepaC_initial_indent = orig_indent ;
+   FramepaC::initial_indent = orig_indent ;
    return output ;
 }
 

@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4+ under Unix/Linux
-# Last change: 02may2017
+# Last change: 03may2017
 
 #########################################################################
 # define the locations of all the files
@@ -263,7 +263,8 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	vector_u32_dbl$(OBJ) vector_u32_flt$(OBJ) \
 	basisvector_u32$(OBJ) progress$(OBJ) \
 	wordcorpus_u32u32$(OBJ) wordcorpus_u32u40$(OBJ) \
-	wordsplit$(OBJ)
+	wordsplit$(OBJ) \
+	globaldata$(OBJ)
 
 TESTS = bin/argparser$(EXE)
 
@@ -384,6 +385,7 @@ cstring$(OBJ):		cstring$(C) framepac/cstring.h
 filename$(OBJ):		filename$(C) framepac/file.h
 float$(OBJ):		float$(C) framepac/number.h
 frame$(OBJ):		frame$(C) framepac/frame.h
+globaldata$(OBJ):	globaldata$(C)
 hashset_obj$(OBJ):	hashset_obj$(C) template/hashtable.cc
 hashset_sym$(OBJ):	hashset_sym$(C) template/hashtable.cc
 hashset_u32$(OBJ):	hashset_u32$(C) template/hashtable.cc

@@ -48,8 +48,10 @@ using namespace Fr ;
 /*	Type declarations						*/
 /************************************************************************/
 
+static SymbolTable* current_symtab() { return nullptr ; /* SymbolTable::current() ;*/ } //FIXME
 extern Symbol* findSymbol(const char* /*name*/) ; //FIXME
-
+static Symbol* add_symbol(SymbolTable* /*symtab*/, const char* /*name*/)
+{ /* return symtab->add(name) ; */ return nullptr ; } //FIXME
 
 enum Operation
 {
@@ -176,7 +178,7 @@ static void hash_gensym(HashRequestOrder *order)
    // generate the symbols in multiple interleaved passes so that we
    //   don't end up with strictly increasing (and thus well-cached)
    //   hash keys during insertion
-   SymbolTable *symtab = SymbolTable::current() ;
+   SymbolTable *symtab = current_symtab() ;
    size_t passes = 53 ;
    for (size_t pass = 0 ; pass < passes ; ++pass)
       {
@@ -185,7 +187,7 @@ static void hash_gensym(HashRequestOrder *order)
 	 // generate our own unique symbol to avoid contention in gensym()
 	 char name[100] ;
 	 snprintf(name,sizeof(name),"%c%lu%c",(char)('A' + (order->id % 26)),i,'\0') ;
-	 syms[i] = symtab->add(name) ;
+	 syms[i] = add_symbol(symtab,name) ;
 	 }
       }
    return ;
