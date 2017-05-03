@@ -58,7 +58,7 @@ int main(int argc, char** argv)
       .add(string_option,"s","string","set char* variable, default=Default","Default")
       .add(bool_option,"b","bool","set boolean flag")
       .addFunc(parse_flag,"p","parse","pass value to function to parse")
-      .addHelp("","longhelp", "show detailed help") ;
+      .addHelp("","longhelp", "show detailed help",true) ;
    bool success = cmdline.parseArgs(argc,argv) ;
    cout << "parse status = " << (success ? "OK" : "error") << endl ;
    cout << "bool value = " << (bool_option ? "true" : "false") << endl ;

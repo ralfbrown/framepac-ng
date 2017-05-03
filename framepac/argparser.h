@@ -197,6 +197,7 @@ class ArgHelp : public ArgOptBase
       ~ArgHelp() ;
 
       bool isLongHelp() const { return m_long ; }
+      bool showHelp() ;
 
    protected:
       virtual bool convert(const char*) ;

@@ -251,6 +251,17 @@ ArgHelp::~ArgHelp()
 
 //----------------------------------------------------------------------------
 
+bool ArgHelp::showHelp()
+{
+   if (m_parser)
+      {
+      return m_parser->showHelp(isLongHelp()) ;
+      }
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
 bool ArgHelp::setDefaultValue()
 {
    if (m_flag)
@@ -259,6 +270,7 @@ bool ArgHelp::setDefaultValue()
       m_value_set = true ;
       return true ;
       }
+   showHelp() ;
    return false ;
 }
 
@@ -435,9 +447,11 @@ bool ArgParser::showHelp(bool longhelp) const
 {
    if (longhelp)
       {
+      cerr << "[longhelp]" << endl ;
       }
    else
       {
+      cerr << "[briefhelp]" << endl ;
       }
    return false ;
 }
