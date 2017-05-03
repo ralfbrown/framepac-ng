@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -35,6 +35,7 @@ template class Allocator<List> ;
 // define the static members of List
 static const FramepaC::Object_VMT<List> list_vmt ;
 Allocator<List> List::s_allocator(&list_vmt) ;
+List* List::empty_list ;
 
 // register initialization and cleanup functions for the List class as a whole
 // these will be called by Fr::Initialize() and Fr::Shutdown()
@@ -264,6 +265,23 @@ bool List::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_a
 
 //----------------------------------------------------------------------------
 
+size_t List::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
+{
+   (void)obj ; (void)wrap; (void)indent ;
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool List::toJSONString_(const Object* obj, char* buffer, size_t buflen,
+			 bool /*wrap*/, size_t indent)
+{
+   (void)obj; (void)buffer; (void)buflen; (void)indent;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
 size_t List::size() const
 {
    size_t sz(0) ;
@@ -360,6 +378,18 @@ void List::StaticCleanup()
 }
 
 //----------------------------------------------------------------------------
+
+/************************************************************************/
+/*	Procedural Interface functions					*/
+/************************************************************************/
+
+void pushlist(Object* obj, List*& list)
+{
+   List* newhead = List::create(obj) ;
+   newhead->setNext(list) ;
+   list = newhead ;
+   return ;
+}
 
 } ; // end namespace Fr
 

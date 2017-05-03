@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-03					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -26,6 +26,24 @@ namespace Fr
 
 // request explicit instantiation
 template class HashTable<uint32_t,NullObject> ;
+
+template <>
+bool HashTable<uint32_t,NullObject>::isEqual(const char* name, size_t namelen, uint32_t key)
+{
+   (void)name; (void)namelen; (void)key;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <>
+size_t HashTable<uint32_t,NullObject>::hashVal(const char* name, size_t* namelen)
+{
+   (void)name ;
+   if (namelen) *namelen = 0 ;
+   return 0 ;  //FIXME
+}
+
 
 } // end namespace Fr
 

@@ -52,7 +52,6 @@ namespace Fr {
 #define FrSPIN_COUNT 20
 #define FrYIELD_COUNT 50
 #define FramepaC_display_width 132
-void pushlist(Object*,List*) ;
 
 size_t FramepaC_initial_indent = 0 ;
 } // end namespace Fr

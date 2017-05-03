@@ -272,14 +272,8 @@ class HashPtr
       HashPtr() : next(), offset(), head() { init() ; }
       ~HashPtr() {}
       uint8_t status() const { return head.status.load() ; }
-#if 0
-//FIXME:
-      const uint8_t *statusPtr() const { return &head.status ; }
-      uint8_t *statusPtr() { return &head.status ; }
-#else
-      const uint8_t *statusPtr() const ;
-      uint8_t *statusPtr() ;
-#endif
+      const Fr::Atomic<uint8_t>* statusPtr() const { return &head.status ; }
+      Fr::Atomic<uint8_t>* statusPtr() { return &head.status ; }
       bool locked() const { return (status() & lock_mask) != 0 ; }
       bool stale() const { return (status() & stale_mask) != 0 ; }
       bool copyDone() const { return (status() & copied_mask) != 0 ; }
@@ -729,7 +723,7 @@ class HashTable : public Object
 	    {
 	       m_table = ht ;
 	       m_pos = bucketnum ;
-	       m_lock = reinterpret_cast<Atomic<uint8_t>*>(ht->bucketPtr(bucketnum)->statusPtr()) ;
+	       m_lock = ht->bucketPtr(bucketnum)->statusPtr() ;
 	       INCR_COUNTstat(chain_lock_count) ;
 	       uint8_t oldval = m_lock->test_and_set_mask((uint8_t)HashPtr::lock_mask) ;
 	       if ((oldval & HashPtr::lock_mask) == 0)

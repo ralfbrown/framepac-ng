@@ -59,6 +59,17 @@ void HashTable_Stats::clear()
    return ;
 }
 
+//----------------------------------------------------------------------------
+
+void HashTable_Stats::add(const HashTable_Stats* other)
+{
+   if (!other) return;
+   insert += other->insert ;
+   insert_dup += other->insert_dup ;
+//FIXME
+   none += other->none ;
+   return ;
+}
 
 } // end namespace FramepaC //
 

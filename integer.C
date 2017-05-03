@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -62,6 +62,70 @@ bool Integer::toCstring_(const Object *obj, char *buffer, size_t buflen,
 {
    size_t needed = snprintf(buffer,buflen,"%*s%ld",(int)indent,"",obj->intValue()) ;
    return needed <= buflen ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t Integer::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
+{
+   (void)obj ; (void)wrap; (void)indent ;
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool Integer::toJSONString_(const Object* obj, char* buffer, size_t buflen,
+			    bool /*wrap*/, size_t indent)
+{
+   (void)obj; (void)buffer; (void)buflen; (void)indent;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+Object* Integer::front_(Object* obj)
+{
+   return obj ;
+}
+
+//----------------------------------------------------------------------------
+
+const Object* Integer::front_const(const Object* obj)
+{
+   return obj ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t Integer::hashValue_(const Object* obj)
+{
+   const Integer* integer = reinterpret_cast<const Integer*>(obj) ;
+//FIXME
+   return integer->m_value ;
+}
+
+//----------------------------------------------------------------------------
+
+bool Integer::equal_(const Object* obj1, const Object* obj2)
+{
+   (void)obj1; (void)obj2;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+int Integer::compare_(const Object* obj1, const Object* obj2)
+{
+   (void)obj1; (void)obj2;
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+int Integer::lessThan_(const Object* obj1, const Object* obj2)
+{
+   (void)obj1; (void)obj2;
+   return 0 ; //FIXME
 }
 
 /************************************************************************/

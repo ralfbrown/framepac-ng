@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-31					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -39,11 +39,63 @@ Allocator<Rational> Rational::s_allocator(&rational_vmt) ;
 /************************************************************************/
 /************************************************************************/
 
+Rational::Rational()
+{
+   //FIXME
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 Rational::Rational(const char *value)
    : m_value(0)
 {
    //FIXME
    (void)value ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+Rational::Rational(const Rational&)
+{
+   //FIXME
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+Rational* Rational::create()
+{
+   return new Rational ;
+}
+
+//----------------------------------------------------------------------------
+
+Rational* Rational::create(const Object*)
+{
+   return nullptr ;  //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+Rational* Rational::create(const Rational*)
+{
+   return nullptr ;  //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+Rational* Rational::create(const char*)
+{
+   return nullptr ;  //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+Rational::~Rational()
+{
+   //FIXME
    return ;
 }
 
@@ -65,6 +117,23 @@ bool Rational::toCstring_(const Object *obj, char *buffer, size_t buflen,
 //   size_t needed = snprintf(buffer,buflen,"%*s%ld",indent,"",((Rational_*)obj)->m_value) ;
    size_t needed = ~0 ; //FIXME
    return needed <= buflen ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t Rational::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
+{
+   (void)obj ; (void)wrap; (void)indent ;
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool Rational::toJSONString_(const Object* obj, char* buffer, size_t buflen,
+			    bool /*wrap*/, size_t indent)
+{
+   (void)obj; (void)buffer; (void)buflen; (void)indent;
+   return false ; //FIXME
 }
 
 //----------------------------------------------------------------------------

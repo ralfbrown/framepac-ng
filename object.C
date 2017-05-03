@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -193,6 +193,22 @@ mpq_t Object::rationalValue(const Object *)
 #endif
 
 //----------------------------------------------------------------------------
+
+/************************************************************************/
+/*	Procedural Interface functions					*/
+/************************************************************************/
+
+bool equal(const Object* obj1, const Object* obj2)
+{
+   if (!obj1)
+      {
+      return !obj2 ;
+      }
+   else if (!obj2)
+      return false ;
+   else
+      return obj1->equal(obj2) ;
+}
 
 } ; // end namespace Fr
 

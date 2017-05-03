@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-02					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -218,6 +218,11 @@ inline ObjectIter& ObjectIter::operator++ ()
 { 
    return m_object ? m_object->next(*this) : *this ; 
 }
+
+/************************************************************************/
+/************************************************************************/
+
+bool equal(const Object* obj1, const Object* obj2) ;
 
 // end of namespace Fr
 } ;

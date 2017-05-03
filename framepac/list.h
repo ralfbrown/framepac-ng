@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-05-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -81,6 +81,8 @@ class List : public Object
       ListIter end() const { return ListIter(empty_list) ; }
       ListIter cend() const { return ListIter(empty_list) ; }
       List *next() const { return m_next ; }
+
+      void setNext(List* nxt) { m_next = nxt ; }
 
    private: // static members
       static Allocator<List> s_allocator ;
@@ -180,6 +182,11 @@ inline ListIter& ListIter::operator++ () { if (m_list != List::empty_list) m_lis
 //----------------------------------------------------------------------------
 
 extern template class Allocator<List> ;
+
+/************************************************************************/
+/************************************************************************/
+
+void pushlist(Object*, List*&) ;
 
 // end of namespace Fr
 } ;
