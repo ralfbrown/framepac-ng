@@ -550,9 +550,6 @@ class HashTable : public Object
 	 [[gnu::hot]] void resizeCopySegment(size_t segnum) ;
 	 [[gnu::hot]] void resizeCopySegments(size_t max_segs = ~0UL) ;
 	 void clearDuplicates(size_t bucketnum) ;
-	 bool relocateEntry(size_t from, size_t to, size_t bucketnum) ;
-	 size_t hopscotchChain(size_t bucketnum, size_t entrynum) ;
-	 size_t hopscotch(size_t bucketnum) ;
 
 	 bool unlinkEntry(size_t entrynum) ;
 	 size_t recycleDeletedEntry(size_t bucketnum, KeyT new_key) ;

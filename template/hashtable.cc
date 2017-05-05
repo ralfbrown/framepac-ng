@@ -361,10 +361,9 @@ bool HashTable<KeyT,ValT>::Table::copyChain(size_t bucketnum)
    if ((status & (HashPtr::stale_mask | HashPtr::lock_mask)) != 0)
       {
       if (status & HashPtr::lock_mask) { INCR_COUNTstat(chain_lock_coll) ; }
-      // someone else has already worked on this
-      //   bucket, or a copy/recycle()/hopscotch() is
-      //   currently running, in which case that thread
-      //   will do the copying for us
+      // someone else has already worked on this bucket, or a
+      //   copy/recycle() is currently running, in which case that
+      //   thread will do the copying for us
       return bucket->copyDone() ;
       }
 #endif /* !FrSINGLE_THREADED */
@@ -404,10 +403,9 @@ void HashTable<KeyT,ValT>::Table::copyChains(size_t bucketnum, size_t endpos)
 	    }
 	 }
       }
-   // if we had to skip copying any chains due to a
-   //    concurrent recycle() or hopscotch(), tell the
-   //    lead resizing thread that it need to do a
-   //    cleanup pass
+   // if we had to skip copying any chains due to a concurrent
+   //    recycle(), tell the lead resizing thread that it need to
+   //    do a cleanup pass
    if (!complete)
       {
       size_t old_first ;
@@ -557,15 +555,6 @@ FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, Ke
    if (NULLPOS != recycled)
       {
       return recycled - bucketnum ;
-      }
-   // that still didn't get us a slot, so try moving
-   //    an entry on someone else's chain to a free
-   //    slot outside our reach
-   size_t hopped = hopscotch(bucketnum) ;
-   if (NULLPOS != hopped)
-      {
-      setKey(hopped,key) ;
-      return hopped - bucketnum ;
       }
    // if we get here, there were no free slots available, and
    //   none could be made
@@ -718,138 +707,13 @@ void HashTable<KeyT,ValT>::Table::clearDuplicates(size_t bucketnum)
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::relocateEntry(size_t from, size_t to, size_t bucketnum)
-{
-   announceBucketNumber(bucketnum) ;
-   // copy the contents of the 'from' entry to the 'to' entry
-   setKey(to,getKey(from)) ;
-   setValue(to,getValue(from)) ;
-   setChainNext(to,chainNext(from)) ;
-//FIXME
-   INCR_COUNT(move) ;
-   // try to swap the predecessor link for 'from' over to 'to'
-
-   unannounceBucketNumber() ;
-   return false ; 
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-size_t HashTable<KeyT,ValT>::Table::hopscotchChain(size_t bucketnum, size_t entrynum)
-{
-   // try to move an entry within the search range of
-   //   'bucketnum' which is contained in another
-   //   bucket's chain to a position outside the search
-   //   range
-#if !defined(FrSINGLE_THREADED) && 0
-   // the following lock serializes to allow only one
-   //   recycle() or hopscotch() on the chain at a time;
-   //   concurrent add() and remove() are OK
-   ScopedChainLock lock(this,bucketnum) ;
-   if (lock.busy())
-      {
-      // someone else is currently reclaiming the chain or
-      //   moving elements to make room, so we can just wait
-      //   for them to finish and then claim success ourselves
-      INCR_COUNT(chain_lock_coll) ;
-      return NULLPOS ;
-      }
-#endif /* !FrSINGLE_THREADED */
-   // find an entry within the search range of
-   //   'bucketnum' which is in the chain for a bucket
-   //   that can reach 'entrynum' and move it there
-   if (entrynum > bucketnum)
-      {
-      size_t max = bucketnum + searchrange ;
-      if (max >= m_size)
-	 max = m_size - 1 ;
-      for (size_t i = max ; i >= bucketnum ; --i)
-	 {
-	 size_t buck = bucketContaining(i) ;
-	 if (NULLPOS == buck || buck + searchrange < entrynum || entrynum + searchrange < buck )
-	    continue ;
-	 if (relocateEntry(i,entrynum,buck))
-	    return i ;
-	 }
-      }
-   else
-      {
-      size_t min = bucketnum > (size_t)searchrange ? bucketnum-searchrange : 0 ;
-      for (size_t i = min ; i <= bucketnum ; ++i)
-	 {
-	 size_t buck = bucketContaining(i) ;
-	 if (NULLPOS == buck || buck + searchrange < entrynum || entrynum + searchrange < buck )
-	    continue ;
-	 if (relocateEntry(i,entrynum,buck))
-	    return i ;
-	 }
-      }
-   return NULLPOS ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-size_t HashTable<KeyT,ValT>::Table::hopscotch(size_t bucketnum)
-{
-   return NULLPOS;//FIXME
-   size_t max = bucketnum + 2 * searchrange ;
-   if (max > m_size)
-      max = m_size ;
-   for (size_t i = bucketnum + searchrange ; i < max ; ++i)
-      {
-      if (claimEmptySlot(i,Entry::RECLAIMING()))
-	 {
-	 size_t slot = hopscotchChain(bucketnum,i) ;
-	 if (slot != NULLPOS)
-	    {
-	    return slot ;
-	    }
-	 else
-	    {
-	    // release the slot we grabbed, since we
-	    //   were unable to use it
-	    setKey(i,Entry::UNUSED()) ;
-	    }
-	 }
-      }
-   size_t min = 0 ;
-   if (bucketnum > 2 * searchrange)
-      {
-      min = bucketnum - 2 * searchrange ;
-      }
-   for (size_t i = min ; i + searchrange < bucketnum ; ++i)
-      {
-      if (claimEmptySlot(i,Entry::RECLAIMING()))
-	 {
-	 size_t slot = hopscotchChain(bucketnum,i) ;
-	 if (slot != NULLPOS)
-	    {
-	    return slot ;
-	    }
-	 else
-	    {
-	    // release the slot we grabbed, since we
-	    //   were unable to use it
-	    setKey(i,Entry::UNUSED()) ;
-	    }
-	 }
-      }
-   return NULLPOS ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::unlinkEntry(size_t entrynum)
 {
 #ifdef FrSINGLE_THREADED
    (void)entrynum ;
 #else
-   // the following lock serializes to allow only one
-   //   recycle() or hopscotch() on the chain at a time;
-   //   concurrent add() and remove() are OK
+   // the following lock serializes to allow only one recycle() on the
+   //   chain at a time; concurrent add() and remove() are OK
    size_t bucketnum = bucketContaining(entrynum) ;
    if (NULLPOS == bucketnum)
       return true ;
@@ -963,16 +827,15 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum, size_t &min_rec
    // remove() chops out the deleted entries, so there's never anything to reclaim
    return false ;
 #else
-   // the following lock serializes to allow only one
-   //   recycle()/reclaim() or hopscotch() on the chain at a time;
-   //   concurrent add() and remove() are OK
+   // the following lock serializes to allow only one recycle() /
+   //   reclaim() on the chain at a time; concurrent add() and
+   //   remove() are OK
    ScopedChainLock lock(this,bucketnum) ;
    if (lock.busy())
       {
-      // someone else is currently reclaiming the chain,
-      //   moving elements to make room, or copying the
-      //   bucket to a new hash table; so we can just
-      //   claim success ourselves
+      // someone else is currently reclaiming the chain, moving
+      //   elements to make room, or copying the bucket to a new hash
+      //   table; so we can just claim success ourselves
       return true ;
       }
    Atomic<Link>* prevptr = chainHeadPtr(bucketnum) ;
@@ -1086,7 +949,7 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
       m_resizepending.wait() ;
       // if necessary, do a cleanup pass to copy any
       //   buckets which had to be skipped due to
-      //   concurrent reclaim/hopscotch/remove() calls
+      //   concurrent reclaim() calls
       size_t first_incomplete = m_first_incomplete.load(std::memory_order_acquire) ;
       size_t last_incomplete = m_last_incomplete.load(std::memory_order_acquire) ;
       size_t loops = FrSPIN_COUNT ;  // jump right to yielding the CPU on backoff
