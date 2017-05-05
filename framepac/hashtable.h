@@ -226,6 +226,7 @@ class HashPtr
    {
    public:
       Fr::Atomic<Link> next ;	// pointer to next entry in current chain
+      Fr::Atomic<Link> offset ; // this entry's offset in hash bucket (subtract to get bucketnum)
       HashPtrHead head ;  	// .first and .status fields
    public:
       static const unsigned lock_bit = 0 ;
@@ -244,9 +245,10 @@ class HashPtr
 	 {
 	 head.first = NULLPTR ;
 	 next.store(NULLPTR,std::memory_order_release) ;
+	 offset.store(NULLPTR,std::memory_order_release) ;
 	 head.status.store(0,std::memory_order_release) ;
 	 }
-      HashPtr() : next(), head() { init() ; }
+      HashPtr() : next(), offset(), head() { init() ; }
       ~HashPtr() {}
       uint8_t status() const { return head.status.load(std::memory_order_consume) ; }
       const Fr::Atomic<uint8_t>* statusPtr() const { return &head.status ; }
@@ -503,8 +505,12 @@ class HashTable : public Object
 	 Atomic<Link>* chainHeadPtr(size_t N) const { return &bucketPtr(N)->head.first ; }
 	 Link chainNext(size_t N) const { return ANNOTATE_UNPROTECTED_READ(bucketPtr(N)->next) ; }
 	 Atomic<Link>* chainNextPtr(size_t N) const { return &bucketPtr(N)->next ; }
+	 Link chainOwner(size_t N) const { return bucketPtr(N)->offset.load(std::memory_order_consume) ; }
 	 void setChainNext(size_t N, Link nxt) { bucketPtr(N)->next.store(nxt,std::memory_order_release) ; }
+	 void setChainOwner(size_t N, Link ofs) { bucketPtr(N)->offset.store(ofs,std::memory_order_release) ; }
 	 void markCopyDone(size_t N) { bucketPtr(N)->markCopyDone() ; }
+	 size_t bucketContaining(size_t N) const
+	    { Link owner = chainOwner(N) ; return (owner == FramepaC::NULLPTR) ? NULLPOS : N - owner ; }
 	 size_t sizeForCapacity(size_t capacity) const
 	    {
 	       return (size_t)(capacity / m_container->m_maxfill + 0.99) ;
@@ -545,6 +551,8 @@ class HashTable : public Object
 	 [[gnu::hot]] void resizeCopySegments(size_t max_segs = ~0UL) ;
 	 void clearDuplicates(size_t bucketnum) ;
 
+	 bool unlinkEntry(size_t entrynum) ;
+	 size_t recycleDeletedEntry(size_t bucketnum, KeyT new_key) ;
 	 bool reclaimChain(size_t bucketnum, size_t &min_reclaimed, size_t &max_reclaimed) ;
 	 bool assistResize() ;
 
