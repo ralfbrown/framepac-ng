@@ -252,7 +252,7 @@ void HashTable<KeyT,ValT>::Table::autoResize()
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::bucketsInUse() const
+bool HashTable<KeyT,ValT>::Table::tableInUse() const
 {
 #ifndef FrSINGLE_THREADED
    // can only have concurrent use when multi-threaded
@@ -280,7 +280,7 @@ void HashTable<KeyT,ValT>::Table::awaitIdle()
 #ifndef FrSINGLE_THREADED
    debug_msg("await idle %ld\n",FramepaC::my_job_id);
    size_t loops = 0 ;
-   while (bucketsInUse())
+   while (tableInUse())
       {
       thread_backoff(loops) ;
       if (superseded())
@@ -430,8 +430,6 @@ bool HashTable<KeyT,ValT>::Table::reAdd(size_t hashval, KeyT key, ValT value)
    while (true)
       {
       FORWARD(reAdd(hashval,key,value),nexttab,insert_forwarded) ;
-      // tell others we're using the bucket
-      announceBucketNumber(bucketnum) ;
       // scan the chain of items for this hash position
       Link offset = chainHead(bucketnum) ;
       Link firstoffset = offset ;
@@ -448,7 +446,6 @@ bool HashTable<KeyT,ValT>::Table::reAdd(size_t hashval, KeyT key, ValT value)
 #endif /* FrHASHTABLE_VERBOSITY > 1 */
 	    // found existing entry!
 	    INCR_COUNT(insert_dup) ;
-	    unannounceBucketNumber() ;
 	    return true ;		// item already exists
 	    }
 	 // advance to next item in chain
@@ -459,7 +456,6 @@ bool HashTable<KeyT,ValT>::Table::reAdd(size_t hashval, KeyT key, ValT value)
       if (insertKey(bucketnum,firstoffset,key,value))
 	 break ;
       }
-   unannounceBucketNumber() ;
    return false ;		// item did not already exist
 }
 
@@ -649,7 +645,6 @@ void HashTable<KeyT,ValT>::Table::clearDuplicates(size_t bucketnum)
 {
    // scan down the chain for the given hash bucket, marking
    //   any duplicate entries for a key as deleted
-   announceBucketNumber(bucketnum) ;
    Link offset = chainHead(bucketnum) ;
    while (FramepaC::NULLPTR != offset)
       {
@@ -672,7 +667,6 @@ void HashTable<KeyT,ValT>::Table::clearDuplicates(size_t bucketnum)
 	    }
 	 }
       }
-   unannounceBucketNumber() ;
    return ;
 }
 
@@ -847,8 +841,6 @@ bool HashTable<KeyT,ValT>::Table::add(size_t hashval, KeyT key, ValT value)
    while (true)
       {
       FORWARD(add(hashval,key,value),nexttab,insert_forwarded) ;
-      // tell others we're using the bucket
-      announceBucketNumber(bucketnum) ;
       // scan the chain of items for this hash position
       if_THREADED(size_t deleted = NULLPOS ;)
       Link offset = chainHead(bucketnum) ;
@@ -861,14 +853,12 @@ bool HashTable<KeyT,ValT>::Table::add(size_t hashval, KeyT key, ValT value)
 	    {
 	    // found existing entry!
 	    INCR_COUNT(insert_dup) ;
-	    unannounceBucketNumber() ;
 	    return true ;		// item already exists
 	    }
 	 if_THREADED(else if (deletedEntry(pos) && deleted == NULLPOS) { deleted = pos ; })
 	    // advance to next item in chain
 	    offset = chainNext(pos) ;
 	 }
-      unannounceBucketNumber() ;
       // when we get here, we know that the item is not yet in the
       //   hash table, so try to add it
 #ifndef FrSINGLE_THREADED
@@ -913,8 +903,6 @@ ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr
       FORWARD(addCount(hashval,key,incr),nexttab,insert_forwarded) ;
       // scan the chain of items for this hash position
       if_THREADED(size_t deleted = NULLPOS ;)
-	 // tell others we're using the bucket
-	 announceBucketNumber(bucketnum) ;
       Link offset = chainHead(bucketnum) ;
       Link firstoffset = offset ;
       while (FramepaC::NULLPTR != offset)
@@ -928,7 +916,6 @@ ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr
 	    //   search
 	    if (superseded())
 	       {
-	       unannounceBucketNumber() ;
 	       return addCount(hashval,key,incr) ;
 	       }
 	    ValT newcount = m_entries[pos].atomicIncrCount(incr) ;
@@ -938,7 +925,6 @@ ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr
 	 // advance to next item in chain
 	 offset = chainNext(pos) ;
 	 }
-      unannounceBucketNumber() ;
       // when we get here, we know that the item is not yet in the
       //   hash table, so try to add it
 #ifndef FrSINGLE_THREADED
@@ -979,8 +965,6 @@ bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, KeyT key) const
    size_t bucketnum = hashval % m_size ;
    FORWARD_IF_COPIED(contains(hashval,key),contains_forwarded) ;
    INCR_COUNT(contains) ;
-   // tell others we're using the bucket
-   announceBucketNumber(bucketnum) ;
    // scan the chain of items for this hash position
    Link offset = chainHead(bucketnum) ;
    bool success = false ;
@@ -997,7 +981,6 @@ bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, KeyT key) const
       // advance to next item in chain
       offset = chainNext(pos) ;
       }
-   unannounceBucketNumber() ;
    return success ;
 }
 
@@ -1009,8 +992,6 @@ ValT HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key) const
    size_t bucketnum = hashval % m_size ;
    FORWARD_IF_COPIED(lookup(hashval,key),lookup_forwarded) ;
    INCR_COUNT(lookup) ;
-   // tell others we're using the bucket
-   announceBucketNumber(bucketnum) ;
    // scan the chain of items for this hash position
    Link offset = chainHead(bucketnum) ;
    ValT value = nullVal() ;
@@ -1032,7 +1013,6 @@ ValT HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key) const
       // advance to next item in chain
       offset = chainNext(pos) ;
       }
-   unannounceBucketNumber() ;
    return value ;
 }
 
@@ -1047,8 +1027,6 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value) 
    FORWARD_IF_COPIED(lookup(hashval,key,value),lookup_forwarded) ;
    INCR_COUNT(lookup) ;
    (*value) = nullVal() ;
-   // tell others we're using the bucket
-   announceBucketNumber(bucketnum) ;
    // scan the chain of items for this hash position
    Link offset = chainHead(bucketnum) ;
    bool found = false ;
@@ -1068,7 +1046,6 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value) 
       // advance to next item in chain
       offset = chainNext(pos) ;
       }
-   unannounceBucketNumber() ;
    return found ;
 }
 
@@ -1084,8 +1061,6 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value, 
    FORWARD_IF_COPIED(lookup(hashval,key,value),lookup_forwarded) ;
    INCR_COUNT(lookup) ;
    (*value) = nullVal() ;
-   // tell others we're using the bucket
-   announceBucketNumber(bucketnum) ;
    // scan the chain of items for this hash position
    Link offset = chainHead(bucketnum) ;
    while (FramepaC::NULLPTR != offset)
@@ -1105,14 +1080,12 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value, 
 	 // double-check that a parallel remove() hasn't deleted the
 	 //   hash entry while we were working with it
 	 bool found = (getKey(pos) == hkey) ;
-	 unannounceBucketNumber() ;
 	 INCR_COUNT(lookup_found) ;
 	 return found ;
 	 }
       // advance to next item in chain
       offset = chainNext(pos) ;
       }
-   unannounceBucketNumber() ;
    return false ;	// not found
 }
 
@@ -1128,8 +1101,6 @@ ValT* HashTable<KeyT,ValT>::Table::lookupValuePtr(size_t hashval, KeyT key) cons
    size_t bucketnum = hashval % m_size ;
    FORWARD_IF_COPIED(lookupValuePtr(hashval,key),lookup_forwarded) ;
    INCR_COUNT(lookup) ;
-   // tell others we're using the bucket
-   announceBucketNumber(bucketnum) ;
    // scan the chain of items for this hash position
    Link offset = chainHead(bucketnum) ;
    ValT* val = nullptr ; // assume "not found"
@@ -1146,7 +1117,6 @@ ValT* HashTable<KeyT,ValT>::Table::lookupValuePtr(size_t hashval, KeyT key) cons
       // advance to next item in chain
       offset = chainNext(pos) ;
       }
-   unannounceBucketNumber() ;
    return val ;
 }
 
@@ -1195,7 +1165,6 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
    //   deleted records in the bucket's chain, we need to
    //   remove all occurrences of the key so that the delete
    //   doesn't make a replaced entry reappear
-   announceBucketNumber(bucketnum) ;
    Link offset = chainHead(bucketnum) ;
    bool success = false ;
    // scan the chain of items for this hash position
@@ -1229,7 +1198,6 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
       // advance to next item in chain
       offset = chainNext(pos) ;
       }
-   unannounceBucketNumber() ;
    return success ;
 #endif /* FrSINGLE_THREADED */
 }
@@ -1309,7 +1277,6 @@ HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char* name, size_t nam
       {
       FORWARD(addKey(hashval,name,namelen,already_existed),nexttab,insert_forwarded) ;
       // scan the chain of items for this hash position
-      announceBucketNumber(bucketnum) ;
       Link offset = chainHead(bucketnum) ;
       Link firstoffset = offset ;
       while (FramepaC::NULLPTR != offset)
@@ -1322,7 +1289,6 @@ HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char* name, size_t nam
 	    INCR_COUNT(insert_dup) ;
 	    if (already_existed)
 	       *already_existed = true ;
-	    unannounceBucketNumber() ;
 	    return existing ;
 	    }
 	 // advance to next item in chain
@@ -1338,7 +1304,6 @@ HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char* name, size_t nam
       //    when we loop back to the top
       if (insertKey(bucketnum,firstoffset,key,nullVal()))
 	 return key ;
-      unannounceBucketNumber() ;
       }
 }
 
@@ -1352,7 +1317,6 @@ bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, const char* name, siz
    FORWARD_IF_COPIED(contains(hashval,name,namelen),contains_forwarded)
       INCR_COUNT(contains) ;
    // scan the chain of items for this hash position
-   announceBucketNumber(bucketnum) ;
    Link offset = chainHead(bucketnum) ;
    bool success = false ;
    while (FramepaC::NULLPTR != offset)
@@ -1368,7 +1332,6 @@ bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, const char* name, siz
       // advance to next item in chain
       offset = chainNext(pos) ;
       }
-   unannounceBucketNumber() ;
    return success ;
 }
 
@@ -1382,7 +1345,6 @@ KeyT HashTable<KeyT,ValT>::Table::lookupKey(size_t hashval, const char* name, si
    FORWARD_IF_COPIED(lookupKey(hashval,name,namelen),contains_forwarded)
       INCR_COUNT(lookup) ;
    // scan the chain of items for this hash position
-   announceBucketNumber(bucketnum) ;
    Link offset = chainHead(bucketnum) ;
    while (FramepaC::NULLPTR != offset)
       {
@@ -1391,13 +1353,11 @@ KeyT HashTable<KeyT,ValT>::Table::lookupKey(size_t hashval, const char* name, si
       if (isEqual(name,namelen,hkey))
 	 {
 	 INCR_COUNT(lookup_found) ;
-	 unannounceBucketNumber() ;
 	 return hkey ;
 	 }
       // advance to next item in chain
       offset = chainNext(pos) ;
       }
-   unannounceBucketNumber() ;
    return nullKey() ; // not found
 }
 
@@ -1476,7 +1436,6 @@ size_t HashTable<KeyT,ValT>::Table::chainLength(size_t bucketnum) const
 {
    FORWARD_IF_COPIED(chainLength(bucketnum),none) ;
    size_t len = 0 ;
-   announceBucketNumber(bucketnum) ;
    Link offset = chainHead(bucketnum) ;
    while (FramepaC::NULLPTR != offset)
       {
@@ -1484,7 +1443,6 @@ size_t HashTable<KeyT,ValT>::Table::chainLength(size_t bucketnum) const
       size_t pos = bucketnum + offset ;
       offset = chainNext(pos) ;
       }
-   unannounceBucketNumber() ;
    return len ;
 }
 

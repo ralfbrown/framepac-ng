@@ -482,22 +482,6 @@ class HashTable : public Object
 #endif /* !FrSINGLE_THREADED */
 	       return ;
 	    }
-	 static void announceBucketNumber(size_t bucketnum)
-	    {
-#ifndef FrSINGLE_THREADED
-	       Atomic<size_t>& bucket = Atomic<size_t>::ref(Fr::HashTable<KeyT,ValT>::s_bucket) ;
-	       bucket.store(bucketnum,std::memory_order_release) ;
-#endif /* !FrSINGLE_THREADED */
-	       return ;
-	    }
-	 static void unannounceBucketNumber()
-	    {
-#ifndef FrSINGLE_THREADED
-	       Atomic<size_t>& bucket = Atomic<size_t>::ref(Fr::HashTable<KeyT,ValT>::s_bucket) ;
-	       bucket.store(~0UL,std::memory_order_release) ;
-#endif /* !FrSINGLE_THREADED */
-	       return ;
-	    }
 
 	 Link chainHead(size_t N) const { return ANNOTATE_UNPROTECTED_READ(bucketPtr(N)->head.first) ; }
 	 Atomic<Link>* chainHeadPtr(size_t N) const { return &bucketPtr(N)->head.first ; }
@@ -510,7 +494,7 @@ class HashTable : public Object
 	       return (size_t)(capacity / m_container->m_maxfill + 0.99) ;
 	    }
 	 void autoResize() ;
-	 bool bucketsInUse() const ;
+	 bool tableInUse() const ;
       public:
 	 void awaitIdle() ;
       protected:
