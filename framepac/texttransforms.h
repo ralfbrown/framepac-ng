@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-05					*/
+/* Version 0.01, last edit 2017-05-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -33,6 +33,11 @@ void uppercase_string(char*) ;
 void lowercase_string(char*, std::locale&) ;
 void uppercase_string(char*, std::locale&) ;
 
+[[gnu::format(gnu_printf,1,0)]]
+char* vaprintf(const char *fmt, va_list args) ;
+
+[[gnu::format(gnu_printf,1,2)]]
+char* aprintf(const char* fmt, ...) ;
 
 } // end namespace Fr
 

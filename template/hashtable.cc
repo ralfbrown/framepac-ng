@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-03					*/
+/* Version 0.01, last edit 2017-05-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -131,22 +131,22 @@ template <typename KeyT, typename ValT>
 inline void HashTable<KeyT,ValT>::Table::init(size_t size, double max_fill)
 {
    m_size = size ;
-   m_currsize.store(0) ;
-   m_next_table.store(nullptr) ;
-   m_next_free.store(nullptr) ;
+   m_currsize.store(0,std::memory_order_release) ;
+   m_next_table.store(nullptr,std::memory_order_release) ;
+   m_next_free.store(nullptr,std::memory_order_release) ;
    m_entries = nullptr ;
    ifnot_INTERLEAVED(m_ptrs = nullptr ;)
-   m_resizelock.store(false) ;
-   m_resizedone.store(false) ;
+   m_resizelock.store(false,std::memory_order_release) ;
+   m_resizedone.store(false,std::memory_order_release) ;
    m_resizestarted.clear() ;
    m_resizepending.clear() ;
    m_resizethresh = (size_t)(size * max_fill + 0.5) ;
    size_t num_segs = (m_size + FrHASHTABLE_SEGMENT_SIZE - 1) / FrHASHTABLE_SEGMENT_SIZE ;
    m_resizepending.init(num_segs) ;
-   m_segments_assigned.store((size_t)0) ;
-   m_segments_total.store(num_segs) ;
-   m_first_incomplete.store(size) ;
-   m_last_incomplete.store(0) ;
+   m_segments_assigned.store((size_t)0,std::memory_order_release) ;
+   m_segments_total.store(num_segs,std::memory_order_release) ;
+   m_first_incomplete.store(size,std::memory_order_release) ;
+   m_last_incomplete.store(0,std::memory_order_release) ;
    remove_fn = nullptr ;
    if (size > 0)
       {
@@ -183,9 +183,9 @@ void HashTable<KeyT,ValT>::Table::clear()
    ifnot_INTERLEAVED(Free(m_ptrs) ;)
    m_entries = nullptr ;
    ifnot_INTERLEAVED(m_ptrs = nullptr ;)
-   m_currsize.store(0) ;
-   m_next_table.store(nullptr) ;
-   m_next_free.store(nullptr) ;
+   m_currsize.store(0,std::memory_order_release) ;
+   m_next_table.store(nullptr,std::memory_order_release) ;
+   m_next_free.store(nullptr,std::memory_order_release) ;
    return ;
 }
 
@@ -217,7 +217,7 @@ size_t HashTable<KeyT,ValT>::Table::normalizeSize(size_t sz)
 template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::Table::autoResize()
 {
-   size_t currsize = m_currsize.load() ;
+   size_t currsize = m_currsize.load(std::memory_order_acquire) ;
    if (currsize <= m_resizethresh)
       {
       // force an increase if we ran out of free slots
@@ -258,7 +258,9 @@ bool HashTable<KeyT,ValT>::Table::bucketsInUse(size_t startbucket, size_t endbuc
    // can only have concurrent use when multi-threaded
    // scan the list of per-thread s_table variables
    typedef typename Fr::HashTable<KeyT,ValT>::TablePtr TablePtr ;
-   for (const TablePtr* tables = s_thread_entries.load() ; tables ; tables = tables->m_next)
+   for (const TablePtr* tables = Atomic<TablePtr*>::ref(s_thread_entries).load(std::memory_order_acquire) ;
+	tables ;
+	tables = tables->m_next)
       {
       // check whether the hazard pointer is for ourself
       const Table* ht = tables->table() ;
@@ -411,14 +413,14 @@ void HashTable<KeyT,ValT>::Table::copyChains(size_t bucketnum, size_t endpos)
       size_t old_first ;
       do 
 	 {
-	 old_first = m_first_incomplete.load() ;
+	 old_first = m_first_incomplete.load(std::memory_order_acquire) ;
 	 if (first_incomplete >= old_first)
 	    break ;
 	 } while (!m_first_incomplete.compare_exchange_strong(old_first,first_incomplete)) ;
       size_t old_last ;
       do
 	 {
-	 old_last = m_last_incomplete.load() ;
+	 old_last = m_last_incomplete.load(std::memory_order_acquire) ;
 	 if (last_incomplete <= old_last)
 	    break ;
 	 } while (!m_last_incomplete.compare_exchange_strong(old_last,last_incomplete)) ;
@@ -580,7 +582,7 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
       // a resize snuck in, so retry
       return false ;
       }
-   if (unlikely(m_currsize.load() > m_resizethresh))
+   if (unlikely(m_currsize.load(std::memory_order_acquire) > m_resizethresh))
       {
       autoResize() ;
       return false ;
@@ -662,15 +664,15 @@ template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::Table::resizeCopySegments(size_t max_segs)
 {
    // is there any work available to be stolen?
-   if (!m_resizelock.load() || m_resizedone.load())
+   if (!m_resizelock.load(std::memory_order_acquire) || m_resizedone.load(std::memory_order_acquire))
       return ;
    // grab the current segment number and increment it
    //   so the next thread gets a different number; stop
    //   once all segments have been assigned
-   while (max_segs > 0 && m_segments_assigned.load() < m_segments_total.load())
+   while (max_segs > 0 && m_segments_assigned.load(std::memory_order_acquire) < m_segments_total.load(std::memory_order_acquire))
       {
       size_t segnum ;
-      if ((segnum = m_segments_assigned++) < m_segments_total.load())
+      if ((segnum = m_segments_assigned++) < m_segments_total.load(std::memory_order_acquire))
 	 {
 	 resizeCopySegment(segnum) ;
 	 --max_segs ;
@@ -1040,7 +1042,7 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
 {
    if (superseded())
       return false ;
-   size_t currsize = m_currsize.load() ;
+   size_t currsize = m_currsize.load(std::memory_order_acquire) ;
    newsize = normalizeSize(newsize) ;
    if (resizeThreshold(newsize) < currsize)
       newsize = normalizeSize(sizeForCapacity(currsize+1)) ;
@@ -1075,7 +1077,7 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
       // link in the new table; this also makes
       //   operations on the current table start to
       //   forward to the new one
-      m_next_table.store(newtable) ;
+      m_next_table.store(newtable,std::memory_order_release) ;
       m_resizestarted.set() ;
       // grab as many segments as we can and copy them
       resizeCopySegments() ;
@@ -1085,8 +1087,8 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
       // if necessary, do a cleanup pass to copy any
       //   buckets which had to be skipped due to
       //   concurrent reclaim/hopscotch/remove() calls
-      size_t first_incomplete = m_first_incomplete.load() ;
-      size_t last_incomplete = m_last_incomplete.load() ;
+      size_t first_incomplete = m_first_incomplete.load(std::memory_order_acquire) ;
+      size_t last_incomplete = m_last_incomplete.load(std::memory_order_acquire) ;
       size_t loops = FrSPIN_COUNT ;  // jump right to yielding the CPU on backoff
       while (first_incomplete <= last_incomplete)
 	 {
@@ -1112,7 +1114,7 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
 	 last_incomplete = last ;
 	 thread_backoff(loops) ;
 	 }
-      m_resizedone.store(true) ;
+      m_resizedone.store(true,std::memory_order_release) ;
       // make the new table the current one for the containing FrHashTable
       m_container->updateTable() ;
       debug_msg(" resize done (thr %ld)\n",FramepaC::my_job_id) ;
@@ -1456,7 +1458,7 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
    //   just chop out the desired item and don't need to bother with marking entries as
    //   deleted and reclaiming them later
    Link* prevptr = chainHeadPtr(bucketnum) ;
-   Link offset = Atomic<Link>::ref(*prevptr).load() ;
+   Link offset = Atomic<Link>::ref(*prevptr).load(std::memory_order_acquire) ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
@@ -1475,7 +1477,7 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
 	 }
       // advance to next item in chain
       prevptr = chainNextPtr(pos) ;
-      offset = Atomic<Link>::ref(*prevptr).load() ;
+      offset = Atomic<Link>::ref(*prevptr).load(std::memory_order_acquire) ;
       }
    // item not found
    return false ;
@@ -2122,10 +2124,10 @@ void HashTable<KeyT,ValT>::init(size_t initial_size, double max_fill, Table* tab
 {
    onRemove(nullptr) ;
    onDelete(nullptr) ;
-   m_table.store(nullptr) ;
+   m_table.store(nullptr,std::memory_order_release) ;
    m_maxfill = max_fill < FrHashTable_MinFill ? FrHashTable_DefaultMaxFill : max_fill ;
-   m_oldtables.store(nullptr) ;
-   m_freetables.store(nullptr) ;
+   m_oldtables.store(nullptr,std::memory_order_release) ;
+   m_freetables.store(nullptr,std::memory_order_release) ;
    clearGlobalStats() ;
    initial_size = Table::normalizeSize(initial_size) ;
    for (size_t i = 0 ; i < FrHT_NUM_TABLES ; i++)
@@ -2141,8 +2143,8 @@ void HashTable<KeyT,ValT>::init(size_t initial_size, double max_fill, Table* tab
       {
       table->m_container = this ;
       table->remove_fn = onRemoveFunc() ;
-      m_table.store(table) ;
-      m_oldtables.store(table) ;
+      m_table.store(table,std::memory_order_release) ;
+      m_oldtables.store(table,std::memory_order_release) ;
       }
    else
       {
@@ -2192,13 +2194,13 @@ template <typename KeyT, typename ValT>
 typename HashTable<KeyT,ValT>::Table* HashTable<KeyT,ValT>::allocTable()
 {
    // pop a table record off the freelist, if available
-   Table* tab = m_freetables.load() ;
+   Table* tab = m_freetables.load(std::memory_order_acquire) ;
    while (tab)
       {
       Table* nxt = tab->nextFree() ;
       if (m_freetables.compare_exchange_strong(tab,nxt))
 	 return tab ;
-      tab = m_freetables.load() ;
+      tab = m_freetables.load(std::memory_order_acquire) ;
       }
    // no table records on the freelist, so create a new one
    return new Table ;
@@ -2213,8 +2215,8 @@ void HashTable<KeyT,ValT>::releaseTable(Table* t)
    Table* freetab ;
    do
       {
-      freetab = m_freetables.load() ;
-      t->m_next_free.store(freetab) ;
+      freetab = m_freetables.load(std::memory_order_acquire) ;
+      t->m_next_free.store(freetab,std::memory_order_release) ;
       } while (!m_freetables.compare_exchange_weak(freetab,t)) ;
    return ;
 }
@@ -2225,10 +2227,10 @@ template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::freeTables()
 {
    Table* tab ;
-   while ((tab = m_freetables.load()) != nullptr)
+   while ((tab = m_freetables.load(std::memory_order_acquire)) != nullptr)
       {
       Table* nxt = tab->nextFree() ;
-      m_freetables.store(nxt) ;
+      m_freetables.store(nxt,std::memory_order_release) ;
       if (tab < &m_tables[0] || tab >= &m_tables[FrHT_NUM_TABLES])
 	 {
 	 // not one of the tables inside our own instance, so
@@ -2244,7 +2246,7 @@ void HashTable<KeyT,ValT>::freeTables()
 template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::updateTable()
 {
-   Table* table = m_table.load() ;
+   Table* table = m_table.load(std::memory_order_acquire) ;
    bool updated = false ;
    while (table && table->resizingDone() && table->next())
       {
@@ -2253,7 +2255,7 @@ void HashTable<KeyT,ValT>::updateTable()
       }
    if (updated)
       {
-      m_table.store(table) ;
+      m_table.store(table,std::memory_order_release) ;
       }
    return ;
 }
@@ -2266,9 +2268,9 @@ bool HashTable<KeyT,ValT>::reclaimSuperseded()
    bool freed = false ;
    while (true)
       {
-      Table* tab = m_oldtables.load() ;
+      Table* tab = m_oldtables.load(std::memory_order_acquire) ;
       assert(tab != nullptr) ;
-      if (tab == m_table.load() || !tab->resizingDone() ||
+      if (tab == m_table.load(std::memory_order_acquire) || !tab->resizingDone() ||
 	  stillLive(tab))
 	 break ;
       Table* nxt = tab->next() ;
@@ -2290,14 +2292,16 @@ void HashTable<KeyT,ValT>::registerThread()
 {
 #ifndef FrSINGLE_THREADED
    // check whether we've initialized the thread-local data yet
-   if (!s_thread_record.initialized())
+   if (!s_stats) s_stats = new HashTable_Stats ; //FIXME
+   if (!s_thread_record) s_thread_record = new TablePtr ;
+   if (!s_thread_record->initialized())
       {
       // push our local-copy variable onto the list of all such variables
       //   for use by the resizer
-      auto head = s_thread_entries.load() ;
+      auto head = Atomic<TablePtr*>::ref(s_thread_entries).load(std::memory_order_acquire) ;
       do {
-         s_thread_record.init(&s_table,&s_bucket,head) ;
-         } while (!s_thread_entries.compare_exchange_weak(head,&s_thread_record)) ;
+         s_thread_record->init(&s_table,&s_bucket,head) ;
+         } while (!Atomic<TablePtr*>::ref(s_thread_entries).compare_exchange_weak(head,s_thread_record)) ;
       /*atomic_incr*/++s_registered_threads ;
       }
 #endif /* FrSINGLE_THREADED */
@@ -2311,13 +2315,14 @@ void HashTable<KeyT,ValT>::unregisterThread()
 {
 #ifndef FrSINGLE_THREADED
    s_table = nullptr ;
-   if (s_thread_record.initialized())
+   storeBarrier() ;
+   if (s_thread_record->initialized())
       {
       // unlink from the list of all thread-local table pointers
       //FIXME: make updates atomic to prevent list corruption
       TablePtr* prev = nullptr ;
       TablePtr* curr = s_thread_entries ;
-      while (curr && curr->m_table != &s_table)
+      while (curr && curr->m_table != &Atomic<Table*>::ref(s_table))
 	 {
 	 prev = curr ;
 	 curr = curr->m_next ;
@@ -2331,7 +2336,7 @@ void HashTable<KeyT,ValT>::unregisterThread()
 	    s_thread_entries = curr->m_next ;
 	 --s_registered_threads ;
 	 }
-      s_thread_record.clear() ;
+      s_thread_record->clear() ;
       }
 #endif /* !FrSINGLE_THREADED */
    return ;
@@ -2347,8 +2352,8 @@ void HashTable<KeyT,ValT>::setMaxFill(double fillfactor)
    else if (fillfactor < FrHashTable_MinFill)
       fillfactor = FrHashTable_MinFill ;
    m_maxfill = fillfactor ;
-   HazardLock hl(m_table.load()) ;
-   Table *table = m_table.load() ;
+   HazardLock hl(m_table) ;
+   Table *table = m_table.load(std::memory_order_acquire) ;
    if (table)
       {
       table->m_resizethresh = table->resizeThreshold(table->m_size) ;
@@ -2367,20 +2372,20 @@ void HashTable<KeyT,ValT>::setMaxFill(double fillfactor)
 
 #ifndef FrSINGLE_THREADED
 template <typename KeyT, typename ValT>
-thread_local Atomic<typename HashTable<KeyT,ValT>::Table*> HashTable<KeyT,ValT>::s_table = nullptr ;
+thread_local typename HashTable<KeyT,ValT>::Table* HashTable<KeyT,ValT>::s_table = nullptr ;
 template <typename KeyT, typename ValT>
-thread_local Atomic<size_t> HashTable<KeyT,ValT>::s_bucket = ~0UL ;
+thread_local size_t HashTable<KeyT,ValT>::s_bucket = ~0UL ;
 template <typename KeyT, typename ValT>
-Atomic<typename HashTable<KeyT,ValT>::TablePtr*> HashTable<KeyT,ValT>::s_thread_entries = nullptr ;
+typename HashTable<KeyT,ValT>::TablePtr* HashTable<KeyT,ValT>::s_thread_entries = nullptr ;
 template <typename KeyT, typename ValT>
 size_t HashTable<KeyT,ValT>::s_registered_threads = 0 ;
 template <typename KeyT, typename ValT>
-thread_local typename HashTable<KeyT,ValT>::TablePtr HashTable<KeyT,ValT>::s_thread_record ;
+thread_local typename HashTable<KeyT,ValT>::TablePtr* HashTable<KeyT,ValT>::s_thread_record = nullptr ;
 #endif /* !FrSINGLE_THREADED */
 
 #if defined(FrHASHTABLE_STATS)
 template <typename KeyT, typename ValT>
-thread_local FramepaC::HashTable_Stats HashTable<KeyT,ValT>::s_stats ;
+thread_local FramepaC::HashTable_Stats* HashTable<KeyT,ValT>::s_stats = nullptr ;
 #endif /* FrHASHTABLE_STATS */
 
 } // end namespace Fr

@@ -52,10 +52,6 @@ using namespace std ;
 // uncomment the following line to collect operational statistics (slightly slower)
 #define FrHASHTABLE_STATS
 
-// comment out the following to maintain global stats (much slower, since it requires
-//    atomic increments of contended locations)
-#define FrHASHTABLE_STATS_PERTHREAD
-
 // uncomment the following line to interleave bucket headers and
 //   bucket contents rather than using separate arrays (fewer cache
 //   misses, but wastes some space on 64-bit machines if the key or
@@ -64,7 +60,7 @@ using namespace std ;
 
 // uncomment the following line to enable 16-bit link pointers instead
 //   of 8-bit.  This will increase memory use unless you use
-//   interleaved entries on a 64-bit machine.
+//   interleaved entries on a 64-bit machine for pointer keys/values.
 //#define FrHASHTABLE_BIGLINK
 
 /************************************************************************/
@@ -123,7 +119,7 @@ const int STRING_LEN_GRAN = 8 ;
 //  because the latter involves a branch and multiple function calls
 //  per access to a variable of that storage class, while __thread
 //  simply uses an fs: override
-//#  define thread_local __thread
+#  define thread_local __thread
 #endif /* __GNUC__ */
 # define if_THREADED(x) x
 # define if_NONTHREADED(x)

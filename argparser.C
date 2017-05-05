@@ -19,9 +19,8 @@
 /*									*/
 /************************************************************************/
 
-#include <cstdlib>
 #include <cstring>
-#include <iostream>
+#include <sstream>
 #include "framepac/argparser.h"
 
 namespace Fr

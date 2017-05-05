@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-05					*/
+/* Version 0.01, last edit 2017-05-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -33,7 +33,7 @@ namespace Fr
 {
 
 thread_local SlabFreelist* AllocatorBase::m_freelist ;
-thread_local Atomic<SlabFreelist*> AllocatorBase::m_pending ;
+thread_local SlabFreelist* AllocatorBase::m_pending ;
 thread_local Slab* AllocatorBase::m_hazard ;
 HazardPointerList AllocatorBase::m_hazardlist ;
 Slab* AllocatorBase::m_slabs ;
@@ -101,9 +101,10 @@ SlabFreelist *stealPendingFrees()
 
 //----------------------------------------------------------------------------
 
-SlabFreelist* AllocatorBase::reclaimPending(Atomic<SlabFreelist*>& )
+SlabFreelist* AllocatorBase::reclaimPending(SlabFreelist*& )
 {
    //TODO
+   // convert to atomic with Atomic<SlabFreelist*>::ref(x)
    return nullptr ;
 }
 

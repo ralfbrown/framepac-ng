@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-26					*/
+/* Version 0.01, last edit 2017-05-04					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <iostream>
 #include "framepac/message.h"
+#include "framepac/texttransforms.h"
 
 namespace Fr
 {
@@ -33,27 +34,6 @@ namespace Fr
 static ConsoleSystemMessage default_console_message ;
 
 SystemMessage* SystemMessage::s_instance = &default_console_message ;
-
-/************************************************************************/
-/************************************************************************/
-
-[[gnu::format(gnu_printf,1,0)]]
-static char* vaprintf(const char *fmt, va_list args)
-{
-   // we need to make a copy of the arglist, because va_lists are passed by
-   //   reference, so the first call to vsprintf would clobber 'args' for
-   //   the second call!
-   va_list argcopy ;
-   va_copy(argcopy,args) ;
-   size_t len = vsnprintf(nullptr,0,fmt,argcopy) ;
-   char* buf = new char[len+1] ;
-   if (buf)
-      {
-      va_copy(argcopy,args) ;
-      vsnprintf(buf,len+1,fmt,args) ;
-      }
-   return buf ;
-}
 
 /************************************************************************/
 /*	Methods for class SystemMessage					*/

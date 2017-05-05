@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.01, last edit 2017-05-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -27,41 +27,12 @@
 #include <climits>
 #include <iostream>
 #include <type_traits>
+#include "framepac/init.h"
 #include "framepac/list.h"
 #include "framepac/number.h"
 #include "framepac/symbol.h"
 #include "framepac/synchevent.h"
 #include <cassert>
-
-/************************************************************************/
-/*	Compile-Time Configuration					*/
-/************************************************************************/
-
-// specify how much checking and output you want:
-//   0 - completely silent except for critical errors
-//   1 - important messsages only
-//   2 - status messages
-//   3 - extra sanity checking
-//   4 - expensive sanity checking
-#define FrHASHTABLE_VERBOSITY 0
-
-// uncomment the following line to collect operational statistics (slightly slower)
-#define FrHASHTABLE_STATS
-
-// comment out the following to maintain global stats (much slower, since it requires
-//    atomic increments of contended locations)
-#define FrHASHTABLE_STATS_PERTHREAD
-
-// uncomment the following line to interleave bucket headers and
-//   bucket contents rather than using separate arrays (fewer cache
-//   misses, but wastes some space on 64-bit machines if the key or
-//   value are 64 bits)
-#define FrHASHTABLE_INTERLEAVED_ENTRIES
-
-// uncomment the following line to enable 16-bit link pointers instead
-//   of 8-bit.  This will increase memory use unless you use
-//   interleaved entries on a 64-bit machine.
-//#define FrHASHTABLE_BIGLINK
 
 /************************************************************************/
 /*	Manifest Constants						*/
@@ -118,10 +89,12 @@
 #endif
 
 #ifdef FrHASHTABLE_STATS
-# define INCR_COUNTstat(x) (++ s_stats.x)
-#  define INCR_COUNT(x) (++ s_stats.x)
-#  define DECR_COUNT(x) (-- s_stats.x)
+#  define if_HASHSTATS(x) x
+#  define INCR_COUNTstat(x) (++ s_stats->x)
+#  define INCR_COUNT(x) (++ s_stats->x)
+#  define DECR_COUNT(x) (-- s_stats->x)
 #else
+#  define if_HASHSTATS(x)
 #  define INCR_COUNTstat(x)
 #  define INCR_COUNT(x)
 #  define DECR_COUNT(x)
@@ -224,7 +197,7 @@ struct HashPtrHead
       Fr::Atomic<Link>    first ; // offset of first entry in hash bucket
       Fr::Atomic<uint8_t> status ;// is someone messing with this bucket's chain?
    public:
-      HashPtrHead() : first(0), status(0) { status.store(0) ; }
+      HashPtrHead() : first(0), status(0) { status.store(0,std::memory_order_release) ; }
    } ;	    
 
 /************************************************************************/
@@ -258,20 +231,26 @@ class HashPtr
    public:
       static const unsigned lock_bit = 0 ;
       static const uint8_t lock_mask = (1 << lock_bit) ;
-      static const unsigned reclaimed_bit = 3 ;
-      static const uint8_t reclaimed_mask = (1 << reclaimed_bit) ;
-      static const unsigned deleted_bit = 4 ;
-      static const uint8_t deleted_mask = (1 << deleted_bit) ;
-      static const unsigned inuse_bit = 5 ;
-      static const uint8_t inuse_mask = (1 << inuse_bit) ;
+//      static const unsigned reclaimed_bit = 3 ;
+//      static const uint8_t reclaimed_mask = (1 << reclaimed_bit) ;
+//      static const unsigned deleted_bit = 4 ;
+//      static const uint8_t deleted_mask = (1 << deleted_bit) ;
+//      static const unsigned inuse_bit = 5 ;
+//      static const uint8_t inuse_mask = (1 << inuse_bit) ;
       static const unsigned copied_bit = 6 ;
       static const uint8_t copied_mask = (1 << copied_bit) ;
       static const unsigned stale_bit = 7 ;
       static const uint8_t stale_mask = (1 << stale_bit) ;
-      void init() { head.first = NULLPTR ; next.store(NULLPTR) ; offset.store(NULLPTR) ; head.status.store(0) ; }
+      void init()
+	 {
+	 head.first = NULLPTR ;
+	 next.store(NULLPTR,std::memory_order_release) ;
+	 offset.store(NULLPTR,std::memory_order_release) ;
+	 head.status.store(0,std::memory_order_release) ;
+	 }
       HashPtr() : next(), offset(), head() { init() ; }
       ~HashPtr() {}
-      uint8_t status() const { return head.status.load() ; }
+      uint8_t status() const { return head.status.load(std::memory_order_consume) ; }
       const Fr::Atomic<uint8_t>* statusPtr() const { return &head.status ; }
       Fr::Atomic<uint8_t>* statusPtr() { return &head.status ; }
       bool locked() const { return (status() & lock_mask) != 0 ; }
@@ -425,7 +404,7 @@ class HashTable : public Object
 	    }
 	 char *displayValue(char *buffer) const
 	    {
-	       buffer = m_key.load().print(buffer) ;
+	       buffer = m_key.load(std::memory_order_consume).print(buffer) ;
 	       *buffer = '\0' ;
 	       return buffer ;
 	    }
@@ -458,15 +437,15 @@ class HashTable : public Object
 	 void init(size_t size, double max_fill = FrHashTable_DefaultMaxFill) ;
 	 void clear() ;
 	 bool good() const { return m_entries != nullptr ifnot_INTERLEAVED(&& m_ptrs != nullptr) && m_size > 0 ; }
-	 bool superseded() const { return m_next_table.load() != nullptr ; }
-	 bool resizingDone() const { return m_resizedone.load() ; }
-	 size_t currentSize() const { return m_currsize.load() ; }
-	 void setSize(size_t newsz) { m_currsize.store(newsz) ; }
-	 Table *next() const { return m_next_table.load() ; }
-	 Table *nextFree() const { return m_next_free.load() ; }
-	 KeyT getKey(size_t N) const { return m_entries[N].m_key.load() ; }
+	 bool superseded() const { return m_next_table.load(std::memory_order_consume) != nullptr ; }
+	 bool resizingDone() const { return m_resizedone.load(std::memory_order_consume) ; }
+	 size_t currentSize() const { return m_currsize.load(std::memory_order_consume) ; }
+	 void setSize(size_t newsz) { m_currsize.store(newsz,std::memory_order_release) ; }
+	 Table *next() const { return m_next_table.load(std::memory_order_consume) ; }
+	 Table *nextFree() const { return m_next_free.load(std::memory_order_consume) ; }
+	 KeyT getKey(size_t N) const { return m_entries[N].m_key.load(std::memory_order_consume) ; }
 	 KeyT getKeyNonatomic(size_t N) const { return ANNOTATE_UNPROTECTED_READ(m_entries[N].m_key) ; }
-	 void setKey(size_t N, KeyT newkey) { m_entries[N].m_key.store(newkey) ; }
+	 void setKey(size_t N, KeyT newkey) { m_entries[N].m_key.store(newkey,std::memory_order_release) ; }
 	 ValT getValue(size_t N) const { return m_entries[N].getValue() ; }
 	 ValT *getValuePtr(size_t N) const { return m_entries[N].getValuePtr() ; }
 	 void setValue(size_t N, ValT value) { m_entries[N].setValue(value) ; }
@@ -500,21 +479,24 @@ class HashTable : public Object
 	 void announceTable()
 	    {
 #ifndef FrSINGLE_THREADED
-	       Fr::HashTable<KeyT,ValT>::s_table.store(this) ;
+	       Atomic<Table*>& tbl = Atomic<Table*>::ref(Fr::HashTable<KeyT,ValT>::s_table) ;
+	       tbl.store(this,std::memory_order_release) ;
 #endif /* !FrSINGLE_THREADED */
 	       return ;
 	    }
-	 static void announceBucketNumber(size_t bucket)
+	 static void announceBucketNumber(size_t bucketnum)
 	    {
 #ifndef FrSINGLE_THREADED
-	       Fr::HashTable<KeyT,ValT>::s_bucket.store(bucket) ;
+	       Atomic<size_t>& bucket = Atomic<size_t>::ref(Fr::HashTable<KeyT,ValT>::s_bucket) ;
+	       bucket.store(bucketnum,std::memory_order_release) ;
 #endif /* !FrSINGLE_THREADED */
 	       return ;
 	    }
 	 static void unannounceBucketNumber()
 	    {
 #ifndef FrSINGLE_THREADED
-	       Fr::HashTable<KeyT,ValT>::s_bucket.store(~0UL) ;
+	       Atomic<size_t>& bucket = Atomic<size_t>::ref(Fr::HashTable<KeyT,ValT>::s_bucket) ;
+	       bucket.store(~0UL,std::memory_order_release) ;
 #endif /* !FrSINGLE_THREADED */
 	       return ;
 	    }
@@ -523,9 +505,9 @@ class HashTable : public Object
 	 Atomic<Link>* chainHeadPtr(size_t N) const { return &bucketPtr(N)->head.first ; }
 	 Link chainNext(size_t N) const { return ANNOTATE_UNPROTECTED_READ(bucketPtr(N)->next) ; }
 	 Atomic<Link>* chainNextPtr(size_t N) const { return &bucketPtr(N)->next ; }
-	 Link chainOwner(size_t N) const { return bucketPtr(N)->offset.load() ; }
-	 void setChainNext(size_t N, Link nxt) { bucketPtr(N)->next.store(nxt) ; }
-	 void setChainOwner(size_t N, Link ofs) { bucketPtr(N)->offset.store(ofs) ; }
+	 Link chainOwner(size_t N) const { return bucketPtr(N)->offset.load(std::memory_order_consume) ; }
+	 void setChainNext(size_t N, Link nxt) { bucketPtr(N)->next.store(nxt,std::memory_order_release) ; }
+	 void setChainOwner(size_t N, Link ofs) { bucketPtr(N)->offset.store(ofs,std::memory_order_release) ; }
 	 void markCopyDone(size_t N) { bucketPtr(N)->markCopyDone() ; }
 	 size_t bucketContaining(size_t N) const
 	    { Link owner = chainOwner(N) ; return (owner == FramepaC::NULLPTR) ? NULLPOS : N - owner ; }
@@ -672,11 +654,12 @@ class HashTable : public Object
       class TablePtr
          {
 	 public:
-	    TablePtr 	   *m_next ;
-	    Atomic<size_t> *m_bucket ;
+	    TablePtr 	   *m_next { nullptr } ;
+	    Atomic<size_t> *m_bucket { nullptr } ;
 	    Atomic<Table*> *m_table { nullptr } ;
-	    size_t   	    m_id ;	   // thread ID, for help in debugging
+	    size_t   	    m_id { 0 } ;	   // thread ID, for help in debugging
 	 public:
+	    TablePtr() : m_next(nullptr), m_bucket(nullptr), m_table(nullptr), m_id(0) {}
 	    bool initialized() const { return m_table != nullptr ; }
 	    void clear()
 	       { m_table = nullptr ; m_bucket = nullptr ; m_next = nullptr ; }
@@ -687,8 +670,8 @@ class HashTable : public Object
 	    void init(Atomic<Table*>* tab, Atomic<size_t>* bcket, TablePtr* next)
 	       { m_table = tab ; m_bucket = bcket ;
 		 m_next = next ; m_id = FramepaC::my_job_id ; }
-	    size_t bucket() const { return m_bucket->load() ; }
-	    const Table *table() const { return m_table->load() ; }
+	    size_t bucket() const { return m_bucket->load(std::memory_order_consume) ; }
+	    const Table *table() const { return m_table->load(std::memory_order_consume) ; }
          } ;
       //------------------------
       class HazardLock
@@ -697,10 +680,24 @@ class HashTable : public Object
 	 public:
 #ifdef FrSINGLE_THREADED
 	    ALWAYS_INLINE HazardLock(Table *) {}
+	    ALWAYS_INLINE HazardLock(Atomic<Table*>) {}
 	    ALWAYS_INLINE ~HazardLock() {}
 #else
-	    HazardLock(Table *tab)  { HashTable::s_table.store(tab) ; }
-	    ~HazardLock() { HashTable::s_table.store((Table*)nullptr) ; }
+	    HazardLock(Atomic<Table*>tab)
+	       {
+	       Atomic<Table*>& tbl = Atomic<Table*>::ref(HashTable::s_table) ;
+	       tbl.store(tab.load(std::memory_order_acquire),std::memory_order_release) ;
+	       }
+	    HazardLock(Table *tab)
+	       {
+	       Atomic<Table*>& tbl = Atomic<Table*>::ref(HashTable::s_table) ;
+	       tbl.store(tab,std::memory_order_release) ;
+	       }
+	    ~HazardLock()
+	       {
+	       Atomic<Table*>& tbl = Atomic<Table*>::ref(HashTable::s_table) ;
+	       tbl.store((Table*)nullptr,std::memory_order_release) ;
+	       }
 #endif /* FrSINGLE_THREADED */
          } ;
       //------------------------
@@ -743,7 +740,7 @@ class HashTable : public Object
 	       if (m_locked)
 		  status = m_lock->test_and_clear_mask((uint8_t)HashPtr::lock_mask) ; 
 	       else
-		  status = m_lock->load() ;
+		  status = m_lock->load(std::memory_order_consume) ;
 	       if (!m_stale && (status & HashPtr::stale_mask) != 0)
 		  {
 		  // someone else tried to copy the chain while we held the lock,
@@ -756,9 +753,9 @@ class HashTable : public Object
 	 bool stale() const { return m_stale ; }
 	 bool busy() const { return !locked() || stale() ; }
 #ifdef FrHASHTABLE_STATS
-	 static void clearPerThreadStats() { s_stats.chain_lock_count.store(0) ; s_stats.chain_lock_coll.store(0) ; }
-	 static size_t numberOfLocks() { return s_stats.chain_lock_count.load() ; }
-	 static size_t numberOfLockCollisions() { return s_stats.chain_lock_coll.load() ; }
+	 static void clearPerThreadStats() { s_stats->chain_lock_count.store(0) ; s_stats->chain_lock_coll.store(0) ; }
+	 static size_t numberOfLocks() { return s_stats->chain_lock_count.load() ; }
+	 static size_t numberOfLockCollisions() { return s_stats->chain_lock_coll.load() ; }
 #else
 	 static void clearPerThreadStats() {}
 	 static size_t numberOfLocks() { return 0 ; }
@@ -770,10 +767,25 @@ class HashTable : public Object
          {
 	 public:
 	    ThreadCleanup() {}
-	    ~ThreadCleanup() { HashTable::unregisterThread() ; }
+	    ~ThreadCleanup() {  }
          } ;
       //------------------------
-
+      void threadInit()
+	 {
+#ifndef FrSINGLE_THREADED
+	 s_thread_record = new TablePtr ;
+#endif /* FrSINGLE_THREADED */
+	 if_HASHSTATS(s_stats = new HashTable_Stats) ;
+	 HashTable::registerThread() ;
+	 }
+      void threadCleanup()
+	 {
+#ifndef FrSINGLE_THREADED
+	 delete s_thread_record ;
+#endif /* FrSINGLE_THREADED */
+         if_HASHSTATS( delete s_stats) ;
+	 HashTable::unregisterThread() ;
+	 }
    protected: // members
       Atomic<Table*>   	  m_table ;	// pointer to currently-active m_tables[] entry
       Atomic<Table*>	  m_oldtables { nullptr } ;  // start of list of currently-live hash arrays
@@ -783,16 +795,16 @@ class HashTable : public Object
       HashKVFunc         *remove_fn ; 	// invoke on removal of entry/value
       double	          m_maxfill ;	// maximum fill factor before resizing
 #ifndef FrSINGLE_THREADED
-      static Atomic<TablePtr*> s_thread_entries ;
+      static FramepaC::ThreadInitializer<HashTable> initializer ;
+      static TablePtr*    s_thread_entries ;
       static size_t       s_registered_threads ;
-      static thread_local TablePtr s_thread_record ;
-      static thread_local Atomic<Table*> s_table ;// thread's announcement which hash table it's using
-      static thread_local Atomic<size_t> s_bucket ;// thread's announcement which hash bucket it's using
-      static thread_local ThreadCleanup cleaner ;
+      static thread_local TablePtr* s_thread_record ;
+      static thread_local Table*    s_table ; // thread's announcement which hash table it's using
+      static thread_local size_t    s_bucket ;// thread's announcement which hash bucket it's using
 #endif /* FrSINGLE_THREADED */
 #ifdef FrHASHTABLE_STATS
       mutable HashTable_Stats	  m_stats ;
-      static thread_local HashTable_Stats   s_stats ;
+      static thread_local HashTable_Stats* s_stats ;
 #endif /* FrHASHTABLE_STATS */
       static const size_t m_bit_resize = ((sizeof(size_t)*CHAR_BIT)-1) ;
       static const size_t m_mask_resize = (1UL << m_bit_resize) ; // lock bit for resize
@@ -839,10 +851,12 @@ class HashTable : public Object
       // set up the per-thread info needed for safe reclamation of
       //   entries and hash arrays, as well as an on-exit callback
       //   to clear that info
+   public://FIXME, shoudl only be called from ThreadInitializer
       static void registerThread() ;
+   protected:
       static void unregisterThread() ;
 
-      size_t maxSize() const { return m_table.load()->m_size ; }
+      size_t maxSize() const { return m_table.load(std::memory_order_consume)->m_size ; }
       static inline size_t hashVal(KeyT key)
 	 {
 	    return key ? key->hashValue() : 0 ;
@@ -878,8 +892,8 @@ class HashTable : public Object
       void copyContents(const HashTable &ht)
          {
 	    init(ht.maxSize(),ht.m_maxfill) ;
-	    Table *table = m_table.load() ;
-	    Table *othertab = ht.m_table.load() ;
+	    Table *table = m_table.load(std::memory_order_consume) ;
+	    Table *othertab = ht.m_table.load(std::memory_order_consume) ;
 	    table->setSize(ht.currentSize()) ;
 	    for (size_t i = 0 ; i < table->m_size ; i++)
 	       {
@@ -890,7 +904,7 @@ class HashTable : public Object
       // single-threaded only!!  But since it's only called from a dtor, that's fine
       void clearContents()
          {
-	    Table *table = m_table.load() ;
+	    Table *table = m_table.load(std::memory_order_consume) ;
 	    if (table && table->good())
 	       {
 	       if (cleanup_fn)
@@ -921,7 +935,9 @@ class HashTable : public Object
 	 {
 #ifndef FrSINGLE_THREADED
 	    // scan the list of per-thread s_table variables
-	    for (const TablePtr *tables = s_thread_entries.load() ; tables ; tables = ANNOTATE_UNPROTECTED_READ(tables->m_next))
+	    for (const TablePtr *tables = Atomic<TablePtr*>::ref(s_thread_entries).load(std::memory_order_consume) ;
+		 tables ;
+		 tables = ANNOTATE_UNPROTECTED_READ(tables->m_next))
 	       {
 	       // check whether the hazard pointer is for the requested version
 	       if (tables->table() == version)
@@ -951,19 +967,20 @@ class HashTable : public Object
 	    size_t hashval = hashVal(key) ; 		\
 	    return m_table.load()->delegate ; 
 #else
-#define DELEGATE(delegate) 				\
-            HazardLock hl(m_table.load()) ; 		\
-	    return m_table.load()->delegate ;
-#define DELEGATE_HASH(delegate) 			\
-	    size_t hashval = hashVal(key) ; 		\
-	    HazardLock hl(m_table.load()) ;		\
-	    return m_table.load()->delegate ;
-#define DELEGATE_HASH_RECLAIM(type,delegate)		\
-	    if (m_oldtables.load() != m_table.load())	\
-	       reclaimSuperseded() ;			\
-	    size_t hashval = hashVal(key) ; 		\
-	    HazardLock hl(m_table.load()) ;		\
-	    return m_table.load()->delegate ;
+#define DELEGATE(delegate) 						\
+            HazardLock hl(m_table) ;					\
+	    return m_table.load(std::memory_order_acquire)->delegate ;
+#define DELEGATE_HASH(delegate) 					\
+	    size_t hashval = hashVal(key) ; 				\
+	    HazardLock hl(m_table) ;					\
+	    return m_table.load(std::memory_order_acquire)->delegate ;
+#define DELEGATE_HASH_RECLAIM(type,delegate)				\
+            if (m_oldtables.load(std::memory_order_consume)		\
+		!= m_table.load(std::memory_order_consume))		\
+	       reclaimSuperseded() ;					\
+	    size_t hashval = hashVal(key) ; 				\
+	    HazardLock hl(m_table) ;					\
+	    return m_table.load(std::memory_order_acquire)->delegate ;
 #endif /* FrSINGLE_THREADED */
 
       // ============== The public API for HashTable ================
@@ -1023,13 +1040,13 @@ class HashTable : public Object
       ValT *lookupValuePtr(KeyT key) const { DELEGATE_HASH(lookupValuePtr(hashval,key)) }
       [[gnu::hot]] bool add(KeyT key, ValT value, bool replace)
 	 {
-	    if (m_oldtables.load() != m_table.load())
+	 if (m_oldtables.load(std::memory_order_acquire) != m_table.load(std::memory_order_acquire))
 	       reclaimSuperseded() ;
 	    size_t hashval = hashVal(key) ;
-	    HazardLock hl(m_table.load()) ;
+	    HazardLock hl(m_table) ;
 	    if (replace)
-	       m_table.load()->remove(hashval,key) ;
-	    return m_table.load()->add(hashval,key,value) ;
+	       m_table.load(std::memory_order_acquire)->remove(hashval,key) ;
+	    return m_table.load(std::memory_order_acquire)->add(hashval,key,value) ;
 	 }
       // special support for Fr::SymbolTableX
       [[gnu::hot]] KeyT addKey(const char *name, bool *already_existed = nullptr)
@@ -1106,7 +1123,12 @@ class HashTable : public Object
       void onDelete(HashKeyValueFunc *func) { cleanup_fn = func ; }
       // set callback function to be invoked when an entry is deleted; this
       //   permits the associated value for the entry to be freed
-      void onRemove(HashKVFunc *func) { remove_fn = func ; if (m_table.load()) m_table.load()->onRemove(func) ; }
+      void onRemove(HashKVFunc *func)
+         {
+	 remove_fn = func ;
+	 Table* tbl = m_table.load(std::memory_order_acquire) ;
+	 if (tbl) tbl->onRemove(func) ; 
+	 }
 
       void setMaxFill(double fillfactor) ;
 
@@ -1128,7 +1150,8 @@ class HashTable : public Object
       [[gnu::cold]] static void clearPerThreadStats()
 	 {
 #if defined(FrHASHTABLE_STATS)
-	    s_stats.clear();
+	    if (!s_stats) s_stats = new HashTable_Stats ;
+	    s_stats->clear();
 	    ScopedChainLock::clearPerThreadStats() ;
 #endif /* FrHASHTABLE_STATS */
 	    return ;
@@ -1136,7 +1159,7 @@ class HashTable : public Object
       [[gnu::cold]] void updateGlobalStats()
 	 {
 #if defined(FrHASHTABLE_STATS)
-	    m_stats.add(&s_stats) ;
+	    m_stats.add(s_stats) ;
 	    m_stats.chain_lock_count += ScopedChainLock::numberOfLocks() ;
 	    m_stats.chain_lock_coll += ScopedChainLock::numberOfLockCollisions() ;
 #endif /* FrHASHTABLE_STATS */

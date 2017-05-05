@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.01, last edit 2017-05-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2015,2017 Carnegie Mellon University			*/
@@ -20,11 +20,13 @@
 /************************************************************************/
 
 #include <iomanip>
+#include <sstream>
 #include "framepac/argparser.h"
 #include "framepac/hashtable.h"
 #include "framepac/message.h"
 #include "framepac/random.h"
 #include "framepac/symbol.h"
+#include "framepac/texttransforms.h"
 #include "framepac/threadpool.h"
 #include "framepac/timer.h"
 
@@ -152,15 +154,9 @@ static void print_msg(ostream& out, const char* fmt, ...)
 {
    va_list args ;
    va_start(args,fmt) ;
-   size_t len = vsnprintf(nullptr,0,fmt,args) ;
-   va_end(args) ;
-   char* msg = new char[len+1] ;
+   char* msg = Fr::vaprintf(fmt,args) ;
    if (msg)
       {
-      va_start(args,fmt) ;
-      vsnprintf(msg,len,fmt,args) ;
-      va_end(args) ;
-      msg[len] = '\0' ;
       out << msg << flush  ;
       delete[] msg ;
       }
@@ -195,6 +191,21 @@ static void hash_gensym(HashRequestOrder *order)
 
 //----------------------------------------------------------------------
 
+template <class KeyT>
+static void err_msg(const char* what, size_t id, KeyT obj)
+{
+   // put everything into a single string to minimize the chances of the output getting interleaved
+   //   with that from other threads 
+   //FIXME: generating empty output!
+   ostringstream ss ;
+   ss << ";  Job " << id << " encountered " << what << " " << obj << endl << flush ;
+   const char* str = ss.str().c_str() ;
+   cerr << str << flush ;
+   return ;
+}
+
+//----------------------------------------------------------------------
+
 template <class HashT, typename KeyT>
 static void hash_add(HashRequestOrder *order)
 {
@@ -206,7 +217,7 @@ static void hash_add(HashRequestOrder *order)
       {
       if (ht->add(syms[i]))
 	 {
-	 cerr << ";  Job " << order->id << " encountered a symbol already in the table!" << endl ;
+	 err_msg("a symbol already in the table:",order->id,syms[i]) ;
 	 }
       }
    return ;
@@ -228,7 +239,7 @@ static void hash_check(HashRequestOrder *order)
 	 {
 	 if (ht->contains(syms[i]))
 	    {
-	    cerr << ";  Job " << order->id << " encountered spurious symbol" << syms[i] << endl ;
+	    err_msg("spurious symbol",order->id,syms[i]) ;
 	    }
 	 }
       }
@@ -238,12 +249,16 @@ static void hash_check(HashRequestOrder *order)
 	 {
 	 if (!ht->contains(syms[i]) && order->strict)
 	    {
-	    cerr << ";  Job " << order->id << " encountered missing symbol " << syms[i] << endl ;
+	    err_msg("missing symbol",order->id,syms[i]) ;
 	    }
 	 }
       }
    if (order->m_verbose)
-      cout << ";  Job " << order->id << " cycle " << order->current_cycle << " complete." << endl ;
+      {
+      char* msg = aprintf(";  Job %lu cycle %lu complete.\n",order->id,order->current_cycle) ;
+      cout << msg << flush ;
+      delete[] msg ;
+      }
    return ;
 }
 
@@ -261,7 +276,7 @@ static bool find_Symbol(INTEGER_TYPE) { return false ; }
 //static const char *sym_name(const Symbol *sym) { return sym->symbolName() ; }
 static const char *sym_name(const Symbol * /*sym*/) { return nullptr ; } //FIXME
 
-static const char *sym_name(INTEGER_TYPE) { return nullptr ; }
+static const char *sym_name(INTEGER_TYPE) { return "" ; }
 
 template <class HashT, typename KeyT>
 static void hash_checksyms(HashRequestOrder *order)
@@ -273,13 +288,13 @@ static void hash_checksyms(HashRequestOrder *order)
       {
       if (!find_Symbol(syms[i]) && order->strict)
 	 {
-	 print_msg(cerr,";  Job %d - missing symbol %s\n",
-		   (int)order->id,sym_name(syms[i])) ;
+	 print_msg(cerr,";  Job %lu - missing symbol %s\n",
+		   order->id,sym_name(syms[i])) ;
 	 }
       }
    if (order->m_verbose)
       {
-      print_msg(cout,";  Job %ld cycle %ld complete.\n",order->id,order->current_cycle) ;
+      print_msg(cout,";  Job %lu cycle %ld complete.\n",order->id,order->current_cycle) ;
       }
    return ;
 }
@@ -369,7 +384,7 @@ static void hash_dispatch(const void *input, void * /*output*/ )
    HashRequestOrder *order = (HashRequestOrder*)input ;
    my_job_id = order->id ;
    order->current_cycle = 1 ;
-//FIXME   HashT::registerThread() ;
+   HashT::registerThread() ;  // should not be needed once HashTable is completely fixed
    HashT::clearPerThreadStats() ;
    while (order->current_cycle <= order->cycles)
       {
@@ -400,7 +415,7 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
    ThreadPool *tpool = user_pool ? user_pool : new ThreadPool(threads) ;
    bool must_wait = (threads != 0) ;
    if (threads == 0) threads = 1 ;
-   HashRequestOrder *hashorders = NewC<HashRequestOrder>(threads) ;
+   HashRequestOrder *hashorders = new HashRequestOrder[threads] ;
    //out << "  Dispatching threads" << endl ;
    size_t slice_size = (maxsize + threads/2) / threads ;
    if (ht)
@@ -792,7 +807,7 @@ void hash_command(ostream &out, int threads, bool terse, uint32_t* randnums,
 		  size_t startsize, size_t maxsize, size_t cycles)
 {
    out << "Parallel (threaded) Object Hash Table operations" << endl << endl ;
-   Symbol **keys = New<Symbol*>(2*maxsize) ;
+   Symbol **keys = new Symbol*[2*maxsize] ;
    out << "Preparing symbols       " << endl ;
    // speed up symbol creation and avoid memory fragmentation by
    //  expanding the symbol table to hold all the symbols we will
@@ -816,7 +831,7 @@ void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, si
 		   size_t maxsize, size_t cycles, size_t order, size_t stride)
 {
    out << "Parallel (threaded) Integer Hash Table operations" << endl << endl ;
-   INTEGER_TYPE *keys = New<INTEGER_TYPE>(2*maxsize) ;
+   INTEGER_TYPE *keys = new INTEGER_TYPE[2*maxsize] ;
    if (order == 0)
       {
       out << "Generating sequential keys" << endl ;
@@ -827,6 +842,7 @@ void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, si
       {
       // generate a randomly-distributed set of 32-bit integers, less the reserved values
       out << "Generating random keys" << endl ;
+#if 0
       RandomInteger rand(0xFFFFFFFC) ;
       if (order == 2)
 	 rand.seed(31415926) ;
@@ -834,6 +850,19 @@ void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, si
 	 {
 	 keys[i] = rand() ;
 	 }
+#else
+      // generate a randomly-distributed set of 31-bit integers
+      //   (Park-Miller Lehmer RNG, aka MINSTD)
+      uint32_t seed = 1 ;
+      for (size_t i = 0 ; i < 2*maxsize ; i++)
+	 {
+	 keys[i] = seed ;
+	 do {
+	 seed = ((uint64_t)seed * 48271UL) % INT32_MAX ;
+	 // skip the special reserved values, just in case we hit them
+	 } while (seed >= (uint32_t)~2) ;
+	 }
+#endif
       }
    else if (order == 3)
       {
@@ -904,7 +933,7 @@ int main(int argc, char** argv)
    else
       {
       cout << "Generating random numbers for randomized tests" << endl ;
-      uint32_t *randnums = New<uint32_t>(2*grow_size) ;
+      uint32_t *randnums = new uint32_t[2*grow_size] ;
       RandomInteger rand(grow_size) ;
       for (size_t i = 0 ; i < 2*grow_size ; i++)
 	 {

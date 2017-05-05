@@ -22,11 +22,7 @@
 #ifndef _Fr_ARGPARSER_H_INCLUDED
 #define _Fr_ARGPARSER_H_INCLUDED
 
-#include <cstdint>
-#include <cstring>
 #include <iostream>
-#include <string>
-#include <sstream>
 
 namespace Fr
 {

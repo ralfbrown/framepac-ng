@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-05-01					*/
+/*  Version 0.01, last edit 2017-05-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File atomic.h		atomic operations on simple variables	*/
@@ -229,21 +229,21 @@ ALWAYS_INLINE void barrier()
 template <typename T>
 void Atomic<T*>::push(T* node)
 {
-   node->next(var.load()) ;
+   node->next(var.load(std::memory_order_acquire)) ;
    store(node) ;
 }
 
 template <typename T>
 void Atomic<T*>::push(T* nodes, T* tail)
 {
-   tail->next(load()) ;
+   tail->next(load(std::memory_order_acquire)) ;
    store(nodes) ;
 }
 
 template <typename T>
 T* Atomic<T*>::pop()
 {
-   T* node = load() ;
+   T* node = load(std::memory_order_acquire) ;
    if (node)
       store(node->next()) ;
    return node ;
@@ -267,11 +267,12 @@ class Atomic : public std::atomic<T>
 	 {}
       Atomic(T value) : std::atomic<T>(value)
 	 {}
-      Atomic(const Atomic<T>& value) : std::atomic<T>(value.load()) {}
+      Atomic(const Atomic<T>& value) : std::atomic<T>(value.load(std::memory_order_consume)) {}
       ~Atomic() = default ;
 
-      Atomic& operator= (const Atomic& value) { this->store(value.load()) ; return *this ; }
-      Atomic& operator= (const T& value) { this->store(value) ; return *this ; }
+      Atomic& operator= (const Atomic& value)
+	 { this->store(value.load(std::memory_order_acquire),std::memory_order_release) ; return *this ; }
+      Atomic& operator= (const T& value) { this->store(value,std::memory_order_release) ; return *this ; }
       T operator+= (const T& value) ;
       template <typename RetT = T>
       typename std::enable_if<std::is_pointer<T>::value,RetT>::type
@@ -372,7 +373,7 @@ inline void Atomic<T>::push(T node)
 {
    T list ;
    do {
-      list = this->load() ;
+      list = this->load(std::memory_order_consume) ;
       node.next(list) ;
       } while (!this->compare_exchange_weak(list,node)) ;
 }
@@ -382,7 +383,7 @@ inline void Atomic<T>::push(T nodes, T tail)
 {
    T list ;
    do {
-      list = this->load() ;
+      list = this->load(std::memory_order_consume) ;
       tail.next(list) ;
       } while (!this->compare_exchange_weak(list,nodes)) ;
 }
@@ -393,7 +394,7 @@ inline T Atomic<T>::pop()
    T head ;
    T rest ;
    do {
-      head = this->load() ;
+      head = this->load(std::memory_order_consume) ;
       if (!head)
 	 return head ;
       rest = head.next() ;

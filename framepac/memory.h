@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-15					*/
+/* Version 0.01, last edit 2017-05-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -184,7 +184,7 @@ class AllocatorBase
    {
    public:
       AllocatorBase(unsigned objsize) : m_objsize(objsize)
-	 { m_slabs = nullptr ; m_freelist = nullptr ; m_pending.store(nullptr) ; }
+	 { m_slabs = nullptr ; m_freelist = nullptr ; m_pending = nullptr ; }
       AllocatorBase(const AllocatorBase&) = delete ;
       ~AllocatorBase() ;
       void operator= (const AllocatorBase&) = delete ;
@@ -209,7 +209,7 @@ class AllocatorBase
 	 //   which is done by storing the old head of the freelist in the next pointer
 	 SlabFreelist* block = reinterpret_cast<SlabFreelist*>(blk) ;
 	 block->invalidateNext() ;
-	 SlabFreelist* next = m_pending.exchange(block) ;
+	 SlabFreelist* next = Atomic<SlabFreelist*>::ref(m_pending).exchange(block) ;
 	 block->next(next) ; 
 	 }
       size_t reclaim() ;
@@ -219,14 +219,14 @@ class AllocatorBase
       typedef FramepaC::Slab Slab ;
    protected: // data members
       static thread_local SlabFreelist* m_freelist ;
-      static thread_local Atomic<SlabFreelist*> m_pending ;
+      static thread_local SlabFreelist* m_pending ;
       static thread_local Slab* m_hazard ;
       static HazardPointerList  m_hazardlist ;
       static Slab*              m_slabs ;
       Slab*                     m_activeslab { nullptr };
       FramepaC::alloc_size_t    m_objsize ;
    protected: // methods
-      SlabFreelist* reclaimPending(Atomic<SlabFreelist*>&) ;
+      SlabFreelist* reclaimPending(SlabFreelist*&) ;
       SlabFreelist* stealPendingFrees() ;
       bool reclaim_foreign_frees() ;
       void* allocate_more() ;

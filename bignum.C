@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-05-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -39,11 +39,62 @@ Allocator<BigNum> BigNum::s_allocator(&bignum_vmt) ;
 /************************************************************************/
 /************************************************************************/
 
+BigNum::BigNum()
+{
+   //FIXME
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 BigNum::BigNum(const char *value)
-   : m_value(0)
 {
    //FIXME
    (void)value ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+BigNum::BigNum(const BigNum&)
+{
+   //FIXME
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+BigNum* BigNum::create()
+{
+   return new BigNum ;
+}
+
+//----------------------------------------------------------------------------
+
+BigNum* BigNum::create(const Object*)
+{
+   return nullptr ;  //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+BigNum* BigNum::create(const BigNum*)
+{
+   return nullptr ;  //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+BigNum* BigNum::create(const char*)
+{
+   return nullptr ;  //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+BigNum::~BigNum()
+{
+   //FIXME
    return ;
 }
 
@@ -65,6 +116,23 @@ bool BigNum::toCstring_(const Object *obj, char *buffer, size_t buflen,
 //   size_t needed = snprintf(buffer,buflen,"%*s%ld",indent,"",((BigNum_*)obj)->m_value) ;
    size_t needed = ~0 ; //FIXME
    return needed <= buflen ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t BigNum::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
+{
+   (void)obj ; (void)wrap; (void)indent ;
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool BigNum::toJSONString_(const Object* obj, char* buffer, size_t buflen,
+			   bool /*wrap*/, size_t indent)
+{
+   (void)obj; (void)buffer; (void)buflen; (void)indent;
+   return false ; //FIXME
 }
 
 //----------------------------------------------------------------------------

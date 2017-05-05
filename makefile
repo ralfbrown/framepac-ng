@@ -251,7 +251,8 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	init$(OBJ) linebatch$(OBJ) random$(OBJ) \
 	integer$(OBJ) jsonreader$(OBJ) list$(OBJ) map$(OBJ) matrix$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
-	object$(OBJ) objreader$(OBJ) rational$(OBJ) slab$(OBJ) \
+	object$(OBJ) objreader$(OBJ) printf$(OBJ) \
+	rational$(OBJ) slab$(OBJ) \
 	slabgroup$(OBJ) \
 	sparsematrix$(OBJ) string$(OBJ) stringbuilder$(OBJ) \
 	sufarray_u32u32$(OBJ) \
@@ -306,14 +307,14 @@ help:
 lib:	$(LIBRARY)
 
 clean:
-	$(RM) *$(OBJ)
+	$(RM) *$(OBJ) tests/*$(OBJ)
 	$(RM) $(TESTPROGS)
-#	$(RM) $(LIBRARY)
 
 veryclean: clean
 	$(RM) *.BAK
 	$(RM) *.CKP *~
 	$(RM) "#*#"
+	$(RM) $(LIBRARY)
 
 install: $(BINDIR)/$(TESTPROG)$(EXE)
 	mkdir -p $(INSTALLDIR)
@@ -408,13 +409,14 @@ linebatch$(OBJ):	linebatch$(C) framepac/file.h
 list$(OBJ):		list$(C) framepac/list.h framepac/init.h
 map$(OBJ):		map$(C) framepac/map.h
 matrix$(OBJ):		matrix$(C) framepac/matrix.h
-message$(OBJ):		message$(C) framepac/message.h
+message$(OBJ):		message$(C) framepac/message.h framepac/texttransforms.h
 mmapfile$(OBJ):		mmapfile$(C) framepac/mmapfile.h framepac/file.h
 number$(OBJ):		number$(C) framepac/bignum.h framepac/rational.h
 progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
 object$(OBJ):		object$(C) framepac/object.h
 objreader$(OBJ):	objreader$(C) framepac/objreader.h framepac/symbol.h framepac/bignum.h framepac/rational.h \
 			framepac/list.h framepac/builder.h
+printf$(OBJ):		printf$(C) framepac/texttransforms.h
 random$(OBJ):		random$(C) framepac/random.h
 rational$(OBJ):		rational$(C) framepac/rational.h
 slab$(OBJ):		slab$(C) framepac/memory.h
@@ -565,7 +567,8 @@ FramepaC.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 tests/argparser$(OBJ):	tests/argparser$(C) framepac/argparser.h
-tests/parhash$(OBJ):	tests/parhash$(C) framepac/argparser.h framepac/hashtable.h framepac/timer.h
+tests/parhash$(OBJ):	tests/parhash$(C) framepac/argparser.h framepac/hashtable.h framepac/texttransforms.h \
+			framepac/threadpool.h framepac/timer.h
 tests/tpool$(OBJ):	tests/tpool$(C) framepac/argparser.h framepac/random.h framepac/threadpool.h framepac/timer.h
 
 # End of Makefile #
