@@ -502,9 +502,6 @@ FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, Ke
       got_resized = true ;
       return FramepaC::NULLPTR ;
       }
-   // is the given position free?
-   if (claimEmptySlot(bucketnum,key))
-      return 0 ;
    size_t sz = m_size ;
    // compute the extent of the cache line containing
    //   the offset-0 entry for the bucket
@@ -514,22 +511,14 @@ FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, Ke
       CLstart_addr = (uintptr_t)bucketPtr(0) ;
    size_t itemsize = (uintptr_t)bucketPtr(1) - (uintptr_t)bucketPtr(0) ;
    size_t CL_start = (CLstart_addr - (uintptr_t)bucketPtr(0)) / itemsize ;
-   size_t CL_end = (CLstart_addr - (uintptr_t)bucketPtr(0) + CL_len) / itemsize ;
-   // search for a free slot on the same cache line as the bucket header
-   for (size_t i = CL_start ; i < CL_end && i < sz ; ++i)
-      {
-      if (i == bucketnum)
-	 continue ;
-      if (claimEmptySlot(i,key))
-	 return (i - bucketnum) ;
-      }
-   // extended search for a free spot following the given position
    size_t max = bucketnum + searchrange ;
    if (max >= sz)
       {
       max = sz - 1 ;
       }
-   for (size_t i = max ; i >= CL_end  ; --i)
+   // search for a free slot starting with the beginning of the cache
+   //   line with the bucket header
+   for (size_t i = CL_start ; i <= max ; ++i)
       {
       if (claimEmptySlot(i,key))
 	 return (i - bucketnum) ;
@@ -547,17 +536,8 @@ FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, Ke
       got_resized = true ;
       return FramepaC::NULLPTR ;
       }
+   // if we get here, there were no free slots available
    INCR_COUNT(neighborhood_full) ;
-   // if we get here, we didn't get a free slot, so
-   //    try recycling a deleted slot in the search
-   //    window
-   size_t recycled = recycleDeletedEntry(bucketnum,key) ;
-   if (NULLPOS != recycled)
-      {
-      return recycled - bucketnum ;
-      }
-   // if we get here, there were no free slots available, and
-   //   none could be made
    return FramepaC::NULLPTR ;
 }
 
@@ -702,119 +682,6 @@ void HashTable<KeyT,ValT>::Table::clearDuplicates(size_t bucketnum)
       }
    unannounceBucketNumber() ;
    return ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::unlinkEntry(size_t entrynum)
-{
-#ifdef FrSINGLE_THREADED
-   (void)entrynum ;
-#else
-   // the following lock serializes to allow only one recycle() on the
-   //   chain at a time; concurrent add() and remove() are OK
-   size_t bucketnum = bucketContaining(entrynum) ;
-   if (NULLPOS == bucketnum)
-      return true ;
-   ScopedChainLock lock(this,bucketnum) ;
-   if (lock.busy())
-      {
-      return false ; // need to retry
-      }
-   announceBucketNumber(bucketnum) ;
-   Atomic<Link>* prevptr = chainHeadPtr(bucketnum) ;
-   Link offset = prevptr->load() ;
-   while (FramepaC::NULLPTR != offset)
-      {
-      size_t pos = bucketnum + offset ;
-      Atomic<Link>* nextptr = chainNextPtr(pos) ;
-      if (pos == entrynum)
-	 {
-	 // we found the entry, now try to unlink it
-	 Link nxt = nextptr->load() ;
-	 if (unlikely(!prevptr->compare_exchange_strong(offset,nxt)))
-	    {
-	    // uh oh, someone else messed with the chain!
-	    // restart from the beginning of the chain
-	    INCR_COUNT(CAS_coll) ;
-	    prevptr = chainHeadPtr(bucketnum) ;
-	    offset = prevptr->load() ;
-	    continue ;
-	    }
-	 // mark the entry as not belonging to any chain anymore
-	 setChainOwner(pos,FramepaC::NULLPTR) ;
-	 unannounceBucketNumber() ;
-	 return true ;
-	 }
-      else
-	 {
-	 prevptr = nextptr ;
-	 }
-      offset = nextptr->load() ;
-      }
-   unannounceBucketNumber() ;
-#endif /* FrSINGLE_THREADED */
-   return true ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-size_t HashTable<KeyT,ValT>::Table::recycleDeletedEntry(size_t bucketnum, KeyT new_key)
-{
-#ifdef FrSINGLE_THREADED
-   // when single-threaded, we chop out deletions
-   //   immediately, so there is nothing to reclaim
-   (void)bucketnum ;
-   (void)new_key ;
-#else
-   if (superseded())
-      return NULLPOS ;
-   debug_msg("recycledDeletedEntry (thr %ld)\n",FramepaC::my_job_id) ;
-   // figure out the range of hash buckets to process
-   size_t endpos = bucketnum + searchrange ;
-   if (endpos > m_size)
-      endpos = m_size ;
-   bucketnum = bucketnum >= (size_t)searchrange ? bucketnum - searchrange : 0 ;
-   size_t claimed = NULLPOS ;
-   for (size_t i = bucketnum ; i < endpos ; ++i)
-      {
-      if (deletedEntry(i))
-	 {
-	 // try to grab the entry
-	 if (updateKey(i,Entry::DELETED(),Entry::RECLAIMING()))
-	    {
-	    claimed = i ;
-	    break ;
-	    }
-	 }
-      }
-   if (claimed == NULLPOS)
-      return NULLPOS ;	// unable to find an entry to recycle
-   INCR_COUNT(reclaim) ;
-   // we successfully grabbed the entry, so
-   //   now we need to chop it out of the
-   //   chain currently containing it
-   size_t claimed_bucketnum = bucketContaining(claimed) ;
-   size_t loops = 0 ;
-   while (!unlinkEntry(claimed))
-      {
-      thread_backoff(loops) ;
-      }
-   if (!superseded())
-      {
-      // ensure that any concurrent accesses complete
-      //   before we actually recycle the entry
-      awaitIdle(claimed_bucketnum,claimed_bucketnum+1) ;
-      if (!superseded())
-	 {
-	 setKey(claimed,new_key) ;
-	 return claimed ;
-	 }
-      }
-#endif /* FrSINGLE_THREADED */
-   return NULLPOS ;
 }
 
 //----------------------------------------------------------------------------
