@@ -569,7 +569,6 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
    //   the chain for the hash bucket
    size_t pos = bucketnum + offset ;
    setValue(pos,value) ;
-   setChainOwner(pos,offset) ;
 #ifdef FrSINGLE_THREADED
    *chainNextPtr(pos) = firstptr ;
    // life is much simpler in non-threaded mode: just point
@@ -694,17 +693,6 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum)
    // remove() chops out the deleted entries, so there's never anything to reclaim
    return false ;
 #else
-   // the following lock serializes to allow only one recycle() /
-   //   reclaim() on the chain at a time; concurrent add() and
-   //   remove() are OK
-   ScopedChainLock lock(this,bucketnum) ;
-   if (lock.busy())
-      {
-      // someone else is currently reclaiming the chain, moving
-      //   elements to make room, or copying the bucket to a new hash
-      //   table; so we can just claim success ourselves
-      return true ;
-      }
    Atomic<Link>* prevptr = chainHeadPtr(bucketnum) ;
    Link offset = prevptr->load() ;
    bool reclaimed = false ;
@@ -716,7 +704,7 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum)
       //   permits us to avoid the expensive CAS except when an entry is actually deleted
       KeyT key = getKey(pos) ;
       Link nxt = nextptr->load() ;
-      if (key == Entry::DELETED() && updateKey(pos,Entry::DELETED(),Entry::RECLAIMING()))
+      if (key == Entry::DELETED() && updateKey(pos,Entry::DELETED(),Entry::UNUSED()))
 	 {
 	 // we grabbed a deleted entry; now try to unlink it
 	 if (unlikely(!prevptr->compare_exchange_strong(offset,nxt)))
@@ -729,8 +717,6 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum)
 	    offset = prevptr->load() ;
 	    continue ;
 	    }
-	 // mark the entry as not belonging to any chain anymore
-	 setChainOwner(pos,FramepaC::NULLPTR) ;
 	 reclaimed = true ;
 	 }
       else
@@ -1267,60 +1253,29 @@ bool HashTable<KeyT,ValT>::Table::reclaimDeletions()
    //   immediately, so there is nothing to reclaim
    return false ;
 #else
+   // the following lock serializes to allow only one reclaimDeletions()
+   //   at a time
+   ScopedChainLock lock(this,0) ;
+   if (lock.busy())
+      {
+      // someone else is already doing reclamation so we can just
+      //   claim success ourselves
+      return true ;
+      }
    INCR_COUNT(reclaim) ;
    debug_msg("reclaimDeletions (thr %ld)\n",FramepaC::my_job_id) ;
+   // ensure that any existing concurrent accesses complete
+   //   before we start the reclamation -- reclamation needs to
+   //   run by itself!
+   awaitIdle(0,m_size) ;
    bool have_reclaimed = false ;
-   size_t min_bucket = ~0UL ;
-   size_t max_bucket = 0 ;
    for (size_t i = 0 ; i < m_size ; ++i)
       {
-      if (deletedEntry(i))
-	 {
-	 // follow the chain containing the deleted item,
-	 //   chopping out any marked as deleted and
-	 //   resetting their status to Reclaimed.
-	 Link offset = chainOwner(i) ;
-	 if (FramepaC::NULLPTR != offset)
-	    {
-	    size_t bucket = i - offset ;
-	    bool reclaimed = reclaimChain(bucket) ;
-	    have_reclaimed |= reclaimed ;
-	    if (reclaimed && bucket < min_bucket)
-	       min_bucket = bucket ;
-	    if (reclaimed && bucket > max_bucket)
-	       max_bucket = bucket ;
-	    }
-	 // abandon reclaim if a resize has run since we started
-	 if (superseded())
-	    break ;
-	 }
-      }
-   if (have_reclaimed && !superseded()) // (if resized, the reclamation was moot)
-      {
-      // ensure that any existing concurrent reads complete
-      //   before we allow writes to the reclaimed entries
-      awaitIdle(0,m_size) ;
-      // at this point, nobody is using the hash table, so we can go
-      //   ahead and actually reclaim
-      if (!superseded())
-	 {
-	 // reclaim entries marked as Reclaimed by switching their
-	 //   keys from Reclaimed to Unused
-	 // assumes no active writers and pending writers will be
-	 //   blocked
-	 for (size_t i = 0 ; i < m_size ; ++i)
-	    {
-	    // any entries which no longer belong to a chain get marked as free
-	    if (FramepaC::NULLPTR == chainOwner(i))
-	       {
-	       setKey(i,Entry::UNUSED()) ;
-	       }
-	    }
-	 }
-      }
-   else if (have_reclaimed)
-      {
-      debug_msg("reclaimDeletions mooted (thr %ld)\n",FramepaC::my_job_id) ;
+      // follow the chain for this hash bucket, chopping out any
+      //   entries marked as deleted and resetting their status to
+      //   Unused.
+      bool reclaimed = reclaimChain(i) ;
+      have_reclaimed |= reclaimed ;
       }
    debug_msg("reclaimDeletions done (thr %ld)\n",FramepaC::my_job_id) ;
    return have_reclaimed ;

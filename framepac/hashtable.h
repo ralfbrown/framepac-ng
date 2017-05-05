@@ -505,12 +505,8 @@ class HashTable : public Object
 	 Atomic<Link>* chainHeadPtr(size_t N) const { return &bucketPtr(N)->head.first ; }
 	 Link chainNext(size_t N) const { return ANNOTATE_UNPROTECTED_READ(bucketPtr(N)->next) ; }
 	 Atomic<Link>* chainNextPtr(size_t N) const { return &bucketPtr(N)->next ; }
-	 Link chainOwner(size_t N) const { return bucketPtr(N)->offset.load(std::memory_order_consume) ; }
 	 void setChainNext(size_t N, Link nxt) { bucketPtr(N)->next.store(nxt,std::memory_order_release) ; }
-	 void setChainOwner(size_t N, Link ofs) { bucketPtr(N)->offset.store(ofs,std::memory_order_release) ; }
 	 void markCopyDone(size_t N) { bucketPtr(N)->markCopyDone() ; }
-	 size_t bucketContaining(size_t N) const
-	    { Link owner = chainOwner(N) ; return (owner == FramepaC::NULLPTR) ? NULLPOS : N - owner ; }
 	 size_t sizeForCapacity(size_t capacity) const
 	    {
 	       return (size_t)(capacity / m_container->m_maxfill + 0.99) ;
