@@ -66,7 +66,26 @@ void HashTable_Stats::add(const HashTable_Stats* other)
    if (!other) return;
    insert += other->insert ;
    insert_dup += other->insert_dup ;
-//FIXME
+   insert_attempt += other->insert_attempt ;
+   insert_forwarded += other->insert_forwarded ;
+   insert_resize += other->insert_resize ;
+   contains += other->contains ;
+   contains_found += other->contains_found ;
+   contains_forwarded += other->contains_forwarded ;
+   lookup += other->lookup ;
+   lookup_found += other->lookup_found ;
+   lookup_forwarded += other->lookup_forwarded ;
+   resize += other->resize ;
+   resize_assist += other->resize_assist ;
+   resize_cleanup += other->resize_cleanup ;
+   reclaim += other->reclaim ;
+   move += other->move ;
+   neighborhood_full += other->neighborhood_full ;
+   chain_lock_count += other->chain_lock_count ;
+   chain_lock_coll += other->chain_lock_coll ;
+   spin += other->spin ;
+   yield += other->yield ;
+   sleep += other->sleep ;
    none += other->none ;
    return ;
 }
