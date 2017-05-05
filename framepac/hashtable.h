@@ -226,7 +226,6 @@ class HashPtr
    {
    public:
       Fr::Atomic<Link> next ;	// pointer to next entry in current chain
-      Fr::Atomic<Link> offset ; // this entry's offset in hash bucket (subtract to get bucketnum)
       HashPtrHead head ;  	// .first and .status fields
    public:
       static const unsigned lock_bit = 0 ;
@@ -245,10 +244,9 @@ class HashPtr
 	 {
 	 head.first = NULLPTR ;
 	 next.store(NULLPTR,std::memory_order_release) ;
-	 offset.store(NULLPTR,std::memory_order_release) ;
 	 head.status.store(0,std::memory_order_release) ;
 	 }
-      HashPtr() : next(), offset(), head() { init() ; }
+      HashPtr() : next(), head() { init() ; }
       ~HashPtr() {}
       uint8_t status() const { return head.status.load(std::memory_order_consume) ; }
       const Fr::Atomic<uint8_t>* statusPtr() const { return &head.status ; }
