@@ -69,6 +69,9 @@ void HashTable_Stats::add(const HashTable_Stats* other)
    insert_attempt += other->insert_attempt ;
    insert_forwarded += other->insert_forwarded ;
    insert_resize += other->insert_resize ;
+   remove += other->remove ;
+   remove_found += other->remove_found ;
+   remove_forwarded += other->remove_forwarded ;
    contains += other->contains ;
    contains_found += other->contains_found ;
    contains_forwarded += other->contains_forwarded ;
