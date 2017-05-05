@@ -252,7 +252,7 @@ void HashTable<KeyT,ValT>::Table::autoResize()
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::bucketsInUse(size_t startbucket, size_t endbucket) const
+bool HashTable<KeyT,ValT>::Table::bucketsInUse() const
 {
 #ifndef FrSINGLE_THREADED
    // can only have concurrent use when multi-threaded
@@ -264,12 +264,7 @@ bool HashTable<KeyT,ValT>::Table::bucketsInUse(size_t startbucket, size_t endbuc
       {
       // check whether the hazard pointer is for ourself
       const Table* ht = tables->table() ;
-      if (this != ht)
-	 continue ;
-      // check whether it's for a bucket of interest
-      size_t bucket = tables->bucket() ;
-      if (bucket >= startbucket && bucket < endbucket)
-	 return true ;
+      if (this == ht) return true ;
       }
 #endif
    return false ; 
@@ -278,14 +273,14 @@ bool HashTable<KeyT,ValT>::Table::bucketsInUse(size_t startbucket, size_t endbuc
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-void HashTable<KeyT,ValT>::Table::awaitIdle(size_t bucketnum, size_t endpos)
+void HashTable<KeyT,ValT>::Table::awaitIdle()
 {
    // wait until nobody is announcing that they are
    //   using one of our hash buckets
 #ifndef FrSINGLE_THREADED
    debug_msg("await idle %ld\n",FramepaC::my_job_id);
    size_t loops = 0 ;
-   while (bucketsInUse(bucketnum,endpos))
+   while (bucketsInUse())
       {
       thread_backoff(loops) ;
       if (superseded())
@@ -296,8 +291,6 @@ void HashTable<KeyT,ValT>::Table::awaitIdle(size_t bucketnum, size_t endpos)
       }
    debug_msg("is idle %ld\n",FramepaC::my_job_id);
 #endif /* !FrSINGLE_THREADED */
-   (void)bucketnum ;
-   (void)endpos ;
    return ;
 }
 
@@ -1267,7 +1260,7 @@ bool HashTable<KeyT,ValT>::Table::reclaimDeletions()
    // ensure that any existing concurrent accesses complete
    //   before we start the reclamation -- reclamation needs to
    //   run by itself!
-   awaitIdle(0,m_size) ;
+   awaitIdle() ;
    bool have_reclaimed = false ;
    for (size_t i = 0 ; i < m_size ; ++i)
       {

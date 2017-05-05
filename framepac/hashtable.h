@@ -510,9 +510,9 @@ class HashTable : public Object
 	       return (size_t)(capacity / m_container->m_maxfill + 0.99) ;
 	    }
 	 void autoResize() ;
-	 bool bucketsInUse(size_t startbucket, size_t endbucket) const ;
+	 bool bucketsInUse() const ;
       public:
-	 void awaitIdle(size_t bucketnum, size_t endpos) ;
+	 void awaitIdle() ;
       protected:
 	 void removeValue(Entry &element) const
 	    {
@@ -913,7 +913,7 @@ class HashTable : public Object
 		  }
 	       atomic_thread_fence(std::memory_order_seq_cst) ; 
 	       debug_msg("HashTable dtor\n") ;
-	       table->awaitIdle(0,table->m_size) ;
+	       table->awaitIdle() ;
 	       }
 	    table->clear() ;
 	    freeTables() ;
