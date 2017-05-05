@@ -628,22 +628,18 @@ class HashTable : public Object
          {
 	 public:
 	    TablePtr 	   *m_next { nullptr } ;
-	    Atomic<size_t> *m_bucket { nullptr } ;
 	    Atomic<Table*> *m_table { nullptr } ;
 	    size_t   	    m_id { 0 } ;	   // thread ID, for help in debugging
 	 public:
-	    TablePtr() : m_next(nullptr), m_bucket(nullptr), m_table(nullptr), m_id(0) {}
+	    TablePtr() : m_next(nullptr), m_table(nullptr), m_id(0) {}
 	    bool initialized() const { return m_table != nullptr ; }
 	    void clear()
-	       { m_table = nullptr ; m_bucket = nullptr ; m_next = nullptr ; }
-	    void init(Table** tab, size_t* bcket, TablePtr* next)
+	       { m_table = nullptr ; m_next = nullptr ; }
+	    void init(Table** tab, TablePtr* next)
 	       { m_table = reinterpret_cast<Atomic<Table*>*>(tab) ;
-		 m_bucket = reinterpret_cast<Atomic<size_t>*>(bcket) ;
 		 m_next = next ; m_id = FramepaC::my_job_id ; }
-	    void init(Atomic<Table*>* tab, Atomic<size_t>* bcket, TablePtr* next)
-	       { m_table = tab ; m_bucket = bcket ;
-		 m_next = next ; m_id = FramepaC::my_job_id ; }
-	    size_t bucket() const { return m_bucket->load(std::memory_order_consume) ; }
+	    void init(Atomic<Table*>* tab, TablePtr* next)
+	       { m_table = tab ; m_next = next ; m_id = FramepaC::my_job_id ; }
 	    const Table *table() const { return m_table->load(std::memory_order_consume) ; }
          } ;
       //------------------------
@@ -773,7 +769,6 @@ class HashTable : public Object
       static size_t       s_registered_threads ;
       static thread_local TablePtr* s_thread_record ;
       static thread_local Table*    s_table ; // thread's announcement which hash table it's using
-      static thread_local size_t    s_bucket ;// thread's announcement which hash bucket it's using
 #endif /* FrSINGLE_THREADED */
 #ifdef FrHASHTABLE_STATS
       mutable HashTable_Stats	  m_stats ;

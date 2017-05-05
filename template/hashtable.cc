@@ -1929,7 +1929,7 @@ void HashTable<KeyT,ValT>::registerThread()
       //   for use by the resizer
       auto head = Atomic<TablePtr*>::ref(s_thread_entries).load(std::memory_order_acquire) ;
       do {
-         s_thread_record->init(&s_table,&s_bucket,head) ;
+         s_thread_record->init(&s_table,head) ;
          } while (!Atomic<TablePtr*>::ref(s_thread_entries).compare_exchange_weak(head,s_thread_record)) ;
       /*atomic_incr*/++s_registered_threads ;
       }
@@ -2002,8 +2002,6 @@ void HashTable<KeyT,ValT>::setMaxFill(double fillfactor)
 #ifndef FrSINGLE_THREADED
 template <typename KeyT, typename ValT>
 thread_local typename HashTable<KeyT,ValT>::Table* HashTable<KeyT,ValT>::s_table = nullptr ;
-template <typename KeyT, typename ValT>
-thread_local size_t HashTable<KeyT,ValT>::s_bucket = ~0UL ;
 template <typename KeyT, typename ValT>
 typename HashTable<KeyT,ValT>::TablePtr* HashTable<KeyT,ValT>::s_thread_entries = nullptr ;
 template <typename KeyT, typename ValT>
