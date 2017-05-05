@@ -548,14 +548,6 @@ FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, Ke
       return FramepaC::NULLPTR ;
       }
    INCR_COUNT(neighborhood_full) ;
-   // if we get here, we didn't get a free slot, so
-   //    try recycling a deleted slot in the search
-   //    window
-   size_t recycled = recycleDeletedEntry(bucketnum,key) ;
-   if (NULLPOS != recycled)
-      {
-      return recycled - bucketnum ;
-      }
    // if we get here, there were no free slots available, and
    //   none could be made
    return FramepaC::NULLPTR ;
@@ -589,7 +581,6 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
    //   the chain for the hash bucket
    size_t pos = bucketnum + offset ;
    setValue(pos,value) ;
-   setChainOwner(pos,offset) ;
 #ifdef FrSINGLE_THREADED
    *chainNextPtr(pos) = firstptr ;
    // life is much simpler in non-threaded mode: just point
@@ -707,119 +698,6 @@ void HashTable<KeyT,ValT>::Table::clearDuplicates(size_t bucketnum)
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::unlinkEntry(size_t entrynum)
-{
-#ifdef FrSINGLE_THREADED
-   (void)entrynum ;
-#else
-   // the following lock serializes to allow only one recycle() on the
-   //   chain at a time; concurrent add() and remove() are OK
-   size_t bucketnum = bucketContaining(entrynum) ;
-   if (NULLPOS == bucketnum)
-      return true ;
-   ScopedChainLock lock(this,bucketnum) ;
-   if (lock.busy())
-      {
-      return false ; // need to retry
-      }
-   announceBucketNumber(bucketnum) ;
-   Atomic<Link>* prevptr = chainHeadPtr(bucketnum) ;
-   Link offset = prevptr->load() ;
-   while (FramepaC::NULLPTR != offset)
-      {
-      size_t pos = bucketnum + offset ;
-      Atomic<Link>* nextptr = chainNextPtr(pos) ;
-      if (pos == entrynum)
-	 {
-	 // we found the entry, now try to unlink it
-	 Link nxt = nextptr->load() ;
-	 if (unlikely(!prevptr->compare_exchange_strong(offset,nxt)))
-	    {
-	    // uh oh, someone else messed with the chain!
-	    // restart from the beginning of the chain
-	    INCR_COUNT(CAS_coll) ;
-	    prevptr = chainHeadPtr(bucketnum) ;
-	    offset = prevptr->load() ;
-	    continue ;
-	    }
-	 // mark the entry as not belonging to any chain anymore
-	 setChainOwner(pos,FramepaC::NULLPTR) ;
-	 unannounceBucketNumber() ;
-	 return true ;
-	 }
-      else
-	 {
-	 prevptr = nextptr ;
-	 }
-      offset = nextptr->load() ;
-      }
-   unannounceBucketNumber() ;
-#endif /* FrSINGLE_THREADED */
-   return true ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-size_t HashTable<KeyT,ValT>::Table::recycleDeletedEntry(size_t bucketnum, KeyT new_key)
-{
-#ifdef FrSINGLE_THREADED
-   // when single-threaded, we chop out deletions
-   //   immediately, so there is nothing to reclaim
-   (void)bucketnum ;
-   (void)new_key ;
-#else
-   if (superseded())
-      return NULLPOS ;
-   debug_msg("recycledDeletedEntry (thr %ld)\n",FramepaC::my_job_id) ;
-   // figure out the range of hash buckets to process
-   size_t endpos = bucketnum + searchrange ;
-   if (endpos > m_size)
-      endpos = m_size ;
-   bucketnum = bucketnum >= (size_t)searchrange ? bucketnum - searchrange : 0 ;
-   size_t claimed = NULLPOS ;
-   for (size_t i = bucketnum ; i < endpos ; ++i)
-      {
-      if (deletedEntry(i))
-	 {
-	 // try to grab the entry
-	 if (updateKey(i,Entry::DELETED(),Entry::RECLAIMING()))
-	    {
-	    claimed = i ;
-	    break ;
-	    }
-	 }
-      }
-   if (claimed == NULLPOS)
-      return NULLPOS ;	// unable to find an entry to recycle
-   INCR_COUNT(reclaim) ;
-   // we successfully grabbed the entry, so
-   //   now we need to chop it out of the
-   //   chain currently containing it
-   size_t claimed_bucketnum = bucketContaining(claimed) ;
-   size_t loops = 0 ;
-   while (!unlinkEntry(claimed))
-      {
-      thread_backoff(loops) ;
-      }
-   if (!superseded())
-      {
-      // ensure that any concurrent accesses complete
-      //   before we actually recycle the entry
-      awaitIdle(claimed_bucketnum,claimed_bucketnum+1) ;
-      if (!superseded())
-	 {
-	 setKey(claimed,new_key) ;
-	 return claimed ;
-	 }
-      }
-#endif /* FrSINGLE_THREADED */
-   return NULLPOS ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum, size_t &min_reclaimed, size_t &max_reclaimed)
 {
 #ifdef FrSINGLE_THREADED
@@ -863,7 +741,6 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum, size_t &min_rec
 	    continue ;
 	    }
 	 // mark the entry as not belonging to any chain anymore
-	 setChainOwner(pos,FramepaC::NULLPTR) ;
 	 reclaimed = true ;
 	 if (pos < min_reclaimed)
 	    min_reclaimed = pos ;
@@ -1409,36 +1286,19 @@ bool HashTable<KeyT,ValT>::Table::reclaimDeletions()
    bool have_reclaimed = false ;
    size_t min_reclaimed = ~0UL ;
    size_t max_reclaimed = 0 ;
-   size_t min_bucket = ~0UL ;
-   size_t max_bucket = 0 ;
    for (size_t i = 0 ; i < m_size ; ++i)
       {
-      if (deletedEntry(i))
-	 {
-	 // follow the chain containing the deleted item,
-	 //   chopping out any marked as deleted and
-	 //   resetting their status to Reclaimed.
-	 Link offset = chainOwner(i) ;
-	 if (FramepaC::NULLPTR != offset)
-	    {
-	    size_t bucket = i - offset ;
-	    bool reclaimed = reclaimChain(bucket,min_reclaimed,max_reclaimed) ;
-	    have_reclaimed |= reclaimed ;
-	    if (reclaimed && bucket < min_bucket)
-	       min_bucket = bucket ;
-	    if (reclaimed && bucket > max_bucket)
-	       max_bucket = bucket ;
-	    }
-	 // abandon reclaim if a resize has run since we started
-	 if (superseded())
-	    break ;
-	 }
+      bool reclaimed = reclaimChain(i,min_reclaimed,max_reclaimed) ;
+      have_reclaimed |= reclaimed ;
+      // abandon reclaim if a resize has run since we started
+      if (superseded())
+	 break ;
       }
    if (have_reclaimed && !superseded()) // (if resized, the reclamation was moot)
       {
       // ensure that any existing concurrent reads complete
       //   before we allow writes to the reclaimed entries
-      awaitIdle(min_bucket,max_bucket+1) ;
+      awaitIdle(0,m_size-1) ;
       // at this point, nobody is traversing nodes we've chopped
       //   out of hash chains, so we can go ahead and actually
       //   reclaim
@@ -1451,7 +1311,7 @@ bool HashTable<KeyT,ValT>::Table::reclaimDeletions()
 	 for (size_t i = min_reclaimed ; i <= max_reclaimed ; ++i)
 	    {
 	    // any entries which no longer belong to a chain get marked as free
-	    if (FramepaC::NULLPTR == chainOwner(i))
+//FIXME	    if (FramepaC::NULLPTR == chainOwner(i))
 	       {
 	       setKey(i,Entry::UNUSED()) ;
 	       }
