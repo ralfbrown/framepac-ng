@@ -382,10 +382,10 @@ static void hash_random_add(HashRequestOrder *order)
 template <class HashT>
 static void hash_dispatch(const void *input, void * /*output*/ )
 {
+   HashT::threadInit() ;  // should not be needed once HashTable is completely fixed
    HashRequestOrder *order = (HashRequestOrder*)input ;
    my_job_id = order->id ;
    order->current_cycle = 1 ;
-   HashT::threadInit() ;  // should not be needed once HashTable is completely fixed
    while (order->current_cycle <= order->cycles)
       {
       order->func(order) ;
@@ -413,6 +413,7 @@ static void hash_dispatch(const void *input, void * /*output*/ )
 template <class HashT>
 static void reclaim_deletion(const void* input, void*)
 {
+   HashT::threadInit() ;  // should not be needed once HashTable is completely fixed
    const HashRequestOrder *order = reinterpret_cast<const HashRequestOrder*>(input) ;
    HashT* ht = (HashT*)order->ht ;
    if (ht)
@@ -611,6 +612,7 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
    size_t stat_rem_forw = ht->numberOfForwardedRemovals() ;
    size_t stat_resize = ht->numberOfResizes() ;
    size_t stat_resize_assist = ht->numberOfResizeAssists() ;
+   size_t stat_wait = ht->numberOfResizeWaits() ;
    size_t stat_reclam = ht->numberOfReclamations() ;
    size_t stat_full = ht->numberOfFullNeighborhoods() ;
    size_t stat_chain = ht->numberOfChainLocks() ;
@@ -622,7 +624,8 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
        << stat_lookup_succ << '/' << stat_lookup << '+' << stat_lookup_forw << " look, "
        << stat_rem_count << '/' << stat_rem << '+' << stat_rem_forw << " rem"
        << endl ;
-   out << "  Admn: " << stat_resize << " resizes (" << stat_resize_assist << " assists), " << stat_full << " congest, "
+   out << "  Admn: " << stat_resize << " resizes (" << stat_resize_assist << " assists,"
+       << stat_wait << " waits), " << stat_full << " congest, "
        << stat_reclam << " reclam, " << stat_chain_coll << '/' << stat_chain << " chainlock" << endl ;
 #ifndef FrSINGLE_THREADED
    size_t stat_spin = ht->numberOfSpins() ;

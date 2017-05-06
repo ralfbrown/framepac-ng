@@ -162,12 +162,12 @@ class HashTable_Stats
       size_t resize ;
       size_t resize_assist ;
       size_t resize_cleanup ;
+      size_t resize_wait ;
       size_t reclaim ;
-      size_t move ; // how many entries were moved to make room?
       size_t neighborhood_full ;
       size_t CAS_coll ;
-      Fr::Atomic<size_t> chain_lock_count ;
-      Fr::Atomic<size_t> chain_lock_coll ;
+      size_t chain_lock_count ;
+      size_t chain_lock_coll ;
       size_t spin ;
       size_t yield ;
       size_t sleep ;
@@ -492,9 +492,6 @@ class HashTable : public Object
 	       return (size_t)(capacity / m_container->m_maxfill + 0.99) ;
 	    }
 	 void autoResize() ;
-	 bool tableInUse() const ;
-      public:
-	 void awaitIdle() ;
       protected:
 	 void removeValue(Entry &element) const
 	    {
@@ -716,15 +713,6 @@ class HashTable : public Object
 	 bool locked() const { return m_locked ; }
 	 bool stale() const { return m_stale ; }
 	 bool busy() const { return !locked() || stale() ; }
-#ifdef FrHASHTABLE_STATS
-	 static void clearPerThreadStats() { s_stats->chain_lock_count.store(0) ; s_stats->chain_lock_coll.store(0) ; }
-	 static size_t numberOfLocks() { return s_stats->chain_lock_count.load() ; }
-	 static size_t numberOfLockCollisions() { return s_stats->chain_lock_coll.load() ; }
-#else
-	 static void clearPerThreadStats() {}
-	 static size_t numberOfLocks() { return 0 ; }
-	 static size_t numberOfLockCollisions() { return 0 ; }
-#endif /* FrHASHTABLE_STATS */
          } ;
       //------------------------
       class ThreadCleanup
@@ -734,22 +722,6 @@ class HashTable : public Object
 	    ~ThreadCleanup() {  }
          } ;
       //------------------------
-      void threadInit()
-	 {
-#ifndef FrSINGLE_THREADED
-	 s_thread_record = new TablePtr ;
-#endif /* FrSINGLE_THREADED */
-	 if_HASHSTATS(s_stats = new HashTable_Stats) ;
-	 HashTable::registerThread() ;
-	 }
-      void threadCleanup()
-	 {
-#ifndef FrSINGLE_THREADED
-	 delete s_thread_record ;
-#endif /* FrSINGLE_THREADED */
-         if_HASHSTATS( delete s_stats) ;
-	 HashTable::unregisterThread() ;
-	 }
    protected: // members
       Atomic<Table*>   	  m_table ;	// pointer to currently-active m_tables[] entry
       Atomic<Table*>	  m_oldtables { nullptr } ;  // start of list of currently-live hash arrays
@@ -815,9 +787,9 @@ class HashTable : public Object
       //   entries and hash arrays, as well as an on-exit callback
       //   to clear that info
    public://FIXME, shoudl only be called from ThreadInitializer
-      static void registerThread() ;
+      static void threadInit() ;
    protected:
-      static void unregisterThread() ;
+      static void threadCleanup() ;
 
       size_t maxSize() const { return m_table.load(std::memory_order_consume)->m_size ; }
       static inline size_t hashVal(KeyT key)
@@ -887,7 +859,6 @@ class HashTable : public Object
 		  }
 	       atomic_thread_fence(std::memory_order_seq_cst) ; 
 	       debug_msg("HashTable dtor\n") ;
-	       table->awaitIdle() ;
 	       }
 	    table->clear() ;
 	    freeTables() ;
@@ -1106,28 +1077,18 @@ class HashTable : public Object
       // =============== Operational Statistics ================
       [[gnu::cold]] void clearGlobalStats()
 	 {
-#ifdef FrHASHTABLE_STATS
-	    m_stats.clear() ;
-#endif /* FrHASHTABLE_STATS */
-	    return ;
+	 if_HASHSTATS(m_stats.clear()) ;
+	 return ;
 	 }
       [[gnu::cold]] static void clearPerThreadStats()
 	 {
-#if defined(FrHASHTABLE_STATS)
-	    if (!s_stats) s_stats = new HashTable_Stats ;
-	    s_stats->clear();
-	    ScopedChainLock::clearPerThreadStats() ;
-#endif /* FrHASHTABLE_STATS */
-	    return ;
+	 if_HASHSTATS(if (s_stats) s_stats->clear()) ;
+	 return ;
 	 }
       [[gnu::cold]] void updateGlobalStats()
 	 {
-#if defined(FrHASHTABLE_STATS)
-	    m_stats.add(s_stats) ;
-	    m_stats.chain_lock_count += ScopedChainLock::numberOfLocks() ;
-	    m_stats.chain_lock_coll += ScopedChainLock::numberOfLockCollisions() ;
-#endif /* FrHASHTABLE_STATS */
-	    return ;
+	 if_HASHSTATS(m_stats.add(s_stats)) ;
+	 return ;
 	 }
 #ifdef FrHASHTABLE_STATS
       size_t numberOfInsertions() const { return m_stats.insert ; }
@@ -1147,12 +1108,12 @@ class HashTable : public Object
       size_t numberOfResizes() const { return  m_stats.resize ; }
       size_t numberOfResizeAssists() const { return  m_stats.resize_assist ; }
       size_t numberOfResizeCleanups() const { return  m_stats.resize_cleanup ; }
+      size_t numberOfResizeWaits() const { return m_stats.resize_wait ; }
       size_t numberOfReclamations() const { return m_stats.reclaim ; }
-      size_t numberOfEntriesMoved() const { return m_stats.move ; }
       size_t numberOfFullNeighborhoods() const { return  m_stats.neighborhood_full ; }
       size_t numberOfCASCollisions() const { return m_stats.CAS_coll ; }
-      size_t numberOfChainLocks() const { return m_stats.chain_lock_count.load() ; }
-      size_t numberOfChainLockCollisions() const { return m_stats.chain_lock_coll.load() ; }
+      size_t numberOfChainLocks() const { return m_stats.chain_lock_count ; }
+      size_t numberOfChainLockCollisions() const { return m_stats.chain_lock_coll ; }
       size_t numberOfSpins() const { return  m_stats.spin ; }
       size_t numberOfYields() const { return m_stats.yield ; }
       size_t numberOfSleeps() const { return m_stats.sleep ; }
@@ -1173,8 +1134,8 @@ class HashTable : public Object
       static size_t numberOfResizes() { return 0 ; }
       static size_t numberOfResizeAssists() { return 0 ; }
       static size_t numberOfResizeCleanups() { return 0 ; }
+      static size_t numberOfResizeWaits() { return 0 ; }
       static size_t numberOfReclamations() { return 0 ; }
-      static size_t numberOfEntriesMoved() { return 0 ; }
       static size_t numberOfFullNeighborhoods() { return 0 ; }
       static size_t numberOfCASCollisions() { return 0 ; }
       static size_t numberOfChainLocks() { return 0 ; }

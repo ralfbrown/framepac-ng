@@ -252,51 +252,6 @@ void HashTable<KeyT,ValT>::Table::autoResize()
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::tableInUse() const
-{
-#ifndef FrSINGLE_THREADED
-   // can only have concurrent use when multi-threaded
-   // scan the list of per-thread s_table variables
-   typedef typename Fr::HashTable<KeyT,ValT>::TablePtr TablePtr ;
-   for (const TablePtr* tables = Atomic<TablePtr*>::ref(s_thread_entries).load(std::memory_order_acquire) ;
-	tables ;
-	tables = tables->m_next)
-      {
-      // check whether the hazard pointer is for ourself
-      const Table* ht = tables->table() ;
-      if (this == ht) return true ;
-      }
-#endif
-   return false ; 
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-void HashTable<KeyT,ValT>::Table::awaitIdle()
-{
-   // wait until nobody is announcing that they are
-   //   using one of our hash buckets
-#ifndef FrSINGLE_THREADED
-   debug_msg("await idle %ld\n",FramepaC::my_job_id);
-   size_t loops = 0 ;
-   while (tableInUse())
-      {
-      thread_backoff(loops) ;
-      if (superseded())
-	 {
-	 debug_msg(" idle wait canceled %ld\n",FramepaC::my_job_id) ;
-	 return ;
-	 }
-      }
-   debug_msg("is idle %ld\n",FramepaC::my_job_id);
-#endif /* !FrSINGLE_THREADED */
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::copyChainLocked(size_t bucketnum)
 {
    Link offset ;
@@ -1912,11 +1867,12 @@ bool HashTable<KeyT,ValT>::reclaimSuperseded()
 //   to clear that info
 
 template <typename KeyT, typename ValT>
-void HashTable<KeyT,ValT>::registerThread()
+void HashTable<KeyT,ValT>::threadInit()
 {
 #ifndef FrSINGLE_THREADED
    // check whether we've initialized the thread-local data yet
    if (!s_stats) s_stats = new HashTable_Stats ; //FIXME
+   s_stats->clear() ;
    if (!s_thread_record) s_thread_record = new TablePtr ;
    if (!s_thread_record->initialized())
       {
@@ -1935,7 +1891,7 @@ void HashTable<KeyT,ValT>::registerThread()
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-void HashTable<KeyT,ValT>::unregisterThread()
+void HashTable<KeyT,ValT>::threadCleanup()
 {
 #ifndef FrSINGLE_THREADED
    s_table = nullptr ;
@@ -1962,6 +1918,10 @@ void HashTable<KeyT,ValT>::unregisterThread()
 	 }
       s_thread_record->clear() ;
       }
+   delete s_thread_record ;
+   s_thread_record = nullptr ;
+   delete s_stats ;
+   s_stats = nullptr ;
 #endif /* !FrSINGLE_THREADED */
    return ;
 }
