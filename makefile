@@ -171,7 +171,7 @@ LINKFLAGS +=$(SANITIZE)
 LINKFLAGS +=$(LINKSAN)
 
 ifeq ($(BUILD_DBG),2)
-  CFLAGS += -ggdb3 -O0 -fno-inline -g3
+  CFLAGS += -ggdb3 -Og -fno-inline -g3
 else ifeq ($(BUILD_DBG),1)
   CFLAGS += -ggdb3 -O -g3 -fno-extern-tls-init
 else

@@ -71,13 +71,15 @@ namespace Fr {
 #else
 #define FORWARD(delegate,tab,counter)					\
       Table* tab = next() ;						\
-      if (tab /*&& chainIsStale(bucketnum)*/)				\
+      if (tab)								\
 	 {								\
-	 /* ensure that our bucket has been copied to 	*/		\
-	 /*   the successor table, then add the key to	*/		\
-	 /*   that table					*/	\
 	 resizeCopySegments() ;						\
-	 waitUntilCopied(bucketnum) ;					\
+	 /* ensure that our bucket has been copied to the	*/	\
+	 /*   successor table, then add the key to that table	*/	\
+         /*BREAKS: if (!copyChain(bucketnum))	*/			\
+	    waitUntilCopied(bucketnum) ;				\
+	 /* help out with the copying in general */			\
+	 /*resizeCopySegments(1) ;*/					\
 	 INCR_COUNT(counter) ;						\
 	 tab->announceTable() ;						\
 	 return tab->delegate ;						\
@@ -352,9 +354,8 @@ void HashTable<KeyT,ValT>::Table::copyChains(size_t bucketnum, size_t endpos)
 	    }
 	 }
       }
-   // if we had to skip copying any chains due to a concurrent
-   //    recycle(), tell the lead resizing thread that it need to
-   //    do a cleanup pass
+   // if we had to skip any chains due to a concurrent copy, tell the
+   //   lead resizing thread that it needs to do a cleanup pass
    if (!complete)
       {
       size_t old_first ;

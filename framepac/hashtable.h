@@ -55,7 +55,7 @@
 //   can allow additional writes even before all old readers complete;
 //   if we were to wait for all readers, performance wouldn't scale as
 //   well with processor over-subscription.
-#  define FrHT_NUM_TABLES	6
+#  define FrHT_NUM_TABLES	4
 #endif
 
 #define FrHashTable_DefaultMaxFill 0.97
@@ -385,8 +385,13 @@ class HashTable : public Object
 	       return old_value ;
 	    }
 #else
-	 ValT swapValue(ValT new_value)
+	 template <typename RetT = ValT>
+	 typename std::enable_if<!std::is_empty<ValT>::value,RetT>::type
+	 swapValue(ValT new_value)
 	    { return Atomic<ValT>::ref(*getValuePtr()).exchange(new_value) ; }
+	 template <typename RetT = ValT>
+	 typename std::enable_if<std::is_empty<ValT>::value,RetT>::type
+	 swapValue(ValT) { return nullVal() ; }
 #endif /* FrSINGLE_THREADED */
 	 ALWAYS_INLINE static KeyT UNUSED() {return (KeyT)~0UL ; } 
 	 ALWAYS_INLINE static KeyT DELETED() {return (KeyT)~1UL ; } 
