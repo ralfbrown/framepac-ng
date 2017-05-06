@@ -55,7 +55,7 @@
 //   can allow additional writes even before all old readers complete;
 //   if we were to wait for all readers, performance wouldn't scale as
 //   well with processor over-subscription.
-#  define FrHT_NUM_TABLES	8
+#  define FrHT_NUM_TABLES	6
 #endif
 
 #define FrHashTable_DefaultMaxFill 0.97
@@ -85,16 +85,17 @@
 #  define INT16_MAX 32767
 #endif
 
-//#define FrHASHTABLE_SEARCHRANGE 0x7FF
 #define FrHASHTABLE_SEARCHRANGE 0x3FF
 
 #ifdef FrHASHTABLE_STATS
 #  define if_HASHSTATS(x) x
 #  define INCR_COUNT(x) (++ s_stats->x)
+#  define INCR_COUNT_if(cond,x) if (cond) {++ s_stats->x ; }
 #  define DECR_COUNT(x) (-- s_stats->x)
 #else
 #  define if_HASHSTATS(x)
 #  define INCR_COUNT(x)
+#  define INCR_COUNT_if(cond,x)
 #  define DECR_COUNT(x)
 #endif
 
@@ -214,7 +215,7 @@ class HashPtr
 	 {
 	    new_ofs = ((new_ofs + LINKBIAS) & link_mask) | stat ;
 	    expected = ((expected + LINKBIAS) & link_mask) | stat ;
-	    return m_first.compare_exchange_strong(expected,new_ofs) ;
+	    return m_first.compare_exchange_weak(expected,new_ofs) ;
 	 }
       void next(Link ofs) { m_next.store(ofs+LINKBIAS,std::memory_order_release) ; }
       bool next(Link new_ofs, Link expected, Link /*stat*/)
@@ -461,8 +462,8 @@ class HashTable : public Object
 	 void copyEntry(size_t N, const Table *othertab)
 	    {
 	       m_entries[N].init(othertab->m_entries[N]) ;
-	       ifnot_INTERLEAVED(m_ptrs[N] = othertab->m_ptrs[N] ;)
-		  return ;
+	       ifnot_INTERLEAVED(m_ptrs[N] = othertab->m_ptrs[N]) ;
+	       return ;
 	    }
 	 static size_t normalizeSize(size_t sz) ;
 	 size_t resizeThreshold(size_t sz)
@@ -525,6 +526,7 @@ class HashTable : public Object
 
 	 bool reclaimChain(size_t bucketnum) ;
 	 bool assistResize() ;
+	 void resizeCleanup() ;
 
 	 static Object* makeObject(KeyT key) ;
 
@@ -813,13 +815,11 @@ class HashTable : public Object
 	    // this is the version for everyone *but* Fr::SymbolTableX
 	    return isEqual(key1,key2) ;
 	 }
-      // special support for Fr::SymbolTableX
       // special support for Fr::SymbolTableX; must be overridden
       static bool isEqual(const char *keyname, size_t namelen, KeyT key) ;
 
 
    protected:
-//FIXME
       // single-threaded only!!  But since it's only called from a ctor, that's fine
       void copyContents(const HashTable &ht)
          {

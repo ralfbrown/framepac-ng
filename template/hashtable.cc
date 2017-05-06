@@ -324,11 +324,11 @@ template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::Table::waitUntilCopied(size_t bucketnum)
 {
    size_t loops = 0 ;
-   INCR_COUNT(resize_wait) ;
    while (!chainCopied(bucketnum))
       {
       thread_backoff(loops) ;
       }
+   INCR_COUNT_if(loops,resize_wait) ;
    return  ;
 }
 
@@ -441,13 +441,6 @@ bool HashTable<KeyT,ValT>::Table::claimEmptySlot(size_t pos, KeyT key)
 template <typename KeyT, typename ValT>
 FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, KeyT key, bool &got_resized)
 {
-   if (superseded())
-      {
-      // a resize snuck in, so caller MUST retry
-      got_resized = true ;
-      return FramepaC::NULLPTR ;
-      }
-   size_t sz = m_size ;
    // compute the extent of the cache line containing
    //   the offset-0 entry for the bucket
    constexpr size_t CL_len = std::hardware_destructive_interference_size ;
@@ -457,9 +450,9 @@ FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, Ke
    size_t itemsize = (uintptr_t)bucketPtr(1) - (uintptr_t)bucketPtr(0) ;
    size_t CL_start = (CLstart_addr - (uintptr_t)bucketPtr(0)) / itemsize ;
    size_t max = bucketnum + searchrange ;
-   if (max >= sz)
+   if (max >= m_size)
       {
-      max = sz - 1 ;
+      max = m_size - 1 ;
       }
    // search for a free slot starting with the beginning of the cache
    //   line with the bucket header
@@ -569,16 +562,28 @@ void HashTable<KeyT,ValT>::Table::resizeCopySegments(size_t max_segs)
    // is there any work available to be stolen?
    if (!m_resizelock.load(std::memory_order_acquire) || m_resizedone.load(std::memory_order_acquire))
       return ;
-   // grab the current segment number and increment it
-   //   so the next thread gets a different number; stop
-   //   once all segments have been assigned
-   while (max_segs > 0 && m_segments_assigned.load(std::memory_order_acquire) < m_segments_total.load(std::memory_order_acquire))
+   size_t total_segs = m_segments_total.load(std::memory_order_acquire) ;
+   // grab the current segment number and increment it so the next
+   //   thread gets a different number; stop once all segments have
+   //   been assigned
+   while (max_segs > 0 && m_segments_assigned.load(std::memory_order_acquire) <= total_segs)
       {
       size_t segnum ;
-      if ((segnum = m_segments_assigned++) < m_segments_total.load(std::memory_order_acquire))
+      if ((segnum = m_segments_assigned++) < total_segs)
 	 {
 	 resizeCopySegment(segnum) ;
 	 --max_segs ;
+	 }
+      else if (segnum == total_segs)
+	 {
+	 // we've won the right to finalize the resizing!
+	 // wait for any other threads that have grabbed segments to
+	 //   complete them
+	 m_resizepending.wait() ;
+	 // if necessary, do a cleanup pass to copy any buckets which
+	 //   had to be skipped due to concurrent reclaim() calls,
+	 //   then finalize the resize
+	 resizeCleanup() ;
 	 }
       }
    return ;
@@ -687,6 +692,45 @@ bool HashTable<KeyT,ValT>::Table::assistResize()
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
+void HashTable<KeyT,ValT>::Table::resizeCleanup()
+{
+   size_t first_incomplete = m_first_incomplete.load(std::memory_order_acquire) ;
+   size_t last_incomplete = m_last_incomplete.load(std::memory_order_acquire) ;
+   size_t loops = FrSPIN_COUNT ;  // jump right to yielding the CPU on backoff
+   while (first_incomplete <= last_incomplete)
+      {
+      INCR_COUNT(resize_cleanup) ;
+      bool complete = true ;
+      size_t first = m_size ;
+      size_t last = 0 ;
+      for (size_t i = first_incomplete ; i < last_incomplete && i < m_size ; ++i)
+	 {
+	 if (!chainCopied(i) && !copyChain(i))
+	    {
+	    last = i ;
+	    if (complete)
+	       {
+	       first = i ;
+	       complete = false ;
+	       }
+	    }
+	 }
+      if (complete)
+	 break ;
+      first_incomplete = first ;
+      last_incomplete = last ;
+      thread_backoff(loops) ;
+      }
+   m_resizedone.store(true,std::memory_order_release) ;
+   // make the new table the current one for the containing HashTable
+   m_container->updateTable() ;
+   debug_msg(" resize done (thr %ld)\n",FramepaC::my_job_id) ;
+   return  ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
 {
    if (superseded())
@@ -735,38 +779,9 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
       m_resizepending.wait() ;
       // if necessary, do a cleanup pass to copy any
       //   buckets which had to be skipped due to
-      //   concurrent reclaim() calls
-      size_t first_incomplete = m_first_incomplete.load(std::memory_order_acquire) ;
-      size_t last_incomplete = m_last_incomplete.load(std::memory_order_acquire) ;
-      size_t loops = FrSPIN_COUNT ;  // jump right to yielding the CPU on backoff
-      while (first_incomplete <= last_incomplete)
-	 {
-	 INCR_COUNT(resize_cleanup) ;
-	 bool complete = true ;
-	 size_t first = m_size ;
-	 size_t last = 0 ;
-	 for (size_t i = first_incomplete ; i < last_incomplete && i < m_size ; ++i)
-	    {
-	    if (!chainCopied(i) && !copyChain(i))
-	       {
-	       last = i ;
-	       if (complete)
-		  {
-		  first = i ;
-		  complete = false ;
-		  }
-	       }
-	    }
-	 if (complete)
-	    break ;
-	 first_incomplete = first ;
-	 last_incomplete = last ;
-	 thread_backoff(loops) ;
-	 }
-      m_resizedone.store(true,std::memory_order_release) ;
-      // make the new table the current one for the containing FrHashTable
-      m_container->updateTable() ;
-      debug_msg(" resize done (thr %ld)\n",FramepaC::my_job_id) ;
+      //   concurrent reclaim() calls, then finalize
+      //   the resize
+      resizeCleanup() ;
       }
    else
       {
@@ -1266,8 +1281,8 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, const char* name, size_t namelen) const
 {
    size_t bucketnum = hashval % m_size ;
-   FORWARD_IF_COPIED(contains(hashval,name,namelen),contains_forwarded)
-      INCR_COUNT(contains) ;
+   FORWARD_IF_COPIED(contains(hashval,name,namelen),contains_forwarded) ;
+   INCR_COUNT(contains) ;
    // scan the chain of items for this hash position
    Link offset = chainHead(bucketnum) ;
    bool success = false ;
