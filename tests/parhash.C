@@ -624,7 +624,7 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
        << stat_lookup_succ << '/' << stat_lookup << '+' << stat_lookup_forw << " look, "
        << stat_rem_count << '/' << stat_rem << '+' << stat_rem_forw << " rem"
        << endl ;
-   out << "  Admn: " << stat_resize << " resizes (" << stat_resize_assist << " assists,"
+   out << "  Admn: " << stat_resize << " resizes (" << stat_resize_assist << " assists, "
        << stat_wait << " waits), " << stat_full << " congest, "
        << stat_reclam << " reclam, " << stat_chain_coll << '/' << stat_chain << " chainlock" << endl ;
 #ifndef FrSINGLE_THREADED
