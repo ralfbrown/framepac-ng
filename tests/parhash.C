@@ -385,8 +385,7 @@ static void hash_dispatch(const void *input, void * /*output*/ )
    HashRequestOrder *order = (HashRequestOrder*)input ;
    my_job_id = order->id ;
    order->current_cycle = 1 ;
-   HashT::registerThread() ;  // should not be needed once HashTable is completely fixed
-   HashT::clearPerThreadStats() ;
+   HashT::threadInit() ;  // should not be needed once HashTable is completely fixed
    while (order->current_cycle <= order->cycles)
       {
       order->func(order) ;
@@ -402,7 +401,10 @@ static void hash_dispatch(const void *input, void * /*output*/ )
       print_msg(cout,"  Job %ld done.\n",order->id) ;
       }
    if (order->ht)
+      {
       ((HashT*)order->ht)->updateGlobalStats() ;
+      HashT::clearPerThreadStats() ;
+      }
    return ;
 }
 
@@ -414,7 +416,10 @@ static void reclaim_deletion(const void* input, void*)
    const HashRequestOrder *order = reinterpret_cast<const HashRequestOrder*>(input) ;
    HashT* ht = (HashT*)order->ht ;
    if (ht)
+      {
       ht->reclaimDeletions(order->threads,order->cycles) ;
+      ht->updateGlobalStats() ;
+      }
    return ;
 }
 
@@ -528,7 +533,6 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
    if (ht && op == Op_REMOVE)
       {
       reclaim_deletions(ht,tpool,hashorders,threads) ;
-      ht->updateGlobalStats() ;
       }
    double time = timer.cpuSeconds() ;
    double walltime = timer.elapsedSeconds() ;
@@ -608,7 +612,6 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
    size_t stat_resize = ht->numberOfResizes() ;
    size_t stat_resize_assist = ht->numberOfResizeAssists() ;
    size_t stat_reclam = ht->numberOfReclamations() ;
-   size_t stat_moves = ht->numberOfEntriesMoved() ;
    size_t stat_full = ht->numberOfFullNeighborhoods() ;
    size_t stat_chain = ht->numberOfChainLocks() ;
    size_t stat_chain_coll = ht->numberOfChainLockCollisions() ;
@@ -620,9 +623,8 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
        << stat_rem_count << '/' << stat_rem << '+' << stat_rem_forw << " rem"
        << endl ;
    out << "  Admn: " << stat_resize << " resizes (" << stat_resize_assist << " assists), " << stat_full << " congest, "
-       << stat_reclam << " reclam, " << stat_moves << " moves, "
-       << stat_chain_coll << '/' << stat_chain << " chainlock" << endl ;
-#ifdef FrMULTITHREAD
+       << stat_reclam << " reclam, " << stat_chain_coll << '/' << stat_chain << " chainlock" << endl ;
+#ifndef FrSINGLE_THREADED
    size_t stat_spin = ht->numberOfSpins() ;
    size_t stat_yield = ht->numberOfYields() ;
    size_t stat_sleep = ht->numberOfSleeps() ;
@@ -630,7 +632,7 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
    size_t stat_resize_cleanup = ht->numberOfResizeCleanups() ;
    out << "  Thrd: " << stat_spin << " spins, " << stat_yield << " yields, " << stat_sleep << " sleeps, "
        << stat_CAS << " CAS, " << stat_resize_cleanup << " resize cleanups" << endl ;
-#endif /* FrMULTITHREAD */
+#endif /* !FrSINGLE_THREADED */
 #endif /* FrHASHTABLE_STATS */
    return  ;
 }
