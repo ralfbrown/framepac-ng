@@ -677,11 +677,11 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum)
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
-      HashPtr* nextptr = bucketPtr(pos) ;
       // while the additional check of the key just below is not strictly necessary, it
       //   permits us to avoid the expensive CAS except when an entry is actually deleted
       KeyT key = getKey(pos) ;
-      Link nxt = headptr->next() ;
+      HashPtr* nextptr = bucketPtr(pos) ;
+      Link nxt = nextptr->next() ;
       if (key == Entry::DELETED() && updateKey(pos,Entry::DELETED(),Entry::UNUSED()))
 	 {
 	 // we grabbed a deleted entry; now try to unlink it
@@ -693,7 +693,7 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum)
 	    // restart from the beginning of the chain
 	    INCR_COUNT(CAS_coll) ;
 	    headptr = bucketPtr(bucketnum) ;
-	    offset = headptr->next() ;
+	    offset = headptr->first() ;
 	    continue ;
 	    }
 	 reclaimed = true ;
@@ -703,7 +703,7 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum)
 	 headptr = nextptr ;
 	 is_first = false ;
 	 }
-      offset = headptr->next() ;
+      offset = nxt ;
       }
    return reclaimed;
 #endif /* FrSINGLE_THREADED */

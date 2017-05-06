@@ -663,7 +663,7 @@ class HashTable : public Object
 	    ~HazardLock()
 	       {
 	       Atomic<Table*>& tbl = Atomic<Table*>::ref(HashTable::s_table) ;
-	       tbl.store((Table*)nullptr,std::memory_order_release) ;
+	       tbl.store((Table*)nullptr,std::memory_order_relaxed) ;
 	       }
 #endif /* FrSINGLE_THREADED */
          } ;
