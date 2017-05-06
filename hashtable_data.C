@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.01, last edit 2017-05-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -21,6 +21,7 @@
 
 
 #include <cstdlib>
+#include "framepac/atomic.h"
 #include "framepac/hashtable.h"
 
 /************************************************************************/
@@ -49,9 +50,9 @@ void HashTable_Stats::clear()
    remove = remove_found = remove_forwarded = 0 ;
    contains = contains_found = contains_forwarded = 0 ;
    lookup = lookup_found = lookup_forwarded = 0 ;
-   resize = resize_assist = resize_cleanup = 0 ;
+   resize = resize_assist = resize_cleanup = resize_wait = 0 ;
    reclaim = 0 ;
-   move = 0 ;
+   CAS_coll = 0 ;
    neighborhood_full = 0 ;
    chain_lock_count = 0 ;
    chain_lock_coll = 0 ;
@@ -61,35 +62,38 @@ void HashTable_Stats::clear()
 
 //----------------------------------------------------------------------------
 
+#define REF(x) Fr::Atomic<size_t>::ref(x)
+
 void HashTable_Stats::add(const HashTable_Stats* other)
 {
    if (!other) return;
-   insert += other->insert ;
-   insert_dup += other->insert_dup ;
-   insert_attempt += other->insert_attempt ;
-   insert_forwarded += other->insert_forwarded ;
-   insert_resize += other->insert_resize ;
-   remove += other->remove ;
-   remove_found += other->remove_found ;
-   remove_forwarded += other->remove_forwarded ;
-   contains += other->contains ;
-   contains_found += other->contains_found ;
-   contains_forwarded += other->contains_forwarded ;
-   lookup += other->lookup ;
-   lookup_found += other->lookup_found ;
-   lookup_forwarded += other->lookup_forwarded ;
-   resize += other->resize ;
-   resize_assist += other->resize_assist ;
-   resize_cleanup += other->resize_cleanup ;
-   reclaim += other->reclaim ;
-   move += other->move ;
-   neighborhood_full += other->neighborhood_full ;
-   chain_lock_count += other->chain_lock_count ;
-   chain_lock_coll += other->chain_lock_coll ;
-   spin += other->spin ;
-   yield += other->yield ;
-   sleep += other->sleep ;
-   none += other->none ;
+   REF(insert) += other->insert ;
+   REF(insert_dup) += other->insert_dup ;
+   REF(insert_attempt) += other->insert_attempt ;
+   REF(insert_forwarded) += other->insert_forwarded ;
+   REF(insert_resize) += other->insert_resize ;
+   REF(remove) += other->remove ;
+   REF(remove_found) += other->remove_found ;
+   REF(remove_forwarded) += other->remove_forwarded ;
+   REF(contains) += other->contains ;
+   REF(contains_found) += other->contains_found ;
+   REF(contains_forwarded) += other->contains_forwarded ;
+   REF(lookup) += other->lookup ;
+   REF(lookup_found) += other->lookup_found ;
+   REF(lookup_forwarded) += other->lookup_forwarded ;
+   REF(resize) += other->resize ;
+   REF(resize_assist) += other->resize_assist ;
+   REF(resize_cleanup) += other->resize_cleanup ;
+   REF(resize_wait) += other->resize_wait ;
+   REF(reclaim) += other->reclaim ;
+   REF(CAS_coll) += other->CAS_coll ;
+   REF(neighborhood_full) += other->neighborhood_full ;
+   REF(chain_lock_count) += other->chain_lock_count ;
+   REF(chain_lock_coll) += other->chain_lock_coll ;
+   REF(spin) += other->spin ;
+   REF(yield) += other->yield ;
+   REF(sleep) += other->sleep ;
+   REF(none) += other->none ;
    return ;
 }
 
