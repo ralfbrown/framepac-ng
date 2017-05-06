@@ -788,9 +788,9 @@ bool HashTable<KeyT,ValT>::Table::add(size_t hashval, KeyT key, ValT value)
 	    INCR_COUNT(insert_dup) ;
 	    return true ;		// item already exists
 	    }
-	 if_THREADED(else if (deletedEntry(pos) && deleted == NULLPOS) { deleted = pos ; })
-	    // advance to next item in chain
-	    offset = chainNext(pos) ;
+	 // advance to next item in chain
+	 offset = chainNext(pos) ;
+	 if_THREADED(if (deletedEntry(pos) && deleted == NULLPOS) { deleted = pos ; })
 	 }
       // when we get here, we know that the item is not yet in the
       //   hash table, so try to add it
@@ -856,6 +856,7 @@ ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr
 	    }
 	 // advance to next item in chain
 	 offset = chainNext(pos) ;
+	 if_THREADED(if (deletedEntry(pos) && deleted == NULLPOS) { deleted = pos ; })
 	 }
       // when we get here, we know that the item is not yet in the
       //   hash table, so try to add it
@@ -898,7 +899,6 @@ bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, KeyT key) const
    INCR_COUNT(contains) ;
    // scan the chain of items for this hash position
    Link offset = chainHead(bucketnum) ;
-   bool success = false ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
@@ -906,13 +906,12 @@ bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, KeyT key) const
       if (isEqual(key,key_at_pos))
 	 {
 	 INCR_COUNT(contains_found) ;
-	 success = true ;
-	 break ;
+	 return true ;
 	 }
       // advance to next item in chain
       offset = chainNext(pos) ;
       }
-   return success ;
+   return false ;
 }
 
 //----------------------------------------------------------------------------
@@ -925,26 +924,25 @@ ValT HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key) const
    INCR_COUNT(lookup) ;
    // scan the chain of items for this hash position
    Link offset = chainHead(bucketnum) ;
-   ValT value = nullVal() ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
       KeyT hkey = getKey(pos) ;
       if (isEqual(key,hkey))
 	 {
-	 value = getValue(pos) ;
+	 ValT value = getValue(pos) ;
 	 // double-check that a parallel remove() hasn't
 	 //   deleted the entry while we were fetching the
 	 //   value
 	 if (getKey(pos) != hkey)
-	    value = nullVal() ;
+	    break ;
 	 INCR_COUNT(lookup_found) ;
-	 break ;
+	 return value ;
 	 }
       // advance to next item in chain
       offset = chainNext(pos) ;
       }
-   return value ;
+   return nullVal() ;
 }
 
 //----------------------------------------------------------------------------
@@ -957,10 +955,8 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value) 
    size_t bucketnum = hashval % m_size ;
    FORWARD_IF_COPIED(lookup(hashval,key,value),lookup_forwarded) ;
    INCR_COUNT(lookup) ;
-   (*value) = nullVal() ;
    // scan the chain of items for this hash position
    Link offset = chainHead(bucketnum) ;
-   bool found = false ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
@@ -968,16 +964,16 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value) 
       if (isEqual(key,hkey))
 	 {
 	 (*value) = getValue(pos) ;
+	 INCR_COUNT(lookup_found) ;
 	 // double-check that a parallel remove() hasn't deleted the
 	 //   hash entry while we were working with it
-	 found = (getKey(pos) == hkey) ;
-	 INCR_COUNT(lookup_found) ;
-	 break ;
+	 return (getKey(pos) == hkey) ;
 	 }
       // advance to next item in chain
       offset = chainNext(pos) ;
       }
-   return found ;
+   (*value) = nullVal() ;
+   return false ;
 }
 
 //----------------------------------------------------------------------------
@@ -991,7 +987,6 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value, 
    size_t bucketnum = hashval % m_size ;
    FORWARD_IF_COPIED(lookup(hashval,key,value),lookup_forwarded) ;
    INCR_COUNT(lookup) ;
-   (*value) = nullVal() ;
    // scan the chain of items for this hash position
    Link offset = chainHead(bucketnum) ;
    while (FramepaC::NULLPTR != offset)
@@ -1000,23 +995,16 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value, 
       KeyT hkey = getKey(pos) ;
       if (isEqual(key,hkey))
 	 {
-	 if (clear_entry)
-	    {
-	    (*value) = m_entries[pos].swapValue(nullVal()) ;
-	    }
-	 else
-	    {
-	    (*value) = getValue(pos) ;
-	    }
+	 (*value) = clear_entry ? m_entries[pos].swapValue(nullVal()) : getValue(pos) ;
+	 INCR_COUNT(lookup_found) ;
 	 // double-check that a parallel remove() hasn't deleted the
 	 //   hash entry while we were working with it
-	 bool found = (getKey(pos) == hkey) ;
-	 INCR_COUNT(lookup_found) ;
-	 return found ;
+	 return (getKey(pos) == hkey) ;
 	 }
       // advance to next item in chain
       offset = chainNext(pos) ;
       }
+   (*value) = nullVal() ;
    return false ;	// not found
 }
 
