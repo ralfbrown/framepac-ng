@@ -34,6 +34,9 @@
 #include "framepac/synchevent.h"
 #include <cassert>
 
+//#undef FrHASHTABLE_VERBOSITY
+//#define FrHASHTABLE_VERBOSITY 2
+
 /************************************************************************/
 /*	Manifest Constants						*/
 /************************************************************************/
@@ -82,11 +85,8 @@
 #  define INT16_MAX 32767
 #endif
 
-#ifdef FrHASHTABLE_BIGLINK
-#  define FrHASHTABLE_SEARCHRANGE INT16_MAX
-#else
-#  define FrHASHTABLE_SEARCHRANGE INT8_MAX
-#endif
+//#define FrHASHTABLE_SEARCHRANGE 0x7FF
+#define FrHASHTABLE_SEARCHRANGE 0x3FF
 
 #ifdef FrHASHTABLE_STATS
 #  define if_HASHSTATS(x) x
@@ -177,86 +177,86 @@ class HashTable_Stats
       void add(const HashTable_Stats *other_stats) ;
    } ;
 
-// encapsulate the chaining links
-#ifdef FrHASHTABLE_BIGLINK
-typedef int16_t Link ;
-#else
-typedef int8_t Link ;
-#endif /* FrHASHTABLE_BIGLINK */
-
 /************************************************************************/
 /*      Auxiliary class for hash pointer heads				*/
 /************************************************************************/
 
-struct HashPtrHead
-   {
-   public:
-   // the following two fields need to be adjacent so that we
-   //   can CAS them together in insertKey(), so we define
-   //   this struct just for that purpose
-      Fr::Atomic<Link>    first ; // offset of first entry in hash bucket
-      Fr::Atomic<uint8_t> status ;// is someone messing with this bucket's chain?
-   public:
-      HashPtrHead() : first(0), status(0) { status.store(0,std::memory_order_release) ; }
-   } ;	    
+// encapsulate the chaining links
+typedef int16_t Link ;
 
-/************************************************************************/
-/************************************************************************/
-
-union HashPtrInt
-   {
-   HashPtrHead head ;  // .first and .status fields
-#ifdef FrHASHTABLE_BIGLINK
-   uint32_t head_int ;
-#else
-   uint16_t head_int ;
-#endif /* FrHASHTABLE_BIGLINK */
-   } ;
-
-/************************************************************************/
-/************************************************************************/
-
-#ifdef FrHASHTABLE_BIGLINK
-   static const Link NULLPTR = INT16_MIN ;
-#else
-   static const Link NULLPTR = INT8_MIN ;
-#endif /* FrHASHTABLE_BIGLINK */
+static constexpr Link LINKBIAS = 0x0800 ;
+static constexpr Link NULLPTR = -LINKBIAS ;
 
 class HashPtr
    {
+   protected:
+      Fr::Atomic<Link> m_first ;	// offset of first entry in hash bucket
+      Fr::Atomic<Link> m_next ;		// pointer to next entry in current chain
    public:
-      Fr::Atomic<Link> next ;	// pointer to next entry in current chain
-      HashPtrHead head ;  	// .first and .status fields
-   public:
-      static const unsigned lock_bit = 0 ;
-      static const uint8_t lock_mask = (1 << lock_bit) ;
-//      static const unsigned reclaimed_bit = 3 ;
-//      static const uint8_t reclaimed_mask = (1 << reclaimed_bit) ;
-//      static const unsigned deleted_bit = 4 ;
-//      static const uint8_t deleted_mask = (1 << deleted_bit) ;
-//      static const unsigned inuse_bit = 5 ;
-//      static const uint8_t inuse_mask = (1 << inuse_bit) ;
-      static const unsigned copied_bit = 6 ;
-      static const uint8_t copied_mask = (1 << copied_bit) ;
-      static const unsigned stale_bit = 7 ;
-      static const uint8_t stale_mask = (1 << stale_bit) ;
+      static constexpr Link link_mask = 0x0FFF ;
+      // flag bits in m_first
+protected:
+      static constexpr unsigned lock_bit = 15 ;
+      static constexpr Link lock_mask = (1 << lock_bit) ;
+      static constexpr unsigned stale_bit = 14 ;
+      static constexpr Link stale_mask = (1 << stale_bit) ;
+      static constexpr unsigned copied_bit = 13 ;
+      static constexpr Link copied_mask = (1 << copied_bit) ;
+public:
+
       void init()
 	 {
-	 head.first = NULLPTR ;
-	 next.store(NULLPTR,std::memory_order_release) ;
-	 head.status.store(0,std::memory_order_release) ;
+	 m_first = 0 ;
+	 m_next.store(0,std::memory_order_release) ;
 	 }
-      HashPtr() : next(), head() { init() ; }
+      HashPtr() : m_first(0), m_next(0) {}
       ~HashPtr() {}
-      uint8_t status() const { return head.status.load(std::memory_order_consume) ; }
-      const Fr::Atomic<uint8_t>* statusPtr() const { return &head.status ; }
-      Fr::Atomic<uint8_t>* statusPtr() { return &head.status ; }
-      bool locked() const { return (status() & lock_mask) != 0 ; }
-      bool stale() const { return (status() & stale_mask) != 0 ; }
-      bool copyDone() const { return (status() & copied_mask) != 0 ; }
-      bool markStale() { return head.status.test_and_set_bit(stale_bit) ; }
-      uint8_t markStaleGetStatus() { return head.status.test_and_set_mask(stale_mask) ; }
-      bool markCopyDone() { return head.status.test_and_set_bit(copied_bit) ; }
+      // accessors
+      Link first() const { return (m_first.load(std::memory_order_consume) & link_mask) - LINKBIAS ; }
+      bool firstIsNull() const { return (m_first.load(std::memory_order_consume) & link_mask) == 0 ; } 
+      Link next() const { return m_next.load(std::memory_order_consume) - LINKBIAS ; }
+      bool nextIsNull() const { return m_next.load(std::memory_order_consume) == 0 ; } 
+      Link status() const { return m_first.load(std::memory_order_consume) & ~link_mask ; }
+      const Fr::Atomic<Link>* statusPtr() const { return &m_first ; }
+      Fr::Atomic<Link>* statusPtr() { return &m_first ; }
+      bool locked() const { return (m_first.load(std::memory_order_consume) & lock_mask) != 0 ; }
+      static bool locked(Link stat) { return (stat & lock_mask) != 0 ; }
+      bool stale() const { return (m_first.load(std::memory_order_consume) & stale_mask) != 0 ; }
+      static bool stale(Link stat) { return (stat & stale_mask) != 0 ; }
+      bool copyDone() const { return (m_first.load(std::memory_order_consume) & copied_mask) != 0 ; }
+
+      // modifiers
+      void first(Link ofs) { m_first.store(((m_first.load(std::memory_order_acquire))&~link_mask) | (ofs+LINKBIAS),
+					   std::memory_order_release) ; }
+      bool first(Link new_ofs, Link expected, Link stat)
+	 {
+	    new_ofs = ((new_ofs + LINKBIAS) & link_mask) | stat ;
+	    expected = ((expected + LINKBIAS) & link_mask) | stat ;
+	    return m_first.compare_exchange_strong(expected,new_ofs) ;
+	 }
+      void next(Link ofs) { m_next.store(ofs+LINKBIAS,std::memory_order_release) ; }
+      bool next(Link new_ofs, Link expected, Link /*stat*/)
+	 {
+	    // (not using extra flags in m_next yet)
+	    new_ofs = ((new_ofs + LINKBIAS) & link_mask) /*| stat*/ ;
+	    expected = ((expected + LINKBIAS) & link_mask) /*| stat*/ ;
+	    return m_next.compare_exchange_strong(expected,new_ofs) ;
+	 }
+      bool lock(bool &is_stale)
+	 {
+	    Link stat = m_first.test_and_set_mask(lock_mask) ;
+	    is_stale = (stat & stale_mask) != 0 ;
+	    return (stat & lock_mask) == 0 ;
+	 }
+      bool unlock(bool &is_stale)
+	 {
+	    Link stat = m_first.test_and_clear_mask(lock_mask) ;
+	    is_stale = (stat & stale_mask) != 0 ;
+	    return (stat & lock_mask) != 0 ;
+	 }
+      bool markStale() { return m_first.test_and_set_bit(stale_bit) ; }
+      uint8_t markStaleGetStatus() { return m_first.test_and_set_mask(stale_mask) ; }
+      bool markCopyDone() { return m_first.test_and_set_bit(copied_bit) ; }
    } ;
 
 /************************************************************************/
@@ -483,11 +483,9 @@ class HashTable : public Object
 	       return ;
 	    }
 
-	 Link chainHead(size_t N) const { return ANNOTATE_UNPROTECTED_READ(bucketPtr(N)->head.first) ; }
-	 Atomic<Link>* chainHeadPtr(size_t N) const { return &bucketPtr(N)->head.first ; }
-	 Link chainNext(size_t N) const { return ANNOTATE_UNPROTECTED_READ(bucketPtr(N)->next) ; }
-	 Atomic<Link>* chainNextPtr(size_t N) const { return &bucketPtr(N)->next ; }
-	 void setChainNext(size_t N, Link nxt) { bucketPtr(N)->next.store(nxt,std::memory_order_release) ; }
+	 Link chainHead(size_t N) const { return bucketPtr(N)->first() ; }
+	 Link chainNext(size_t N) const { return bucketPtr(N)->next() ; }
+	 void setChainNext(size_t N, Link nxt) { bucketPtr(N)->next(nxt) ; }
 	 void markCopyDone(size_t N) { bucketPtr(N)->markCopyDone() ; }
 	 size_t sizeForCapacity(size_t capacity) const
 	    {
@@ -676,7 +674,7 @@ class HashTable : public Object
 #ifndef FrSINGLE_THREADED
 	 Table*		 m_table ;
 	 size_t		 m_pos ;
-	 Atomic<uint8_t>* m_lock ;
+	 HashPtr*        m_bucket ;
 #endif /* !FrSINGLE_THREADED */
 	 bool		 m_locked ;
 	 bool		 m_stale ;
@@ -689,28 +687,25 @@ class HashTable : public Object
 	    {
 	       m_table = ht ;
 	       m_pos = bucketnum ;
-	       m_lock = ht->bucketPtr(bucketnum)->statusPtr() ;
+	       m_bucket = ht->bucketPtr(bucketnum) ;
 	       INCR_COUNTstat(chain_lock_count) ;
-	       uint8_t oldval = m_lock->test_and_set_mask((uint8_t)HashPtr::lock_mask) ;
-	       if ((oldval & HashPtr::lock_mask) == 0)
+	       if (m_bucket->lock(m_stale))
 		  {
 		  m_locked = true ;
-		  m_stale = (oldval & HashPtr::stale_mask) != 0 ;
 		  return ;
 		  }
 	       INCR_COUNTstat(chain_lock_coll) ;
 	       m_locked = false ;
-	       m_stale = (oldval & HashPtr::stale_mask) != 0 ;
 	       return ;
 	    }
 	 ~ScopedChainLock()
 	    {
-	       uint8_t status ;
+	       bool is_stale ;
 	       if (m_locked)
-		  status = m_lock->test_and_clear_mask((uint8_t)HashPtr::lock_mask) ; 
+		  (void)m_bucket->unlock(is_stale) ;
 	       else
-		  status = m_lock->load(std::memory_order_consume) ;
-	       if (!m_stale && (status & HashPtr::stale_mask) != 0)
+		  is_stale = m_bucket->stale() ;
+	       if (!m_stale && is_stale)
 		  {
 		  // someone else tried to copy the chain while we held the lock,
 		  //    so copy it for them now

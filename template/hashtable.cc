@@ -350,10 +350,10 @@ bool HashTable<KeyT,ValT>::Table::copyChain(size_t bucketnum)
 #ifndef FrSINGLE_THREADED
    HashPtr* bucket = bucketPtr(bucketnum) ;
    // atomically set the 'stale' bit and get the current status
-   uint8_t status = bucket->markStaleGetStatus() ;
-   if ((status & (HashPtr::stale_mask | HashPtr::lock_mask)) != 0)
+   Link status = bucket->markStaleGetStatus() ;
+   if (HashPtr::stale(status) | HashPtr::locked(status))
       {
-      if (status & HashPtr::lock_mask) { INCR_COUNTstat(chain_lock_coll) ; }
+      if (HashPtr::locked(status)) { INCR_COUNTstat(chain_lock_coll) ; }
       // someone else has already worked on this bucket, or a
       //   copy/recycle() is currently running, in which case that
       //   thread will do the copying for us
@@ -559,31 +559,21 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
    size_t pos = bucketnum + offset ;
    setValue(pos,value) ;
 #ifdef FrSINGLE_THREADED
-   *chainNextPtr(pos) = firstptr ;
+   bucketPtr(pos)->next(firstptr) ;
    // life is much simpler in non-threaded mode: just point
    //   the chain head at the new node and increment the
    //   tally of items in the table
-   *chainHeadPtr(bucketnum) = offset ;
+   bucketPtr(bucketnum)->first(offset) ;
 #else
    setChainNext(pos,firstptr) ;
    // now that we've done all the preliminaries, try to get
    //   write access to actually insert the new entry
    // try to point the hash chain at the new entry
-   FramepaC::HashPtrHead expected_head ;
-   FramepaC::HashPtrHead new_head ;
-   expected_head.first = firstptr ;
-   expected_head.status = 0 ;
-   new_head.first = offset ;
-   new_head.status = 0 ;
-   // we need to "cast" a bit of black magic here so that we
-   //   can CAS both the .first and .status fields in the
-   //   HashPtr, since we require not only that the link
-   //   be unchanged, but that the chain be neither stale
-   //   nor locked
-   FramepaC::HashPtrInt* headptr = (FramepaC::HashPtrInt*)&bucketPtr(bucketnum)->head ;
-   if (unlikely(!Atomic<uint16_t>::ref(headptr->head_int).compare_exchange_strong(
-				    *((uint16_t*)&expected_head),
-				    *((uint16_t*)&new_head))))
+   HashPtr* headptr = bucketPtr(bucketnum) ;
+   Link status = headptr->status() ;
+   Link expected_head = firstptr ;
+   Link new_head = offset ;
+   if (unlikely(!headptr->first(new_head,expected_head,status)))
       {
       // oops, someone else messed with the hash chain, which
       //   means there could have been a parallel insert of
@@ -680,37 +670,40 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum)
    // remove() chops out the deleted entries, so there's never anything to reclaim
    return false ;
 #else
-   Atomic<Link>* prevptr = chainHeadPtr(bucketnum) ;
-   Link offset = prevptr->load() ;
+   HashPtr* headptr = bucketPtr(bucketnum) ;
+   Link offset = headptr->first() ;
    bool reclaimed = false ;
+   bool is_first = true ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
-      Atomic<Link>* nextptr = chainNextPtr(pos) ;
+      HashPtr* nextptr = bucketPtr(pos) ;
       // while the additional check of the key just below is not strictly necessary, it
       //   permits us to avoid the expensive CAS except when an entry is actually deleted
       KeyT key = getKey(pos) ;
-      Link nxt = nextptr->load() ;
+      Link nxt = headptr->next() ;
       if (key == Entry::DELETED() && updateKey(pos,Entry::DELETED(),Entry::UNUSED()))
 	 {
 	 // we grabbed a deleted entry; now try to unlink it
-	 if (unlikely(!prevptr->compare_exchange_strong(offset,nxt)))
+	 if ((is_first && !headptr->first(nxt,offset,headptr->status()))
+	     || (!is_first && !headptr->next(nxt,offset,0)))
 	    {
 	    // uh oh, someone else messed with the chain!
 	    setKey(pos,Entry::DELETED()) ;
 	    // restart from the beginning of the chain
 	    INCR_COUNT(CAS_coll) ;
-	    prevptr = chainHeadPtr(bucketnum) ;
-	    offset = prevptr->load() ;
+	    headptr = bucketPtr(bucketnum) ;
+	    offset = headptr->next() ;
 	    continue ;
 	    }
 	 reclaimed = true ;
 	 }
       else
 	 {
-	 prevptr = nextptr ;
+	 headptr = nextptr ;
+	 is_first = false ;
 	 }
-      offset = nextptr->load() ;
+      offset = headptr->next() ;
       }
    return reclaimed;
 #endif /* FrSINGLE_THREADED */
