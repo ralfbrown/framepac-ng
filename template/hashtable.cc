@@ -38,7 +38,7 @@
 /*	Manifest Constants						*/
 /************************************************************************/
 
-#define FrNAP_TIME std::chrono::microseconds(250)
+#define FrNAP_TIME 250
 
 namespace FramepaC
 {
@@ -308,7 +308,7 @@ bool HashTable<KeyT,ValT>::Table::copyChain(size_t bucketnum)
    Link status = bucket->markStaleGetStatus() ;
    if (HashPtr::stale(status) | HashPtr::locked(status))
       {
-      if (HashPtr::locked(status)) { INCR_COUNTstat(chain_lock_coll) ; }
+      if (HashPtr::locked(status)) { INCR_COUNT(chain_lock_coll) ; }
       // someone else has already worked on this bucket, or a
       //   copy/recycle() is currently running, in which case that
       //   thread will do the copying for us
@@ -324,6 +324,7 @@ template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::Table::waitUntilCopied(size_t bucketnum)
 {
    size_t loops = 0 ;
+   INCR_COUNT(resize_wait) ;
    while (!chainCopied(bucketnum))
       {
       thread_backoff(loops) ;
@@ -1159,6 +1160,7 @@ bool HashTable<KeyT,ValT>::Table::reclaimDeletions(size_t totalfrags, size_t fra
    if (superseded())
       return true ;
 #ifdef FrSINGLE_THREADED
+   (void)totalfrags ; (void)fragnum ;
    // when single-threaded, we chop out deletions
    //   immediately, so there is nothing to reclaim
    return false ;
@@ -1762,7 +1764,7 @@ void HashTable<KeyT,ValT>::thread_backoff(size_t &loops)
       debug_msg("sleep\n") ;
       INCR_COUNT(sleep) ;
       size_t factor = loops - FrSPIN_COUNT - FrYIELD_COUNT + 1 ;
-      std::this_thread::sleep_for(factor * FrNAP_TIME) ;
+      std::this_thread::sleep_for(std::chrono::microseconds(factor * FrNAP_TIME)) ;
       }
    return ;
 }
@@ -1871,7 +1873,7 @@ void HashTable<KeyT,ValT>::threadInit()
 {
 #ifndef FrSINGLE_THREADED
    // check whether we've initialized the thread-local data yet
-   if (!s_stats) s_stats = new HashTable_Stats ; //FIXME
+   if (!s_stats) s_stats = new HashTable_Stats ;
    s_stats->clear() ;
    if (!s_thread_record) s_thread_record = new TablePtr ;
    if (!s_thread_record->initialized())

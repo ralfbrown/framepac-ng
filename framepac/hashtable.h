@@ -90,12 +90,10 @@
 
 #ifdef FrHASHTABLE_STATS
 #  define if_HASHSTATS(x) x
-#  define INCR_COUNTstat(x) (++ s_stats->x)
 #  define INCR_COUNT(x) (++ s_stats->x)
 #  define DECR_COUNT(x) (-- s_stats->x)
 #else
 #  define if_HASHSTATS(x)
-#  define INCR_COUNTstat(x)
 #  define INCR_COUNT(x)
 #  define DECR_COUNT(x)
 #endif
@@ -189,21 +187,7 @@ static constexpr Link NULLPTR = -LINKBIAS ;
 
 class HashPtr
    {
-   protected:
-      Fr::Atomic<Link> m_first ;	// offset of first entry in hash bucket
-      Fr::Atomic<Link> m_next ;		// pointer to next entry in current chain
    public:
-      static constexpr Link link_mask = 0x0FFF ;
-      // flag bits in m_first
-protected:
-      static constexpr unsigned lock_bit = 15 ;
-      static constexpr Link lock_mask = (1 << lock_bit) ;
-      static constexpr unsigned stale_bit = 14 ;
-      static constexpr Link stale_mask = (1 << stale_bit) ;
-      static constexpr unsigned copied_bit = 13 ;
-      static constexpr Link copied_mask = (1 << copied_bit) ;
-public:
-
       void init()
 	 {
 	 m_first = 0 ;
@@ -217,8 +201,6 @@ public:
       Link next() const { return m_next.load(std::memory_order_consume) - LINKBIAS ; }
       bool nextIsNull() const { return m_next.load(std::memory_order_consume) == 0 ; } 
       Link status() const { return m_first.load(std::memory_order_consume) & ~link_mask ; }
-      const Fr::Atomic<Link>* statusPtr() const { return &m_first ; }
-      Fr::Atomic<Link>* statusPtr() { return &m_first ; }
       bool locked() const { return (m_first.load(std::memory_order_consume) & lock_mask) != 0 ; }
       static bool locked(Link stat) { return (stat & lock_mask) != 0 ; }
       bool stale() const { return (m_first.load(std::memory_order_consume) & stale_mask) != 0 ; }
@@ -257,6 +239,26 @@ public:
       bool markStale() { return m_first.test_and_set_bit(stale_bit) ; }
       uint8_t markStaleGetStatus() { return m_first.test_and_set_mask(stale_mask) ; }
       bool markCopyDone() { return m_first.test_and_set_bit(copied_bit) ; }
+   protected:
+      Fr::Atomic<Link> m_first ;	// offset of first entry in hash bucket
+      Fr::Atomic<Link> m_next ;		// pointer to next entry in current chain
+
+      static constexpr Link link_mask = 0x0FFF ;
+      // flag bits in m_first
+      static constexpr unsigned lock_bit = 15 ;
+      static constexpr Link lock_mask = (1 << lock_bit) ;
+      static constexpr unsigned stale_bit = 14 ;
+      static constexpr Link stale_mask = (1 << stale_bit) ;
+      static constexpr unsigned copied_bit = 13 ;
+      static constexpr Link copied_mask = (1 << copied_bit) ;
+      // flag bits in m_next
+      //static constexpr unsigned inuse_bit = 15 ;
+      //static constexpr Link inuse_mask = (1 << inuse_bit) ;
+      //static constexpr unsigned state_shift = 13 ;
+      //static constexpr Link state_mask = (3 << state_shift) ;
+      //static constexpr Link state_VALID = (1 << state_shift) ;
+      //static constexpr Link state_DELETED = (2 << state_shift) ;
+      //static constexpr Link state_RECLAIMING = (3 << state_shift) ;
    } ;
 
 /************************************************************************/
@@ -418,9 +420,6 @@ class HashTable : public Object
       {
 	 typedef class Fr::HashTable<KeyT,ValT> HT ;
       public:
-//!      void* operator new(size_t sz) { return FrMalloc(sz) ; }
-//!      void* operator new(size_t, void* where) { return where ; }
-//!      void operator delete(void* blk) { FrFree(blk) ; }
 	 Table()
 	    {
 	       init(0) ;
@@ -472,7 +471,7 @@ class HashTable : public Object
 	       return (thresh >= sz) ? sz-1 : thresh ;
 	    }
       protected:
-	 // the following three functions are defined *after* the declaration of HashTable
+	 // the following function is defined *after* the declaration of HashTable
 	 //   due to the circular dependency of declarations....
 	 void announceTable()
 	    {
@@ -685,13 +684,13 @@ class HashTable : public Object
 	       m_table = ht ;
 	       m_pos = bucketnum ;
 	       m_bucket = ht->bucketPtr(bucketnum) ;
-	       INCR_COUNTstat(chain_lock_count) ;
+	       INCR_COUNT(chain_lock_count) ;
 	       if (m_bucket->lock(m_stale))
 		  {
 		  m_locked = true ;
 		  return ;
 		  }
-	       INCR_COUNTstat(chain_lock_coll) ;
+	       INCR_COUNT(chain_lock_coll) ;
 	       m_locked = false ;
 	       return ;
 	    }
@@ -741,8 +740,6 @@ class HashTable : public Object
       mutable HashTable_Stats	  m_stats ;
       static thread_local HashTable_Stats* s_stats ;
 #endif /* FrHASHTABLE_STATS */
-      static const size_t m_bit_resize = ((sizeof(size_t)*CHAR_BIT)-1) ;
-      static const size_t m_mask_resize = (1UL << m_bit_resize) ; // lock bit for resize
 
    protected: // debug methods
 #if FrHASHTABLE_VERBOSITY > 0
@@ -786,7 +783,7 @@ class HashTable : public Object
       // set up the per-thread info needed for safe reclamation of
       //   entries and hash arrays, as well as an on-exit callback
       //   to clear that info
-   public://FIXME, shoudl only be called from ThreadInitializer
+   public://FIXME, should only be called from ThreadInitializer
       static void threadInit() ;
    protected:
       static void threadCleanup() ;
