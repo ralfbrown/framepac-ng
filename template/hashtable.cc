@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-05					*/
+/* Version 0.01, last edit 2017-05-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -130,10 +130,9 @@ namespace Fr
 
 
 template <typename KeyT, typename ValT>
-inline void HashTable<KeyT,ValT>::Table::init(size_t size, double max_fill)
+inline void HashTable<KeyT,ValT>::Table::init(size_t size)
 {
    m_size = size ;
-   m_currsize.store(0,std::memory_order_release) ;
    m_next_table.store(nullptr,std::memory_order_release) ;
    m_next_free.store(nullptr,std::memory_order_release) ;
    m_entries = nullptr ;
@@ -142,7 +141,6 @@ inline void HashTable<KeyT,ValT>::Table::init(size_t size, double max_fill)
    m_resizedone.store(false,std::memory_order_release) ;
    m_resizestarted.clear() ;
    m_resizepending.clear() ;
-   m_resizethresh = (size_t)(size * max_fill + 0.5) ;
    size_t num_segs = (m_size + FrHASHTABLE_SEGMENT_SIZE - 1) / FrHASHTABLE_SEGMENT_SIZE ;
    m_resizepending.init(num_segs) ;
    m_segments_assigned.store((size_t)0,std::memory_order_release) ;
@@ -182,10 +180,9 @@ template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::Table::clear()
 {
    Free(m_entries) ;
-   ifnot_INTERLEAVED(Free(m_ptrs) ;)
+   ifnot_INTERLEAVED(Free(m_ptrs)) ;
    m_entries = nullptr ;
-   ifnot_INTERLEAVED(m_ptrs = nullptr ;)
-   m_currsize.store(0,std::memory_order_release) ;
+   ifnot_INTERLEAVED(m_ptrs = nullptr) ;
    m_next_table.store(nullptr,std::memory_order_release) ;
    m_next_free.store(nullptr,std::memory_order_release) ;
    return ;
@@ -219,35 +216,26 @@ size_t HashTable<KeyT,ValT>::Table::normalizeSize(size_t sz)
 template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::Table::autoResize()
 {
-   size_t currsize = m_currsize.load(std::memory_order_acquire) ;
-   if (currsize <= m_resizethresh)
-      {
-      // force an increase if we ran out of free slots
-      //   within range of a bucket
-      size_t sz = m_size ;
+   size_t newsize ;
+   size_t sz = m_size ;
 #ifdef FrSAVE_MEMORY
-      if (sz < 100000)
-	 currsize = 2.0*sz ;
-      else if (sz < 1000000)
-	 currsize = 1.5*sz ;
-      else if (sz < 10*1000*1000)
-	 currsize = 1.4*sz ;
-      else if (sz < 100*1000*1000)
-	 currsize = 1.3*sz ;
-      else
-	 currsize = 1.2*sz ;
-#else
-      if (sz < 16*1000*1000)
-	 currsize = 2.0*sz ;
-      else
-	 currsize = 1.5*sz ;
-#endif /* FrSAVE_MEMORY */
-      }
+   if (sz < 100000)
+      newsize = (size_t)(2.0*sz) ;
+   else if (sz < 1000000)
+      newsize = (size_t)(1.5*sz) ;
+   else if (sz < 10*1000*1000)
+      newsize = (size_t)(1.4*sz) ;
+   else if (sz < 100*1000*1000)
+      newsize = (size_t)(1.3*sz) ;
    else
-      {
-      currsize *= 2 ;
-      }
-   resize(currsize,true) ;
+      newsize = (size_t)(1.2*sz) ;
+#else
+   if (sz < 16*1000*1000)
+      newsize = (size_t)(2.0*sz) ;
+   else
+      newsize = (size_t)(1.5*sz) ;
+#endif /* FrSAVE_MEMORY */
+   resize(newsize,true) ;
    return ;
 }
 
@@ -490,11 +478,6 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
       // a resize snuck in, so retry
       return false ;
       }
-   if (unlikely(m_currsize.load(std::memory_order_acquire) > m_resizethresh))
-      {
-      autoResize() ;
-      return false ;
-      }
    INCR_COUNT(insert_attempt) ;
    bool got_resized = false ;
    Link offset = locateEmptySlot(bucketnum,key,got_resized) ;
@@ -536,7 +519,6 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
       return false ;
       }
 #endif /* FrSINGLE_THREADED */
-   m_currsize++ ;
    return true ;
 }
 
@@ -736,10 +718,7 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
 {
    if (superseded())
       return false ;
-   size_t currsize = m_currsize.load(std::memory_order_acquire) ;
    newsize = normalizeSize(newsize) ;
-   if (resizeThreshold(newsize) < currsize)
-      newsize = normalizeSize(sizeForCapacity(currsize+1)) ;
    if (newsize == m_size || (enlarge_only && newsize < 1.1*m_size))
       {
       debug_msg("resize canceled (thr %ld)\n",FramepaC::my_job_id) ;
@@ -751,18 +730,10 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
       }
    // OK, we've won the right to run the resizing
    INCR_COUNT(resize) ;
-   if (enlarge_only && currsize <= m_resizethresh)
-      {
-      warn_msg("contention-resize to %ld (currently %ld/%ld - %4.1f%%), thr %ld\n",
-	       newsize,currsize,m_size,100.0*currsize/m_size,FramepaC::my_job_id) ;
-      }
-   else
-      {
-      debug_msg("resize to %ld from %ld/%ld (%4.1f%%) (thr %ld)\n",
-		newsize,currsize,m_size,100.0*currsize/m_size,FramepaC::my_job_id) ;
-      }
+   debug_msg("resize to %ld from %ld (thr %ld)\n",
+	     newsize,m_size,FramepaC::my_job_id) ;
    Table* newtable = m_container->allocTable() ;
-   newtable->init(newsize,m_container->m_maxfill) ;
+   newtable->init(newsize) ;
    newtable->onRemove(m_container->onRemoveFunc()) ;
    newtable->m_container = m_container ;
    bool success = true ;
@@ -787,10 +758,6 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
    else
       {
       SystemMessage::warning("unable to resize hash table--will continue") ;
-      // bump up the resize threshold so that we can
-      //   (hopefully) store a few more before
-      //   (hopefully successfully) retrying the resize
-      m_resizethresh += (m_size - m_resizethresh)/2 ;
       m_container->releaseTable(newtable) ;
       success = false ;
       }
@@ -838,7 +805,6 @@ bool HashTable<KeyT,ValT>::Table::add(size_t hashval, KeyT key, ValT value)
 	    continue ;		// someone else reclaimed the entry, so restart
 	    }
 	 // we managed to grab the entry for reclamation
-	 m_currsize++ ;
 	 // fill in the value, then the key
 	 setValue(deleted,value) ;
 	 atomic_thread_fence(std::memory_order_release) ;
@@ -904,7 +870,6 @@ ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr
 	    continue ;		// someone else reclaimed the entry, so restart
 	    }
 	 // we managed to grab the entry for reclamation
-	 m_currsize++ ;
 	 // fill in the value, then the key
 	 setValue(deleted,nullVal()+incr) ;
 	 atomic_thread_fence(std::memory_order_release) ;
@@ -1112,7 +1077,6 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
 	 // delete the item proper
 	 m_entries[pos].markUnused() ;
 	 replaceValue(pos,0) ;
-	 m_currsize-- ; // update count of active items
 	 INCR_COUNT(remove_found) ;
 	 return true ;
 	 }
@@ -1143,8 +1107,6 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
 	 ValT value = getValue(pos) ;
 	 if (updateKey(pos,keyval,Entry::DELETED()))
 	    {
-	    // update count of items in table
-	    m_currsize-- ;
 	    INCR_COUNT(remove_found) ;
 	    success = true ;
 	    // we successfully marked the entry as deleted
@@ -1717,12 +1679,11 @@ size_t HashTable<KeyT,ValT>::Table::cStringLength(size_t wrap_at, size_t indent)
 /************************************************************************/
 
 template <typename KeyT, typename ValT>
-void HashTable<KeyT,ValT>::init(size_t initial_size, double max_fill, Table* table)
+void HashTable<KeyT,ValT>::init(size_t initial_size, Table* table)
 {
    onRemove(nullptr) ;
    onDelete(nullptr) ;
    m_table.store(nullptr,std::memory_order_release) ;
-   m_maxfill = max_fill < FrHashTable_MinFill ? FrHashTable_DefaultMaxFill : max_fill ;
    m_oldtables.store(nullptr,std::memory_order_release) ;
    m_freetables.store(nullptr,std::memory_order_release) ;
    clearGlobalStats() ;
@@ -1735,7 +1696,7 @@ void HashTable<KeyT,ValT>::init(size_t initial_size, double max_fill, Table* tab
       {
       table = allocTable() ;
       }
-   new (table) Table(initial_size,m_maxfill) ;
+   new (table) Table(initial_size) ;
    if (table->good())
       {
       table->m_container = this ;
@@ -1943,27 +1904,6 @@ void HashTable<KeyT,ValT>::threadCleanup()
 #endif /* !FrSINGLE_THREADED */
    return ;
 }
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-void HashTable<KeyT,ValT>::setMaxFill(double fillfactor)
-{
-   if (fillfactor > 0.98)
-      fillfactor = 0.98 ;
-   else if (fillfactor < FrHashTable_MinFill)
-      fillfactor = FrHashTable_MinFill ;
-   m_maxfill = fillfactor ;
-   HazardLock hl(m_table) ;
-   Table *table = m_table.load(std::memory_order_acquire) ;
-   if (table)
-      {
-      table->m_resizethresh = table->resizeThreshold(table->m_size) ;
-      }
-   return ;
-}
-
-//----------------------------------------------------------------------------
 
 /************************************************************************/
 /*	Declarations for template class HashTable			*/

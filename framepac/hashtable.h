@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-05					*/
+/* Version 0.01, last edit 2017-05-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -27,6 +27,7 @@
 #include <climits>
 #include <iostream>
 #include <type_traits>
+#include "framepac/counter.h"
 #include "framepac/init.h"
 #include "framepac/list.h"
 #include "framepac/number.h"
@@ -431,19 +432,20 @@ class HashTable : public Object
 	       init(0) ;
 	       return ;
 	    }
-	 Table(size_t size, double maxfill)
+	 Table(size_t size)
 	    {
-	       init(size,maxfill) ;
+	       init(size) ;
 	       return ;
 	    } ;
 	 ~Table() { clear() ; }
-	 void init(size_t size, double max_fill = FrHashTable_DefaultMaxFill) ;
+	 void init(size_t size) ;
 	 void clear() ;
 	 bool good() const { return m_entries != nullptr ifnot_INTERLEAVED(&& m_ptrs != nullptr) && m_size > 0 ; }
 	 bool superseded() const { return m_next_table.load(std::memory_order_consume) != nullptr ; }
 	 bool resizingDone() const { return m_resizedone.load(std::memory_order_consume) ; }
-	 size_t currentSize() const { return m_currsize.load(std::memory_order_consume) ; }
-	 void setSize(size_t newsz) { m_currsize.store(newsz,std::memory_order_release) ; }
+	 // maintaining the count of elements in the table is too much of a bottleneck under high load,
+	 //   so we'll punt and simply scan the hash array if someone needs that count
+	 size_t currentSize() const { return countItems() ; }
 	 Table *next() const { return m_next_table.load(std::memory_order_consume) ; }
 	 Table *nextFree() const { return m_next_free.load(std::memory_order_consume) ; }
 	 KeyT getKey(size_t N) const { return m_entries[N].m_key.load(std::memory_order_consume) ; }
@@ -471,11 +473,6 @@ class HashTable : public Object
 	       return ;
 	    }
 	 static size_t normalizeSize(size_t sz) ;
-	 size_t resizeThreshold(size_t sz)
-	    {
-	       size_t thresh = (size_t)(sz * m_container->m_maxfill + 0.5) ;
-	       return (thresh >= sz) ? sz-1 : thresh ;
-	    }
       protected:
 	 // the following function is defined *after* the declaration of HashTable
 	 //   due to the circular dependency of declarations....
@@ -492,10 +489,6 @@ class HashTable : public Object
 	 Link chainNext(size_t N) const { return bucketPtr(N)->next() ; }
 	 void setChainNext(size_t N, Link nxt) { bucketPtr(N)->next(nxt) ; }
 	 void markCopyDone(size_t N) { bucketPtr(N)->markCopyDone() ; }
-	 size_t sizeForCapacity(size_t capacity) const
-	    {
-	       return (size_t)(capacity / m_container->m_maxfill + 0.99) ;
-	    }
 	 void autoResize() ;
       protected:
 	 void removeValue(Entry &element) const
@@ -611,9 +604,7 @@ class HashTable : public Object
 	 static const Link searchrange = FrHASHTABLE_SEARCHRANGE ; // full search window (+/-)
 	 static const size_t NULLPOS = ~0UL ;
 	 size_t	           m_size ;		// capacity of hash array [constant for life of table]
-	 size_t	           m_resizethresh ;	// at what entry count should we grow? [constant]
       protected:
-	 Fr::Atomic<size_t> m_currsize { 0 } ;	// number of active entries
 	 Fr::Atomic<size_t> m_segments_total { 0 } ;
 	 Fr::Atomic<size_t> m_segments_assigned { 0 } ;
 	 Fr::Atomic<size_t> m_first_incomplete { ~0U } ;
@@ -735,7 +726,6 @@ class HashTable : public Object
       Table		  m_tables[FrHT_NUM_TABLES] ;// hash array, chains, and associated data
       HashKeyValueFunc   *cleanup_fn ;	// invoke on destruction of obj
       HashKVFunc         *remove_fn ; 	// invoke on removal of entry/value
-      double	          m_maxfill ;	// maximum fill factor before resizing
 #ifndef FrSINGLE_THREADED
       static FramepaC::ThreadInitializer<HashTable> initializer ;
       static TablePtr*    s_thread_entries ;
@@ -780,7 +770,7 @@ class HashTable : public Object
    protected: // methods
       static void thread_backoff(size_t &loops) ;
       static bool isActive(KeyT p) { return p < Entry::RECLAIMING() ; }
-      void init(size_t initial_size, double max_fill, Table *table = nullptr) ;
+      void init(size_t initial_size, Table *table = nullptr) ;
       Table *allocTable() ;
       void releaseTable(Table *t) ;
       void freeTables() ;
@@ -828,10 +818,9 @@ class HashTable : public Object
       // single-threaded only!!  But since it's only called from a ctor, that's fine
       void copyContents(const HashTable &ht)
          {
-	    init(ht.maxSize(),ht.m_maxfill) ;
+	    init(ht.maxSize()) ;
 	    Table *table = m_table.load(std::memory_order_consume) ;
 	    Table *othertab = ht.m_table.load(std::memory_order_consume) ;
-	    table->setSize(ht.currentSize()) ;
 	    for (size_t i = 0 ; i < table->m_size ; i++)
 	       {
 	       table->copyEntry(i,othertab) ;
@@ -921,10 +910,10 @@ class HashTable : public Object
 
       // ============== The public API for HashTable ================
    public:
-      HashTable(size_t initial_size = 1031, double max_fill = 0.0)
+      HashTable(size_t initial_size = 1031)
 	 : Object(), m_table(nullptr)
 	 {
-	    init(initial_size,max_fill) ;
+	    init(initial_size) ;
 	    return ;
 	 }
       HashTable(const HashTable &ht)
@@ -942,21 +931,10 @@ class HashTable : public Object
 	    return ;
 	 }
 
-      size_t sizeForCapacity(size_t capacity) const
-	 {
-	    return (size_t)(capacity / m_maxfill + 0.99) ;
-	 }
-
       bool resizeTo(size_t newsize, bool enlarge_only = false)
 	 { DELEGATE(resize(newsize,enlarge_only)) }
-      void resizeToFit(size_t new_capacity)
-	 {
-	    resizeTo(sizeForCapacity(new_capacity)) ;
-	    return ;
-	 } ;
       bool reserve_(size_t newsize) { DELEGATE(resize(newsize,true) ; }
       void reserve(size_t newsize) { reserve_(newsize) ; }
-      void shrinK_to_fit() { resizeToFit(currentSize()) ; }
 
       bool reclaimDeletions(size_t totalfrags = 1, size_t fragnum = 0)
          { DELEGATE(reclaimDeletions(totalfrags,fragnum)) }

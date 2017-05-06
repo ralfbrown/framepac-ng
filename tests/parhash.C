@@ -850,7 +850,6 @@ void hash_command(ostream &out, int threads, bool terse, uint32_t* randnums,
    //  expanding the symbol table to hold all the symbols we will
    //  create
 //FIXME   SymbolTable* curr_symtab = SymbolTable::current() ;
-//FIXME   size_t needed = curr_symtab->sizeForCapacity(2*maxsize) ;
    size_t needed = 2*maxsize ;//FIXME
    needed *= 1.33 ; // gensyms tend to cluster in the table, since they are so similar in name
 //FIXME   curr_symtab->expandTo(needed+1000) ;
