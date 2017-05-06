@@ -694,6 +694,7 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum)
 	    INCR_COUNT(CAS_coll) ;
 	    headptr = bucketPtr(bucketnum) ;
 	    offset = headptr->first() ;
+	    is_first = true ;
 	    continue ;
 	    }
 	 reclaimed = true ;
@@ -1198,7 +1199,7 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::reclaimDeletions()
+bool HashTable<KeyT,ValT>::Table::reclaimDeletions(size_t totalfrags, size_t fragnum)
 {
    if (superseded())
       return true ;
@@ -1207,9 +1208,14 @@ bool HashTable<KeyT,ValT>::Table::reclaimDeletions()
    //   immediately, so there is nothing to reclaim
    return false ;
 #else
+   if (totalfrags == 0) totalfrags = 1 ;
+   size_t per_fragment = (m_size / totalfrags) + 1 ;
+   size_t start_bucket = fragnum * per_fragment ;
+   size_t end_bucket = start_bucket + per_fragment ;
+   if (end_bucket > m_size) end_bucket = m_size ;
    // the following lock serializes to allow only one reclaimDeletions()
-   //   at a time
-   ScopedChainLock lock(this,0) ;
+   //   at a time on the current fragment
+   ScopedChainLock lock(this,start_bucket) ;
    if (lock.busy())
       {
       // someone else is already doing reclamation so we can just
@@ -1218,12 +1224,8 @@ bool HashTable<KeyT,ValT>::Table::reclaimDeletions()
       }
    INCR_COUNT(reclaim) ;
    debug_msg("reclaimDeletions (thr %ld)\n",FramepaC::my_job_id) ;
-   // ensure that any existing concurrent accesses complete
-   //   before we start the reclamation -- reclamation needs to
-   //   run by itself!
-   awaitIdle() ;
    bool have_reclaimed = false ;
-   for (size_t i = 0 ; i < m_size ; ++i)
+   for (size_t i = start_bucket ; i < end_bucket ; ++i)
       {
       // follow the chain for this hash bucket, chopping out any
       //   entries marked as deleted and resetting their status to

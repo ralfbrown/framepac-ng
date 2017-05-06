@@ -67,7 +67,8 @@ enum Operation
    Op_RANDOM_HIGHREMOVE,
    Op_RANDOM_LOWREMOVE,
    Op_RANDOM_NOREMOVE,
-   Op_RANDOM_ADDONLY
+   Op_RANDOM_ADDONLY,
+   Op_RECLAIM
 } ;
 
 typedef void HashRequestFunc(class HashRequestOrder *) ;
@@ -407,6 +408,37 @@ static void hash_dispatch(const void *input, void * /*output*/ )
 
 //----------------------------------------------------------------------
 
+template <class HashT>
+static void reclaim_deletion(const void* input, void*)
+{
+   const HashRequestOrder *order = reinterpret_cast<const HashRequestOrder*>(input) ;
+   HashT* ht = (HashT*)order->ht ;
+   if (ht)
+      ht->reclaimDeletions(order->threads,order->cycles) ;
+   return ;
+}
+
+//----------------------------------------------------------------------
+
+template <class HashT>
+static void reclaim_deletions(HashT* ht, ThreadPool* tpool, HashRequestOrder* hashorders, size_t threads)
+{
+   if (ht)
+      {
+      for (size_t i = 0 ; i < threads ; ++i)
+	 {
+	 hashorders[i].ht = (void*)ht ;
+	 hashorders[i].cycles = i ;
+	 hashorders[i].threads = threads ;
+	 tpool->dispatch(&reclaim_deletion<HashT>,&hashorders[i],nullptr) ;
+	 }
+      tpool->waitUntilIdle() ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------
+
 template <class HashT, typename KeyT>
 static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_t cycles, HashT *ht,
 		      size_t maxsize, KeyT *syms, enum Operation op, bool terse, bool strict = true,
@@ -495,13 +527,11 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
    double walltime_noreclaim = timer.elapsedSeconds() ;
    if (ht && op == Op_REMOVE)
       {
-      ht->reclaimDeletions() ;
+      reclaim_deletions(ht,tpool,hashorders,threads) ;
       ht->updateGlobalStats() ;
       }
    double time = timer.cpuSeconds() ;
    double walltime = timer.elapsedSeconds() ;
-   if (!user_pool)
-      delete tpool ;
    size_t ops = cycles * maxsize ;
    if (op == Op_RANDOM || op == Op_RANDOM_LOWREMOVE || op == Op_RANDOM_HIGHREMOVE ||
        op == Op_RANDOM_NOREMOVE)
@@ -513,7 +543,6 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
 	 ops += hashorders[i].total_ops ;
 	 }
       }
-   delete[] hashorders ;
    if (time <= 0.0) time = 0.00001 ;
    if (walltime <= 0.0) walltime = 0.00001 ;
    out << "  Time: " << timer << ", " ;
@@ -544,7 +573,7 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
       {
       if (deleted > 0)
 	 {
-	 if (ht) ht->reclaimDeletions() ;
+	 reclaim_deletions(ht,tpool,hashorders,threads) ;
 	 out << "   Pending deletions: " << deleted << " marked for deletion, "
 	     << (ht ? ht->countDeletedItems() : 0) << " after reclamation"
 	     << endl ;
@@ -556,6 +585,9 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
 	 out << "   Hash table was not emptied!  " << size << " items remain (activeitems="
 	     << count << ")." << endl ;
       }
+   if (!user_pool)
+      delete tpool ;
+   delete[] hashorders ;
    if (!ht)
       return ;
 #ifdef FrHASHTABLE_STATS

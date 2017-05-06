@@ -552,7 +552,7 @@ class HashTable : public Object
 	 ValT *lookupValuePtr(size_t hashval, KeyT key) const ;
 
 	 bool remove(size_t hashval, KeyT key) ;
-	 bool reclaimDeletions() ;
+	 bool reclaimDeletions(size_t totalfrags, size_t fragnum) ;
 
 	 // special support for Fr::SymbolTableX
 	 template <typename RetT = KeyT>
@@ -985,7 +985,8 @@ class HashTable : public Object
       void reserve(size_t newsize) { reserve_(newsize) ; }
       void shrinK_to_fit() { resizeToFit(currentSize()) ; }
 
-      bool reclaimDeletions() { DELEGATE(reclaimDeletions()) }
+      bool reclaimDeletions(size_t totalfrags = 1, size_t fragnum = 0)
+         { DELEGATE(reclaimDeletions(totalfrags,fragnum)) }
 
       [[gnu::hot]] bool add(KeyT key) { DELEGATE_HASH_RECLAIM(bool,add(hashval,key)) }
       [[gnu::hot]] bool add(KeyT key, ValT value) { DELEGATE_HASH_RECLAIM(bool,add(hashval,key,value)) }
