@@ -375,29 +375,7 @@ bool HashTable<KeyT,ValT>::Table::reAdd(size_t hashval, KeyT key, ValT value)
    while (true)
       {
       FORWARD(reAdd(hashval,key,value),nexttab,insert_forwarded) ;
-      // scan the chain of items for this hash position
-      Link offset = chainHead(bucketnum) ;
-      Link firstoffset = offset ;
-      while (FramepaC::NULLPTR != offset)
-	 {
-	 size_t pos = bucketnum + offset ;
-	 KeyT key_at_pos = getKey(pos) ;
-	 if (isEqualFull(key,key_at_pos))
-	    {
-#if FrHASHTABLE_VERBOSITY > 1
-	    cerr << "reAdd skipping duplicate " << key << " [" << hex << (size_t)key
-		 << "] - " << key_at_pos << " [" << ((size_t)key_at_pos)
-		 << "]" << dec << endl ;
-#endif /* FrHASHTABLE_VERBOSITY > 1 */
-	    // found existing entry!
-	    INCR_COUNT(insert_dup) ;
-	    return true ;		// item already exists
-	    }
-	 // advance to next item in chain
-	 offset = chainNext(pos) ;
-	 }
-      // when we get here, we know that the item is not yet in the
-      //   hash table, so try to add it
+      Link firstoffset = chainHead(bucketnum) ;
       if (insertKey(bucketnum,firstoffset,key,value))
 	 break ;
       }
