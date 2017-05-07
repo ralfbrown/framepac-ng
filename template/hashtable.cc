@@ -1808,8 +1808,10 @@ void HashTable<KeyT,ValT>::threadInit()
 {
 #ifndef FrSINGLE_THREADED
    // check whether we've initialized the thread-local data yet
+#ifdef FrHASHTABLE_STATS
    if (!s_stats) s_stats = new HashTable_Stats ;
    s_stats->clear() ;
+#endif /* FrHASHTABLE_STATS */
    if (!s_thread_record) s_thread_record = new TablePtr ;
    if (!s_thread_record->initialized())
       {
@@ -1857,8 +1859,10 @@ void HashTable<KeyT,ValT>::threadCleanup()
       }
    delete s_thread_record ;
    s_thread_record = nullptr ;
+#ifdef FrHASHTABLE_STATS
    delete s_stats ;
    s_stats = nullptr ;
+#endif /* FrHASHTABLE_STATS */
 #endif /* !FrSINGLE_THREADED */
    return ;
 }
