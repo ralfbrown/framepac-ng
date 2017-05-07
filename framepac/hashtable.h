@@ -495,8 +495,7 @@ class HashTable : public Object
 	 //   look at the full key->hashValue(), not just 'key' itself
 	 bool reAdd(size_t hashval, KeyT key, ValT value = (ValT)0) ;
 
-	 [[gnu::hot]] bool claimEmptySlot(size_t pos, KeyT key) ;
-	 [[gnu::hot]] Link locateEmptySlot(size_t bucketnum, KeyT key, bool &got_resized);
+	 [[gnu::hot]] Link locateEmptySlot(size_t bucketnum, bool &got_resized);
 
 	 [[gnu::hot]] bool insertKey(size_t bucketnum, Link firstptr, KeyT key, ValT value) ;
 	 [[gnu::hot]] void resizeCopySegment(size_t segnum) ;

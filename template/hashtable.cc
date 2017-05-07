@@ -382,22 +382,7 @@ bool HashTable<KeyT,ValT>::Table::reAdd(size_t hashval, KeyT key, ValT value)
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::claimEmptySlot(size_t pos, KeyT key)
-{
-   HashPtr* hp = bucketPtr(pos) ;
-   if (!hp->inUse() && hp->markUsed())
-      {
-      // in-use bit was previously clear, so we successfully grabbed this entry
-      setKey(pos,key) ;
-      return true ;
-      }
-   return false ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, KeyT key, bool &got_resized)
+FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, bool &got_resized)
 {
    // compute the extent of the cache line containing
    //   the offset-0 entry for the bucket
@@ -416,14 +401,16 @@ FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, Ke
    //   line with the bucket header
    for (size_t i = CL_start ; i <= max ; ++i)
       {
-      if (claimEmptySlot(i,key))
+      HashPtr* hp = bucketPtr(i) ;
+      if (!hp->inUse() && hp->markUsed())
 	 return (i - bucketnum) ;
       }
    // search for a free spot preceding the given position
    size_t min = bucketnum >= (size_t)searchrange ? bucketnum - searchrange : 0 ;
    for (size_t i = min ; i < CL_start ; ++i)
       {
-      if (claimEmptySlot(i,key))
+      HashPtr* hp = bucketPtr(i) ;
+      if (!hp->inUse() && hp->markUsed())
 	 return (i - bucketnum) ;
       }
    if (superseded())
@@ -449,7 +436,7 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
       }
    INCR_COUNT(insert_attempt) ;
    bool got_resized = false ;
-   Link offset = locateEmptySlot(bucketnum,key,got_resized) ;
+   Link offset = locateEmptySlot(bucketnum,got_resized) ;
    if (unlikely(FramepaC::NULLPTR == offset))
       {
       if (!got_resized)
@@ -461,6 +448,7 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
    size_t pos = bucketnum + offset ;
    setValue(pos,value) ;
    bucketPtr(pos)->next(firstptr) ;
+   setKey(pos,key) ;
    HashPtr* headptr = bucketPtr(bucketnum) ;
 #ifdef FrSINGLE_THREADED
    // life is much simpler in non-threaded mode: just point
@@ -479,6 +467,7 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
       //   the same value, or a resize is in progress and
       //   copied the bucket while we were working
       // release the slot we grabbed and tell caller to retry
+      setKey(pos,Entry::DELETED()) ;
       bucketPtr(pos)->markFree() ;
       INCR_COUNT(CAS_coll) ;
       debug_msg("insertKey: CAS collision\n") ;
