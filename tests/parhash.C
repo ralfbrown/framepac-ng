@@ -615,7 +615,6 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
    size_t stat_wait = ht->numberOfResizeWaits() ;
    size_t stat_reclam = ht->numberOfReclamations() ;
    size_t stat_full = ht->numberOfFullNeighborhoods() ;
-   size_t stat_chain = ht->numberOfChainLocks() ;
    size_t stat_chain_coll = ht->numberOfChainLockCollisions() ;
    size_t retries = (stat_ins_att >= stat_ins - stat_ins_dup) ? stat_ins_att - (stat_ins - stat_ins_dup) : 0 ;
    out << "  Stat: " << (stat_ins-stat_ins_forw) << "+" << stat_ins_forw << " ins (" 
@@ -626,7 +625,7 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
        << endl ;
    out << "  Admn: " << stat_resize << " resizes (" << stat_resize_assist << " assists, "
        << stat_wait << " waits), " << stat_full << " congest, "
-       << stat_reclam << " reclam, " << stat_chain_coll << '/' << stat_chain << " chainlock" << endl ;
+       << stat_reclam << " reclam, " << stat_chain_coll << " chainlock" << endl ;
 #ifndef FrSINGLE_THREADED
    size_t stat_spin = ht->numberOfSpins() ;
    size_t stat_yield = ht->numberOfYields() ;

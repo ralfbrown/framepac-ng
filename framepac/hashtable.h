@@ -166,7 +166,6 @@ class HashTable_Stats
       size_t reclaim ;
       size_t neighborhood_full ;
       size_t CAS_coll ;
-      size_t chain_lock_count ;
       size_t chain_lock_coll ;
       size_t spin ;
       size_t yield ;
@@ -1042,7 +1041,6 @@ class HashTable : public Object
       size_t numberOfReclamations() const { return m_stats.reclaim ; }
       size_t numberOfFullNeighborhoods() const { return  m_stats.neighborhood_full ; }
       size_t numberOfCASCollisions() const { return m_stats.CAS_coll ; }
-      size_t numberOfChainLocks() const { return m_stats.chain_lock_count ; }
       size_t numberOfChainLockCollisions() const { return m_stats.chain_lock_coll ; }
       size_t numberOfSpins() const { return  m_stats.spin ; }
       size_t numberOfYields() const { return m_stats.yield ; }
@@ -1068,7 +1066,6 @@ class HashTable : public Object
       static size_t numberOfReclamations() { return 0 ; }
       static size_t numberOfFullNeighborhoods() { return 0 ; }
       static size_t numberOfCASCollisions() { return 0 ; }
-      static size_t numberOfChainLocks() { return 0 ; }
       static size_t numberOfChainLockCollisions() { return 0 ; }
       static size_t numberOfSpins() { return 0 ; }
       static size_t numberOfYields() { return 0 ; }

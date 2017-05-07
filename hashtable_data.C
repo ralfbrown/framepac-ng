@@ -54,7 +54,6 @@ void HashTable_Stats::clear()
    reclaim = 0 ;
    CAS_coll = 0 ;
    neighborhood_full = 0 ;
-   chain_lock_count = 0 ;
    chain_lock_coll = 0 ;
    spin = yield = sleep = none = 0 ;
    return ;
@@ -88,7 +87,6 @@ void HashTable_Stats::add(const HashTable_Stats* other)
    REF(reclaim) += other->reclaim ;
    REF(CAS_coll) += other->CAS_coll ;
    REF(neighborhood_full) += other->neighborhood_full ;
-   REF(chain_lock_count) += other->chain_lock_count ;
    REF(chain_lock_coll) += other->chain_lock_coll ;
    REF(spin) += other->spin ;
    REF(yield) += other->yield ;
