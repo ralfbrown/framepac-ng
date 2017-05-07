@@ -662,56 +662,6 @@ class HashTable : public Object
 #endif /* FrSINGLE_THREADED */
          } ;
       //------------------------
-      class ScopedChainLock
-      {
-      private:
-#ifndef FrSINGLE_THREADED
-	 Table*		 m_table ;
-	 size_t		 m_pos ;
-	 HashPtr*        m_bucket ;
-#endif /* !FrSINGLE_THREADED */
-	 bool		 m_locked ;
-	 bool		 m_stale ;
-      public:
-#ifdef FrSINGLE_THREADED
-	 ScopedChainLock(Table *, size_t, bool) { m_locked = m_stale = false ; }
-	 ~ScopedChainLock() {}
-#else
-	 ScopedChainLock(Table *ht, size_t bucketnum)
-	    {
-	       m_table = ht ;
-	       m_pos = bucketnum ;
-	       m_bucket = ht->bucketPtr(bucketnum) ;
-	       INCR_COUNT(chain_lock_count) ;
-	       if (m_bucket->lock(m_stale))
-		  {
-		  m_locked = true ;
-		  return ;
-		  }
-	       INCR_COUNT(chain_lock_coll) ;
-	       m_locked = false ;
-	       return ;
-	    }
-	 ~ScopedChainLock()
-	    {
-	       bool is_stale ;
-	       if (m_locked)
-		  (void)m_bucket->unlock(is_stale) ;
-	       else
-		  is_stale = m_bucket->stale() ;
-	       if (!m_stale && is_stale)
-		  {
-		  // someone else tried to copy the chain while we held the lock,
-		  //    so copy it for them now
-		  m_table->copyChainLocked(m_pos) ;
-		  }
-	    }
-#endif /* FrSINGLE_THREADED */
-	 bool locked() const { return m_locked ; }
-	 bool stale() const { return m_stale ; }
-	 bool busy() const { return !locked() || stale() ; }
-         } ;
-      //------------------------
       class ThreadCleanup
          {
 	 public:

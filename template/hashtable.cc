@@ -60,12 +60,7 @@ namespace Fr {
 /************************************************************************/
 
 #if defined(FrSINGLE_THREADED)
-#define FORWARD(delegate,tab,counter)		\
-      Table* tab = next() ;			\
-      if (tab /*&& chainIsStale(bucketnum)*/)	\
-	 {					\
-	 return tab->delegate ;			\
-	 }							
+#define FORWARD(delegate,tab,counter)
 #define FORWARD_IF_COPIED(delegate,counter)
 #define FORWARD_IF_STALE(delegate,counter)
 #else
@@ -101,25 +96,18 @@ namespace Fr {
 	 }
 #define FORWARD_IF_STALE(delegate,counter)				\
       Table* nexttab = next() ;						\
-      if (nexttab)							\
+      if (nexttab && chainIsStale(bucketnum))				\
 	 {								\
 	 /* if our bucket has at least started to be copied to	*/	\
 	 /*   the successor table, look for the key in that	*/	\
 	 /*   table instead of the current one			*/ 	\
-	 /* FIXME: do we want to do any copying to help out the resize?*/ \
-	 if (chainIsStale(bucketnum))					\
-	    {								\
-	    INCR_COUNT(counter) ;					\
-	    waitUntilCopied(bucketnum) ;				\
-	    nexttab->announceTable() ;					\
-	    return nexttab->delegate ;					\
-	    }								\
+	 INCR_COUNT(counter) ;						\
+	 resizeCopySegments(1) ;					\
+	 waitUntilCopied(bucketnum) ;					\
+	 nexttab->announceTable() ;					\
+	 return nexttab->delegate ;					\
 	 }
 #endif /* FrSINGLE_THREADED */
-
-/************************************************************************/
-/*	Manifest Constants						*/
-/************************************************************************/
 
 /************************************************************************/
 /*	Methods for class Table						*/
@@ -150,26 +138,26 @@ inline void HashTable<KeyT,ValT>::Table::init(size_t size)
    remove_fn = nullptr ;
    if (size > 0)
       {
-      m_entries = New<Entry>(size) ;
-      ifnot_INTERLEAVED(m_ptrs = New<HashPtr>(size) ;)
-	 if (m_entries
-	     ifnot_INTERLEAVED(&& m_ptrs)
-	    )
+      m_entries = new Entry[size] ;
+      ifnot_INTERLEAVED(m_ptrs = new HashPtr[size]) ;
+      if (m_entries
+	  ifnot_INTERLEAVED(&& m_ptrs)
+	 )
+	 {
+	 for (size_t i = 0 ; i < size ; i++)
 	    {
-	    for (size_t i = 0 ; i < size ; i++)
-	       {
-	       m_entries[i].init() ;
-	       ifnot_INTERLEAVED(m_ptrs[i].init() ;)
-		  }
+	    m_entries[i].init() ;
+	    ifnot_INTERLEAVED(m_ptrs[i].init()) ;
 	    }
-	 else
-	    {
-	    Free(m_entries) ;
-	    ifnot_INTERLEAVED(Free(m_ptrs) ;)
-	    m_entries = nullptr ;
-	    ifnot_INTERLEAVED(m_ptrs = nullptr ;)
-	    m_size = 0 ;
-	    }
+	 }
+      else
+	 {
+	 delete[] m_entries ;
+	 ifnot_INTERLEAVED(delete[] m_ptrs) ;
+	 m_entries = nullptr ;
+	 ifnot_INTERLEAVED(m_ptrs = nullptr) ;
+	 m_size = 0 ;
+	 }
       }
    return ;
 }
@@ -179,8 +167,8 @@ inline void HashTable<KeyT,ValT>::Table::init(size_t size)
 template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::Table::clear()
 {
-   Free(m_entries) ;
-   ifnot_INTERLEAVED(Free(m_ptrs)) ;
+   delete[] m_entries ;
+   ifnot_INTERLEAVED(delete[] m_ptrs) ;
    m_entries = nullptr ;
    ifnot_INTERLEAVED(m_ptrs = nullptr) ;
    m_next_table.store(nullptr,std::memory_order_release) ;
@@ -1114,15 +1102,6 @@ bool HashTable<KeyT,ValT>::Table::reclaimDeletions(size_t totalfrags, size_t fra
    size_t start_bucket = fragnum * per_fragment ;
    size_t end_bucket = start_bucket + per_fragment ;
    if (end_bucket > m_size) end_bucket = m_size ;
-   // the following lock serializes to allow only one reclaimDeletions()
-   //   at a time on the current fragment
-   ScopedChainLock lock(this,start_bucket) ;
-   if (lock.busy())
-      {
-      // someone else is already doing reclamation so we can just
-      //   claim success ourselves
-      return true ;
-      }
    INCR_COUNT(reclaim) ;
    debug_msg("reclaimDeletions (thr %ld)\n",FramepaC::my_job_id) ;
    bool have_reclaimed = false ;
