@@ -284,13 +284,12 @@ bool HashTable<KeyT,ValT>::Table::copyChain(size_t bucketnum)
    HashPtr* bucket = bucketPtr(bucketnum) ;
    // atomically set the 'stale' bit and get the current status
    Link status = bucket->markStaleGetStatus() ;
-   if (HashPtr::stale(status) | HashPtr::locked(status))
+   if (HashPtr::stale(status))
       {
-      if (HashPtr::locked(status)) { INCR_COUNT(chain_lock_coll) ; }
       // someone else has already worked on this bucket, or a
       //   copy/recycle() is currently running, in which case that
       //   thread will do the copying for us
-      return bucket->copyDone() ;
+      return HashPtr::copyDone(status) ;
       }
 #endif /* !FrSINGLE_THREADED */
    return copyChainLocked(bucketnum) ;
@@ -376,7 +375,8 @@ bool HashTable<KeyT,ValT>::Table::reAdd(size_t hashval, KeyT key, ValT value)
 template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::claimEmptySlot(size_t pos, KeyT key)
 {
-   if (bucketPtr(pos)->markUsed())
+   HashPtr* hp = bucketPtr(pos) ;
+   if (!hp->inUse() && hp->markUsed())
       {
       // in-use bit was previously clear, so we successfully grabbed this entry
       setKey(pos,key) ;
@@ -747,7 +747,7 @@ bool HashTable<KeyT,ValT>::Table::add(size_t hashval, KeyT key, ValT value)
 	    }
 	 // advance to next item in chain
 	 offset = chainNext(pos) ;
-	 if_THREADED(if (deletedEntry(pos) && deleted == NULLPOS) { deleted = pos ; })
+	 if_THREADED(if (key_at_pos == Entry::DELETED() && deleted == NULLPOS) { deleted = pos ; })
 	 }
       // when we get here, we know that the item is not yet in the
       //   hash table, so try to add it
@@ -813,7 +813,7 @@ ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr
 	    }
 	 // advance to next item in chain
 	 offset = chainNext(pos) ;
-	 if_THREADED(if (deletedEntry(pos) && deleted == NULLPOS) { deleted = pos ; })
+	 if_THREADED(if (key_at_pos == Entry::DELETED() && deleted == NULLPOS) { deleted = pos ; })
 	 }
       // when we get here, we know that the item is not yet in the
       //   hash table, so try to add it
@@ -1245,6 +1245,7 @@ void HashTable<KeyT,ValT>::Table::replaceValue(size_t pos, ValT new_value)
 template <typename KeyT, typename ValT>
 size_t HashTable<KeyT,ValT>::Table::countItems() const
 {
+   debug_msg("countItems\n") ;
    if (next())
       return next()->countItems() ;
    size_t count = 0 ;
@@ -1253,6 +1254,7 @@ size_t HashTable<KeyT,ValT>::Table::countItems() const
       if (activeEntry(i))
 	 count++ ;
       }
+   debug_msg("  -> %lu\n",count) ;
    return count ;
 }
 
@@ -1270,7 +1272,7 @@ size_t HashTable<KeyT,ValT>::Table::countItems(bool remove_dups)
 	 clearDuplicates(i) ;
 	 }
       }
-   return countItems() ;
+   return this->countItems() ;
 }
 
 //----------------------------------------------------------------------------
@@ -1278,14 +1280,16 @@ size_t HashTable<KeyT,ValT>::Table::countItems(bool remove_dups)
 template <typename KeyT, typename ValT>
 size_t HashTable<KeyT,ValT>::Table::countDeletedItems() const
 {
+   debug_msg("countDeletedItems\n") ;
    if (next())
       return next()->countDeletedItems() ;
    size_t count = 0 ;
    for (size_t i = 0 ; i < m_size ; ++i)
       {
-      if (deletedEntry(i))
+      if (m_entries[i].isDeleted())
 	 count++ ;
       }
+   debug_msg("  -> %lu\n",count) ;
    return count ;
 }
 

@@ -197,21 +197,21 @@ class HashPtr
       HashPtr() : m_first(0), m_next(0) {}
       ~HashPtr() {}
       // accessors
-      Link first() const { return (m_first.load(std::memory_order_consume) & link_mask) - LINKBIAS ; }
-      bool firstIsNull() const { return (m_first.load(std::memory_order_consume) & link_mask) == 0 ; } 
-      Link next() const { return m_next.load(std::memory_order_consume) - LINKBIAS ; }
-      bool nextIsNull() const { return m_next.load(std::memory_order_consume) == 0 ; } 
-      Link status() const { return m_first.load(std::memory_order_consume) & ~link_mask ; }
-      bool locked() const { return (m_first.load(std::memory_order_consume) & lock_mask) != 0 ; }
-      static bool locked(Link stat) { return (stat & lock_mask) != 0 ; }
-      bool stale() const { return (m_first.load(std::memory_order_consume) & stale_mask) != 0 ; }
+      Link first() const { return (m_first.load(std::memory_order_acquire) & link_mask) - LINKBIAS ; }
+      bool firstIsNull() const { return (m_first.load(std::memory_order_acquire) & link_mask) == 0 ; } 
+      Link next() const { return m_next.load(std::memory_order_acquire) - LINKBIAS ; }
+      bool nextIsNull() const { return m_next.load(std::memory_order_acquire) == 0 ; } 
+      Link status() const { return m_first.load(std::memory_order_acquire) & ~link_mask ; }
+      //Link state() const { return m_next.load(std::memory_order_acquire) & ~link_mask ; }
+      bool stale() const { return (m_first.load(std::memory_order_acquire) & stale_mask) != 0 ; }
       static bool stale(Link stat) { return (stat & stale_mask) != 0 ; }
-      bool inUse() const { return (m_first.load(std::memory_order_consume) & inuse_mask) != 0 ; }
-      bool copyDone() const { return (m_first.load(std::memory_order_consume) & copied_mask) != 0 ; }
+      bool inUse() const { return (m_first.load(std::memory_order_acquire) & inuse_mask) != 0 ; }
+      static bool inUse(Link stat) { return (stat & inuse_mask) != 0 ; }
+      bool copyDone() const { return (m_first.load(std::memory_order_acquire) & copied_mask) != 0 ; }
+      static bool copyDone(Link stat) { return (stat & copied_mask) != 0 ; }
 
       // modifiers
-      void first(Link ofs) { m_first.store(((m_first.load(std::memory_order_acquire))&~link_mask) | (ofs+LINKBIAS),
-					   std::memory_order_release) ; }
+      void first(Link ofs) { m_first.store(status() | (ofs+LINKBIAS),std::memory_order_release) ; }
       bool first(Link new_ofs, Link expected, Link stat)
 	 {
 	    new_ofs = ((new_ofs + LINKBIAS) & link_mask) | stat ;
@@ -226,22 +226,10 @@ class HashPtr
 	    expected = ((expected + LINKBIAS) & link_mask) /*| stat*/ ;
 	    return m_next.compare_exchange_strong(expected,new_ofs) ;
 	 }
-      bool lock(bool &is_stale)
-	 {
-	    Link stat = m_first.test_and_set_mask(lock_mask) ;
-	    is_stale = (stat & stale_mask) != 0 ;
-	    return (stat & lock_mask) == 0 ;
-	 }
-      bool unlock(bool &is_stale)
-	 {
-	    Link stat = m_first.test_and_clear_mask(lock_mask) ;
-	    is_stale = (stat & stale_mask) != 0 ;
-	    return (stat & lock_mask) != 0 ;
-	 }
       bool markStale() { return m_first.test_and_set_bit(stale_bit) ; }
-      bool markUsed() { return m_first.test_and_set_bit(stale_bit) ; }
-      bool markFree() { return m_first.test_and_clear_bit(stale_bit) ; }
-      uint8_t markStaleGetStatus() { return m_first.test_and_set_mask(stale_mask) ; }
+      bool markUsed() { return m_first.test_and_set_bit(inuse_bit) ; }
+      bool markFree() { return m_first.test_and_clear_bit(inuse_bit) ; }
+      Link markStaleGetStatus() { return m_first.fetch_or(stale_mask) & ~link_mask ; }
       bool markCopyDone() { return m_first.test_and_set_bit(copied_bit) ; }
    protected:
       Fr::Atomic<Link> m_first ;	// offset of first entry in hash bucket
@@ -249,13 +237,11 @@ class HashPtr
 
       static constexpr Link link_mask = 0x0FFF ;
       // flag bits in m_first
-      static constexpr unsigned lock_bit = 15 ;
-      static constexpr Link lock_mask = (1 << lock_bit) ;
-      static constexpr unsigned stale_bit = 14 ;
+      static constexpr unsigned stale_bit = 15 ;
       static constexpr Link stale_mask = (1 << stale_bit) ;
-      static constexpr unsigned copied_bit = 13 ;
+      static constexpr unsigned copied_bit = 14 ;
       static constexpr Link copied_mask = (1 << copied_bit) ;
-      static constexpr unsigned inuse_bit = 12 ;
+      static constexpr unsigned inuse_bit = 13 ;
       static constexpr Link inuse_mask = (1 << inuse_bit) ;
       // flag bits in m_next
       //static constexpr unsigned inuse_bit = 15 ;
@@ -410,7 +396,7 @@ class HashTable : public Object
 	    }
 	 char *displayValue(char *buffer) const
 	    {
-	       buffer = m_key.load(std::memory_order_consume).print(buffer) ;
+	       buffer = m_key.load(std::memory_order_acquire).print(buffer) ;
 	       *buffer = '\0' ;
 	       return buffer ;
 	    }
@@ -440,14 +426,14 @@ class HashTable : public Object
 	 void init(size_t size) ;
 	 void clear() ;
 	 bool good() const { return m_entries != nullptr ifnot_INTERLEAVED(&& m_ptrs != nullptr) && m_size > 0 ; }
-	 bool superseded() const { return m_next_table.load(std::memory_order_consume) != nullptr ; }
-	 bool resizingDone() const { return m_resizedone.load(std::memory_order_consume) ; }
+	 bool superseded() const { return m_next_table.load(std::memory_order_acquire) != nullptr ; }
+	 bool resizingDone() const { return m_resizedone.load(std::memory_order_acquire) ; }
 	 // maintaining the count of elements in the table is too much of a bottleneck under high load,
 	 //   so we'll punt and simply scan the hash array if someone needs that count
 	 size_t currentSize() const { return countItems() ; }
-	 Table *next() const { return m_next_table.load(std::memory_order_consume) ; }
-	 Table *nextFree() const { return m_next_free.load(std::memory_order_consume) ; }
-	 KeyT getKey(size_t N) const { return m_entries[N].m_key.load(std::memory_order_consume) ; }
+	 Table *next() const { return m_next_table.load(std::memory_order_acquire) ; }
+	 Table *nextFree() const { return m_next_free.load(std::memory_order_acquire) ; }
+	 KeyT getKey(size_t N) const { return m_entries[N].m_key.load(std::memory_order_acquire) ; }
 	 KeyT getKeyNonatomic(size_t N) const { return ANNOTATE_UNPROTECTED_READ(m_entries[N].m_key) ; }
 	 void setKey(size_t N, KeyT newkey) { m_entries[N].m_key.store(newkey,std::memory_order_release) ; }
 	 ValT getValue(size_t N) const { return m_entries[N].getValue() ; }
@@ -456,7 +442,6 @@ class HashTable : public Object
 	 bool updateKey(size_t N, KeyT expected, KeyT desired)
 	    { return m_entries[N].m_key.compare_exchange_strong(expected,desired) ; }
 	 bool activeEntry(size_t N) const { return bucketPtr(N)->inUse() && m_entries[N].isActive() ; }
-	 bool deletedEntry(size_t N) const { return m_entries[N].isDeleted() ; }
 #ifndef FrHASHTABLE_INTERLEAVED_ENTRIES
 	 HashPtr *bucketPtr(size_t N) const { return &m_ptrs[N] ; }
 #else
@@ -566,7 +551,7 @@ class HashTable : public Object
 
 	 //================= Content Statistics ===============
 	 [[gnu::cold]] size_t countItems() const ;
-	 [[gnu::cold]] size_t countItems(bool remove_dups = false) ;
+	 [[gnu::cold]] size_t countItems(bool remove_dups) ;
 	 [[gnu::cold]] size_t countDeletedItems() const ;
 	 [[gnu::cold]] size_t chainLength(size_t bucketnum) const ;
 	 [[gnu::cold]] size_t *chainLengths(size_t &max_length) const ;
@@ -630,7 +615,7 @@ class HashTable : public Object
 		 m_next = next ; m_id = FramepaC::my_job_id ; }
 	    void init(Atomic<Table*>* tab, TablePtr* next)
 	       { m_table = tab ; m_next = next ; m_id = FramepaC::my_job_id ; }
-	    const Table *table() const { return m_table->load(std::memory_order_consume) ; }
+	    const Table *table() const { return m_table->load(std::memory_order_acquire) ; }
          } ;
       //------------------------
       class HazardLock
@@ -733,7 +718,7 @@ class HashTable : public Object
    protected:
       static void threadCleanup() ;
 
-      size_t maxSize() const { return m_table.load(std::memory_order_consume)->m_size ; }
+      size_t maxSize() const { return m_table.load(std::memory_order_acquire)->m_size ; }
       static inline size_t hashVal(KeyT key)
 	 {
 	    return key ? key->hashValue() : 0 ;
@@ -767,8 +752,8 @@ class HashTable : public Object
       void copyContents(const HashTable &ht)
          {
 	    init(ht.maxSize()) ;
-	    Table *table = m_table.load(std::memory_order_consume) ;
-	    Table *othertab = ht.m_table.load(std::memory_order_consume) ;
+	    Table *table = m_table.load(std::memory_order_acquire) ;
+	    Table *othertab = ht.m_table.load(std::memory_order_acquire) ;
 	    for (size_t i = 0 ; i < table->m_size ; i++)
 	       {
 	       table->copyEntry(i,othertab) ;
@@ -778,7 +763,7 @@ class HashTable : public Object
       // single-threaded only!!  But since it's only called from a dtor, that's fine
       void clearContents()
          {
-	    Table *table = m_table.load(std::memory_order_consume) ;
+	    Table *table = m_table.load(std::memory_order_acquire) ;
 	    if (table && table->good())
 	       {
 	       if (cleanup_fn)
@@ -808,7 +793,7 @@ class HashTable : public Object
 	 {
 #ifndef FrSINGLE_THREADED
 	    // scan the list of per-thread s_table variables
-	    for (const TablePtr *tables = Atomic<TablePtr*>::ref(s_thread_entries).load(std::memory_order_consume) ;
+	    for (const TablePtr *tables = Atomic<TablePtr*>::ref(s_thread_entries).load(std::memory_order_acquire) ;
 		 tables ;
 		 tables = ANNOTATE_UNPROTECTED_READ(tables->m_next))
 	       {
@@ -848,8 +833,8 @@ class HashTable : public Object
 	    HazardLock hl(m_table) ;					\
 	    return m_table.load(std::memory_order_acquire)->delegate ;
 #define DELEGATE_HASH_RECLAIM(type,delegate)				\
-            if (m_oldtables.load(std::memory_order_consume)		\
-		!= m_table.load(std::memory_order_consume))		\
+            if (m_oldtables.load(std::memory_order_acquire)		\
+		!= m_table.load(std::memory_order_acquire))		\
 	       reclaimSuperseded() ;					\
 	    size_t hashval = hashVal(key) ; 				\
 	    HazardLock hl(m_table) ;					\
