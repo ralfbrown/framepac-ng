@@ -117,6 +117,12 @@ template <typename KeyT, typename ValT>
 inline void HashTable<KeyT,ValT>::Table::init(size_t size)
 {
    m_size = size ;
+   if (size < searchrange)
+      m_fullsize = 2*size ;
+   else if (size < 16*searchrange)
+      m_fullsize = size + searchrange/2 ;
+   else
+      m_fullsize = size + searchrange ;
    m_next_table.store(nullptr,std::memory_order_release) ;
    m_next_free.store(nullptr,std::memory_order_release) ;
    m_entries = nullptr ;
@@ -125,7 +131,7 @@ inline void HashTable<KeyT,ValT>::Table::init(size_t size)
    m_resizedone.store(false,std::memory_order_release) ;
    m_resizestarted.clear() ;
    m_resizepending.clear() ;
-   size_t num_segs = (m_size + FrHASHTABLE_SEGMENT_SIZE - 1) / FrHASHTABLE_SEGMENT_SIZE ;
+   size_t num_segs = (m_fullsize + FrHASHTABLE_SEGMENT_SIZE - 1) / FrHASHTABLE_SEGMENT_SIZE ;
    m_resizepending.init(num_segs) ;
    m_segments_assigned.store((size_t)0,std::memory_order_release) ;
    m_segments_total.store(num_segs,std::memory_order_release) ;
@@ -134,8 +140,8 @@ inline void HashTable<KeyT,ValT>::Table::init(size_t size)
    remove_fn = nullptr ;
    if (size > 0)
       {
-      m_entries = new Entry[size] ;
-      ifnot_INTERLEAVED(m_ptrs = new HashPtr[size]) ;
+      m_entries = new Entry[m_fullsize] ;
+      ifnot_INTERLEAVED(m_ptrs = new HashPtr[m_fullsize]) ;
       if (m_entries
 	  ifnot_INTERLEAVED(&& m_ptrs)
 	 )
@@ -153,6 +159,7 @@ inline void HashTable<KeyT,ValT>::Table::init(size_t size)
 	 m_entries = nullptr ;
 	 ifnot_INTERLEAVED(m_ptrs = nullptr) ;
 	 m_size = 0 ;
+	 m_fullsize = 0 ;
 	 }
       }
    return ;
@@ -382,42 +389,17 @@ bool HashTable<KeyT,ValT>::Table::reAdd(size_t hashval, KeyT key, ValT value)
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, bool &got_resized)
+FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, Link hint)
 {
-   // compute the extent of the cache line containing
-   //   the offset-0 entry for the bucket
-   constexpr size_t CL_len = std::hardware_destructive_interference_size ;
-   uintptr_t CLstart_addr = ((uintptr_t)(bucketPtr(bucketnum))) & ~(CL_len-1) ;
-   if (CLstart_addr < (uintptr_t)bucketPtr(0))
-      CLstart_addr = (uintptr_t)bucketPtr(0) ;
-   size_t itemsize = (uintptr_t)bucketPtr(1) - (uintptr_t)bucketPtr(0) ;
-   size_t CL_start = (CLstart_addr - (uintptr_t)bucketPtr(0)) / itemsize ;
-   size_t max = bucketnum + searchrange ;
-   if (max >= m_size)
+   if (hint == FramepaC::NULLPTR) hint = 0 ;
+   size_t max = searchrange ;
+   if (bucketnum + max > m_fullsize)
+      max = m_fullsize - bucketnum ;
+   for (size_t i = hint ; i < max ; ++i)
       {
-      max = m_size - 1 ;
-      }
-   // search for a free slot starting with the beginning of the cache
-   //   line with the bucket header
-   for (size_t i = CL_start ; i <= max ; ++i)
-      {
-      HashPtr* hp = bucketPtr(i) ;
+      HashPtr* hp = bucketPtr(bucketnum + i) ;
       if (!hp->inUse() && hp->markUsed())
-	 return (i - bucketnum) ;
-      }
-   // search for a free spot preceding the given position
-   size_t min = bucketnum >= (size_t)searchrange ? bucketnum - searchrange : 0 ;
-   for (size_t i = min ; i < CL_start ; ++i)
-      {
-      HashPtr* hp = bucketPtr(i) ;
-      if (!hp->inUse() && hp->markUsed())
-	 return (i - bucketnum) ;
-      }
-   if (superseded())
-      {
-      // a resize snuck in, so caller MUST retry
-      got_resized = true ;
-      return FramepaC::NULLPTR ;
+	 return i ;
       }
    // if we get here, there were no free slots available
    INCR_COUNT(neighborhood_full) ;
@@ -429,27 +411,23 @@ FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, bo
 template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, KeyT key, ValT value)
 {
-   if (superseded())
-      {
-      // a resize snuck in, so retry
-      return false ;
-      }
    INCR_COUNT(insert_attempt) ;
-   bool got_resized = false ;
-   Link offset = locateEmptySlot(bucketnum,got_resized) ;
+   Link offset = locateEmptySlot(bucketnum,firstptr) ;
    if (unlikely(FramepaC::NULLPTR == offset))
       {
-      if (!got_resized)
+      if (!superseded())
 	 autoResize() ;
       return false ;
       }
    // fill in the slot we grabbed and link it to the head of
    //   the chain for the hash bucket
    size_t pos = bucketnum + offset ;
-   setValue(pos,value) ;
    bucketPtr(pos)->next(firstptr) ;
+   setValue(pos,value) ;
    setKey(pos,key) ;
    HashPtr* headptr = bucketPtr(bucketnum) ;
+   if (superseded())
+      return false ;
 #ifdef FrSINGLE_THREADED
    // life is much simpler in non-threaded mode: just point
    //   the chain head at the new node and increment the
@@ -484,8 +462,8 @@ void HashTable<KeyT,ValT>::Table::resizeCopySegment(size_t segnum)
 {
    size_t bucketnum = segnum * FrHASHTABLE_SEGMENT_SIZE ;
    size_t endpos = (segnum + 1) * FrHASHTABLE_SEGMENT_SIZE ;
-   if (endpos > m_size)
-      endpos = m_size ;
+   if (endpos > m_fullsize)
+      endpos = m_fullsize ;
    copyChains(bucketnum,endpos-1) ;
    // record the fact that we copied a segment
    m_resizepending.consume() ;
@@ -642,9 +620,9 @@ void HashTable<KeyT,ValT>::Table::resizeCleanup()
       {
       INCR_COUNT(resize_cleanup) ;
       bool complete = true ;
-      size_t first = m_size ;
+      size_t first = m_fullsize ;
       size_t last = 0 ;
-      for (size_t i = first_incomplete ; i < last_incomplete && i < m_size ; ++i)
+      for (size_t i = first_incomplete ; i < last_incomplete && i < m_fullsize ; ++i)
 	 {
 	 if (!chainCopied(i) && !copyChain(i))
 	    {
@@ -1098,10 +1076,10 @@ bool HashTable<KeyT,ValT>::Table::reclaimDeletions(size_t totalfrags, size_t fra
    return false ;
 #else
    if (totalfrags == 0) totalfrags = 1 ;
-   size_t per_fragment = (m_size / totalfrags) + 1 ;
+   size_t per_fragment = (m_fullsize / totalfrags) + 1 ;
    size_t start_bucket = fragnum * per_fragment ;
    size_t end_bucket = start_bucket + per_fragment ;
-   if (end_bucket > m_size) end_bucket = m_size ;
+   if (end_bucket > m_fullsize) end_bucket = m_fullsize ;
    INCR_COUNT(reclaim) ;
    debug_msg("reclaimDeletions (thr %ld)\n",FramepaC::my_job_id) ;
    bool have_reclaimed = false ;
@@ -1260,7 +1238,7 @@ size_t HashTable<KeyT,ValT>::Table::countItems() const
    if (next())
       return next()->countItems() ;
    size_t count = 0 ;
-   for (size_t i = 0 ; i < m_size ; ++i)
+   for (size_t i = 0 ; i < m_fullsize ; ++i)
       {
       if (activeEntry(i))
 	 count++ ;
@@ -1278,7 +1256,7 @@ size_t HashTable<KeyT,ValT>::Table::countItems(bool remove_dups)
       return next()->countItems(remove_dups) ;
    if (remove_dups)
       {
-      for (size_t i = 0 ; i < m_size ; ++i)
+      for (size_t i = 0 ; i < m_fullsize ; ++i)
 	 {
 	 clearDuplicates(i) ;
 	 }
@@ -1295,7 +1273,7 @@ size_t HashTable<KeyT,ValT>::Table::countDeletedItems() const
    if (next())
       return next()->countDeletedItems() ;
    size_t count = 0 ;
-   for (size_t i = 0 ; i < m_size ; ++i)
+   for (size_t i = 0 ; i < m_fullsize ; ++i)
       {
       if (bucketPtr(i)->inUse() && getKey(i) == Entry::DELETED())
 	 count++ ;
@@ -1335,7 +1313,7 @@ size_t* HashTable<KeyT,ValT>::Table::chainLengths(size_t &max_length) const
       lengths[i] = 0 ;
       }
    max_length = 0 ;
-   for (size_t i = 0 ; i < m_size ; ++i)
+   for (size_t i = 0 ; i < m_fullsize ; ++i)
       {
       size_t len = chainLength(i) ;
       if (len > max_length)
@@ -1352,28 +1330,28 @@ size_t* HashTable<KeyT,ValT>::Table::neighborhoodDensities(size_t &num_densities
 {
    if (next())
       return next()->neighborhoodDensities(num_densities) ;
-   size_t* densities = new size_t[2*searchrange+2] ;
-   num_densities = 2*searchrange+1 ;
-   for (size_t i = 0 ; i <= 2*searchrange+1 ; i++)
+   size_t* densities = new size_t[searchrange+2] ;
+   num_densities = searchrange+1 ;
+   for (size_t i = 0 ; i <= searchrange+1 ; i++)
       {
       densities[i] = 0 ;
       }
    // count up the active neighbors of the left-most entry in the hash array
    size_t density = 0 ;
-   for (size_t i = 0 ; i <= (size_t)searchrange && i < m_size ; ++i)
+   for (size_t i = 0 ; i <= (size_t)searchrange && i < m_fullsize ; ++i)
       {
       if (activeEntry(i))
 	 ++density ;
       }
    ++densities[density] ;
-   for (size_t i = 1 ; i < m_size ; ++i)
+   for (size_t i = 1 ; i < m_fullsize ; ++i)
       {
       // keep a rolling count of the active neighbors around the current point
       // did an active entry come into range on the right?
-      if (i + searchrange < m_size && activeEntry(i+searchrange))
+      if (i + searchrange < m_fullsize && activeEntry(i+searchrange))
 	 ++density ;
       // did an active entry go out of range on the left?
-      if (i > (size_t)searchrange && activeEntry(i-searchrange-1))
+      if (activeEntry(i-1))
 	 --density ;
       ++densities[density] ;
       }
@@ -1386,7 +1364,7 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::iterateVA(HashKeyValueFunc* func, std::va_list args) const
 {
    bool success = true ;
-   for (size_t i = 0 ; i < m_size && success ; ++i)
+   for (size_t i = 0 ; i < m_fullsize && success ; ++i)
       {
       if (!activeEntry(i))
 	 continue ;
@@ -1410,7 +1388,7 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::iterateAndClearVA(HashKeyValueFunc* func, std::va_list args) const
 {
    bool success = true ;
-   for (size_t i = 0 ; i < m_size && success ; ++i)
+   for (size_t i = 0 ; i < m_fullsize && success ; ++i)
       {
       if (!activeEntry(i))
 	 continue ;
@@ -1436,7 +1414,7 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::iterateAndModifyVA(HashKeyPtrFunc* func, std::va_list args) const
 {
    bool success = true ;
-   for (size_t i = 0 ; i < m_size && success ; ++i)
+   for (size_t i = 0 ; i < m_fullsize && success ; ++i)
       {
       if (!activeEntry(i))
 	 continue ;
@@ -1468,7 +1446,7 @@ template <typename KeyT, typename ValT>
 List* HashTable<KeyT,ValT>::Table::allKeys() const
 {
    List* keys = nullptr ;
-   for (size_t i = 0 ; i < m_size ; ++i)
+   for (size_t i = 0 ; i < m_fullsize ; ++i)
       {
       if (activeEntry(i))
 	 {
@@ -1485,7 +1463,7 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::verify() const
 {
    bool success = true ;
-   for (size_t i = 0 ; i < m_size ; ++i)
+   for (size_t i = 0 ; i < m_fullsize ; ++i)
       {
       KeyT key = getKey(i) ;
       if (key != Entry::DELETED() && !contains(hashVal(key),key))
@@ -1547,7 +1525,7 @@ ostream &HashTable<KeyT,ValT>::Table::printValue(ostream &output) const
    FramepaC::initial_indent += 3 ; //strlen("#H(")
    size_t loc = FramepaC::initial_indent ;
    bool first = true ;
-   for (size_t i = 0 ; i < m_size ; ++i)
+   for (size_t i = 0 ; i < m_fullsize ; ++i)
       {
       KeyT key = getKey(i) ;
       if (key == Entry::DELETED())
@@ -1574,7 +1552,7 @@ char* HashTable<KeyT,ValT>::Table::displayValue(char* buffer) const
 {
    strcpy(buffer,"#H(") ;
    buffer += 3 ;
-   for (size_t i = 0 ; i < m_size ; ++i)
+   for (size_t i = 0 ; i < m_fullsize ; ++i)
       {
       KeyT key = getKey(i) ;
       if (key == Entry::DELETED())
@@ -1598,7 +1576,7 @@ size_t HashTable<KeyT,ValT>::Table::cStringLength(size_t wrap_at, size_t indent)
    if (wrap_at == 0) wrap_at = (size_t)~0 ;
    size_t dlength = indent + 4 ; // "#H(" prefix plus ")" trailer
    size_t currline = dlength ;
-   for (size_t i = 0 ; i < m_size ; i++)
+   for (size_t i = 0 ; i < m_fullsize ; i++)
       {
       KeyT key = getKey(i) ;
       if (key == Entry::DELETED())

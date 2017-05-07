@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-06					*/
+/* Version 0.01, last edit 2017-05-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -44,11 +44,11 @@
 
 #define FrHASHTABLE_MIN_INCREMENT 256
 
+#define FrHASHTABLE_MIN_SIZE      128	// minimum user-specifiable size (number of hash buckets)
+
 #ifdef FrSINGLE_THREADED
-#  define FrHASHTABLE_MIN_SIZE 128
-#  define FrHT_NUM_TABLES	2	// need separate for before/after resize
+#  define FrHT_NUM_TABLES	    2	// need separate for before/after resize
 #else
-#  define FrHASHTABLE_MIN_SIZE 256
 // number of distinct indirection records to maintain in the
 //   HashTable proper (if we need more, we'll allocate them, but we
 //   mostly want to be able to satisfy needs without that).  We want
@@ -56,11 +56,8 @@
 //   can allow additional writes even before all old readers complete;
 //   if we were to wait for all readers, performance wouldn't scale as
 //   well with processor over-subscription.
-#  define FrHT_NUM_TABLES	4
+#  define FrHT_NUM_TABLES	    4
 #endif
-
-#define FrHashTable_DefaultMaxFill 0.97
-#define FrHashTable_MinFill        0.25	// lowest allowed value for MaxFill
 
 // starting up the copying of a segment of the current hash array into
 //   a new hash table is fairly expensive, so enforce a minimum size
@@ -86,7 +83,7 @@
 #  define INT16_MAX 32767
 #endif
 
-#define FrHASHTABLE_SEARCHRANGE 0x3FF
+#define FrHASHTABLE_SEARCHRANGE 0x7FF
 
 #ifdef FrHASHTABLE_STATS
 #  define if_HASHSTATS(x) x
@@ -181,30 +178,29 @@ class HashTable_Stats
 /************************************************************************/
 
 // encapsulate the chaining links
-typedef int16_t Link ;
+typedef uint16_t Link ;
 
-static constexpr Link LINKBIAS = 0x0800 ;
-static constexpr Link NULLPTR = -LINKBIAS ;
+static constexpr Link NULLPTR = 0x0FFF ;
 
 class HashPtr
    {
    public:
       void init()
 	 {
-	 m_first = 0 ;
-	 m_next.store(0,std::memory_order_release) ;
+	 m_first = NULLPTR ;
+	 m_next.store(NULLPTR,std::memory_order_release) ;
 	 }
-      HashPtr() : m_first(0), m_next(0) {}
+      HashPtr() : m_first(NULLPTR), m_next(NULLPTR) {}
       ~HashPtr() {}
       // accessors
-      Link first() const { return (m_first.load(std::memory_order_acquire) & link_mask) - LINKBIAS ; }
+      Link first() const { return m_first.load(std::memory_order_acquire) & link_mask ; }
       Link firstAndStatus(Link& stat) const
 	 {
 	 Link val = m_first.load(std::memory_order_acquire) ;
 	 stat = val & ~link_mask ;
-	 return (val & link_mask) - LINKBIAS ;
+	 return val & link_mask ;
 	 }
-      Link next() const { return m_next.load(std::memory_order_acquire) - LINKBIAS ; }
+      Link next() const { return m_next.load(std::memory_order_acquire) ; }
       Link status() const { return m_first.load(std::memory_order_acquire) & ~link_mask ; }
       bool stale() const { return (m_first.load(std::memory_order_acquire) & stale_mask) != 0 ; }
       static bool stale(Link stat) { return (stat & stale_mask) != 0 ; }
@@ -214,19 +210,19 @@ class HashPtr
       static bool copyDone(Link stat) { return (stat & copied_mask) != 0 ; }
 
       // modifiers
-      void first(Link ofs) { m_first.store(status() | (ofs+LINKBIAS),std::memory_order_release) ; }
+      void first(Link ofs) { m_first.store(status() | ofs,std::memory_order_release) ; }
       bool first(Link new_ofs, Link expected, Link stat)
 	 {
-	    new_ofs = ((new_ofs + LINKBIAS) & link_mask) | stat ;
-	    expected = ((expected + LINKBIAS) & link_mask) | stat ;
+	    new_ofs = (new_ofs & link_mask) | stat ;
+	    expected = (expected & link_mask) | stat ;
 	    return m_first.compare_exchange_weak(expected,new_ofs) ;
 	 }
-      void next(Link ofs) { m_next.store(ofs+LINKBIAS,std::memory_order_release) ; }
+      void next(Link ofs) { m_next.store(ofs,std::memory_order_release) ; }
       bool next(Link new_ofs, Link expected, Link /*stat*/)
 	 {
 	    // (not using extra flags in m_next yet)
-	    new_ofs = ((new_ofs + LINKBIAS) /*& link_mask*/) /*| stat*/ ;
-	    expected = ((expected + LINKBIAS) /*& link_mask*/) /*| stat*/ ;
+	    new_ofs = (new_ofs /*& link_mask*/) /*| stat*/ ;
+	    expected = (expected /*& link_mask*/) /*| stat*/ ;
 	    return m_next.compare_exchange_strong(expected,new_ofs) ;
 	 }
       bool markStale() { return m_first.test_and_set_bit(stale_bit) ; }
@@ -349,7 +345,7 @@ class HashTable : public Object
 	    }
 
 	 // constructors/destructors
-	 Entry() { init() ; }
+	 Entry() if_INTERLEAVED(: m_info()) { init() ; }
 	 ~Entry() {}
 
 	 // variable-setting functions
@@ -493,9 +489,9 @@ class HashTable : public Object
 	 [[gnu::hot]] void copyChains(size_t bucketnum, size_t endpos) ;
 	 // a separate version of add() for resizing, because Fr::SymbolTable needs to
 	 //   look at the full key->hashValue(), not just 'key' itself
-	 bool reAdd(size_t hashval, KeyT key, ValT value = (ValT)0) ;
+         bool reAdd(size_t hashval, KeyT key, ValT value = (ValT)0) ;
 
-	 [[gnu::hot]] Link locateEmptySlot(size_t bucketnum, bool &got_resized);
+         [[gnu::hot]] Link locateEmptySlot(size_t bucketnum, Link hint = 0);
 
 	 [[gnu::hot]] bool insertKey(size_t bucketnum, Link firstptr, KeyT key, ValT value) ;
 	 [[gnu::hot]] void resizeCopySegment(size_t segnum) ;
@@ -581,9 +577,10 @@ class HashTable : public Object
 	 Fr::Atomic<Table*> m_next_table { nullptr } ;	// the table which supersedes us
 	 Fr::Atomic<Table*> m_next_free { nullptr } ;
 	 HashKVFunc*       remove_fn { nullptr } ; 	// invoke on removal of entry/value
-	 static const Link searchrange = FrHASHTABLE_SEARCHRANGE ; // full search window (+/-)
+	 static const Link searchrange = FrHASHTABLE_SEARCHRANGE ; // full search window, starting at bucket head
 	 static const size_t NULLPOS = ~0UL ;
 	 size_t	           m_size ;		// capacity of hash array [constant for life of table]
+	 size_t	           m_fullsize ;		// capacity including padding [constant for life of table]
       protected:
 	 Fr::Atomic<size_t> m_segments_total { 0 } ;
 	 Fr::Atomic<size_t> m_segments_assigned { 0 } ;
@@ -750,7 +747,7 @@ class HashTable : public Object
 	    init(ht.maxSize()) ;
 	    Table *table = m_table.load(std::memory_order_acquire) ;
 	    Table *othertab = ht.m_table.load(std::memory_order_acquire) ;
-	    for (size_t i = 0 ; i < table->m_size ; i++)
+	    for (size_t i = 0 ; i < table->m_fullsize ; i++)
 	       {
 	       table->copyEntry(i,othertab) ;
 	       }
@@ -769,7 +766,7 @@ class HashTable : public Object
 		  }
 	       if (remove_fn)
 		  {
-		  for (size_t i = 0 ; i < table->m_size ; ++i)
+		  for (size_t i = 0 ; i < table->m_fullsize ; ++i)
 		     {
 		     if (table->activeEntry(i))
 			{
@@ -974,11 +971,9 @@ class HashTable : public Object
 	 if (tbl) tbl->onRemove(func) ; 
 	 }
 
-      void setMaxFill(double fillfactor) ;
-
       // access to internal state
       size_t currentSize() const { DELEGATE(currentSize()) }
-      size_t maxCapacity() const { DELEGATE(m_size) }
+      size_t maxCapacity() const { DELEGATE(m_fullsize) }
       bool isPacked() const { return false ; }  // backwards compatibility
       HashKeyValueFunc *cleanupFunc() const { return cleanup_fn ; }
       HashKVFunc *onRemoveFunc() const { return remove_fn ; }
@@ -1054,7 +1049,6 @@ class HashTable : public Object
 
       // ============= Fr::Object support =============
       const char* typeName_() const { return "HashTable" ; }
-//!      virtual FrObjectType objSuperclass() const { return OT_FrObject ; }
       HashTable* shallowCopy_() const { return new HashTable(*this) ; }
       HashTable* clone_() const { return new HashTable(*this) ; }
       void free_() { delete this ; }
