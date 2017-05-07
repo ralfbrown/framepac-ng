@@ -256,7 +256,7 @@ bool HashTable<KeyT,ValT>::Table::copyChainLocked(size_t bucketnum)
       size_t pos = bucketnum + offset ;
       offset = chainNext(pos) ;
       // insert the element, ignoring it if it is deleted or a duplicate
-      if (!activeEntry(pos))
+      if (!m_entries[pos].isActive())
 	 {
 	 continue ;
 	 }
@@ -353,6 +353,7 @@ void HashTable<KeyT,ValT>::Table::copyChains(size_t bucketnum, size_t endpos)
 }
 
 //----------------------------------------------------------------------------
+// add a key which is known not to be in the table (yet)
 
 template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::reAdd(size_t hashval, KeyT key, ValT value)
@@ -375,19 +376,12 @@ bool HashTable<KeyT,ValT>::Table::reAdd(size_t hashval, KeyT key, ValT value)
 template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::claimEmptySlot(size_t pos, KeyT key)
 {
-#ifdef FrSINGLE_THREADED
-   if (unusedEntry(pos))
+   if (bucketPtr(pos)->markUsed())
       {
+      // in-use bit was previously clear, so we successfully grabbed this entry
       setKey(pos,key) ;
       return true ;
       }
-#else
-   if (getKeyNonatomic(pos) == Entry::UNUSED())
-      {
-      // check if someone stole the free slot out from under us
-      return updateKey(pos,Entry::UNUSED(),key) ;
-      }
-#endif /* FrSINGLE_THREADED */
    return false ;
 }
 
@@ -457,14 +451,13 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
    //   the chain for the hash bucket
    size_t pos = bucketnum + offset ;
    setValue(pos,value) ;
-#ifdef FrSINGLE_THREADED
    bucketPtr(pos)->next(firstptr) ;
+#ifdef FrSINGLE_THREADED
    // life is much simpler in non-threaded mode: just point
    //   the chain head at the new node and increment the
    //   tally of items in the table
    bucketPtr(bucketnum)->first(offset) ;
 #else
-   setChainNext(pos,firstptr) ;
    // now that we've done all the preliminaries, try to get
    //   write access to actually insert the new entry
    // try to point the hash chain at the new entry
@@ -479,7 +472,7 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
       //   the same value, or a resize is in progress and
       //   copied the bucket while we were working
       // release the slot we grabbed and tell caller to retry
-      setKey(pos,Entry::UNUSED()) ;
+      headptr->markFree() ;
       INCR_COUNT(CAS_coll) ;
       debug_msg("insertKey: CAS collision\n") ;
       return false ;
@@ -587,19 +580,16 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum)
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
-      // while the additional check of the key just below is not strictly necessary, it
-      //   permits us to avoid the expensive CAS except when an entry is actually deleted
       KeyT key = getKey(pos) ;
       HashPtr* nextptr = bucketPtr(pos) ;
       Link nxt = nextptr->next() ;
-      if (key == Entry::DELETED() && updateKey(pos,Entry::DELETED(),Entry::UNUSED()))
+      if (key == Entry::DELETED())
 	 {
-	 // we grabbed a deleted entry; now try to unlink it
+	 // we found a deleted entry; now try to unlink it
 	 if ((is_first && !headptr->first(nxt,offset,headptr->status()))
 	     || (!is_first && !headptr->next(nxt,offset,0)))
 	    {
 	    // uh oh, someone else messed with the chain!
-	    setKey(pos,Entry::DELETED()) ;
 	    // restart from the beginning of the chain
 	    INCR_COUNT(CAS_coll) ;
 	    headptr = bucketPtr(bucketnum) ;
@@ -607,6 +597,7 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum)
 	    is_first = true ;
 	    continue ;
 	    }
+	 nextptr->markFree() ;
 	 reclaimed = true ;
 	 }
       else
@@ -1027,9 +1018,9 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
 	 {
 	 // we found it!
 	 // chop entry out of hash chain
-	 *prevptr = chainNext(pos) ;
+	 *prevptr = chainNext(pos) ; //FIXME
 	 // delete the item proper
-	 m_entries[pos].markUnused() ;
+	 bucketPtr(pos)->markFree() ;
 	 replaceValue(pos,0) ;
 	 INCR_COUNT(remove_found) ;
 	 return true ;
@@ -1279,13 +1270,7 @@ size_t HashTable<KeyT,ValT>::Table::countItems(bool remove_dups)
 	 clearDuplicates(i) ;
 	 }
       }
-   size_t count = 0 ;
-   for (size_t i = 0 ; i < m_size ; ++i)
-      {
-      if (activeEntry(i))
-	 count++ ;
-      }
-   return count ;
+   return countItems() ;
 }
 
 //----------------------------------------------------------------------------
@@ -1683,7 +1668,7 @@ void HashTable<KeyT,ValT>::thread_backoff(size_t &loops)
       // hmm, this is taking a while -- maybe an add() had
       // to do extra work, or we are oversubscribed on
       // threads and an operation got suspended
-      debug_msg("sleep\n") ;
+//      debug_msg("sleep\n") ;
       INCR_COUNT(sleep) ;
       size_t factor = loops - FrSPIN_COUNT - FrYIELD_COUNT + 1 ;
       std::this_thread::sleep_for(std::chrono::microseconds(factor * FrNAP_TIME)) ;

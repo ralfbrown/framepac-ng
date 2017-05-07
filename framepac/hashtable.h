@@ -35,8 +35,8 @@
 #include "framepac/synchevent.h"
 #include <cassert>
 
-//#undef FrHASHTABLE_VERBOSITY
-//#define FrHASHTABLE_VERBOSITY 2
+#undef FrHASHTABLE_VERBOSITY
+#define FrHASHTABLE_VERBOSITY 2
 
 /************************************************************************/
 /*	Manifest Constants						*/
@@ -206,6 +206,7 @@ class HashPtr
       static bool locked(Link stat) { return (stat & lock_mask) != 0 ; }
       bool stale() const { return (m_first.load(std::memory_order_consume) & stale_mask) != 0 ; }
       static bool stale(Link stat) { return (stat & stale_mask) != 0 ; }
+      bool inUse() const { return (m_first.load(std::memory_order_consume) & inuse_mask) != 0 ; }
       bool copyDone() const { return (m_first.load(std::memory_order_consume) & copied_mask) != 0 ; }
 
       // modifiers
@@ -238,6 +239,8 @@ class HashPtr
 	    return (stat & lock_mask) != 0 ;
 	 }
       bool markStale() { return m_first.test_and_set_bit(stale_bit) ; }
+      bool markUsed() { return m_first.test_and_set_bit(stale_bit) ; }
+      bool markFree() { return m_first.test_and_clear_bit(stale_bit) ; }
       uint8_t markStaleGetStatus() { return m_first.test_and_set_mask(stale_mask) ; }
       bool markCopyDone() { return m_first.test_and_set_bit(copied_bit) ; }
    protected:
@@ -252,6 +255,8 @@ class HashPtr
       static constexpr Link stale_mask = (1 << stale_bit) ;
       static constexpr unsigned copied_bit = 13 ;
       static constexpr Link copied_mask = (1 << copied_bit) ;
+      static constexpr unsigned inuse_bit = 12 ;
+      static constexpr Link inuse_mask = (1 << inuse_bit) ;
       // flag bits in m_next
       //static constexpr unsigned inuse_bit = 15 ;
       //static constexpr Link inuse_mask = (1 << inuse_bit) ;
@@ -345,23 +350,21 @@ class HashTable : public Object
 	    {
 	       return obj ? static_cast<KeyT>((Object*)obj->clone()) : nullKey() ;
 	    }
-	 void markUnused() { m_key = UNUSED() ; }
 	 void init()
 	    {
-	       if_INTERLEAVED(m_info.init() ;)
-		  markUnused() ;
+	       if_INTERLEAVED(m_info.init()) ;
 	       setValue(nullVal()) ; 
 	    }
 	 void init(const Entry &entry)
 	    {
-	       if_INTERLEAVED(m_info = entry.m_info ;)
-		  m_key = entry.m_key ;
+	       if_INTERLEAVED(m_info = entry.m_info) ;
+	       m_key = entry.m_key ;
 	       setValue(entry.getValue()) ;
 	    }
 
 	 // constructors/destructors
 	 Entry() { init() ; }
-	 ~Entry() { if (isActive()) { markUnused() ; } }
+	 ~Entry() {}
 
 	 // variable-setting functions
 	 void setValue(ValT value)
@@ -393,12 +396,9 @@ class HashTable : public Object
 	 typename std::enable_if<std::is_empty<ValT>::value,RetT>::type
 	 swapValue(ValT) { return nullVal() ; }
 #endif /* FrSINGLE_THREADED */
-	 ALWAYS_INLINE static KeyT UNUSED() {return (KeyT)~0UL ; } 
-	 ALWAYS_INLINE static KeyT DELETED() {return (KeyT)~1UL ; } 
-	 ALWAYS_INLINE static KeyT RECLAIMING() { return (KeyT)~2UL ; }
-	 bool isUnused() const { return ANNOTATE_UNPROTECTED_READ(m_key) == UNUSED() ; }
+	 ALWAYS_INLINE static KeyT DELETED() {return (KeyT)~0UL ; } 
+	 ALWAYS_INLINE static KeyT RECLAIMING() { return (KeyT)~1UL ; }
 	 bool isDeleted() const { return ANNOTATE_UNPROTECTED_READ(m_key) == DELETED() ; }
-	 bool isBeingReclaimed() const { return  ANNOTATE_UNPROTECTED_READ(m_key) == RECLAIMING() ; }
 	 bool isActive() const { return ANNOTATE_UNPROTECTED_READ(m_key) < RECLAIMING() ; }
 
 	 // I/O
@@ -455,9 +455,8 @@ class HashTable : public Object
 	 void setValue(size_t N, ValT value) { m_entries[N].setValue(value) ; }
 	 bool updateKey(size_t N, KeyT expected, KeyT desired)
 	    { return m_entries[N].m_key.compare_exchange_strong(expected,desired) ; }
-	 bool activeEntry(size_t N) const { return m_entries[N].isActive() ; }
+	 bool activeEntry(size_t N) const { return bucketPtr(N)->inUse() && m_entries[N].isActive() ; }
 	 bool deletedEntry(size_t N) const { return m_entries[N].isDeleted() ; }
-	 bool unusedEntry(size_t N) const { return m_entries[N].isUnused() ; }
 #ifndef FrHASHTABLE_INTERLEAVED_ENTRIES
 	 HashPtr *bucketPtr(size_t N) const { return &m_ptrs[N] ; }
 #else
@@ -566,8 +565,8 @@ class HashTable : public Object
 	 void replaceValue(size_t pos, ValT new_value) ;
 
 	 //================= Content Statistics ===============
-	 [[gnu::cold]] size_t countItems() const;
-	 [[gnu::cold]] size_t countItems(bool remove_dups) ;
+	 [[gnu::cold]] size_t countItems() const ;
+	 [[gnu::cold]] size_t countItems(bool remove_dups = false) ;
 	 [[gnu::cold]] size_t countDeletedItems() const ;
 	 [[gnu::cold]] size_t chainLength(size_t bucketnum) const ;
 	 [[gnu::cold]] size_t *chainLengths(size_t &max_length) const ;

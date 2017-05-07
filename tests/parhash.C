@@ -570,7 +570,7 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
    if (op == Op_ADD)
       {
       if (size > maxsize)
-	 out << "   " << (size-maxsize) <<  "spurious additions to hash table!" << endl ;
+	 out << "   " << (size-maxsize) <<  " spurious additions to hash table!" << endl ;
       else if (size< maxsize)
 	 out << "   Failed to add " << (maxsize-size) << " items to hash table!" << endl ;
       }
