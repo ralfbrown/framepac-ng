@@ -364,10 +364,23 @@ bool HashTable<KeyT,ValT>::Table::reAdd(size_t hashval, KeyT key, ValT value)
       {
       FORWARD(reAdd(hashval,key,value),nexttab,insert_forwarded) ;
       Link firstoffset = chainHead(bucketnum) ;
+      Link offset = firstoffset ;
+      while (FramepaC::NULLPTR != offset)
+	 {
+	 size_t pos = bucketnum + offset ;
+	 KeyT key_at_pos = getKey(pos) ;
+	 if (isEqualFull(key,key_at_pos))
+	    {
+	    INCR_COUNT(insert_dup) ;
+	    return true ;		// item already exists
+	    }
+	 // advance to next item in chain
+	 offset = chainNext(pos) ;
+	 }
       if (insertKey(bucketnum,firstoffset,key,value))
 	 break ;
       }
-   return false ;		// item did not already exist
+   return false ;			// item did not already exist
 }
 
 //----------------------------------------------------------------------------
