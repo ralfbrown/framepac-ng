@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-06					*/
+/* Version 0.01, last edit 2017-05-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -452,27 +452,25 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
    size_t pos = bucketnum + offset ;
    setValue(pos,value) ;
    bucketPtr(pos)->next(firstptr) ;
+   HashPtr* headptr = bucketPtr(bucketnum) ;
 #ifdef FrSINGLE_THREADED
    // life is much simpler in non-threaded mode: just point
    //   the chain head at the new node and increment the
    //   tally of items in the table
-   bucketPtr(bucketnum)->first(offset) ;
+   headptr->first(offset) ;
 #else
    // now that we've done all the preliminaries, try to get
    //   write access to actually insert the new entry
    // try to point the hash chain at the new entry
-   HashPtr* headptr = bucketPtr(bucketnum) ;
    Link status = headptr->status() ;
-   Link expected_head = firstptr ;
-   Link new_head = offset ;
-   if (unlikely(!headptr->first(new_head,expected_head,status)))
+   if (unlikely(!headptr->first(offset,firstptr,status)))
       {
       // oops, someone else messed with the hash chain, which
       //   means there could have been a parallel insert of
       //   the same value, or a resize is in progress and
       //   copied the bucket while we were working
       // release the slot we grabbed and tell caller to retry
-      headptr->markFree() ;
+      bucketPtr(pos)->markFree() ;
       INCR_COUNT(CAS_coll) ;
       debug_msg("insertKey: CAS collision\n") ;
       return false ;
