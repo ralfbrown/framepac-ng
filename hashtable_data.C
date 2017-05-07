@@ -30,8 +30,9 @@
 namespace FramepaC
 {
 
-size_t small_primes[] =
-   { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 } ;  //FIXME
+size_t small_primes[] =  // all primes < 2^7
+   { 127, 113, 109, 107, 103, 101, 97, 89, 83, 79, 73, 71, 67, 61, 59,
+     53, 47, 43, 41, 37, 31, 29, 23, 19, 17, 13, 11, 7, 5, 3, 2 } ;
 size_t num_small_primes = (sizeof(small_primes)/sizeof(small_primes[0])) ;
 
 thread_local size_t my_job_id ;

@@ -189,13 +189,13 @@ size_t HashTable<KeyT,ValT>::Table::normalizeSize(size_t sz)
       ++sz ;
    size_t pre_bump ;
    do {
-   pre_bump = sz ;
-   for (size_t i = 0 ; i < FramepaC::num_small_primes ; ++i)
-      {
-      if (sz % FramepaC::small_primes[i] == 0)
-	 sz += 2 ;
-      }
-   } while (sz != pre_bump) ;
+      pre_bump = sz ;
+      for (size_t i = 0 ; i < FramepaC::num_small_primes ; ++i)
+	 {
+	 if (sz % FramepaC::small_primes[i] == 0)
+	    sz += 2 ;
+	 }
+      } while (sz != pre_bump) ;
    return sz ;
 }
 
@@ -1378,11 +1378,11 @@ bool HashTable<KeyT,ValT>::Table::iterateVA(HashKeyValueFunc* func, std::va_list
       {
       if (!activeEntry(i))
 	 continue ;
-      KeyT key = getKey(i) ;
       ValT value = getValue(i) ;
+      KeyT key = getKey(i) ;
       // if the item hasn't been removed while we were getting it,
       //   call the processing function
-      if (!activeEntry(i))
+      if (key == Entry::DELETED())
 	 continue ;
       std::va_list argcopy ;
       va_copy(argcopy,args) ;
@@ -1402,11 +1402,11 @@ bool HashTable<KeyT,ValT>::Table::iterateAndClearVA(HashKeyValueFunc* func, std:
       {
       if (!activeEntry(i))
 	 continue ;
-      KeyT key = getKey(i) ;
       ValT value = getValue(i) ;
+      KeyT key = getKey(i) ;
       // if the item hasn't been removed while we were getting it,
       //   call the processing function
-      if (!activeEntry(i))
+      if (key == Entry::DELETED())
 	 continue ;
       std::va_list argcopy ;
       va_copy(argcopy,args) ;
@@ -1428,11 +1428,11 @@ bool HashTable<KeyT,ValT>::Table::iterateAndModifyVA(HashKeyPtrFunc* func, std::
       {
       if (!activeEntry(i))
 	 continue ;
-      KeyT key = getKey(i) ;
       ValT* valptr = getValuePtr(i) ;
+      KeyT key = getKey(i) ;
       // if the item hasn't been removed while we were getting it,
       //   call the processing function
-      if (!activeEntry(i))
+      if (key == Entry::DELETED())
 	 continue ;
       std::va_list argcopy ;
       va_copy(argcopy,args) ;
@@ -1475,7 +1475,8 @@ bool HashTable<KeyT,ValT>::Table::verify() const
    bool success = true ;
    for (size_t i = 0 ; i < m_size ; ++i)
       {
-      if (activeEntry(i) && !contains(hashVal(getKey(i)),getKey(i)))
+      KeyT key = getKey(i) ;
+      if (key != Entry::DELETED() && !contains(hashVal(key),key))
 	 {
 	 debug_msg("verify: missing @ %ld\n",i) ;
 	 success = false ;
@@ -1536,9 +1537,9 @@ ostream &HashTable<KeyT,ValT>::Table::printValue(ostream &output) const
    bool first = true ;
    for (size_t i = 0 ; i < m_size ; ++i)
       {
-      if (!activeEntry(i))
-	 continue ;
       KeyT key = getKey(i) ;
+      if (key == Entry::DELETED())
+	 continue ;
       size_t len = keyDisplayLength(key) ;
       loc += len ;
       if (loc > FramepaC_display_width && !first)
@@ -1563,9 +1564,9 @@ char* HashTable<KeyT,ValT>::Table::displayValue(char* buffer) const
    buffer += 3 ;
    for (size_t i = 0 ; i < m_size ; ++i)
       {
-      if (!activeEntry(i))
-	 continue ;
       KeyT key = getKey(i) ;
+      if (key == Entry::DELETED())
+	 continue ;
       buffer = displayKeyValue(buffer,key) ;
       *buffer++ = ' ' ;
       }
@@ -1587,9 +1588,9 @@ size_t HashTable<KeyT,ValT>::Table::cStringLength(size_t wrap_at, size_t indent)
    size_t currline = dlength ;
    for (size_t i = 0 ; i < m_size ; i++)
       {
-      if (!activeEntry(i))
-	 continue ;
       KeyT key = getKey(i) ;
+      if (key == Entry::DELETED())
+	 continue ;
       size_t len = keyDisplayLength(key) + 1 ;
       dlength += len ;
       currline += len ;
