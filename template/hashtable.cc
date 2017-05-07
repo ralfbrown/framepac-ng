@@ -571,6 +571,7 @@ void HashTable<KeyT,ValT>::Table::clearDuplicates(size_t bucketnum)
 }
 
 //----------------------------------------------------------------------------
+//   must ONLY be called while the hash table is otherwise quiescent
 
 template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum)
@@ -583,34 +584,38 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum)
    HashPtr* headptr = bucketPtr(bucketnum) ;
    Link offset = headptr->first() ;
    bool reclaimed = false ;
-   bool is_first = true ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
-      KeyT key = getKey(pos) ;
+      Link nxt = bucketPtr(pos)->next() ;
+      if (getKey(pos) != Entry::DELETED())
+	 break ;
+      headptr->first(nxt) ;
+      bucketPtr(pos)->markFree() ;
+      offset = nxt ;
+      reclaimed = true ;
+      }
+   if (FramepaC::NULLPTR == offset)
+      return reclaimed ;
+
+   size_t prevpos = bucketnum + offset ;
+   offset = bucketPtr(prevpos)->next() ;
+   while (FramepaC::NULLPTR != offset)
+      {
+      size_t pos = bucketnum + offset ;
       HashPtr* nextptr = bucketPtr(pos) ;
+      KeyT key = getKey(pos) ;
       Link nxt = nextptr->next() ;
       if (key == Entry::DELETED())
 	 {
-	 // we found a deleted entry; now try to unlink it
-	 if ((is_first && !headptr->first(nxt,offset,headptr->status()))
-	     || (!is_first && !headptr->next(nxt,offset,0)))
-	    {
-	    // uh oh, someone else messed with the chain!
-	    // restart from the beginning of the chain
-	    INCR_COUNT(CAS_coll) ;
-	    headptr = bucketPtr(bucketnum) ;
-	    offset = headptr->first() ;
-	    is_first = true ;
-	    continue ;
-	    }
+	 // we found a deleted entry; now unlink it
+	 bucketPtr(prevpos)->next(nxt) ;
 	 nextptr->markFree() ;
 	 reclaimed = true ;
 	 }
       else
 	 {
-	 headptr = nextptr ;
-	 is_first = false ;
+	 prevpos = pos ;
 	 }
       offset = nxt ;
       }
@@ -1303,7 +1308,7 @@ size_t HashTable<KeyT,ValT>::Table::countDeletedItems() const
    size_t count = 0 ;
    for (size_t i = 0 ; i < m_size ; ++i)
       {
-      if (getKey(i) == Entry::DELETED())
+      if (bucketPtr(i)->inUse() && getKey(i) == Entry::DELETED())
 	 count++ ;
       }
    debug_msg("  -> %lu\n",count) ;

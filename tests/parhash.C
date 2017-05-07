@@ -574,7 +574,7 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
       else if (size< maxsize)
 	 out << "   Failed to add " << (maxsize-size) << " items to hash table!" << endl ;
       }
-   if (op == Op_REMOVE || op == Op_RANDOM)
+   if (op == Op_RANDOM)
       {
       if (deleted > 0)
 	 {
