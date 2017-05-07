@@ -198,11 +198,14 @@ class HashPtr
       ~HashPtr() {}
       // accessors
       Link first() const { return (m_first.load(std::memory_order_acquire) & link_mask) - LINKBIAS ; }
-      bool firstIsNull() const { return (m_first.load(std::memory_order_acquire) & link_mask) == 0 ; } 
+      Link firstAndStatus(Link& stat) const
+	 {
+	 Link val = m_first.load(std::memory_order_acquire) ;
+	 stat = val & ~link_mask ;
+	 return (val & link_mask) - LINKBIAS ;
+	 }
       Link next() const { return m_next.load(std::memory_order_acquire) - LINKBIAS ; }
-      bool nextIsNull() const { return m_next.load(std::memory_order_acquire) == 0 ; } 
       Link status() const { return m_first.load(std::memory_order_acquire) & ~link_mask ; }
-      //Link state() const { return m_next.load(std::memory_order_acquire) & ~link_mask ; }
       bool stale() const { return (m_first.load(std::memory_order_acquire) & stale_mask) != 0 ; }
       static bool stale(Link stat) { return (stat & stale_mask) != 0 ; }
       bool inUse() const { return (m_first.load(std::memory_order_acquire) & inuse_mask) != 0 ; }
@@ -222,8 +225,8 @@ class HashPtr
       bool next(Link new_ofs, Link expected, Link /*stat*/)
 	 {
 	    // (not using extra flags in m_next yet)
-	    new_ofs = ((new_ofs + LINKBIAS) & link_mask) /*| stat*/ ;
-	    expected = ((expected + LINKBIAS) & link_mask) /*| stat*/ ;
+	    new_ofs = ((new_ofs + LINKBIAS) /*& link_mask*/) /*| stat*/ ;
+	    expected = ((expected + LINKBIAS) /*& link_mask*/) /*| stat*/ ;
 	    return m_next.compare_exchange_strong(expected,new_ofs) ;
 	 }
       bool markStale() { return m_first.test_and_set_bit(stale_bit) ; }
@@ -463,6 +466,7 @@ class HashTable : public Object
 	    }
 
 	 Link chainHead(size_t N) const { return bucketPtr(N)->first() ; }
+	 Link chainHead(size_t N, Link& status) const { return bucketPtr(N)->firstAndStatus(status) ; }
 	 Link chainNext(size_t N) const { return bucketPtr(N)->next() ; }
 	 void setChainNext(size_t N, Link nxt) { bucketPtr(N)->next(nxt) ; }
 	 void markCopyDone(size_t N) { bucketPtr(N)->markCopyDone() ; }

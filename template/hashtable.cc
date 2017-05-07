@@ -80,30 +80,26 @@ namespace Fr {
 	 return tab->delegate ;						\
 	 }							
 #define FORWARD_IF_COPIED(delegate,counter)				\
-      Table* nexttab = next() ;						\
-      if (nexttab)							\
+      if (HashPtr::copyDone(status))					\
 	 {								\
-	 /* if our bucket has been fully copied to the	*/ 		\
-	 /*   successor table, look for the key in that	*/		\
-	 /*   table instead of the current one		*/ 		\
-	 /* FIXME: do we want to do any copying to help out the resize?*/ \
-	 if (chainCopied(bucketnum))					\
-	    {								\
-	    INCR_COUNT(counter) ;					\
-	    nexttab->announceTable() ;					\
-	    return nexttab->delegate ;					\
-	    }								\
+	 /* our bucket has been fully copied to the successor	*/	\
+	 /*   table, so look for the key in that table instead	*/	\
+	 /*   of the current one				*/	\
+         Table* nexttab = next() ;					\
+	 INCR_COUNT(counter) ;						\
+	 nexttab->announceTable() ;					\
+	 return nexttab->delegate ;					\
 	 }
 #define FORWARD_IF_STALE(delegate,counter)				\
-      Table* nexttab = next() ;						\
-      if (nexttab && chainIsStale(bucketnum))				\
+      if (HashPtr::stale(status))					\
 	 {								\
-	 /* if our bucket has at least started to be copied to	*/	\
-	 /*   the successor table, look for the key in that	*/	\
+	 /* our bucket has at least started to be copied to the	*/	\
+	 /*   successor table, so look for the key in that	*/	\
 	 /*   table instead of the current one			*/ 	\
 	 INCR_COUNT(counter) ;						\
 	 resizeCopySegments(1) ;					\
 	 waitUntilCopied(bucketnum) ;					\
+	 Table* nexttab = next() ;					\
 	 nexttab->announceTable() ;					\
 	 return nexttab->delegate ;					\
 	 }
@@ -865,10 +861,11 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, KeyT key) const
 {
    size_t bucketnum = hashval % m_size ;
+   Link status ;
+   Link offset = chainHead(bucketnum,status) ;
    FORWARD_IF_COPIED(contains(hashval,key),contains_forwarded) ;
    INCR_COUNT(contains) ;
    // scan the chain of items for this hash position
-   Link offset = chainHead(bucketnum) ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
@@ -890,10 +887,11 @@ template <typename KeyT, typename ValT>
 ValT HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key) const
 {
    size_t bucketnum = hashval % m_size ;
+   Link status ;
+   Link offset = chainHead(bucketnum,status) ;
    FORWARD_IF_COPIED(lookup(hashval,key),lookup_forwarded) ;
    INCR_COUNT(lookup) ;
    // scan the chain of items for this hash position
-   Link offset = chainHead(bucketnum) ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
@@ -923,10 +921,11 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value) 
    if (!value)
       return false ;
    size_t bucketnum = hashval % m_size ;
+   Link status ;
+   Link offset = chainHead(bucketnum,status) ;
    FORWARD_IF_COPIED(lookup(hashval,key,value),lookup_forwarded) ;
    INCR_COUNT(lookup) ;
    // scan the chain of items for this hash position
-   Link offset = chainHead(bucketnum) ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
@@ -955,10 +954,11 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value, 
    if (!value)
       return false ;
    size_t bucketnum = hashval % m_size ;
+   Link status ;
+   Link offset = chainHead(bucketnum,status) ;
    FORWARD_IF_COPIED(lookup(hashval,key,value),lookup_forwarded) ;
    INCR_COUNT(lookup) ;
    // scan the chain of items for this hash position
-   Link offset = chainHead(bucketnum) ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
@@ -988,10 +988,11 @@ template <typename KeyT, typename ValT>
 ValT* HashTable<KeyT,ValT>::Table::lookupValuePtr(size_t hashval, KeyT key) const
 {
    size_t bucketnum = hashval % m_size ;
+   Link status ;
+   Link offset = chainHead(bucketnum,status) ;
    FORWARD_IF_COPIED(lookupValuePtr(hashval,key),lookup_forwarded) ;
    INCR_COUNT(lookup) ;
    // scan the chain of items for this hash position
-   Link offset = chainHead(bucketnum) ;
    ValT* val = nullptr ; // assume "not found"
    while (FramepaC::NULLPTR != offset)
       {
@@ -1015,12 +1016,11 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
 {
    size_t bucketnum = hashval % m_size ;
-   FORWARD_IF_STALE(remove(hashval,key),remove_forwarded) ;
-   INCR_COUNT(remove) ;
 #ifdef FrSINGLE_THREADED
    // since nobody else can mess with the bucket chain while we're traversing it, we can
    //   just chop out the desired item and don't need to bother with marking entries as
    //   deleted and reclaiming them later
+   INCR_COUNT(remove) ;
    Link* prevptr = chainHeadPtr(bucketnum) ;
    Link offset = Atomic<Link>::ref(*prevptr).load(std::memory_order_acquire) ;
    while (FramepaC::NULLPTR != offset)
@@ -1045,6 +1045,9 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
    // item not found
    return false ;
 #else
+   Link status ;
+   Link offset = chainHead(bucketnum,status) ;
+   FORWARD_IF_STALE(remove(hashval,key),remove_forwarded) ;
    // deletions must be marked rather than removed since we
    //   can't CAS both the key field and the chain link at
    //   once
@@ -1053,7 +1056,6 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
    //   deleted records in the bucket's chain, we need to
    //   remove all occurrences of the key so that the delete
    //   doesn't make a replaced entry reappear
-   Link offset = chainHead(bucketnum) ;
    bool success = false ;
    // scan the chain of items for this hash position
    while (FramepaC::NULLPTR != offset)
@@ -1193,10 +1195,11 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, const char* name, size_t namelen) const
 {
    size_t bucketnum = hashval % m_size ;
+   Link status ;
+   Link offset = chainHead(bucketnum,status) ;
    FORWARD_IF_COPIED(contains(hashval,name,namelen),contains_forwarded) ;
    INCR_COUNT(contains) ;
    // scan the chain of items for this hash position
-   Link offset = chainHead(bucketnum) ;
    bool success = false ;
    while (FramepaC::NULLPTR != offset)
       {
@@ -1221,10 +1224,11 @@ template <typename KeyT, typename ValT>
 KeyT HashTable<KeyT,ValT>::Table::lookupKey(size_t hashval, const char* name, size_t namelen) const
 {
    size_t bucketnum = hashval % m_size ;
-   FORWARD_IF_COPIED(lookupKey(hashval,name,namelen),contains_forwarded)
-      INCR_COUNT(lookup) ;
+   Link status ;
+   Link offset = chainHead(bucketnum,status) ;
+   FORWARD_IF_COPIED(lookupKey(hashval,name,namelen),contains_forwarded) ;
+   INCR_COUNT(lookup) ;
    // scan the chain of items for this hash position
-   Link offset = chainHead(bucketnum) ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
@@ -1311,9 +1315,10 @@ size_t HashTable<KeyT,ValT>::Table::countDeletedItems() const
 template <typename KeyT, typename ValT>
 size_t HashTable<KeyT,ValT>::Table::chainLength(size_t bucketnum) const
 {
+   Link status ;
+   Link offset = chainHead(bucketnum,status) ;
    FORWARD_IF_COPIED(chainLength(bucketnum),none) ;
    size_t len = 0 ;
-   Link offset = chainHead(bucketnum) ;
    while (FramepaC::NULLPTR != offset)
       {
       len++ ;
