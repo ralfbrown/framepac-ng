@@ -35,8 +35,8 @@
 #include "framepac/synchevent.h"
 #include <cassert>
 
-#undef FrHASHTABLE_VERBOSITY
-#define FrHASHTABLE_VERBOSITY 2
+//#undef FrHASHTABLE_VERBOSITY
+//#define FrHASHTABLE_VERBOSITY 2
 
 /************************************************************************/
 /*	Manifest Constants						*/
@@ -229,6 +229,8 @@ class HashPtr
       bool markStale() { return m_first.test_and_set_bit(stale_bit) ; }
       bool markUsed() { return m_first.test_and_set_bit(inuse_bit) ; }
       bool markFree() { return m_first.test_and_clear_bit(inuse_bit) ; }
+      bool markReclaiming() { return m_first.test_and_set_bit(reclaim_bit) ; }
+      void markReclaimed() { m_first.store(m_first.load(std::memory_order_acquire)&~reclaim_mask,std::memory_order_release) ; }
       Link markStaleGetStatus() { return m_first.fetch_or(stale_mask) & ~link_mask ; }
       bool markCopyDone() { return m_first.test_and_set_bit(copied_bit) ; }
    protected:
@@ -243,14 +245,8 @@ class HashPtr
       static constexpr Link copied_mask = (1 << copied_bit) ;
       static constexpr unsigned inuse_bit = 13 ;
       static constexpr Link inuse_mask = (1 << inuse_bit) ;
-      // flag bits in m_next
-      //static constexpr unsigned inuse_bit = 15 ;
-      //static constexpr Link inuse_mask = (1 << inuse_bit) ;
-      //static constexpr unsigned state_shift = 13 ;
-      //static constexpr Link state_mask = (3 << state_shift) ;
-      //static constexpr Link state_VALID = (1 << state_shift) ;
-      //static constexpr Link state_DELETED = (2 << state_shift) ;
-      //static constexpr Link state_RECLAIMING = (3 << state_shift) ;
+      static constexpr unsigned reclaim_bit = 12 ;
+      static constexpr Link reclaim_mask = (1 << reclaim_bit) ;
    } ;
 
 /************************************************************************/
@@ -339,6 +335,7 @@ class HashTable : public Object
 	 void init()
 	    {
 	       if_INTERLEAVED(m_info.init()) ;
+	       m_key = DELETED() ;
 	       setValue(nullVal()) ; 
 	    }
 	 void init(const Entry &entry)
@@ -383,9 +380,6 @@ class HashTable : public Object
 	 swapValue(ValT) { return nullVal() ; }
 #endif /* FrSINGLE_THREADED */
 	 ALWAYS_INLINE static KeyT DELETED() {return (KeyT)~0UL ; } 
-	 ALWAYS_INLINE static KeyT RECLAIMING() { return (KeyT)~1UL ; }
-	 bool isDeleted() const { return ANNOTATE_UNPROTECTED_READ(m_key) == DELETED() ; }
-	 bool isActive() const { return ANNOTATE_UNPROTECTED_READ(m_key) < RECLAIMING() ; }
 
 	 // I/O
 #if FIXME
@@ -441,7 +435,7 @@ class HashTable : public Object
 	 void setValue(size_t N, ValT value) { m_entries[N].setValue(value) ; }
 	 bool updateKey(size_t N, KeyT expected, KeyT desired)
 	    { return m_entries[N].m_key.compare_exchange_strong(expected,desired) ; }
-	 bool activeEntry(size_t N) const { return bucketPtr(N)->inUse() && m_entries[N].isActive() ; }
+	 bool activeEntry(size_t N) const { return m_entries[N].getKey() != Entry::DELETED() ; }
 #ifndef FrHASHTABLE_INTERLEAVED_ENTRIES
 	 HashPtr *bucketPtr(size_t N) const { return &m_ptrs[N] ; }
 #else
@@ -702,7 +696,6 @@ class HashTable : public Object
 #endif /* FrHASHTABLE_VERBOSITY > 1 */
    protected: // methods
       static void thread_backoff(size_t &loops) ;
-      static bool isActive(KeyT p) { return p < Entry::RECLAIMING() ; }
       void init(size_t initial_size, Table *table = nullptr) ;
       Table *allocTable() ;
       void releaseTable(Table *t) ;
@@ -734,7 +727,7 @@ class HashTable : public Object
       static size_t hashVal(const char *keyname, size_t *namelen) ;
       static inline bool isEqual(KeyT key1, KeyT key2)
 	 {
-	    return HashTable::isActive(key2) && Fr::equal(key1,key2) ;
+	    return key2 != Entry::DELETED() && Fr::equal(key1,key2) ;
 	 }
       static inline bool isEqualFull(KeyT key1, KeyT key2)
 	 {
@@ -1154,7 +1147,7 @@ inline size_t HashTable<const Symbol*,NullObject>::hashValFull(const Symbol* key
 template <>
 inline bool HashTable<const Symbol*,NullObject>::isEqualFull(const Symbol* key1, const Symbol* key2)
 { 
-   if (!HashTable::isActive(key2))
+   if (key2 != Entry::DELETED())
       return false ;
    if (key1 == key2)
       return true ;

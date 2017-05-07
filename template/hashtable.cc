@@ -244,7 +244,7 @@ bool HashTable<KeyT,ValT>::Table::copyChainLocked(size_t bucketnum)
       {
       size_t pos = bucketnum + offset ;
       offset = chainNext(pos) ;
-      (void)updateKey(pos,Entry::DELETED(),Entry::RECLAIMING()) ;
+      bucketPtr(pos)->markReclaiming() ;
       }
    // the chain is now frozen -- add() can't push to
    //   the start or re-use anything on the chain
@@ -256,11 +256,11 @@ bool HashTable<KeyT,ValT>::Table::copyChainLocked(size_t bucketnum)
       size_t pos = bucketnum + offset ;
       offset = chainNext(pos) ;
       // insert the element, ignoring it if it is deleted or a duplicate
-      if (!m_entries[pos].isActive())
+      KeyT key = getKey(pos) ;
+      if (key == Entry::DELETED())
 	 {
 	 continue ;
 	 }
-      KeyT key = getKey(pos) ;
       size_t hashval = hashValFull(key) ;
       Entry* element = &m_entries[pos] ;
       if (next()->reAdd(hashval,key,element->getValue()))
@@ -542,7 +542,7 @@ void HashTable<KeyT,ValT>::Table::clearDuplicates(size_t bucketnum)
       size_t pos = bucketnum + offset ;
       offset = chainNext(pos) ;
       KeyT currkey = getKey(pos) ;
-      if (!isActive(currkey))
+      if (currkey == Entry::DELETED())
 	 continue ;
       Link nxt = offset ;
       while (FramepaC::NULLPTR != nxt)
@@ -550,7 +550,7 @@ void HashTable<KeyT,ValT>::Table::clearDuplicates(size_t bucketnum)
 	 size_t nextpos = bucketnum + nxt ;
 	 nxt = chainNext(nextpos) ;
 	 KeyT nextkey = getKey(nextpos) ;
-	 if (isActive(nextkey) && isEqualFull(currkey,nextkey))
+	 if (nextkey != Entry::DELETED() && isEqualFull(currkey,nextkey))
 	    {
 	    // duplicate, apply removal function to the value
 	    removeValue(m_entries[nextpos]) ;
@@ -754,7 +754,7 @@ bool HashTable<KeyT,ValT>::Table::add(size_t hashval, KeyT key, ValT value)
       // If so, try to reclaim it
       if (deleted != NULLPOS)
 	 {
-	 if (unlikely(!updateKey(deleted,Entry::DELETED(),Entry::RECLAIMING())))
+	 if (unlikely(!bucketPtr(deleted)->markReclaiming()))
 	    {
 	    INCR_COUNT(CAS_coll) ;
 	    continue ;		// someone else reclaimed the entry, so restart
@@ -764,6 +764,7 @@ bool HashTable<KeyT,ValT>::Table::add(size_t hashval, KeyT key, ValT value)
 	 setValue(deleted,value) ;
 	 atomic_thread_fence(std::memory_order_release) ;
 	 setKey(deleted,key) ;
+	 bucketPtr(deleted)->markReclaimed() ;
 	 INCR_COUNT(insert_attempt) ;
 	 // Verify that we haven't been superseded while we
 	 //   were working
@@ -820,7 +821,7 @@ ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr
       // If so, try to reclaim it
       if (deleted != NULLPOS)
 	 {
-	 if (unlikely(!updateKey(deleted,Entry::DELETED(),Entry::RECLAIMING())))
+	 if (unlikely(!bucketPtr(deleted)->markReclaiming()))
 	    {
 	    INCR_COUNT(CAS_coll) ;
 	    continue ;		// someone else reclaimed the entry, so restart
@@ -830,6 +831,7 @@ ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr
 	 setValue(deleted,nullVal()+incr) ;
 	 atomic_thread_fence(std::memory_order_release) ;
 	 setKey(deleted,key) ;
+	 bucketPtr(deleted)->markReclaimed() ;
 	 INCR_COUNT(insert_attempt) ;
 	 // Verify that we haven't been superseded while we
 	 //   were working
@@ -1284,7 +1286,7 @@ size_t HashTable<KeyT,ValT>::Table::countDeletedItems() const
    size_t count = 0 ;
    for (size_t i = 0 ; i < m_size ; ++i)
       {
-      if (m_entries[i].isDeleted())
+      if (getKey(i) == Entry::DELETED())
 	 count++ ;
       }
    debug_msg("  -> %lu\n",count) ;
