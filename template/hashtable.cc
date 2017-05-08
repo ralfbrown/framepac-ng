@@ -138,25 +138,17 @@ inline void HashTable<KeyT,ValT>::Table::init(size_t size)
    m_first_incomplete.store(size,std::memory_order_release) ;
    m_last_incomplete.store(0,std::memory_order_release) ;
    remove_fn = nullptr ;
-   if (size > 0)
+   if (m_fullsize > 0)
       {
       m_entries = new Entry[m_fullsize] ;
       ifnot_INTERLEAVED(m_ptrs = new HashPtr[m_fullsize]) ;
-      if (m_entries
-	  ifnot_INTERLEAVED(&& m_ptrs)
+      if (!m_entries
+	  ifnot_INTERLEAVED(|| !m_ptrs)
 	 )
 	 {
-	 for (size_t i = 0 ; i < size ; i++)
-	    {
-	    m_entries[i].init() ;
-	    ifnot_INTERLEAVED(m_ptrs[i].init()) ;
-	    }
-	 }
-      else
-	 {
 	 delete[] m_entries ;
-	 ifnot_INTERLEAVED(delete[] m_ptrs) ;
 	 m_entries = nullptr ;
+	 ifnot_INTERLEAVED(delete[] m_ptrs) ;
 	 ifnot_INTERLEAVED(m_ptrs = nullptr) ;
 	 m_size = 0 ;
 	 m_fullsize = 0 ;

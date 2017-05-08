@@ -185,11 +185,6 @@ static constexpr Link NULLPTR = 0x0FFF ;
 class HashPtr
    {
    public:
-      void init()
-	 {
-	 m_first = NULLPTR ;
-	 m_next.store(NULLPTR,std::memory_order_release) ;
-	 }
       HashPtr() : m_first(NULLPTR), m_next(NULLPTR) {}
       ~HashPtr() {}
       // accessors
@@ -214,8 +209,8 @@ class HashPtr
       void first(Link ofs) { m_first.store(status() | ofs,std::memory_order_release) ; }
       bool first(Link new_ofs, Link expected, Link stat)
 	 {
-	    new_ofs = (new_ofs & link_mask) | stat ;
-	    expected = (expected & link_mask) | stat ;
+	    new_ofs = (new_ofs /*& link_mask*/) | stat ;
+	    expected = (expected /*& link_mask*/) | stat ;
 	    return m_first.compare_exchange_weak(expected,new_ofs) ;
 	 }
       void next(Link ofs) { m_next.store(ofs,std::memory_order_release) ; }
@@ -334,7 +329,6 @@ class HashTable : public Object
 	    }
 	 void init()
 	    {
-	       if_INTERLEAVED(m_info.init()) ;
 	       m_key = DELETED() ;
 	       setValue(nullVal()) ; 
 	    }
@@ -406,12 +400,7 @@ class HashTable : public Object
       {
 	 typedef class Fr::HashTable<KeyT,ValT> HT ;
       public:
-	 Table()
-	    {
-	       init(0) ;
-	       return ;
-	    }
-	 Table(size_t size)
+	 Table(size_t size = 0)
 	    {
 	       init(size) ;
 	       return ;
