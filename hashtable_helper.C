@@ -31,6 +31,9 @@ namespace Fr
 
 HashTableBase* hash_table_queue = nullptr ;
 
+bool HashTableHelper::s_initialized = false ;
+std::thread* HashTableHelper::s_thread = nullptr ;
+
 /************************************************************************/
 /************************************************************************/
 

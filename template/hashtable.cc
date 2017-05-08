@@ -494,6 +494,8 @@ void HashTable<KeyT,ValT>::Table::resizeCopySegments(size_t max_segs)
 	 //   had to be skipped due to concurrent reclaim() calls,
 	 //   then finalize the resize
 	 resizeCleanup() ;
+	 // finally, de-queue ourselves from the HashTableHelper thread
+	 m_container->finishResize() ;
 	 }
       }
    return ;
@@ -674,16 +676,10 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
       //   forward to the new one
       m_next_table.store(newtable) ;
       m_resizestarted.set() ;
+      // enqueue ourself on the HashTableHelper thread
+      m_container->startResize() ;
       // grab as many segments as we can and copy them
       resizeCopySegments() ;
-      // wait for any other threads that have grabbed
-      //   segments to complete them
-      m_resizepending.wait() ;
-      // if necessary, do a cleanup pass to copy any
-      //   buckets which had to be skipped due to
-      //   concurrent reclaim() calls, then finalize
-      //   the resize
-      resizeCleanup() ;
       }
    else
       {
