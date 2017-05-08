@@ -112,20 +112,6 @@
 
 /************************************************************************/
 
-namespace Fr
-{
-   // forward declarations
-   template <typename KeyT, typename ValT> class HashTable ;
-   bool equal(const Object*, const Object*) ;
-
-   class List ;
-   class Symbol ;
-   class SymbolTable ;//FIXME
-
-} // end namespace Fr
-
-//----------------------------------------------------------------------------
-
 namespace FramepaC
 {
 
@@ -288,13 +274,16 @@ inline void free_object(size_t) { return ; }
 class HashTableBase : public Object
    {
    public:
-      HashTableBase() {}
+      HashTableBase() : m_active_resizes(0) {}
       ~HashTableBase() {}
 
-      virtual void assistResize() = 0 ;
-      virtual void assistReclaim() = 0 ;
-   protected:
+      void startResize() ;
+      void finishResize() ;
 
+      virtual bool assistResize() = 0 ;
+   protected:
+      HashTableBase* m_next_base ;
+      unsigned	     m_active_resizes ;
    } ;
 
 /************************************************************************/
@@ -305,18 +294,15 @@ class HashTableHelper
    {
    public:
       static bool queueResize(HashTableBase* ht) ;
-      static bool queueReclamation(HashTableBase* ht) ;
 
    protected:  // internal methods
-      HashTableHelper() ;
-      ~HashTableHelper() ;
+      HashTableHelper() {}
+      ~HashTableHelper() {}
+      static bool initialize() ;
 
-      static HashTableHelper* instance() ;
-      bool good() const ;
-      bool queueResize_(HashTableBase* ht) ;
-      bool queueReclamation_(HashTableBase* ht) ;
    protected:
-      static HashTableHelper* s_instance ;
+      static std::thread*     s_thread ;
+      static bool             s_initialized ;
    } ;
 
 /************************************************************************/
@@ -435,7 +421,7 @@ class HashTable : public HashTableBase
 	 typename std::enable_if<std::is_empty<ValT>::value,RetT>::type
 	 swapValue(ValT) { return nullVal() ; }
 #endif /* FrSINGLE_THREADED */
-	 ALWAYS_INLINE static KeyT DELETED() {return (KeyT)~0UL ; } 
+	 ALWAYS_INLINE static constexpr KeyT DELETED() {return (KeyT)~0UL ; } 
 
 	 // I/O
 #if FIXME
@@ -939,8 +925,8 @@ class HashTable : public HashTableBase
       HashKVFunc *onRemoveFunc() const { return remove_fn ; }
 
       // =============== Background Processing =================
-      virtual void assistResize() ;
-      virtual void assistReclaim() ;
+      virtual bool assistResize() ;
+      virtual bool assistReclaim() ;
 
       // =============== Operational Statistics ================
       [[gnu::cold]] void clearGlobalStats()

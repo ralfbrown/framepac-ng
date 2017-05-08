@@ -1879,21 +1879,22 @@ void HashTable<KeyT,ValT>::threadCleanup()
 //----------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-void HashTable<KeyT,ValT>::assistResize()
+bool HashTable<KeyT,ValT>::assistResize()
 {
 //TODO: table->resizeCopySegments(1)
-   return ;
+   return assistReclaim() ;
 }
 
 //----------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-void HashTable<KeyT,ValT>::assistReclaim()
+bool HashTable<KeyT,ValT>::assistReclaim()
 {
    // only one thread at a time needs to check
    static atom_flag being_checked ;
    if (being_checked.test_and_set())
-      return ;
+      return false ;
+   bool reclaimed = false ;
    while (true)
       {
       Table* tab = m_oldtables.load() ;
@@ -1905,9 +1906,10 @@ void HashTable<KeyT,ValT>::assistReclaim()
       if (!m_oldtables.compare_exchange_strong(tab,nxt))
 	 break ;	   // someone else has freed the table
       releaseTable(tab) ; // put the emptied table on the freelist
+      reclaimed = true ;
       }
    being_checked.clear() ;
-   return ;
+   return reclaimed ;
 }
 
 /************************************************************************/

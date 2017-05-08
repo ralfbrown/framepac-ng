@@ -29,89 +29,69 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-HashTableHelper::HashTableHelper()
+HashTableBase* hash_table_queue = nullptr ;
+
+/************************************************************************/
+/************************************************************************/
+
+bool HashTableHelper::initialize()
 {
-//TODO
-   return  ;
-}
-
-//----------------------------------------------------------------------------
-
-HashTableHelper::~HashTableHelper()
-{
-//TODO
-   return  ;
-}
-
-//----------------------------------------------------------------------------
-
-bool HashTableHelper::good() const
-{
-//TODO
-   return false ; 
-}
-
-//----------------------------------------------------------------------------
-
-HashTableHelper* HashTableHelper::instance()
-{
-   if (!s_instance)
+   if (!s_initialized)
       {
-      HashTableHelper* inst = new HashTableHelper ;
-      if (inst && inst->good())
+      std::thread* thr = new thread ;
+      Atomic<std::thread*>& ref = Atomic<std::thread*>::ref(s_thread) ;
+      std::thread* nullthr = nullptr ;
+      if (ref.compare_exchange_strong(nullthr, thr))
 	 {
-	 Atomic<HashTableHelper*>& ref = Atomic<HashTableHelper*>::ref(s_instance) ;
-	 HashTableHelper* nullinst = nullptr ;
-	 if (!ref.compare_exchange_strong(nullinst, inst))
-	    {
-	    // someone else beat us to installing the unique instance, so just
-	    //  delete the one we created
-	    delete inst ;
-	    }
+      //FIXME
+
+	 s_initialized = true ;
+	 }
+      else
+	 {
+	 // someone else beat us to installing the unique instance, so just
+	 //  delete the one we created
+	 delete thr ;
 	 }
       }
-   return s_instance ;
+   return s_initialized ;
 }
 
 //----------------------------------------------------------------------------
 
 bool HashTableHelper::queueResize(HashTableBase* ht)
 {
-   HashTableHelper* inst = instance() ;
-   if (!inst)
-      return false ;
-   return inst->queueResize_(ht) ;
-}
-
-//----------------------------------------------------------------------------
-
-bool HashTableHelper::queueReclamation(HashTableBase* ht)
-{
-   HashTableHelper* inst = instance() ;
-   if (!inst)
+   if (!initialize())
       {
-      SystemMessage::warning("unable to initialize background thread for hashtable memory reclamation") ;
+      SystemMessage::warning("unable to initialize background thread for hashtable resize") ;
       return false ;
       }
-   return inst->queueReclamation_(ht) ;
+   //TODO
+   (void)ht;
+   return true ;
+}
+
+/************************************************************************/
+/*	Methods for class HashTableBase					*/
+/************************************************************************/
+
+void HashTableBase::startResize()
+{
+   if (m_active_resizes++ == 0)
+      HashTableHelper::queueResize(this) ;
+   return ;
 }
 
 //----------------------------------------------------------------------------
 
-bool HashTableHelper::queueResize_(HashTableBase* ht)
+void HashTableBase::finishResize()
 {
-   (void)ht; //FIXME
+   if (--m_active_resizes == 0)
+      {
+      //TODO: de-queue this hash table
 
-   return false ;
-}
-
-//----------------------------------------------------------------------------
-
-bool HashTableHelper::queueReclamation_(HashTableBase* ht)
-{
-   (void)ht; //FIXME
-
-   return false ;
+      }
+   return ;
 }
 
 //----------------------------------------------------------------------------
