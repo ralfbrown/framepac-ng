@@ -206,6 +206,7 @@ class HashPtr
       static bool stale(Link stat) { return (stat & stale_mask) != 0 ; }
       bool inUse() const { return (m_first.load(std::memory_order_acquire) & inuse_mask) != 0 ; }
       static bool inUse(Link stat) { return (stat & inuse_mask) != 0 ; }
+      bool reclaiming() const { return (m_first.load(std::memory_order_acquire) & reclaim_mask) != 0 ; }
       bool copyDone() const { return (m_first.load(std::memory_order_acquire) & copied_mask) != 0 ; }
       static bool copyDone(Link stat) { return (stat & copied_mask) != 0 ; }
 
@@ -229,7 +230,7 @@ class HashPtr
       bool markUsed() { return m_first.test_and_set_bit(inuse_bit) ; }
       bool markFree() { return m_first.test_and_clear_bit(inuse_bit) ; }
       bool markReclaiming() { return m_first.test_and_set_bit(reclaim_bit) ; }
-      void markReclaimed() { m_first.store(m_first.load(std::memory_order_acquire)&~reclaim_mask,std::memory_order_release) ; }
+      void markReclaimed() { m_first.fetch_and(~reclaim_mask,std::memory_order_relaxed) ; }
       Link markStaleGetStatus() { return m_first.fetch_or(stale_mask) & ~link_mask ; }
       bool markCopyDone() { return m_first.test_and_set_bit(copied_bit) ; }
    protected:

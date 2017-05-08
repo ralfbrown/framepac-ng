@@ -726,7 +726,7 @@ bool HashTable<KeyT,ValT>::Table::add(size_t hashval, KeyT key, ValT value)
 	    }
 	 // advance to next item in chain
 	 offset = chainNext(pos) ;
-	 if_THREADED(if (key_at_pos == Entry::DELETED() && deleted == NULLPOS) { deleted = pos ; })
+	 if_THREADED(if (key_at_pos == Entry::DELETED() && deleted == NULLPOS && !bucketPtr(pos)->reclaiming()) { deleted = pos ; })
 	 }
       // when we get here, we know that the item is not yet in the
       //   hash table, so try to add it
