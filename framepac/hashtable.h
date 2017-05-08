@@ -629,13 +629,6 @@ class HashTable : public Object
 #endif /* FrSINGLE_THREADED */
          } ;
       //------------------------
-      class ThreadCleanup
-         {
-	 public:
-	    ThreadCleanup() {}
-	    ~ThreadCleanup() {  }
-         } ;
-      //------------------------
    protected: // members
       Atomic<Table*>   	  m_table ;	// pointer to currently-active m_tables[] entry
       Atomic<Table*>	  m_oldtables { nullptr } ;  // start of list of currently-live hash arrays
@@ -656,19 +649,6 @@ class HashTable : public Object
 #endif /* FrHASHTABLE_STATS */
 
    protected: // debug methods
-#if FrHASHTABLE_VERBOSITY > 0
-      [[gnu::format(printf,1,2)]] static void warn_msg(const char *fmt, ...)
-	 {
-	    std::va_list args ;
-	    va_start(args,fmt) ;
-	    vfprintf(stderr,fmt,args) ;
-	    va_end(args) ;
-	    return ;
-	 }
-#else
-      [[gnu::format(printf,1,2)]]
-      ALWAYS_INLINE static void warn_msg(const char *fmt [[gnu::unused]], ...) { }
-#endif /* FrHASHTABLE_VERBOSITY > 0 */
 #if FrHASHTABLE_VERBOSITY > 1
       [[gnu::format(printf,1,2)]] 
       static void debug_msg(const char *fmt, ...)

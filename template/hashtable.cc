@@ -68,13 +68,15 @@ namespace Fr {
       Table* tab = next() ;						\
       if (tab)								\
 	 {								\
-	 resizeCopySegments() ;						\
 	 /* ensure that our bucket has been copied to the	*/	\
 	 /*   successor table, then add the key to that table	*/	\
-         /*BREAKS: if (!copyChain(bucketnum))	*/			\
+         if (!copyChain(bucketnum))					\
+	    {								\
+	    resizeCopySegments(1) ;					\
 	    waitUntilCopied(bucketnum) ;				\
+	    }								\
 	 /* help out with the copying in general */			\
-	 /*resizeCopySegments(1) ;*/					\
+	 resizeCopySegments(4) ;					\
 	 INCR_COUNT(counter) ;						\
 	 tab->announceTable() ;						\
 	 return tab->delegate ;						\
