@@ -56,7 +56,7 @@
 //   can allow additional writes even before all old readers complete;
 //   if we were to wait for all readers, performance wouldn't scale as
 //   well with processor over-subscription.
-#  define FrHT_NUM_TABLES	    4
+#  define FrHT_NUM_TABLES	    14
 #endif
 
 // starting up the copying of a segment of the current hash array into
@@ -188,32 +188,32 @@ class HashPtr
       HashPtr() : m_first(NULLPTR), m_next(NULLPTR) {}
       ~HashPtr() {}
       // accessors
-      Link first() const { return m_first.load(std::memory_order_acquire) & link_mask ; }
+      Link first() const { return m_first.load() & link_mask ; }
       Link firstAndStatus(Link& stat) const
 	 {
-	 Link val = m_first.load(std::memory_order_acquire) ;
+	 Link val = m_first.load() ;
 	 stat = val & ~link_mask ;
 	 return val & link_mask ;
 	 }
-      Link next() const { return m_next.load(std::memory_order_acquire) ; }
-      Link status() const { return m_first.load(std::memory_order_acquire) & ~link_mask ; }
-      bool stale() const { return (m_first.load(std::memory_order_acquire) & stale_mask) != 0 ; }
+      Link next() const { return m_next.load() ; }
+      Link status() const { return m_first.load() & ~link_mask ; }
+      bool stale() const { return (m_first.load() & stale_mask) != 0 ; }
       static bool stale(Link stat) { return (stat & stale_mask) != 0 ; }
-      bool inUse() const { return (m_first.load(std::memory_order_acquire) & inuse_mask) != 0 ; }
+      bool inUse() const { return (m_first.load() & inuse_mask) != 0 ; }
       static bool inUse(Link stat) { return (stat & inuse_mask) != 0 ; }
-      bool reclaiming() const { return (m_first.load(std::memory_order_acquire) & reclaim_mask) != 0 ; }
-      bool copyDone() const { return (m_first.load(std::memory_order_acquire) & copied_mask) != 0 ; }
+      bool reclaiming() const { return (m_first.load() & reclaim_mask) != 0 ; }
+      bool copyDone() const { return (m_first.load() & copied_mask) != 0 ; }
       static bool copyDone(Link stat) { return (stat & copied_mask) != 0 ; }
 
       // modifiers
-      void first(Link ofs) { m_first.store(status() | ofs,std::memory_order_release) ; }
+      void first(Link ofs) { m_first.store(status() | ofs) ; }
       bool first(Link new_ofs, Link expected, Link stat)
 	 {
 	    new_ofs = (new_ofs /*& link_mask*/) | stat ;
 	    expected = (expected /*& link_mask*/) | stat ;
 	    return m_first.compare_exchange_weak(expected,new_ofs) ;
 	 }
-      void next(Link ofs) { m_next.store(ofs,std::memory_order_release) ; }
+      void next(Link ofs) { m_next.store(ofs) ; }
       bool next(Link new_ofs, Link expected, Link /*stat*/)
 	 {
 	    // (not using extra flags in m_next yet)
@@ -282,11 +282,49 @@ inline void free_object(const class Fr::Symbol*) { return ; }
 inline void free_object(size_t) { return ; }
 
 /************************************************************************/
+/*	Declarations for class HashTableBase				*/
+/************************************************************************/
+
+class HashTableBase : public Object
+   {
+   public:
+      HashTableBase() {}
+      ~HashTableBase() {}
+
+      virtual void assistResize() = 0 ;
+      virtual void assistReclaim() = 0 ;
+   protected:
+
+   } ;
+
+/************************************************************************/
+/*	Declarations for class HashTableHelper				*/
+/************************************************************************/
+
+class HashTableHelper
+   {
+   public:
+      static bool queueResize(HashTableBase* ht) ;
+      static bool queueReclamation(HashTableBase* ht) ;
+
+   protected:  // internal methods
+      HashTableHelper() ;
+      ~HashTableHelper() ;
+
+      static HashTableHelper* instance() ;
+      bool good() const ;
+      bool queueResize_(HashTableBase* ht) ;
+      bool queueReclamation_(HashTableBase* ht) ;
+   protected:
+      static HashTableHelper* s_instance ;
+   } ;
+
+/************************************************************************/
 /*	Declarations for template class HashTable			*/
 /************************************************************************/
 
 template <typename KeyT, typename ValT>
-class HashTable : public Object
+class HashTable : public HashTableBase
    {
    public:
       typedef bool HashKeyValueFunc(KeyT key, ValT value,std::va_list) ;
@@ -389,7 +427,7 @@ class HashTable : public Object
 	    }
 	 char *displayValue(char *buffer) const
 	    {
-	       buffer = m_key.load(std::memory_order_acquire).print(buffer) ;
+	       buffer = m_key.load().print(buffer) ;
 	       *buffer = '\0' ;
 	       return buffer ;
 	    }
@@ -414,16 +452,16 @@ class HashTable : public Object
 	 void init(size_t size) ;
 	 void clear() ;
 	 bool good() const { return m_entries != nullptr ifnot_INTERLEAVED(&& m_ptrs != nullptr) && m_size > 0 ; }
-	 bool superseded() const { return m_next_table.load(std::memory_order_acquire) != nullptr ; }
-	 bool resizingDone() const { return m_resizedone.load(std::memory_order_acquire) ; }
+	 bool superseded() const { return m_next_table.load() != nullptr ; }
+	 bool resizingDone() const { return m_resizedone.load() ; }
 	 // maintaining the count of elements in the table is too much of a bottleneck under high load,
 	 //   so we'll punt and simply scan the hash array if someone needs that count
 	 size_t currentSize() const { return countItems() ; }
-	 Table *next() const { return m_next_table.load(std::memory_order_acquire) ; }
-	 Table *nextFree() const { return m_next_free.load(std::memory_order_acquire) ; }
-	 KeyT getKey(size_t N) const { return m_entries[N].m_key.load(std::memory_order_acquire) ; }
+	 Table *next() const { return m_next_table.load() ; }
+	 Table *nextFree() const { return m_next_free.load() ; }
+	 KeyT getKey(size_t N) const { return m_entries[N].m_key.load() ; }
 	 KeyT getKeyNonatomic(size_t N) const { return ANNOTATE_UNPROTECTED_READ(m_entries[N].m_key) ; }
-	 void setKey(size_t N, KeyT newkey) { m_entries[N].m_key.store(newkey,std::memory_order_release) ; }
+	 void setKey(size_t N, KeyT newkey) { m_entries[N].m_key.store(newkey) ; }
 	 ValT getValue(size_t N) const { return m_entries[N].getValue() ; }
 	 ValT *getValuePtr(size_t N) const { return m_entries[N].getValuePtr() ; }
 	 void setValue(size_t N, ValT value) { m_entries[N].setValue(value) ; }
@@ -451,7 +489,7 @@ class HashTable : public Object
 	    {
 #ifndef FrSINGLE_THREADED
 	       Atomic<Table*>& tbl = Atomic<Table*>::ref(Fr::HashTable<KeyT,ValT>::s_table) ;
-	       tbl.store(this,std::memory_order_release) ;
+	       tbl.store(this) ;
 #endif /* !FrSINGLE_THREADED */
 	       return ;
 	    }
@@ -494,7 +532,7 @@ class HashTable : public Object
 	 void clearDuplicates(size_t bucketnum) ;
 
 	 bool reclaimChain(size_t bucketnum) ;
-	 bool assistResize() ;
+	 bool assistWithResize() ;
 	 void resizeCleanup() ;
 
 	 static Object* makeObject(KeyT key) ;
@@ -604,7 +642,7 @@ class HashTable : public Object
 		 m_next = next ; m_id = FramepaC::my_job_id ; }
 	    void init(Atomic<Table*>* tab, TablePtr* next)
 	       { m_table = tab ; m_next = next ; m_id = FramepaC::my_job_id ; }
-	    const Table *table() const { return m_table->load(std::memory_order_acquire) ; }
+	    const Table *table() const { return m_table->load() ; }
          } ;
       //------------------------
       class HazardLock
@@ -619,12 +657,12 @@ class HashTable : public Object
 	    HazardLock(Atomic<Table*>tab)
 	       {
 	       Atomic<Table*>& tbl = Atomic<Table*>::ref(HashTable::s_table) ;
-	       tbl.store(tab.load(std::memory_order_acquire),std::memory_order_release) ;
+	       tbl.store(tab.load()) ;
 	       }
 	    HazardLock(Table *tab)
 	       {
 	       Atomic<Table*>& tbl = Atomic<Table*>::ref(HashTable::s_table) ;
-	       tbl.store(tab,std::memory_order_release) ;
+	       tbl.store(tab) ;
 	       }
 	    ~HazardLock()
 	       {
@@ -676,7 +714,6 @@ class HashTable : public Object
       void releaseTable(Table *t) ;
       void freeTables() ;
       void updateTable() ;
-      bool reclaimSuperseded() ;
 
       // set up the per-thread info needed for safe reclamation of
       //   entries and hash arrays, as well as an on-exit callback
@@ -685,8 +722,9 @@ class HashTable : public Object
       static void threadInit() ;
    protected:
       static void threadCleanup() ;
+      static bool stillLive(const Table *version) ;
 
-      size_t maxSize() const { return m_table.load(std::memory_order_acquire)->m_size ; }
+      size_t maxSize() const { return m_table.load()->m_size ; }
       static inline size_t hashVal(KeyT key)
 	 {
 	    return key ? key->hashValue() : 0 ;
@@ -714,70 +752,6 @@ class HashTable : public Object
       // special support for Fr::SymbolTableX; must be overridden
       static bool isEqual(const char *keyname, size_t namelen, KeyT key) ;
 
-
-   protected:
-      // single-threaded only!!  But since it's only called from a ctor, that's fine
-      void copyContents(const HashTable &ht)
-         {
-	    init(ht.maxSize()) ;
-	    Table *table = m_table.load(std::memory_order_acquire) ;
-	    Table *othertab = ht.m_table.load(std::memory_order_acquire) ;
-	    for (size_t i = 0 ; i < table->m_fullsize ; i++)
-	       {
-	       table->copyEntry(i,othertab) ;
-	       }
-	    return ;
-	 }
-      // single-threaded only!!  But since it's only called from a dtor, that's fine
-      void clearContents()
-         {
-	    Table *table = m_table.load(std::memory_order_acquire) ;
-	    if (table && table->good())
-	       {
-	       if (cleanup_fn)
-		  {
-		  this->iterate(cleanup_fn) ;
-		  cleanup_fn = nullptr ;
-		  }
-	       if (remove_fn)
-		  {
-		  for (size_t i = 0 ; i < table->m_fullsize ; ++i)
-		     {
-		     if (table->activeEntry(i))
-			{
-			table->replaceValue(i,nullVal()) ;
-			}
-		     }
-		  }
-	       atomic_thread_fence(std::memory_order_seq_cst) ; 
-	       debug_msg("HashTable dtor\n") ;
-	       }
-	    table->clear() ;
-	    freeTables() ;
-	    return ;
-	 }
-
-      static size_t stillLive(const Table *version)
-	 {
-#ifndef FrSINGLE_THREADED
-	    // scan the list of per-thread s_table variables
-	    for (const TablePtr *tables = Atomic<TablePtr*>::ref(s_thread_entries).load(std::memory_order_acquire) ;
-		 tables ;
-		 tables = ANNOTATE_UNPROTECTED_READ(tables->m_next))
-	       {
-	       // check whether the hazard pointer is for the requested version
-	       if (tables->table() == version)
-		  {
-		  // yep, the requested version is still live
-		  return true ;
-		  }
-	       }
-#endif /* !FrSINGLE_THREADED */
-	    (void)version ;
-	    // nobody else is using that version
-	    return false ;
-	 }
-
       // ============== Definitions to reduce duplication ================
       // much of the HashTable API just calls through to Table after
       //   setting a hazard pointer
@@ -789,48 +763,35 @@ class HashTable : public Object
             return m_table.load()->delegate ;
 #define DELEGATE_HASH_RECLAIM(type,delegate)		\
 	    if (m_oldtables.load() != m_table.load())	\
-	       reclaimSuperseded() ;			\
+	       assistReclaim() ;			\
 	    size_t hashval = hashVal(key) ; 		\
 	    return m_table.load()->delegate ; 
 #else
 #define DELEGATE(delegate) 						\
             HazardLock hl(m_table) ;					\
-	    return m_table.load(std::memory_order_acquire)->delegate ;
+	    return m_table.load()->delegate ;
 #define DELEGATE_HASH(delegate) 					\
 	    size_t hashval = hashVal(key) ; 				\
 	    HazardLock hl(m_table) ;					\
-	    return m_table.load(std::memory_order_acquire)->delegate ;
+	    return m_table.load()->delegate ;
 #define DELEGATE_HASH_RECLAIM(type,delegate)				\
-            if (m_oldtables.load(std::memory_order_acquire)		\
-		!= m_table.load(std::memory_order_acquire))		\
-	       reclaimSuperseded() ;					\
+            if (m_oldtables.load() != m_table.load())			\
+	       assistReclaim() ;					\
 	    size_t hashval = hashVal(key) ; 				\
 	    HazardLock hl(m_table) ;					\
-	    return m_table.load(std::memory_order_acquire)->delegate ;
+	    return m_table.load()->delegate ;
 #endif /* FrSINGLE_THREADED */
 
       // ============== The public API for HashTable ================
    public:
       HashTable(size_t initial_size = 1031)
-	 : Object(), m_table(nullptr)
+	 : HashTableBase(), m_table(nullptr)
 	 {
 	    init(initial_size) ;
 	    return ;
 	 }
-      HashTable(const HashTable &ht)
-	 : Object(), m_table(nullptr)
-	 {
-	    if (&ht == nullptr)
-	       return ;
-	    copyContents(ht) ;
-	    return ;
-	 }
-      virtual ~HashTable()
-	 {
-	    clearContents() ;
-	    remove_fn = nullptr ;
-	    return ;
-	 }
+      HashTable(const HashTable &ht) ;
+      virtual ~HashTable() ;
 
       bool resizeTo(size_t newsize, bool enlarge_only = false)
 	 { DELEGATE(resize(newsize,enlarge_only)) }
@@ -856,13 +817,14 @@ class HashTable : public Object
       ValT *lookupValuePtr(KeyT key) const { DELEGATE_HASH(lookupValuePtr(hashval,key)) }
       [[gnu::hot]] bool add(KeyT key, ValT value, bool replace)
 	 {
-	 if (m_oldtables.load(std::memory_order_acquire) != m_table.load(std::memory_order_acquire))
-	       reclaimSuperseded() ;
+	 if (m_oldtables.load() != m_table.load())
+	       assistReclaim() ;
 	    size_t hashval = hashVal(key) ;
 	    HazardLock hl(m_table) ;
+	    Table *tab = m_table.load() ;
 	    if (replace)
-	       m_table.load(std::memory_order_acquire)->remove(hashval,key) ;
-	    return m_table.load(std::memory_order_acquire)->add(hashval,key,value) ;
+	       tab->remove(hashval,key) ;
+	    return tab->add(hashval,key,value) ;
 	 }
       // special support for Fr::SymbolTableX
       [[gnu::hot]] KeyT addKey(const char *name, bool *already_existed = nullptr)
@@ -942,7 +904,7 @@ class HashTable : public Object
       void onRemove(HashKVFunc *func)
          {
 	 remove_fn = func ;
-	 Table* tbl = m_table.load(std::memory_order_acquire) ;
+	 Table* tbl = m_table.load() ;
 	 if (tbl) tbl->onRemove(func) ; 
 	 }
 
@@ -952,6 +914,10 @@ class HashTable : public Object
       bool isPacked() const { return false ; }  // backwards compatibility
       HashKeyValueFunc *cleanupFunc() const { return cleanup_fn ; }
       HashKVFunc *onRemoveFunc() const { return remove_fn ; }
+
+      // =============== Background Processing =================
+      virtual void assistResize() ;
+      virtual void assistReclaim() ;
 
       // =============== Operational Statistics ================
       [[gnu::cold]] void clearGlobalStats()

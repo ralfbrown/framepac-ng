@@ -404,12 +404,12 @@ class Atomic
 
       bool is_lock_free() const { return std::atomic<T>::is_lock_free() ; }
 
-      void store(const T& value) noexcept { ref().store(value,std::memory_order_release) ; }
-      void store(const T& value) volatile noexcept { ref().store(value,std::memory_order_release) ; }
-      void store(const T& value, std::memory_order order) noexcept { ref().store(value,order) ; }
-      void store(const T& value, std::memory_order order) volatile noexcept { ref().store(value,order) ; }
-      void store_relax(const T& value) noexcept { ref().store(value,std::memory_order_relaxed) ; }
-      void store_relax(const T& value) volatile noexcept { ref().store(value,std::memory_order_relaxed) ; }
+      void store(const T value) noexcept { ref().store(value,std::memory_order_release) ; }
+      void store(const T value) volatile noexcept { ref().store(value,std::memory_order_release) ; }
+      void store(const T value, std::memory_order order) noexcept { ref().store(value,order) ; }
+      void store(const T value, std::memory_order order) volatile noexcept { ref().store(value,order) ; }
+      void store_relax(const T value) noexcept { ref().store(value,std::memory_order_relaxed) ; }
+      void store_relax(const T value) volatile noexcept { ref().store(value,std::memory_order_relaxed) ; }
 
       T load() const noexcept
 	 { std::atomic<T>& atom = ref() ;
@@ -551,7 +551,7 @@ class Atomic
       T operator^= (const T mask) volatile noexcept { return ref().fetch_xor(mask) ^ mask ; } 
 
       // additional operations beyond those for std::atomic
-#if __GNUC__ >= 4 && (defined(__i386__) || defined(__x86_64__))
+#if __GNUC__ >= 4 && (defined(__i386__) || defined(__x86_64__)) && 0
       bool test_and_set_bit( unsigned bitnum )
 	 {
 	    bool origbit ;
@@ -584,7 +584,7 @@ class Atomic
 	 return test_and_set_mask(mask) == 0 ;
 	 }
 #endif /* GCC inline-assembler for x86 */
-#if __GNUC__ >= 4 && (defined(__i386__) || defined(__x86_64__))
+#if __GNUC__ >= 4 && (defined(__i386__) || defined(__x86_64__)) && 0
       bool test_and_clear_bit( unsigned bitnum )
 	 {
 	    bool origbit ;

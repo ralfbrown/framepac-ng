@@ -248,6 +248,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
 	hashtable_objobj$(OBJ) hashtable_objsz$(OBJ) \
 	hashtable_symnul$(OBJ) hashtable_symobj$(OBJ) hashtable_symsz$(OBJ) \
 	hashtable_u32u32$(OBJ) hashtable_data$(OBJ) \
+	hashtable_helper$(OBJ) \
 	init$(OBJ) linebatch$(OBJ) random$(OBJ) \
 	integer$(OBJ) jsonreader$(OBJ) list$(OBJ) map$(OBJ) matrix$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
@@ -393,6 +394,7 @@ hashset_obj$(OBJ):	hashset_obj$(C) template/hashtable.cc
 hashset_sym$(OBJ):	hashset_sym$(C) template/hashtable.cc
 hashset_u32$(OBJ):	hashset_u32$(C) template/hashtable.cc
 hashtable_data$(OBJ):	hashtable_data$(C) framepac/hashtable.h
+hashtable_helper$(OBJ):	hashtable_helper$(C) framepac/hashtable.h framepac/atomic.h
 hashtable_objobj$(OBJ):	hashtable_objobj$(C) template/hashtable.cc
 hashtable_objsz$(OBJ):	hashtable_objsz$(C) template/hashtable.cc
 hashtable_symnul$(OBJ):	hashtable_symnul$(C) template/hashtable.cc
