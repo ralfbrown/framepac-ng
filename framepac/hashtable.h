@@ -353,12 +353,6 @@ class HashTable : public HashTableBase
       // encapsulate a hash table entry
       class Entry
       {
-      private:
-	 constexpr static size_t numValues() { return lengthof(Entry::m_value) ; }
-      public: // members
-	 if_INTERLEAVED(HashPtr  m_info ;)
-	 Fr::Atomic<KeyT>  m_key ;
-	 ValT              m_value[std::is_empty<ValT>::value ? 0 : 1] ;
       public: // methods
 	 void *operator new(size_t,void *where) { return where ; }
 	 static KeyT copy(KeyT obj)
@@ -382,10 +376,19 @@ class HashTable : public HashTableBase
 	 ~Entry() {}
 
 	 // variable-setting functions
-	 void setValue(ValT value)
-	    { if (numValues() > 0) m_value[0] = value ; }
-	 ValT incrCount(size_t incr)
-	    { return (numValues() > 0) ? (m_value[0] += incr) : nullVal() ; }
+	 template <typename V_T = ValT>
+	 void setValue(typename std::enable_if<std::is_empty<ValT>::value,V_T>::type /*value*/) {}
+	 template <typename V_T = ValT>
+	 void setValue(typename std::enable_if<!std::is_empty<ValT>::value,V_T>::type value)
+	    { m_value[0] = value ; }
+
+	 template <typename RetT = ValT>
+	 typename std::enable_if<std::is_empty<ValT>::value,RetT>::type
+	 incrCount(size_t incr) { return nullVal() ; }
+	 template <typename RetT = ValT>
+	 typename std::enable_if<!std::is_empty<ValT>::value,RetT>::type
+	 incrCount(size_t incr) { return m_value[0] += incr ; }
+
 	 template <typename RetT = ValT>
 	 typename std::enable_if<std::is_empty<ValT>::value,RetT>::type
 	 atomicIncrCount(size_t) { return nullVal() ; }
@@ -395,11 +398,27 @@ class HashTable : public HashTableBase
 	    { return Fr::Atomic<ValT>::ref(m_value[0]) += incr ; }
 
 	 // access to internal state
-	 KeyT getKey() const { return m_key ; }
+	 KeyT getKey() const { return m_key.load() ; }
+	 void setKey(KeyT newkey) { m_key.store(newkey) ; }
+	 bool updateKey(KeyT expected, KeyT desired)
+	    { return m_key.compare_exchange_strong(expected,desired) ; }
 	 KeyT copyName() const { return copy(m_key) ; }
-	 ValT getValue() const { return (numValues() > 0) ? m_value[0] : nullVal() ; }
-	 //const ValT *getValuePtr() const { return (numValues() > 0) ? &m_value[0] : (ValT*)nullptr ; }
-	 ValT* getValuePtr() const { return (numValues() > 0) ? (ValT*)&m_value[0] : (ValT*)nullptr ; }
+	 bool isActive() const { return m_key != DELETED() ; }
+
+	 template <typename RetT = ValT>
+	 typename std::enable_if<std::is_empty<ValT>::value,RetT>::type
+	 getValue() const { return nullVal() ; }
+	 template <typename RetT = ValT>
+	 typename std::enable_if<!std::is_empty<ValT>::value,RetT>::type
+	 getValue() const { return m_value[0]; }
+
+	 template <typename RetT = ValT>
+	 typename std::enable_if<std::is_empty<ValT>::value,RetT>::type*
+	 getValuePtr() { return (ValT*)nullptr ; }
+	 template <typename RetT = ValT>
+	 typename std::enable_if<!std::is_empty<ValT>::value,RetT>::type*
+	 getValuePtr() { return &m_value[0] ; }
+
 #if defined(FrSINGLE_THREADED)
 	 ValT swapValue(ValT new_value)
 	    {
@@ -436,7 +455,12 @@ class HashTable : public HashTableBase
 	       return m_key ? m_key->displayLength() : 3 ;
 	    }
 #endif /* FIXME */
-         } ;
+      public: // data members
+	 if_INTERLEAVED(HashPtr  m_info ;)
+      protected: // members
+	 Fr::Atomic<KeyT>  m_key ;
+	 ValT              m_value[std::is_empty<ValT>::value ? 0 : 1] ;
+      } ;
       //------------------------
       // encapsulate all of the fields which must be atomically swapped at the end of a resize()
       class Table
@@ -459,15 +483,14 @@ class HashTable : public HashTableBase
 	 size_t currentSize() const { return countItems() ; }
 	 Table *next() const { return m_next_table.load() ; }
 	 Table *nextFree() const { return m_next_free.load() ; }
-	 KeyT getKey(size_t N) const { return m_entries[N].m_key.load() ; }
-	 KeyT getKeyNonatomic(size_t N) const { return ANNOTATE_UNPROTECTED_READ(m_entries[N].m_key) ; }
-	 void setKey(size_t N, KeyT newkey) { m_entries[N].m_key.store(newkey) ; }
+	 KeyT getKey(size_t N) const { return m_entries[N].getKey() ; }
+	 void setKey(size_t N, KeyT newkey) { m_entries[N].setKey(newkey) ; }
 	 ValT getValue(size_t N) const { return m_entries[N].getValue() ; }
 	 ValT *getValuePtr(size_t N) const { return m_entries[N].getValuePtr() ; }
 	 void setValue(size_t N, ValT value) { m_entries[N].setValue(value) ; }
 	 bool updateKey(size_t N, KeyT expected, KeyT desired)
-	    { return m_entries[N].m_key.compare_exchange_strong(expected,desired) ; }
-	 bool activeEntry(size_t N) const { return m_entries[N].getKey() != Entry::DELETED() ; }
+	    { return m_entries[N].updateKey(expected,desired) ; }
+	 bool activeEntry(size_t N) const { return m_entries[N].isActive() ; }
 #ifndef FrHASHTABLE_INTERLEAVED_ENTRIES
 	 HashPtr *bucketPtr(size_t N) const { return &m_ptrs[N] ; }
 #else
