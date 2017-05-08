@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-05					*/
+/* Version 0.01, last edit 2017-05-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -127,7 +127,7 @@ class Slab
 	    } ;
 	 public:
 	    SlabFooter() {}
-	    ~SlabFooter() = default ;
+	    ~SlabFooter() {} ;
          } ;
    private:
       SlabHeader m_header ;

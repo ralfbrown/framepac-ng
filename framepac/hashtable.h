@@ -225,7 +225,7 @@ class HashPtr
       bool markUsed() { return m_first.test_and_set_bit(inuse_bit) ; }
       bool markFree() { return m_first.test_and_clear_bit(inuse_bit) ; }
       bool markReclaiming() { return m_first.test_and_set_bit(reclaim_bit) ; }
-      void markReclaimed() { m_first.fetch_and(~reclaim_mask,std::memory_order_relaxed) ; }
+      void markReclaimed() { m_first.fetch_and_relax(~reclaim_mask) ; }
       Link markStaleGetStatus() { return m_first.fetch_or(stale_mask) & ~link_mask ; }
       bool markCopyDone() { return m_first.test_and_set_bit(copied_bit) ; }
    protected:
@@ -348,8 +348,13 @@ class HashTable : public Object
 	    { if (numValues() > 0) m_value[0] = value ; }
 	 ValT incrCount(size_t incr)
 	    { return (numValues() > 0) ? (m_value[0] += incr) : nullVal() ; }
-	 ValT atomicIncrCount(size_t incr)
-	    { return (numValues() > 0) ? (Fr::Atomic<ValT>::ref(m_value[0]) += incr) : nullVal() ; }
+	 template <typename RetT = ValT>
+	 typename std::enable_if<std::is_empty<ValT>::value,RetT>::type
+	 atomicIncrCount(size_t) { return nullVal() ; }
+	 template <typename RetT = ValT>
+	 typename std::enable_if<!std::is_empty<ValT>::value,RetT>::type
+	 atomicIncrCount(size_t incr)
+	    { return Fr::Atomic<ValT>::ref(m_value[0]) += incr ; }
 
 	 // access to internal state
 	 KeyT getKey() const { return m_key ; }
@@ -624,7 +629,7 @@ class HashTable : public Object
 	    ~HazardLock()
 	       {
 	       Atomic<Table*>& tbl = Atomic<Table*>::ref(HashTable::s_table) ;
-	       tbl.store((Table*)nullptr,std::memory_order_relaxed) ;
+	       tbl.store_relax((Table*)nullptr) ;
 	       }
 #endif /* FrSINGLE_THREADED */
          } ;

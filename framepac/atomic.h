@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-05-05					*/
+/*  Version 0.01, last edit 2017-05-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File atomic.h		atomic operations on simple variables	*/
@@ -60,136 +60,285 @@ class atom_flag
 template <typename T>
 class Atomic
    {
-   private:
-      T v ;
    public:
       Atomic() {}
       Atomic(T value) { v = value ; }
       ~Atomic() {}
 
-      T operator= (T newval) { v = newval ; return newval ; }
-      T operator= (T newval) volatile { v = newval ; return newval ; }
-      Atomic& operator= (const Atomic& ) = delete ;
-      Atomic& operator= (const Atomic& ) volatile = delete ;
+      T& operator= (T& newval) noexcept { v = newval ; return newval ; }
+      T& operator= (T& newval) volatile noexcept { v = newval ; return newval ; }
+      const T& operator= (const T& newval) noexcept { v = newval ; return newval ; }
+      const T& operator= (const T& newval) volatile noexcept { v = newval ; return newval ; }
 
-      static bool is_lock_free() const { return true ; }
+      static bool is_lock_free() const noexcept { return true ; }
       static constexpr bool is_always_lock_free = true ;
 
-      void store( T desired, std::memory_order = std::memory_order_seq_cst ) { v = desired ; }
-      void store( T desired, std::memory_order = std::memory_order_seq_cst ) volatile { v = desired ; }
-      
-      T load( std::memory_order = std::memory_order_seq_cst ) const { return v ; }
-      T load( std::memory_order = std::memory_order_seq_cst ) const volatile { return v ; }
-      T operator T () const { return v ; }
-      T operator T () const volatile { return v ; }
+      void store(const T& desired, std::memory_order = std::memory_order_seq_cst ) noexcept { v = desired ; }
+      void store(const T& desired, std::memory_order = std::memory_order_seq_cst ) volatile noexcept { v = desired ; }
+      void store_relax(const T& desired) noexcept { v = desired ; }
+      void store_relax(const T& desired) volatile noexcept { v = desired ; }
 
-      T exchange( T desired, std::memory_order = std::memory_order_seq_cst )
+      T load( std::memory_order = std::memory_order_seq_cst ) const noexcept { return v ; }
+      T load( std::memory_order = std::memory_order_seq_cst ) const volatile noexcept { return v ; }
+      T load_relax() const noexcept { return v ; }
+      T load_relax() const volatile noexcept { return v ; }
+
+      operator T () const noexcept { return v ; }
+      operator T () const volatile noexcept { return v ; }
+
+      T exchange(const T desired, std::memory_order = std::memory_order_seq_cst ) noexcept
 	 { T old = v ; v = desired ; return old ; }
-      T exchange( T desired, std::memory_order = std::memory_order_seq_cst ) volatile
+      T exchange(const T desired, std::memory_order = std::memory_order_seq_cst ) volatile noexcept
 	 { T old = v ; v = desired ; return old ; }
+      T exchange_relax(const T desired) noexcept { T old = v ; v = desired ; return old ; }
+      T exchange_relax(const T desired) volatile noexcept { T old = v ; v = desired ; return old ; }
 
       bool compare_exchange_weak( T& /*expected*/, T desired,
-				  std::memory_order = std::memory_order_seq_cst )
+				  std::memory_order = std::memory_order_seq_cst ) noexcept
 	 { v = desired ; return true ; }
       bool compare_exchange_weak( T& /*expected*/, T desired,
-				  std::memory_order = std::memory_order_seq_cst ) volatile
+				  std::memory_order = std::memory_order_seq_cst ) volatile noexcept
 	 { v = desired ; return true ; }
       bool compare_exchange_strong( T& /*expected*/, T desired,
-				    std::memory_order = std::memory_order_seq_cst )
+				    std::memory_order = std::memory_order_seq_cst ) noexcept
 	 { v = desired ; return true ; }
       bool compare_exchange_strong( T& /*expected*/, T desired,
-				    std::memory_order = std::memory_order_seq_cst ) volatile
+				    std::memory_order = std::memory_order_seq_cst ) volatile noexcept
 	 { v = desired ; return true ; }
 
-      T fetch_add( T incr, std::memory_order = std::memory_order_seq_cst )
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_add( T incr, std::memory_order = std::memory_order_seq_cst ) noexcept
 	 { T old = v ; v += incr ; return old ; }
-      T fetch_add( T incr, std::memory_order = std::memory_order_seq_cst ) volatile
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_add( T incr, std::memory_order = std::memory_order_seq_cst ) volatile noexcept
 	 { T old = v ; v += incr ; return old ; }
-      T fetch_sub( T incr, std::memory_order = std::memory_order_seq_cst )
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_add(std::ptrdiff_t incr, std::memory_order = std::memory_order_seq_cst ) noexcept
+	 { T old = v ; v += incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_add(std::ptrdiff_t incr, std::memory_order = std::memory_order_seq_cst ) volatile noexcept
+	 { T old = v ; v += incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_add_relax( T incr) noexcept
+	 { T old = v ; v += incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_add_relax( T incr) volatile noexcept
+	 { T old = v ; v += incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_add_relax(std::ptrdiff_t incr) noexcept
+	 { T old = v ; v += incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_add_relax(std::ptrdiff_t incr) volatile noexcept
+	 { T old = v ; v += incr ; return old ; }
+
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_sub( T incr, std::memory_order = std::memory_order_seq_cst ) noexcept
 	 { T old = v ; v -= incr ; return old ; }
-      T fetch_sub( T incr, std::memory_order = std::memory_order_seq_cst ) volatile
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_sub( T incr, std::memory_order = std::memory_order_seq_cst ) volatile noexcept
 	 { T old = v ; v -= incr ; return old ; }
-      T fetch_and( T incr, std::memory_order = std::memory_order_seq_cst )
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_sub(std::ptrdiff_t incr, std::memory_order = std::memory_order_seq_cst ) noexcept
+	 { T old = v ; v -= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_sub(std::ptrdiff_t incr, std::memory_order = std::memory_order_seq_cst ) volatile noexcept
+	 { T old = v ; v -= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_sub_relax( T incr) noexcept
+	 { T old = v ; v -= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_sub_relax( T incr) volatile noexcept
+	 { T old = v ; v -= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_sub_relax(std::ptrdiff_t incr) noexcept
+	 { T old = v ; v -= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_sub_relax(std::ptrdiff_t incr) volatile noexcept
+	 { T old = v ; v -= incr ; return old ; }
+
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_and( T incr, std::memory_order = std::memory_order_seq_cst ) noexcept
 	 { T old = v ; v &= incr ; return old ; }
-      T fetch_and( T incr, std::memory_order = std::memory_order_seq_cst ) volatile
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_and( T incr, std::memory_order = std::memory_order_seq_cst ) volatile noexcept
 	 { T old = v ; v &= incr ; return old ; }
-      T fetch_or( T incr, std::memory_order = std::memory_order_seq_cst )
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_and(std::ptrdiff_t incr, std::memory_order = std::memory_order_seq_cst ) noexcept
+	 { T old = v ; v &= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_and(std::ptrdiff_t incr, std::memory_order = std::memory_order_seq_cst ) volatile noexcept
+	 { T old = v ; v &= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_and_relax( T incr) noexcept
+	 { T old = v ; v &= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_and_relax( T incr) volatile noexcept
+	 { T old = v ; v &= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_and_relax(std::ptrdiff_t incr) noexcept
+	 { T old = v ; v &= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_and_relax(std::ptrdiff_t incr) volatile noexcept
+	 { T old = v ; v &= incr ; return old ; }
+
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_or( T incr, std::memory_order = std::memory_order_seq_cst ) noexcept
 	 { T old = v ; v |= incr ; return old ; }
-      T fetch_or( T incr, std::memory_order = std::memory_order_seq_cst ) volatile
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_or( T incr, std::memory_order = std::memory_order_seq_cst ) volatile noexcept
 	 { T old = v ; v |= incr ; return old ; }
-      T fetch_xor( T incr, std::memory_order = std::memory_order_seq_cst )
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_or(std::ptrdiff_t incr, std::memory_order = std::memory_order_seq_cst ) noexcept
+	 { T old = v ; v |= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_or(std::ptrdiff_t incr, std::memory_order = std::memory_order_seq_cst ) volatile noexcept
+	 { T old = v ; v |= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_or_relax( T incr) noexcept
+	 { T old = v ; v |= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_or_relax( T incr) volatile noexcept
+	 { T old = v ; v |= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_or_relax(std::ptrdiff_t incr) noexcept
+	 { T old = v ; v |= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_or_relax(std::ptrdiff_t incr) volatile noexcept
+	 { T old = v ; v |= incr ; return old ; }
+
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_xor( T incr, std::memory_order = std::memory_order_seq_cst ) noexcept
 	 { T old = v ; v ^= incr ; return old ; }
-      T fetch_xor( T incr, std::memory_order = std::memory_order_seq_cst ) volatile
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_xor( T incr, std::memory_order = std::memory_order_seq_cst ) volatile noexcept
+	 { T old = v ; v ^= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_xor(std::ptrdiff_t incr, std::memory_order = std::memory_order_seq_cst ) noexcept
+	 { T old = v ; v ^= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_xor(std::ptrdiff_t incr, std::memory_order = std::memory_order_seq_cst ) volatile noexcept
+	 { T old = v ; v ^= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_xor_relax( T incr) noexcept
+	 { T old = v ; v ^= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_xor_relax( T incr) volatile noexcept
+	 { T old = v ; v ^= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_xor_relax(std::ptrdiff_t incr) noexcept
+	 { T old = v ; v ^= incr ; return old ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_xor_relax(std::ptrdiff_t incr) volatile noexcept
 	 { T old = v ; v ^= incr ; return old ; }
 
-      T operator++ () { return ++v ; }
-      T operator++ () volatile { return ++v ; }
-      T operator++ (int) { return v++ ; }
-      T operator++ (int) volatile { return v++ ; }
-      T operator-- () { return --v ; }
-      T operator-- () volatile { return --v ; }
-      T operator-- (int) { return v-- ; }
-      T operator-- (int) volatile { return v-- ; }
+      T operator++ () noexcept { return ++v ; }
+      T operator++ () volatile noexcept { return ++v ; }
+      T operator++ (int) noexcept { return v++ ; }
+      T operator++ (int) volatile noexcept { return v++ ; }
+      T operator-- () noexcept { return --v ; }
+      T operator-- () volatile noexcept { return --v ; }
+      T operator-- (int) noexcept { return v-- ; }
+      T operator-- (int) volatile noexcept { return v-- ; }
 
-      T operator+= ( T incr ) { v += incr ; return v ; }
-      T operator+= ( T incr ) volatile { v += incr ; return v ; }
-      T operator-= ( T incr ) { v -= incr ; return v ; }
-      T operator-= ( T incr ) volatile { v -= incr ; return v ; }
-      T operator&= ( T incr ) { v &= incr ; return v ; }
-      T operator&= ( T incr ) volatile { v &= incr ; return v ; }
-      T operator|= ( T incr ) { v |= incr ; return v ; }
-      T operator|= ( T incr ) volatile { v |= incr ; return v ; }
-      T operator^= ( T incr ) { v ^= incr ; return v ; }
-      T operator^= ( T incr ) volatile { v ^= incr ; return v ; }
+      T operator+= ( T incr ) noexcept { v += incr ; return v ; }
+      T operator+= ( T incr ) volatile noexcept { v += incr ; return v ; }
+      T operator-= ( T incr ) noexcept { v -= incr ; return v ; }
+      T operator-= ( T incr ) volatile noexcept { v -= incr ; return v ; }
+      T operator&= ( T incr ) noexcept { v &= incr ; return v ; }
+      T operator&= ( T incr ) volatile noexcept { v &= incr ; return v ; }
+      T operator|= ( T incr ) noexcept { v |= incr ; return v ; }
+      T operator|= ( T incr ) volatile noexcept { v |= incr ; return v ; }
+      T operator^= ( T incr ) noexcept { v ^= incr ; return v ; }
+      T operator^= ( T incr ) volatile noexcept { v ^= incr ; return v ; }
 
       // additional operations not in C++ standard library
-      bool test_and_set_bit( unsigned bitnum )
+      bool test_and_set_bit( unsigned bitnum ) noexcept
 	 {
 	 T mask = (T)(1L << bitnum) ;
 	 bool was_clear = (v & mask) == 0 ;
 	 v |= mask ;
 	 return was_clear ;
 	 }
-      bool test_and_set_bit( unsigned bitnum ) volatile
+      bool test_and_set_bit( unsigned bitnum ) volatile noexcept
 	 {
 	 T mask = (T)(1L << bitnum) ;
 	 bool was_clear = (v & mask) == 0 ;
 	 v |= mask ;
 	 return was_clear ;
 	 }
-      bool test_and_clear_bit( unsigned bitnum )
+      bool test_and_clear_bit( unsigned bitnum ) noexcept
 	 {
 	 T mask = (T)(1L << bitnum) ;
 	 bool was_set = (v & mask) != 0 ;
 	 v &= ~mask ;
 	 return was_set ;
 	 }
-      bool test_and_clear_bit( unsigned bitnum ) volatile
+      bool test_and_clear_bit( unsigned bitnum ) volatile noexcept
 	 {
 	 T mask = (T)(1L << bitnum) ;
 	 bool was_set = (v & mask) != 0 ;
 	 v &= ~mask ;
 	 return was_set ;
 	 }
-      T test_and_set_mask( T bitmask )
+      T test_and_set_mask( T bitmask ) noexcept
 	 {
 	 T prev_val = v ;
 	 v |= bitmask ;
 	 return prev_val & bitmask ;
 	 }
-      T test_and_set_mask( T bitmask ) volatile
+      T test_and_set_mask( T bitmask ) volatile noexcept
 	 {
 	 T prev_val = v ;
 	 v |= bitmask ;
 	 return prev_val & bitmask ;
 	 }
-      T test_and_clear_mask( T bitmask )
+      T test_and_clear_mask( T bitmask ) noexcept
 	 {
 	 T prev_val = v ;
 	 v &= ~bitmask ;
 	 return prev_val & bitmask ;
 	 }
-      T test_and_clear_mask( T bitmask ) volatile
+      T test_and_clear_mask( T bitmask ) volatile noexcept
 	 {
 	 T prev_val = v ;
 	 v &= ~bitmask ;
@@ -198,14 +347,373 @@ class Atomic
 
       // generic functionality built on top of the atomic primitives
       //  (only available in pointer specializations)
-      void push(T node) ;
-      void push(T nodes, T tail) ;
-      T pop() ;
+      template <typename RetT = T>
+      void push(typename std::enable_if<std::is_pointer<T>::value,RetT>::type node)
+	 {
+	    node->next(var.load(std::memory_order_acquire)) ;
+	    store(node) ;
+	 }
+
+      template <typename RetT = T>
+      void push(typename std::enable_if<std::is_pointer<T>::value,RetT>::type nodes, T tail)
+	 {
+	    tail->next(load(std::memory_order_acquire)) ;
+	    store(nodes) ;
+	 }
+
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      pop()
+	 {
+	    T node = load(std::memory_order_acquire) ;
+	    aif (node)
+	       store(node->next()) ;
+	    return node ;
+	 }
 
       static Atomic<T> ref(T& obj) { return reinterpret_cast<Atomic<T> >(obj) ; }
+
+   private:
+      T v ;
    } ;
 
-// memory barriers
+
+template <>
+inline NullObject Atomic<NullObject>::exchange(class NullObject v,
+					       std::memory_order) { return *this; }
+
+#else // multi-threaded version
+
+typedef std::atomic_flag atom_flag ;
+
+//----------------------------------------------------------------------------
+
+template <typename T>
+class Atomic
+   {
+   public:
+      Atomic() {}
+      Atomic(T value) : v(value) {}
+      Atomic(const Atomic<T>& value) : v(value.load(std::memory_order_acquire)) {}
+      ~Atomic() {}
+
+      T& operator= (T& value) noexcept { ref().store(value,std::memory_order_release) ; return value ; }
+      T& operator= (T& value) volatile noexcept { ref().store(value,std::memory_order_release) ; return value ; }
+      const T& operator= (const T& value) noexcept { ref().store(value,std::memory_order_release) ; return value ; }
+      const T& operator= (const T& value) volatile noexcept { ref().store(value,std::memory_order_release) ; return value ; }
+
+      bool is_lock_free() const { return std::atomic<T>::is_lock_free() ; }
+
+      void store(const T& value) noexcept { ref().store(value,std::memory_order_release) ; }
+      void store(const T& value) volatile noexcept { ref().store(value,std::memory_order_release) ; }
+      void store(const T& value, std::memory_order order) noexcept { ref().store(value,order) ; }
+      void store(const T& value, std::memory_order order) volatile noexcept { ref().store(value,order) ; }
+      void store_relax(const T& value) noexcept { ref().store(value,std::memory_order_relaxed) ; }
+      void store_relax(const T& value) volatile noexcept { ref().store(value,std::memory_order_relaxed) ; }
+
+      T load() const noexcept
+	 { std::atomic<T>& atom = ref() ;
+	    return atom.load(std::memory_order_acquire) ; }
+      T load() const volatile noexcept
+	 { std::atomic<T>& atom = ref() ;
+	    return atom.load(std::memory_order_acquire) ; }
+      T load(std::memory_order order) const noexcept
+	 { std::atomic<T>& atom = ref() ;
+	    return atom.load(order) ; }
+      T load(std::memory_order order) const volatile noexcept
+	 { std::atomic<T>& atom = ref() ;
+	    return atom.load(atom,order) ; }
+      T load_relax() const noexcept
+	 { std::atomic<T>& atom = ref() ;
+	    return atom.load(atom,std::memory_order_relaxed) ; }
+      T load_relax() const volatile noexcept
+	 { std::atomic<T>& atom = ref() ;
+	    return atom.load(atom,std::memory_order_relaxed) ; }
+
+      operator T () const noexcept { return ref().load(std::memory_order_acquire) ; }
+      operator T () const volatile noexcept { return ref().load(std::memory_order_acquire) ; }
+
+      T exchange(const T newvalue) noexcept { return ref().exchange(newvalue) ; }
+      T exchange(const T newvalue) volatile noexcept { return ref().exchange(newvalue) ; }
+      T exchange(const T newvalue, std::memory_order order) noexcept { return ref().exchange(newvalue,order) ; }
+      T exchange(const T newvalue, std::memory_order order) volatile noexcept { return ref().exchange(newvalue,order) ; }
+      T exchange_relax(const T newvalue) noexcept { return ref().exchange(newvalue,std::memory_order_relaxed) ; }
+      T exchange_relax(const T newvalue) volatile noexcept { return ref().exchange(newvalue,std::memory_order_relaxed) ; }
+
+      bool compare_exchange_weak(T& expected, T desired) noexcept
+	 { return ref().compare_exchange_weak(expected,desired) ; }
+      bool compare_exchange_weak(T& expected, T desired) volatile noexcept
+	 { return ref().compare_exchange_weak(expected,desired) ; }
+      bool compare_exchange_weak(T& expected, T desired, std::memory_order order) noexcept
+	 { return ref().compare_exchange_weak(expected,desired,order) ; }
+      bool compare_exchange_weak(T& expected, T desired, std::memory_order order) volatile noexcept
+	 { return ref().compare_exchange_weak(expected,desired,order) ; }
+
+      bool compare_exchange_strong(T& expected, T desired) noexcept
+	 { return ref().compare_exchange_strong(expected,desired) ; }
+      bool compare_exchange_strong(T& expected, T desired) volatile noexcept
+	 { return ref().compare_exchange_strong(expected,desired) ; }
+      bool compare_exchange_strong(T& expected, T desired, std::memory_order order) noexcept
+	 { return ref().compare_exchange_strong(expected,desired,order) ; }
+      bool compare_exchange_strong(T& expected, T desired, std::memory_order order) volatile noexcept
+	 { return ref().compare_exchange_strong(expected,desired,order) ; }
+
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_add(T arg) noexcept { return ref().fetch_add(arg) ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      fetch_add(T arg) volatile noexcept { return ref().fetch_add(arg) ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_add(std::ptrdiff_t arg) noexcept { return ref().fetch_add(arg) ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_add(std::ptrdiff_t arg) volatile noexcept { return ref().fetch_add(arg) ; }
+      T fetch_add_relax(T arg) noexcept { return ref().fetch_add(arg,std::memory_order_relaxed) ; }
+      T fetch_add_relax(T arg) volatile noexcept { return ref().fetch_add(arg,std::memory_order_relaxed) ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_add_relax(std::ptrdiff_t arg) noexcept { return ref().fetch_add(arg,std::memory_order_relaxed) ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_add_relax(std::ptrdiff_t arg) volatile noexcept { return ref().fetch_add(arg,std::memory_order_relaxed) ; }
+
+      T fetch_sub(T arg) noexcept { return ref().fetch_sub(arg) ; }
+      T fetch_sub(T arg) volatile noexcept { return ref().fetch_sub(arg) ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_sub(std::ptrdiff_t arg) noexcept { return ref().fetch_sub(arg) ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_sub(std::ptrdiff_t arg) volatile noexcept { return ref().fetch_sub(arg) ; }
+      T fetch_sub_relax(T arg) noexcept { return ref().fetch_sub(arg,std::memory_order_relaxed) ; }
+      T fetch_sub_relax(T arg) volatile noexcept { return ref().fetch_sub(arg,std::memory_order_relaxed) ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_sub_relax(std::ptrdiff_t arg) noexcept { return ref().fetch_sub(arg,std::memory_order_relaxed) ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      fetch_sub_relax(std::ptrdiff_t arg) volatile noexcept { return ref().fetch_sub(arg,std::memory_order_relaxed) ; }
+
+      T fetch_and(T arg) noexcept { return ref().fetch_and(arg) ; }
+      T fetch_and(T arg) volatile noexcept { return ref().fetch_and(arg) ; }
+      T fetch_and_relax(T arg) noexcept { return ref().fetch_and(arg,std::memory_order_relaxed) ; }
+      T fetch_and_relax(T arg) volatile noexcept { return ref().fetch_and(arg,std::memory_order_relaxed) ; }
+
+      T fetch_or(T arg) noexcept { return ref().fetch_or(arg) ; }
+      T fetch_or(T arg) volatile noexcept { return ref().fetch_or(arg) ; }
+      T fetch_or_relax(T arg) noexcept { return ref().fetch_or(arg,std::memory_order_relaxed) ; }
+      T fetch_or_relax(T arg) volatile noexcept { return ref().fetch_or(arg,std::memory_order_relaxed) ; }
+
+      T fetch_xor(T arg) noexcept { return ref().fetch_xor(arg) ; }
+      T fetch_xor(T arg) volatile noexcept { return ref().fetch_xor(arg) ; }
+      T fetch_xor_relax(T arg) noexcept { return ref().fetch_xor(arg,std::memory_order_relaxed) ; }
+      T fetch_xor_relax(T arg) volatile noexcept { return ref().fetch_xor(arg,std::memory_order_relaxed) ; }
+
+      T operator++ () noexcept { return ref().fetch_add(1) + 1 ; }
+      T operator++ () volatile noexcept { return ref().fetch_add(1) + 1 ; }
+      T operator++ (int) noexcept { return ref().fetch_add(1) ; }
+      T operator++ (int) volatile noexcept { return ref().fetch_add(1) ; }
+
+      T operator-- () noexcept { return ref().fetch_sub(1) - 1 ; }
+      T operator-- () volatile noexcept { return ref().fetch_sub(1) - 1 ; }
+      T operator-- (int) noexcept { return ref().fetch_sub(1) ; }
+      T operator-- (int) volatile noexcept { return ref().fetch_sub(1) ; }
+
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      operator+= (const T value) noexcept { return ref().fetch_add(value) + value ; } 
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      operator+= (const T value) volatile noexcept { return ref().fetch_add(value) + value ; } 
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      operator+= (size_t value) noexcept { return ref().fetch_add(value) + value ; } 
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      operator+= (size_t value) volatile noexcept { return ref().fetch_add(value) + value ; } 
+
+      T operator-= (const T value) noexcept { return ref().fetch_sub(value) - value ; } 
+      T operator-= (const T value) volatile noexcept { return ref().fetch_sub(value) - value ; } 
+
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      operator-= (size_t value) ;
+
+      T operator&= (const T mask) noexcept { return ref().fetch_and(mask) & mask ; } 
+      T operator&= (const T mask) volatile noexcept { return ref().fetch_and(mask) & mask ; } 
+
+      T operator|= (const T mask) noexcept { return ref().fetch_or(mask) | mask ; } 
+      T operator|= (const T mask) volatile noexcept { return ref().fetch_or(mask) | mask ; } 
+
+      T operator^= (const T mask) noexcept { return ref().fetch_xor(mask) ^ mask ; } 
+      T operator^= (const T mask) volatile noexcept { return ref().fetch_xor(mask) ^ mask ; } 
+
+      // additional operations beyond those for std::atomic
+#if __GNUC__ >= 4 && (defined(__i386__) || defined(__x86_64__))
+      bool test_and_set_bit( unsigned bitnum )
+	 {
+	    bool origbit ;
+	    __asm__(
+	       "lock bts %[bit], %[var]; setb %[flag]"
+	       : [flag] "=q" (origbit), [var] "+m" (v)
+	       : [bit] "Ir" (bitnum)
+	       ) ;
+	    return origbit ;
+	 }
+      bool test_and_set_bit( unsigned bitnum ) volatile
+	 {
+	    bool origbit ;
+	    __asm__(
+	       "lock bts %[bit], %[var]; setb %[flag]"
+	       : [flag] "=q" (origbit), [var] "+m" (v)
+	       : [bit] "Ir" (bitnum)
+	       ) ;
+	    return origbit ;
+	 }
+#else
+      bool test_and_set_bit( unsigned bitnum )
+	 {
+	 T mask = (T)(1L << bitnum) ;
+	 return test_and_set_mask(mask) == 0 ;
+	 }
+      bool test_and_set_bit( unsigned bitnum ) volatile
+	 {
+	 T mask = (T)(1L << bitnum) ;
+	 return test_and_set_mask(mask) == 0 ;
+	 }
+#endif /* GCC inline-assembler for x86 */
+#if __GNUC__ >= 4 && (defined(__i386__) || defined(__x86_64__))
+      bool test_and_clear_bit( unsigned bitnum )
+	 {
+	    bool origbit ;
+	    __asm__(
+	       "lock btr %[bit], %[var]; setb %[flag]"
+	       : [flag] "=q" (origbit), [var] "+m" (v)
+	       : [bit] "Ir" (bitnum)
+	       ) ;
+	    return origbit ;
+	 }
+      bool test_and_clear_bit( unsigned bitnum ) volatile
+	 {
+	    bool origbit ;
+	    __asm__(
+	       "lock btr %[bit], %[var]; setb %[flag]"
+	       : [flag] "=q" (origbit), [var] "+m" (v)
+	       : [bit] "Ir" (bitnum)
+	       ) ;
+	    return origbit ;
+	 }
+#else
+      bool test_and_clear_bit( unsigned bitnum )
+	 {
+	 T mask = (T)(1L << bitnum) ;
+	 return test_and_clear_mask(mask) != 0 ;
+	 }
+      bool test_and_clear_bit( unsigned bitnum ) volatile
+	 {
+	 T mask = (T)(1L << bitnum) ;
+	 return test_and_clear_mask(mask) != 0 ;
+	 }
+#endif /* GCC inline-assembler for x86 */
+      T test_and_set_mask( T bitmask ) noexcept { return ref().fetch_or(bitmask) & bitmask ; }
+      T test_and_set_mask( T bitmask ) volatile noexcept { return ref().fetch_or(bitmask) & bitmask ; }
+      T test_and_clear_mask( T bitmask ) noexcept { return ref().fetch_and(~bitmask) & bitmask ; }
+      T test_and_clear_mask( T bitmask ) volatile noexcept { return ref().fetch_and(~bitmask) & bitmask ; }
+
+      // generic functionality built on top of the atomic primitives
+      //  (only available in pointer specializations)
+      template <typename RetT = T>
+      void push(typename std::enable_if<std::is_pointer<T>::value,RetT>::type node)
+	 {
+	    T list ;
+	    do {
+	       list = this->load(std::memory_order_consume) ;
+	       node.next(list) ;
+	       } while (!this->compare_exchange_weak(list,node)) ;
+	 }
+
+      template <typename RetT = T>
+      void push(typename std::enable_if<std::is_pointer<T>::value,RetT>::type nodes, T tail)
+	 {
+	    T list ;
+	    do {
+	       list = this->load(std::memory_order_acquire) ;
+	       tail.next(list) ;
+	       } while (!this->compare_exchange_weak(list,nodes)) ;
+	 }
+
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      pop()
+	 {
+	    T head ;
+	    T rest ;
+	    do {
+	       head = this->load(std::memory_order_acquire) ;
+	       if (!head)
+		  return head ;
+	       rest = head.next() ;
+	       } while (!this->compare_exchange_weak(head,rest)) ;
+	    head.next(nullptr) ;
+	    return head ;
+	 }
+
+      static Atomic<T>& ref(T& value) noexcept { return reinterpret_cast<Atomic<T>&>(value) ; }
+      static Atomic<const T>& ref(const T& value) noexcept { return reinterpret_cast<Atomic<const T>&>(value) ; }
+
+   protected:
+      std::atomic<T>& ref() noexcept { return reinterpret_cast<std::atomic<T>&>(v) ; }
+      std::atomic<T>& ref() const noexcept { return *((std::atomic<T>*)const_cast<T*>(&v)) ; }
+      std::atomic<T>& ref() volatile noexcept { return *((std::atomic<T>*)const_cast<T*>(&v)) ; }
+
+   private:
+      T v ;
+   } ;
+
+//----------------------------------------------------------------------------
+// specializations for Atomic<bool>
+
+// bool doesn't support fetch_or or fetch_and, so we need specific specialization
+template <>
+inline bool Atomic<bool>::test_and_set_mask(bool mask) noexcept
+{
+   return mask ? exchange(mask) : false ;
+}
+
+template <>
+inline bool Atomic<bool>::test_and_set_mask(bool mask) volatile noexcept
+{
+   return mask ? exchange(mask) : false ;
+}
+
+template <>
+inline bool Atomic<bool>::test_and_clear_mask(bool mask) noexcept
+{
+   return mask ? exchange(false) : false ;
+}
+
+template <>
+inline bool Atomic<bool>::test_and_clear_mask(bool mask) volatile noexcept
+{
+   return mask ? exchange(false) : false ;
+}
+
+#ifdef ERROR
+template <> template <>
+inline Fr::NullObject std::atomic<Fr::NullObject>::exchange(Fr::NullObject v,
+							    std::memory_order) { return *this; }
+#endif
+
+#endif /* FrSINGLE_THREADED */
+
+/************************************************************************/
+/*	Various kinds of barriers					*/
+/************************************************************************/
+
+#ifdef FrSINGLE_THREADED
+
 ALWAYS_INLINE void atomic_thread_fence( std::memory_order )
 {
 #ifdef __GNUC__
@@ -213,7 +721,6 @@ ALWAYS_INLINE void atomic_thread_fence( std::memory_order )
 #endif
 }
 
-// various kinds of barriers
 ALWAYS_INLINE void memoryBarrier() {}
 ALWAYS_INLINE void loadBarrier() {}
 ALWAYS_INLINE void storeBarrier() {}
@@ -224,186 +731,8 @@ ALWAYS_INLINE void barrier()
 #endif
 }
 
-// generic functionality built on top of the atomic primitives
+#else   /* multi-threaded version */
 
-template <typename T>
-void Atomic<T*>::push(T* node)
-{
-   node->next(var.load(std::memory_order_acquire)) ;
-   store(node) ;
-}
-
-template <typename T>
-void Atomic<T*>::push(T* nodes, T* tail)
-{
-   tail->next(load(std::memory_order_acquire)) ;
-   store(nodes) ;
-}
-
-template <typename T>
-T* Atomic<T*>::pop()
-{
-   T* node = load(std::memory_order_acquire) ;
-   if (node)
-      store(node->next()) ;
-   return node ;
-}
-
-template <>
-inline NullObject Atomic<NullObject>::exchange(class NullObject v,
-					       std::memory_order) { return *this; }
-
-#else // multi-threaded version
-
-typedef std::atomic_flag atom_flag ;
-
-template <typename T>
-class Atomic : public std::atomic<T>
-   {
-   private:
-      // no data members
-   public:
-      Atomic() : std::atomic<T>()
-	 {}
-      Atomic(T value) : std::atomic<T>(value)
-	 {}
-      Atomic(const Atomic<T>& value) : std::atomic<T>(value.load(std::memory_order_consume)) {}
-      ~Atomic() = default ;
-
-      Atomic& operator= (const Atomic& value)
-	 { this->store(value.load(std::memory_order_acquire),std::memory_order_release) ; return *this ; }
-      Atomic& operator= (const T& value) { this->store(value,std::memory_order_release) ; return *this ; }
-      T operator+= (const T& value) ;
-      template <typename RetT = T>
-      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
-      operator+= (size_t value) ;
-
-      // additional operations
-      bool test_and_set_bit( unsigned bitnum )
-	 {
-	 T mask = (T)(1L << bitnum) ;
-	 return test_and_set_mask(mask) == 0 ;
-	 }
-      bool test_and_set_bit( unsigned bitnum ) volatile
-	 {
-	 T mask = (T)(1L << bitnum) ;
-	 return test_and_set_mask(mask) == 0 ;
-	 }
-      bool test_and_clear_bit( unsigned bitnum )
-	 {
-	 T mask = (T)(1L << bitnum) ;
-	 return test_and_clear_mask(mask) != 0 ;
-	 }
-      bool test_and_clear_bit( unsigned bitnum ) volatile
-	 {
-	 T mask = (T)(1L << bitnum) ;
-	 return test_and_clear_mask(mask) != 0 ;
-	 }
-      T test_and_set_mask( T bitmask )
-	 {
-	 return std::atomic<T>::fetch_or(bitmask) & bitmask ;
-	 }
-      T test_and_set_mask( T bitmask ) volatile
-	 {
-	 return std::atomic<T>::fetch_or(bitmask) & bitmask ;
-	 }
-      T test_and_clear_mask( T bitmask )
-	 {
-	 return std::atomic<T>::fetch_and(~bitmask) & bitmask ;
-	 }
-      T test_and_clear_mask( T bitmask ) volatile
-	 {
-	 return std::atomic<T>::fetch_and(~bitmask) & bitmask ;
-	 }
-
-      // generic functionality built on top of the atomic primitives
-      //  (only available in pointer specializations)
-      void push(T node) ;
-      void push(T nodes, T tail) ;
-      T pop() ;
-
-      static Atomic<T>& ref(T& obj) { return reinterpret_cast<Atomic<T>&>(obj) ; }
-   } ;
-
-// bool doesn't support fetch_or or fetch_and, so we need specific specialization
-template <>
-inline bool Atomic<bool>::test_and_set_mask(bool mask)
-{
-   return mask ? exchange(mask) : false ;
-}
-
-template <>
-inline bool Atomic<bool>::test_and_clear_mask(bool mask)
-{
-   return mask ? exchange(false) : false ;
-}
-
-// NullObject requires special handling
-template <>
-inline Atomic<NullObject>& Atomic<NullObject>::operator= (const NullObject&)
-{
-   return *this ;
-}
-
-template <>
-inline NullObject Atomic<NullObject>::operator+= (const NullObject&)
-{
-   NullObject n ;
-   return n ;
-}
-
-template <typename T>
-inline T Atomic<T>::operator+= (const T& value)
-{
-   return this->fetch_add(value) + value ; 
-}
-
-template <typename T>
-template <typename RetT>
-inline typename std::enable_if<std::is_pointer<T>::value,RetT>::type
-Atomic<T>::operator+= (size_t value)
-{
-   return this->fetch_add(value) + value ; 
-}
-
-// generic functionality built on top of the atomic primitives
-
-template <typename T>
-inline void Atomic<T>::push(T node)
-{
-   T list ;
-   do {
-      list = this->load(std::memory_order_consume) ;
-      node.next(list) ;
-      } while (!this->compare_exchange_weak(list,node)) ;
-}
-
-template <typename T>
-inline void Atomic<T>::push(T nodes, T tail)
-{
-   T list ;
-   do {
-      list = this->load(std::memory_order_consume) ;
-      tail.next(list) ;
-      } while (!this->compare_exchange_weak(list,nodes)) ;
-}
-
-template <typename T>
-inline T Atomic<T>::pop()
-{
-   T head ;
-   T rest ;
-   do {
-      head = this->load(std::memory_order_consume) ;
-      if (!head)
-	 return head ;
-      rest = head.next() ;
-      } while (!this->compare_exchange_weak(head,rest)) ;
-   head.next(nullptr) ;
-   return head ;
-}
-
-// various kinds of barriers
 ALWAYS_INLINE void memoryBarrier() 
 {
    atomic_thread_fence(std::memory_order_seq_cst) ; 
@@ -418,19 +747,17 @@ ALWAYS_INLINE void storeBarrier()
 }
 ALWAYS_INLINE void barrier()
 {
-   atomic_thread_fence(std::memory_order_relaxed) ;/*FIXME*/ 
+   atomic_thread_fence(std::memory_order_relaxed) ;
 #ifdef __GNUC__
    asm volatile ("" : : : "memory") ;
 #endif
 }
 
-#ifdef ERROR
-template <> template <>
-inline Fr::NullObject std::atomic<Fr::NullObject>::exchange(Fr::NullObject v,
-							    std::memory_order) { return *this; }
-#endif
-
 #endif /* FrSINGLE_THREADED */
+
+
+//----------------------------------------------------------------------------
+// aliases to shorten things for standard types
 
 typedef Atomic<bool> atom_bool ;
 typedef Atomic<char> atom_char ;
