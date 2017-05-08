@@ -19,42 +19,15 @@
 /*									*/
 /************************************************************************/
 
-#ifndef _Fr_TEXTTRANSFORMS_H_INCLUDED
-#define _Fr_TEXTTRANSFORMS_H_INCLUDED
-
-#include <locale>
+#include "framepac/bitwisetrie.h"
 
 namespace Fr
 {
 
-char* dup_string(const char*) ;
-char* dup_string_n(const char*, size_t maxlength) ;
+/************************************************************************/
+/************************************************************************/
 
-char* skip_whitespace(char*) ;
-const char* skip_whitespace(const char*) ;
-
-char* skip_to_whitespace(char*) ;
-const char* skip_to_whitespace(const char*) ;
-
-char* trim_whitespace(char*) ;
-
-void lowercase_string(char*) ;
-void uppercase_string(char*) ;
-
-void lowercase_string(char*, std::locale&) ;
-void uppercase_string(char*, std::locale&) ;
-
-[[gnu::format(gnu_printf,1,0)]]
-char* vaprintf(const char *fmt, va_list args) ;
-
-[[gnu::format(gnu_printf,1,2)]]
-char* aprintf(const char* fmt, ...) ;
 
 } // end namespace Fr
 
-
-
-#endif /* !_Fr_TEXTTRANSFORMS_H_INCLUDED */
-
-// end of file texttransforms.h
-
+// end of file bitwisetrie.h //

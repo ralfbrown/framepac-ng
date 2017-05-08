@@ -238,8 +238,9 @@ PACKAGE=framepacng
 RELEASE=0.01
 
 # the object modules to be included in the library file
-OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) bitvector$(OBJ) \
+OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	argopt$(OBJ) argopt_real$(OBJ) argparser$(OBJ) \
+	bitvector$(OBJ) bitwisetrie$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) charget$(OBJ) cfile$(OBJ) \
 	cluster$(OBJ) cluster_growseed$(OBJ) cluster_kmeans$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
@@ -373,6 +374,7 @@ argparser$(OBJ):	argparser$(C) framepac/argparser.h
 array$(OBJ):		array$(C) framepac/array.h
 basisvector_u32$(OBJ):	basisvector_u32$(C) template/basisvector.cc
 bignum$(OBJ):		bignum$(C) framepac/bignum.h
+bitwisetrie$(OBJ):	bitwisetrie$(C) framepac/bitwisetrie.h
 bitvector$(OBJ):	bitvector$(C) framepac/bitvector.h
 bufbuilder_char$(OBJ):	bufbuilder_char$(C) template/bufbuilder.cc
 bwt$(OBJ):		bwt$(C) framepac/config.h

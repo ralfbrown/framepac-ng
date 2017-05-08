@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-05-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -36,7 +36,7 @@ class Array ;
 class List ;
 
 //----------------------------------------------------------------------------
-// due to the circular dependencies, we can't actually define many of the functions
+// due to the circular dependencies, we can't actually define some of the functions
 //   inline in the iterator class definition; they will be defined after the underlying
 //   class has been declared
 
@@ -44,19 +44,19 @@ class BitVectorIter
    {
    public:
       BitVectorIter(BitVector* v, size_t n = 0) : m_vector(v), m_bitnum(n) {}
-      BitVectorIter(const BitVector* v, size_t n = 0) : m_vector(const_cast<BitVector*>(v)), m_bitnum(n) {}
+      BitVectorIter(const BitVector* v, size_t n = 0) : m_vector(v), m_bitnum(n) {}
       BitVectorIter(const BitVectorIter &o) : m_vector(o.m_vector), m_bitnum(o.m_bitnum) {}
       ~BitVectorIter() = default ;
 
       inline bool operator* () const ;
-      inline BitVectorIter& operator++ () ;
+      inline BitVectorIter& operator++ () { ++m_bitnum ; }
       bool operator== (const BitVectorIter& other) const
 	 { return m_vector == other.m_vector && m_bitnum == other.m_bitnum ; }
       bool operator!= (const BitVectorIter& other) const { return !(*this == other) ; }
 
    private:
-      BitVector* m_vector ;
-      size_t     m_bitnum ;
+      const BitVector* m_vector ;
+      size_t           m_bitnum ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -142,6 +142,13 @@ class BitVector : public Object
       static int lessThan_(const Object *obj, const Object *other) ;
 
    } ;
+
+//----------------------------------------------------------------------------
+
+bool BitVectorIter::operator* () const
+{
+   return m_vector->getBit(m_bitnum) ;
+}
 
 //----------------------------------------------------------------------------
 
