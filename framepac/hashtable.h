@@ -286,7 +286,7 @@ class HashTableBase : public Object
 
       virtual bool assistResize() = 0 ;
    protected:
-      unsigned	     m_active_resizes ;
+      atom_int	     m_active_resizes ;
    } ;
 
 /************************************************************************/
@@ -313,7 +313,7 @@ class HashTableHelper
    } ;
 
 inline HashTableBase::~HashTableBase()
-{ while (Atomic<unsigned>::ref(m_active_resizes).load()) std::this_thread::yield() ; }
+{ while (m_active_resizes.load()) std::this_thread::yield() ; }
 
 /************************************************************************/
 /*	Declarations for template class HashTable			*/
@@ -779,22 +779,11 @@ class HashTable : public HashTableBase
 #define DELEGATE_HASH(delegate) 			\
 	    size_t hashval = hashVal(key) ; 		\
             return m_table.load()->delegate ;
-#define DELEGATE_HASH_RECLAIM(type,delegate)		\
-	    if (m_oldtables.load() != m_table.load())	\
-	       assistReclaim() ;			\
-	    size_t hashval = hashVal(key) ; 		\
-	    return m_table.load()->delegate ; 
 #else
 #define DELEGATE(delegate) 						\
             HazardLock hl(m_table) ;					\
 	    return m_table.load()->delegate ;
 #define DELEGATE_HASH(delegate) 					\
-	    size_t hashval = hashVal(key) ; 				\
-	    HazardLock hl(m_table) ;					\
-	    return m_table.load()->delegate ;
-#define DELEGATE_HASH_RECLAIM(type,delegate)				\
-            if (m_oldtables.load() != m_table.load())			\
-	       assistReclaim() ;					\
 	    size_t hashval = hashVal(key) ; 				\
 	    HazardLock hl(m_table) ;					\
 	    return m_table.load()->delegate ;
@@ -819,9 +808,9 @@ class HashTable : public HashTableBase
       bool reclaimDeletions(size_t totalfrags = 1, size_t fragnum = 0)
          { DELEGATE(reclaimDeletions(totalfrags,fragnum)) }
 
-      [[gnu::hot]] bool add(KeyT key) { DELEGATE_HASH_RECLAIM(bool,add(hashval,key)) }
-      [[gnu::hot]] bool add(KeyT key, ValT value) { DELEGATE_HASH_RECLAIM(bool,add(hashval,key,value)) }
-      [[gnu::hot]] ValT addCount(KeyT key, size_t incr) { DELEGATE_HASH_RECLAIM(size_t,addCount(hashval,key,incr)) }
+      [[gnu::hot]] bool add(KeyT key) { DELEGATE_HASH(add(hashval,key)) }
+      [[gnu::hot]] bool add(KeyT key, ValT value) { DELEGATE_HASH(add(hashval,key,value)) }
+      [[gnu::hot]] ValT addCount(KeyT key, size_t incr) { DELEGATE_HASH(addCount(hashval,key,incr)) }
       bool remove(KeyT key) { DELEGATE_HASH(remove(hashval,key)) }
       [[gnu::hot]] bool contains(KeyT key) const { DELEGATE_HASH(contains(hashval,key)) }
       [[gnu::hot]] ValT lookup(KeyT key) const { DELEGATE_HASH(lookup(hashval,key)) }
@@ -835,8 +824,6 @@ class HashTable : public HashTableBase
       ValT *lookupValuePtr(KeyT key) const { DELEGATE_HASH(lookupValuePtr(hashval,key)) }
       [[gnu::hot]] bool add(KeyT key, ValT value, bool replace)
 	 {
-	 if (m_oldtables.load() != m_table.load())
-	       assistReclaim() ;
 	    size_t hashval = hashVal(key) ;
 	    HazardLock hl(m_table) ;
 	    Table *tab = m_table.load() ;
@@ -935,7 +922,6 @@ class HashTable : public HashTableBase
 
       // =============== Background Processing =================
       virtual bool assistResize() ;
-      virtual bool assistReclaim() ;
 
       // =============== Operational Statistics ================
       [[gnu::cold]] void clearGlobalStats()

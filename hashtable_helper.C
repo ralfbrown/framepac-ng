@@ -61,16 +61,15 @@ void HashTableHelper::remove(const HashTableBase* ht)
 
 void HashTableHelper::helperFunction()
 {
+   ThreadInit() ;
+   //FIXME FIXME: need auto thread registration ASAP
+   HashTable<uint32_t,NullObject>::threadInit();
    for ( ; ; )
       {
       s_semaphore.wait() ;
       // pop the first item off the queue
       HashTableBase* ht = s_queue.pop() ;
-      if (!ht)
-	 {
-	 // the hash table removed itself because it was being destructed
-	 continue ;
-	 }
+//cerr<<"assist:"<<(size_t)ht<<endl;
       // invoke that hash table's assist function
       bool more = ht->assistResize() ;
       // if it returns true, there's more work to be done, so re-queue the hash table
@@ -82,6 +81,7 @@ void HashTableHelper::helperFunction()
       else
 	 {
 	 ht->finishResize() ;
+//cerr<<"dequeued:"<<(size_t)ht<<endl;
 	 }
       }
 }
@@ -103,8 +103,8 @@ bool HashTableHelper::queueResize(HashTableBase* ht)
 
 void HashTableBase::startResize()
 {
-   if (m_active_resizes++ == 0)
-      HashTableHelper::queueResize(this) ;
+   m_active_resizes++ ;
+   HashTableHelper::queueResize(this) ;
    return ;
 }
 
@@ -112,7 +112,7 @@ void HashTableBase::startResize()
 
 void HashTableBase::finishResize()
 {
-   --m_active_resizes ;
+   m_active_resizes-- ;
    return ;
 }
 

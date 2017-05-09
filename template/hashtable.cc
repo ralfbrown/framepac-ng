@@ -1858,53 +1858,24 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::assistResize()
 {
    Table *tab = m_oldtables.load() ;
-   while (tab != m_table.load())
+   while (tab && tab->next())
       {
       if (!tab->resizingDone())
 	 {
 	 tab->resizeCopySegments(4) ;
 	 }
-      if (tab->resizingDone() && !stillLive(tab))
-	 {
-	 Table* nxt = tab->next() ;
-	 if (m_oldtables.compare_exchange_strong(tab,nxt))
-	    {
-	    releaseTable(tab) ;
-	    tab = nxt ;
-	    continue ;
-	    }
-	 }
       tab = tab->next() ;
       }
-   return m_oldtables.load() != m_table.load() ;
-}
-
-//----------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::assistReclaim()
-{
-   // only one thread at a time needs to check
-   // (can remove this check once HashTableHelper is the only caller)
-   static atom_flag being_checked ;
-   if (being_checked.test_and_set())
-      return true ;
-   bool reclaimed = false ;
-   while (true)
+   tab = m_oldtables.load() ;
+   if (tab->resizingDone() && !stillLive(tab))
       {
-      Table* tab = m_oldtables.load() ;
-      assert(tab != nullptr) ;
-      if (tab == m_table.load() || !tab->resizingDone() ||
-	  stillLive(tab))
-	 break ;
       Table* nxt = tab->next() ;
-      if (!m_oldtables.compare_exchange_strong(tab,nxt))
-	 break ;	   // someone else has freed the table
-      releaseTable(tab) ; // put the emptied table on the freelist
-      reclaimed = true ;
+      if (m_oldtables.compare_exchange_strong(tab,nxt))
+	 {
+	 releaseTable(tab) ;
+	 }
       }
-   being_checked.clear() ;
-   return !reclaimed ;
+   return m_oldtables.load() != m_table.load() ;
 }
 
 /************************************************************************/
