@@ -22,17 +22,19 @@
 #ifndef __Fr_BITWISETRIE_H_INCLUDED
 #define __Fr_BITWISETRIE_H_INCLUDED
 
+#include <cstdint>
+
 namespace Fr
 {
 
 /************************************************************************/
 /************************************************************************/
 
-template <typename T, unsigned bits = 4, typename IdxT = uint32_t>
+template <typename T, unsigned bits = 4, typename IdxT = std::uint32_t>
 class BitwiseTrieNode
    {
    public:
-      void *operator new(size_t, void *where) { return where ; }
+      void *operator new(std::size_t, void *where) { return where ; }
       BitwiseTrieNode() ;
       ~BitwiseTrieNode() ;
 

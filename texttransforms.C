@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-05					*/
+/* Version 0.01, last edit 2017-05-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -38,6 +38,99 @@ static std::locale utf8locale("en_US.UTF-8") ;
 
 /************************************************************************/
 /************************************************************************/
+
+char* dup_string(const char* s)
+{
+   if (!s)
+      return nullptr ;
+   size_t len = strlen(s) ;
+   char* copy = new char[len+1] ;
+   if (copy)
+      memcpy(copy,s,len+1) ;
+   return copy ;
+}
+
+//----------------------------------------------------------------------------
+
+char* dup_string_n(const char* s, size_t maxlen)
+{
+   if (!s)
+      return nullptr ;
+   size_t len = strlen(s) ;
+   if (len > maxlen)
+      len = maxlen ;
+   char* copy = new char[len+1] ;
+   if (copy)
+      memcpy(copy,s,len+1) ;
+   return copy ;
+}
+
+//----------------------------------------------------------------------------
+
+char* skip_whitespace(char* s)
+{
+   if (s)
+      {
+      while (*s && isspace(*s))
+	 s++ ;
+      }
+   return s ;
+}
+
+//----------------------------------------------------------------------------
+
+const char* skip_whitespace(const char* s)
+{
+   if (s)
+      {
+      while (*s && isspace(*s))
+	 s++ ;
+      }
+   return s ;
+}
+
+//----------------------------------------------------------------------------
+
+char* skip_to_whitespace(char* s)
+{
+   if (s)
+      {
+      while (*s && !isspace(*s))
+	 s++ ;
+      }
+   return s ;
+}
+
+//----------------------------------------------------------------------------
+
+const char* skip_to_whitespace(const char* s)
+{
+   if (s)
+      {
+      while (*s && !isspace(*s))
+	 s++ ;
+      }
+   return s ;
+}
+
+//----------------------------------------------------------------------------
+
+char* trim_whitespace(char* s)
+{
+   if (s)
+      {
+      char* nonwhite = skip_whitespace(s) ;
+      char* s_end = strchr(nonwhite,'\0') ;
+      while (s_end > nonwhite && isspace(s_end[-1]))
+	 s_end-- ;
+      size_t len = s_end - nonwhite ;
+      memcpy(s,nonwhite,len) ;
+      s[len] = '\0' ;
+      }
+   return s ;
+}
+
+//----------------------------------------------------------------------------
 
 void lowercase_string(char* s)
 {
@@ -88,7 +181,7 @@ void uppercase_string(char* s, std::locale& loc)
 #if 0
 //FUTURE:  not supported in G++ 4.9
 //#include <codecvt> //C++11 standard
-#include <bits/codecvt.h>  // needed in G++ 4.9, since on <codecvt> header
+#include <bits/codecvt.h>  // needed in G++ 4.9, since no <codecvt> header
 // for a codepoint-wise case conversion, we need to convert to a wide-char strings,
 //   apply toupper to each of the wide characters, then convert back to UTF8. And
 //   the result is likely to differ in size, so we can't do it in place...

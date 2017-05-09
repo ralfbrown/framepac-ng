@@ -44,6 +44,9 @@ void uppercase_string(char*) ;
 void lowercase_string(char*, std::locale&) ;
 void uppercase_string(char*, std::locale&) ;
 
+//std::string lowercase_utf8_string(char*) ;
+//std::string uppercase_utf8_string(char*) ;
+
 [[gnu::format(gnu_printf,1,0)]]
 char* vaprintf(const char *fmt, va_list args) ;
 
