@@ -83,6 +83,7 @@ class Trie
 
 	    T value() const { return m_value ; }
 	    void setValue(T v) { m_value = v ; }
+	    IdxT  insertChild(unsigned N, Trie *) ;
 	 protected:
 	    T     m_value ;
 	    bool  m_leaf ;

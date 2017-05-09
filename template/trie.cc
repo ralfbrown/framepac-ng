@@ -164,14 +164,49 @@ Trie<T,IdxT,bits>::ValuelessNode::ValuelessNode()
 template <typename T, typename IdxT, unsigned bits>
 IdxT Trie<T,IdxT,bits>::ValuelessNode::insertChild(unsigned N, Trie<T,IdxT,bits>* trie)
 {
-   if (!childPresent(N))
+   if (!this->childPresent(N))
+      {
+      IdxT new_index = trie->allocValuelessNode() ;
+      if (new_index != NULL_INDEX)
+	 {
+	 // try to atomically insert the index of the new node
+	 IdxT expected = NULL_INDEX ;
+	 if (Atomic<IdxT>::ref(this->m_children[N]).compare_exchange_strong(expected,new_index))
+	    {
+	    return new_index ;
+	    }
+	 // if the insertion failed, that means someone else has already
+	 //   added a child, so we can release the node we just allocated
+	 //   and return the one the other thread inserted
+	 trie->releaseValuelessNode(new_index) ;
+	 }
+      }
+   return this->childIndex(N) ;
+}
+
+/************************************************************************/
+/*	Methods for template class Trie::Node				*/
+/************************************************************************/
+
+template <typename T, typename IdxT, unsigned bits>
+Trie<T,IdxT,bits>::Node::Node() : ValuelessNode(), m_leaf(false)
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+IdxT Trie<T,IdxT,bits>::Node::insertChild(unsigned N, Trie<T,IdxT,bits>* trie)
+{
+   if (!this->childPresent(N))
       {
       IdxT new_index = trie->allocNode() ;
       if (new_index != NULL_INDEX)
 	 {
 	 // try to atomically insert the index of the new node
 	 IdxT expected = NULL_INDEX ;
-	 if (Atomic<IdxT>::ref(m_children[N]).compare_exchange_strong(expected,new_index))
+	 if (Atomic<IdxT>::ref(this->m_children[N]).compare_exchange_strong(expected,new_index))
 	    {
 	    return new_index ;
 	    }
@@ -181,7 +216,7 @@ IdxT Trie<T,IdxT,bits>::ValuelessNode::insertChild(unsigned N, Trie<T,IdxT,bits>
 	 trie->releaseNode(new_index) ;
 	 }
       }
-   return childIndex(N) ;
+   return this->childIndex(N) ;
 }
 
 /************************************************************************/
