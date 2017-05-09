@@ -284,7 +284,7 @@ class HashTableBase : public Object
 
       unsigned activeResizes() const { return m_active_resizes ; }
 
-      virtual bool assistResize() = 0 ;
+      virtual bool assistResize() { return false ; }
    protected:
       atom_int	     m_active_resizes ;
    } ;

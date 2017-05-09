@@ -76,7 +76,7 @@ namespace Fr {
 	    waitUntilCopied(bucketnum) ;				\
 	    }								\
 	 /* help out with the copying in general */			\
-	 resizeCopySegments(4) ;					\
+	 resizeCopySegments(1) ;					\
 	 INCR_COUNT(counter) ;						\
 	 tab->announceTable() ;						\
 	 return tab->delegate ;						\
