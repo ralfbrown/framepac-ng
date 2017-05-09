@@ -312,7 +312,8 @@ class HashTableHelper
       static atom_flag                   s_initialized ;
    } ;
 
-inline HashTableBase::~HashTableBase() { HashTableHelper::remove(this) ; }
+inline HashTableBase::~HashTableBase()
+{ while (Atomic<unsigned>::ref(m_active_resizes).load()) std::this_thread::yield() ; }
 
 /************************************************************************/
 /*	Declarations for template class HashTable			*/

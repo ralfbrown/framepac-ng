@@ -476,8 +476,6 @@ void HashTable<KeyT,ValT>::Table::resizeCopySegments(size_t max_segs)
 	 //   had to be skipped due to concurrent reclaim() calls,
 	 //   then finalize the resize
 	 resizeCleanup() ;
-	 // finally, de-queue ourselves from the HashTableHelper thread
-	 m_container->finishResize() ;
 	 }
       }
    return ;

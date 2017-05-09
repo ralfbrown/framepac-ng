@@ -41,7 +41,7 @@ class MPSC_Queue
          {
 	 public: // methods
 	    Node() {}
-	    Node(T val, MPSC_Queue* nxt = 0) { m_value = val ; m_next = nxt ; }
+	    Node(T val, Node* nxt = nullptr) { m_value = val ; m_next = nxt ; }
 	    ~Node() {}
 	 public: // data
 	    Node* m_next ;
@@ -88,26 +88,29 @@ class MPSC_Queue
 	 return next->m_value ;
 	 }
       // only the 'owning' thread can pop values!
-      T nonblockingPop()
+      // non-blocking version that returns the status as well as the
+      //   value (if non-empty)
+      bool pop(T& val)
          {
 	 Node* n = m_tail  ;
 	 Node* next = Atomic<Node*>::ref(n->m_next).load() ;
 	 if (next)
 	    {
 	    m_tail = next ;
+	    val = next->m_value ;
 	    delete n ;
-	    return next->m_value ;
+	    return true ;
 	    }
-	 return null() ;
+	 return false ;
 	 }
-   protected: // methods
+
+   protected:
       template <typename RetT = T>
-      typename std::enable_if<std::is_pointer<T>::value, RetT>::type
+      constexpr typename std::enable_if<std::is_pointer<T>::value, RetT>::type
       null() { return (T)nullptr ; }
       template <typename RetT = T>
-      typename std::enable_if<!std::is_pointer<T>::value, RetT>::type
+      constexpr typename std::enable_if<!std::is_pointer<T>::value, RetT>::type
       null() { return T(0) ; }
-
    protected: // data
       Node*  m_head ;
       Node*  m_tail ;

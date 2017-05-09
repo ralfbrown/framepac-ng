@@ -64,16 +64,9 @@ void HashTableHelper::helperFunction()
    for ( ; ; )
       {
       s_semaphore.wait() ;
-#if 0
       // pop the first item off the queue
-      HashTableBase* ht ;
-      bool popped = s_queue.pop(ht) ;
-      if (!popped)
-	 {
-	 s_semaphore.post() ;
-	 continue ;
-	 }
-      else if (!ht)
+      HashTableBase* ht = s_queue.pop() ;
+      if (!ht)
 	 {
 	 // the hash table removed itself because it was being destructed
 	 continue ;
@@ -81,12 +74,15 @@ void HashTableHelper::helperFunction()
       // invoke that hash table's assist function
       bool more = ht->assistResize() ;
       // if it returns true, there's more work to be done, so re-queue the hash table
-      if (more || ht->activeResizes() > 0)
+      if (more)
 	 {
 	 s_queue.push(ht) ;
 	 s_semaphore.post() ;
 	 }
-#endif
+      else
+	 {
+	 ht->finishResize() ;
+	 }
       }
 }
 
@@ -95,10 +91,8 @@ void HashTableHelper::helperFunction()
 bool HashTableHelper::queueResize(HashTableBase* ht)
 {
    initialize() ;
-#if 0
    s_queue.push(ht) ;
    s_semaphore.post() ;
-#endif
    (void)ht;
    return true ;
 }
