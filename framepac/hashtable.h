@@ -276,14 +276,15 @@ class HashTableBase : public Object
    {
    public:
       HashTableBase() : m_active_resizes(0) {}
-      ~HashTableBase() {}
+      ~HashTableBase() ;
 
       void startResize() ;
       void finishResize() ;
 
+      unsigned activeResizes() const { return m_active_resizes ; }
+
       virtual bool assistResize() = 0 ;
    protected:
-      HashTableBase* m_next_base ;
       unsigned	     m_active_resizes ;
    } ;
 
@@ -295,20 +296,22 @@ class HashTableHelper
    {
    public:
       static bool queueResize(HashTableBase* ht) ;
+      static void remove(const HashTableBase* ht) ;
 
    protected:  // internal methods
       HashTableHelper() {}
       ~HashTableHelper() {}
 
-      static bool initialize() ;
+      static void initialize() ;
       [[gnu::noreturn]] static void helperFunction() ;
 
    protected:
-      static std::thread*     s_thread ;
       static Semaphore	      s_semaphore ;
       //static MPSC_queue<HashTableBase*>     s_queue ;
-      static bool             s_initialized ;
+      static atom_flag        s_initialized ;
    } ;
+
+inline HashTableBase::~HashTableBase() { HashTableHelper::remove(this) ; }
 
 /************************************************************************/
 /*	Declarations for template class HashTable			*/
@@ -524,6 +527,8 @@ class HashTable : public HashTableBase
 		  }
 	       return ;
 	    }
+      public:
+	 [[gnu::hot]] void resizeCopySegments(size_t max_segs = ~0UL) ;
       protected:
 	 [[gnu::hot]] bool copyChain(size_t bucketnum) ;
 	 void waitUntilCopied(size_t bucketnum) ;
@@ -540,7 +545,6 @@ class HashTable : public HashTableBase
 
 	 [[gnu::hot]] bool insertKey(size_t bucketnum, Link firstptr, KeyT key, ValT value) ;
 	 [[gnu::hot]] void resizeCopySegment(size_t segnum) ;
-	 [[gnu::hot]] void resizeCopySegments(size_t max_segs = ~0UL) ;
 	 void clearDuplicates(size_t bucketnum) ;
 
 	 bool reclaimChain(size_t bucketnum) ;

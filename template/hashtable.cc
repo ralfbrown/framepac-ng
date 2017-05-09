@@ -1859,8 +1859,26 @@ void HashTable<KeyT,ValT>::threadCleanup()
 template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::assistResize()
 {
-//TODO: table->resizeCopySegments(1)
-   return assistReclaim() ;
+   Table *tab = m_oldtables.load() ;
+   while (tab != m_table.load())
+      {
+      if (!tab->resizingDone())
+	 {
+	 tab->resizeCopySegments(4) ;
+	 }
+      if (tab->resizingDone() && !stillLive(tab))
+	 {
+	 Table* nxt = tab->next() ;
+	 if (m_oldtables.compare_exchange_strong(tab,nxt))
+	    {
+	    releaseTable(tab) ;
+	    tab = nxt ;
+	    continue ;
+	    }
+	 }
+      tab = tab->next() ;
+      }
+   return m_oldtables.load() != m_table.load() ;
 }
 
 //----------------------------------------------------------------------

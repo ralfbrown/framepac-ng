@@ -29,36 +29,32 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-HashTableBase* hash_table_queue = nullptr ;
-
-bool HashTableHelper::s_initialized = false ;
+atom_flag HashTableHelper::s_initialized ;
+//MPSC_queue<HashTableBase*> HashTableHelper::s_queue ;
 Semaphore HashTableHelper::s_semaphore ; 
-std::thread* HashTableHelper::s_thread = nullptr ;
 
 /************************************************************************/
 /************************************************************************/
 
-bool HashTableHelper::initialize()
+void HashTableHelper::initialize()
 {
-   if (!s_initialized)
+   if (!s_initialized.test_and_set())
       {
       std::thread* thr = new thread(helperFunction) ;
-      Atomic<std::thread*>& ref = Atomic<std::thread*>::ref(s_thread) ;
-      std::thread* nullthr = nullptr ;
-      if (ref.compare_exchange_strong(nullthr, thr))
-	 {
-	 thr->detach() ;
-	 s_initialized = true ;
-	 }
-      else
-	 {
-	 // someone else beat us to installing the unique instance, so just
-	 //  delete the one we created
-	 delete thr ;
-	 s_semaphore.post() ;
-	 }
+      thr->detach() ;
+      delete thr ;
       }
-   return s_initialized ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void HashTableHelper::remove(const HashTableBase* ht)
+{
+   // scan the queue for the entry for 'ht' and remove it
+   (void)ht;
+//   s_queue.remove(ht) ;
+   return ;
 }
 
 //----------------------------------------------------------------------------
@@ -70,16 +66,22 @@ void HashTableHelper::helperFunction()
       s_semaphore.wait() ;
 #if 0
       // pop the first item off the queue
-      HashTableBase* ht = s_queue.pop() ;
-      if (!ht)
+      HashTableBase* ht ;
+      bool popped = s_queue.pop(ht) ;
+      if (!popped)
 	 {
 	 s_semaphore.post() ;
+	 continue ;
+	 }
+      else if (!ht)
+	 {
+	 // the hash table removed itself because it was being destructed
 	 continue ;
 	 }
       // invoke that hash table's assist function
       bool more = ht->assistResize() ;
       // if it returns true, there's more work to be done, so re-queue the hash table
-      if (more)
+      if (more || ht->activeResizes() > 0)
 	 {
 	 s_queue.push(ht) ;
 	 s_semaphore.post() ;
@@ -92,12 +94,11 @@ void HashTableHelper::helperFunction()
 
 bool HashTableHelper::queueResize(HashTableBase* ht)
 {
-   if (!initialize())
-      {
-      SystemMessage::warning("unable to initialize background thread for hashtable resize") ;
-      return false ;
-      }
-   //TODO
+   initialize() ;
+#if 0
+   s_queue.push(ht) ;
+   s_semaphore.post() ;
+#endif
    (void)ht;
    return true ;
 }
@@ -117,11 +118,7 @@ void HashTableBase::startResize()
 
 void HashTableBase::finishResize()
 {
-   if (--m_active_resizes == 0)
-      {
-      //TODO: de-queue this hash table
-
-      }
+   --m_active_resizes ;
    return ;
 }
 
