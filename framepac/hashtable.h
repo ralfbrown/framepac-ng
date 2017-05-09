@@ -31,6 +31,7 @@
 #include "framepac/init.h"
 #include "framepac/list.h"
 #include "framepac/number.h"
+#include "framepac/queue_mpsc.h"
 #include "framepac/semaphore.h"
 #include "framepac/symbol.h"
 #include "framepac/synchevent.h"
@@ -306,9 +307,9 @@ class HashTableHelper
       [[gnu::noreturn]] static void helperFunction() ;
 
    protected:
-      static Semaphore	      s_semaphore ;
-      //static MPSC_queue<HashTableBase*>     s_queue ;
-      static atom_flag        s_initialized ;
+      static Semaphore	                 s_semaphore ;
+      static MPSC_Queue<HashTableBase*>  s_queue ;
+      static atom_flag                   s_initialized ;
    } ;
 
 inline HashTableBase::~HashTableBase() { HashTableHelper::remove(this) ; }

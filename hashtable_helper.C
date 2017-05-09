@@ -30,7 +30,7 @@ namespace Fr
 /************************************************************************/
 
 atom_flag HashTableHelper::s_initialized ;
-//MPSC_queue<HashTableBase*> HashTableHelper::s_queue ;
+MPSC_Queue<HashTableBase*> HashTableHelper::s_queue ;
 Semaphore HashTableHelper::s_semaphore ; 
 
 /************************************************************************/

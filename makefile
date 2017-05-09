@@ -379,7 +379,7 @@ bitvector$(OBJ):	bitvector$(C) framepac/bitvector.h
 bufbuilder_char$(OBJ):	bufbuilder_char$(C) template/bufbuilder.cc
 bwt$(OBJ):		bwt$(C) framepac/config.h
 charget$(OBJ):		charget$(C) framepac/charget.h
-cfile$(OBJ):		cfile$(C) framepac/file.h framepac/stringbuilder.h
+cfile$(OBJ):		cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
 cluster$(OBJ):		cluster$(C) framepac/cluster.h
 cluster_agglom$(OBJ):	cluster_agglom$(C) framepac/cluster.h
 cluster_growseed$(OBJ):	cluster_growseed$(C) framepac/cluster.h
@@ -505,8 +505,8 @@ framepac/file.h:	framepac/config.h
 framepac/frame.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/hashtable.h:	framepac/counter.h framepac/init.h framepac/list.h framepac/number.h framepac/semaphore.h \
-			framepac/symbol.h framepac/synchevent.h
+framepac/hashtable.h:	framepac/counter.h framepac/init.h framepac/list.h framepac/number.h framepac/queue_mpsc.h \
+			framepac/semaphore.h framepac/symbol.h framepac/synchevent.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/list.h:	framepac/object.h

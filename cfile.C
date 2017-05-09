@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include "framepac/file.h"
 #include "framepac/stringbuilder.h"
+#include "framepac/texttransforms.h"
 
 namespace Fr
 {
@@ -374,6 +375,25 @@ int CFile::getc_nonws()
 
 //----------------------------------------------------------------------------
 
+void CFile::skipWS()
+{
+   int c ;
+   while (!eof())
+      {
+      c = getc() ;
+      if (c == EOF)
+	 return;
+      if (!isspace(c))
+	 {
+	 ungetc(c) ;
+	 return ;
+	 }
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 size_t CFile::skipLines(size_t maxskip)
 {
    size_t skipped = 0 ;
@@ -423,6 +443,7 @@ char* CFile::getTrimmedLine(size_t maxline)
 {
    if (!m_file || feof(m_file))
       return nullptr ;
+   skipWS() ;
    StringBuilder str(this,maxline) ;
    return trim_whitespace(str.cstring()) ;
 }
