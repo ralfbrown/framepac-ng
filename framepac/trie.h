@@ -30,7 +30,7 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-template <typename IdxT, typename ValT>
+template <typename T, typename IdxT = std::uint32_t, unsigned bits=4>
 class Trie
    {
    public:
@@ -46,13 +46,19 @@ class Trie
 	    bool  hasChildren() const ;
 	    bool  childPresent(unsigned N) const ;
 	    IdxT  childIndex(unsigned N) const ;
-	    ValT  value() const { return ValT(0) ; }
+
+	    template <typename RetT = T>
+	    typename std::enable_if<std::is_pointer<T>::value, RetT>::type
+	    value() const { return (T)nullptr ; }
+	    template <typename RetT = T>
+	    typename std::enable_if<!std::is_pointer<T>::value, RetT>::type
+	    value() const { return T(0) ; }
 
 	    void  markAsLeaf() { m_leaf = true ; }
-	    void  setValue(ValT) {}
+	    void  setValue(T) {}
 	    bool  insertChild(unsigned N, class Trie *) ;
 	 protected:
-	    IdxT  m_children[1<<4] ;
+	    IdxT  m_children[1<<bits] ;
 	    bool  m_leaf ;
          } ;
       class Node : public ValuelessNode
@@ -61,18 +67,18 @@ class Trie
 	    Node() ;
 	    Node(const Node&) = default ;
 	    ~Node() {}
-	    ValT  value() const { return m_value ; }
-	    void  setValue(ValT v) { m_value = v ; }
+	    T  value() const { return m_value ; }
+	    void  setValue(T v) { m_value = v ; }
 	 protected:
-	    ValT  m_value ;
+	    T  m_value ;
          } ;
 
       Trie(IdxT capacity) ;
       ~Trie() ;
 
-      bool insert(const uint8_t *key, unsigned keylength, ValT value) ;
+      bool insert(const uint8_t *key, unsigned keylength, T value) ;
       bool extendKey(IdxT &index, uint8_t keybyte) const ;
-      ValT find(const uint8_t* key, unsigned keylength) const ;
+      T find(const uint8_t* key, unsigned keylength) const ;
 
       IdxT size() const { return m_size_valueless + m_size_full ; }
       IdxT capacity() const { return m_capacity_valueless + m_capacity_full ; }
@@ -99,7 +105,7 @@ class Trie
 
 // a trie with a variable list of items as node values
 
-template <typename IdxT, typename ValT>
+template <typename T, typename IdxT = std::uint32_t>
 class MultiTrie
    {
    public:
@@ -113,7 +119,7 @@ class MultiTrie
 /************************************************************************/
 /************************************************************************/
 
-template <typename IdxT, typename ValT>
+template <typename T, typename IdxT>
 class PackedTrie
    {
    public:
@@ -126,7 +132,13 @@ class PackedTrie
 	 public:
 	    ValuelessNode() ;
 	    ~ValuelessNode() ;
-	    ValT nodeValue() const { return ValT(0) ; }
+
+	    template <typename RetT = T>
+	    typename std::enable_if<std::is_pointer<T>::value, RetT>::type
+	    nodeValue() const { return (T)nullptr ; }
+	    template <typename RetT = T>
+	    typename std::enable_if<!std::is_pointer<T>::value, RetT>::type
+	    nodeValue() const { return T(0) ; }
 
 	 protected:
 	    IdxT   m_firstchild ;	// children are stored breadth-first, so we need only
@@ -138,10 +150,10 @@ class PackedTrie
 	 public:
 	    Node() ;
 	    ~Node() ;
-	    ValT nodeValue() const { return m_value ; }
+	    T nodeValue() const { return m_value ; }
 
 	 protected:
-	    ValT   m_value ;		// we allow non-leaf nodes to have values
+	    T   m_value ;		// we allow non-leaf nodes to have values
          } ;
       // leaves don't need to store child pointers
       class LeafNode
@@ -149,10 +161,10 @@ class PackedTrie
 	 public:
 	    LeafNode() ;
 	    ~LeafNode() ;
-	    ValT nodeValue() const { return m_value ; }
+	    T nodeValue() const { return m_value ; }
 
 	 protected:
-	    ValT     m_value ;
+	    T     m_value ;
          } ;
 
       PackedTrie() ;
@@ -164,11 +176,11 @@ class PackedTrie
 
       unsigned longestKey() const { return m_maxkey ; }
       bool extendKey(IdxT& index, uint8_t keybyte) const ;
-      bool find(const uint8_t* key, unsigned keylength, ValT& value) const ;
+      bool find(const uint8_t* key, unsigned keylength, T& value) const ;
       bool leafNode(IdxT& index) const ;
       bool nodeHasValue(IdxT& index) const ;
-      ValT nodeValue(IdxT& index) const ;
-      bool nodeValue(IdxT& index, ValT& value) const ;
+      T nodeValue(IdxT& index) const ;
+      bool nodeValue(IdxT& index, T& value) const ;
 
    protected:
       // because we have three different types of nodes, we need to
@@ -190,7 +202,7 @@ class PackedTrie
 //   a node in a packed trie by storing an index in the node and
 //   having a separate array of items
 
-template <typename IdxT, typename ValIdxT, typename ValT>
+template <typename T, typename IdxT = std::uint32_t, typename ValIdxT = std::uint32_t>
 class PackedMultiTrie : public PackedTrie<IdxT,ValIdxT>
    {
    public:
@@ -198,7 +210,7 @@ class PackedMultiTrie : public PackedTrie<IdxT,ValIdxT>
       ~PackedMultiTrie() ;
 
    protected:
-      ValT*          m_values ;
+      T*          m_values ;
 
    } ;
 
