@@ -549,14 +549,13 @@ class HashTable : public HashTableBase
 	 void clearDuplicates(size_t bucketnum) ;
 
 	 bool reclaimChain(size_t bucketnum) ;
-	 bool assistWithResize() ;
 	 void resizeCleanup() ;
 
 	 static Object* makeObject(KeyT key) ;
 
       public:
 	 void onRemove(HashKVFunc *func) { remove_fn = func ; }
-	 bool resize(size_t newsize, bool enlarge_only = false) ;
+	 bool resize(size_t newsize) ;
 
 	 [[gnu::hot]] bool add(size_t hashval, KeyT key, ValT value) ;
 	 [[gnu::hot]] bool add(size_t hashval, KeyT key) { return add(hashval,key,nullVal()) ; }
@@ -799,9 +798,9 @@ class HashTable : public HashTableBase
       HashTable(const HashTable &ht) ;
       virtual ~HashTable() ;
 
-      bool resizeTo(size_t newsize, bool enlarge_only = false)
-	 { DELEGATE(resize(newsize,enlarge_only)) }
-      bool reserve_(size_t newsize) { DELEGATE(resize(newsize,true) ; }
+      bool resizeTo(size_t newsize)
+	 { DELEGATE(resize(newsize)) }
+      bool reserve_(size_t newsize) { DELEGATE(resize(newsize) ; }
       void reserve(size_t newsize) { reserve_(newsize) ; }
 
       bool reclaimDeletions(size_t totalfrags = 1, size_t fragnum = 0)

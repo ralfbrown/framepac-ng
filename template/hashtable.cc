@@ -220,7 +220,7 @@ void HashTable<KeyT,ValT>::Table::autoResize()
    else
       newsize = (size_t)(1.5*sz) ;
 #endif /* FrSAVE_MEMORY */
-   resize(newsize,true) ;
+   resize(newsize) ;
    return ;
 }
 
@@ -569,24 +569,6 @@ bool HashTable<KeyT,ValT>::Table::reclaimChain(size_t bucketnum)
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::assistWithResize()
-{
-   // someone else has already claimed the right to
-   //   resize, so wait until the resizing starts and
-   //   then help them out
-   INCR_COUNT(resize_assist) ;
-   m_resizestarted.wait() ;
-   resizeCopySegments() ;
-   // there's no need to synchronize with the
-   //   completion of the resizing, since we'll
-   //   transparently forward from the older version
-   //   as required
-   return true ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::Table::resizeCleanup()
 {
    size_t first_incomplete = m_first_incomplete.load() ;
@@ -626,48 +608,46 @@ void HashTable<KeyT,ValT>::Table::resizeCleanup()
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::resize(size_t newsize, bool enlarge_only)
+bool HashTable<KeyT,ValT>::Table::resize(size_t newsize)
 {
    if (superseded())
-      return false ;
-   newsize = normalizeSize(newsize) ;
-   if (newsize == m_size || (enlarge_only && newsize < 1.1*m_size))
       {
-      debug_msg("resize canceled (thr %ld)\n",FramepaC::my_job_id) ;
       return false ;
       }
    if (unlikely(m_resizelock.exchange(true)))
       {
-      return assistWithResize() ;
+      // someone else has already claimed the right to
+      //   resize, so wait until the resizing starts and
+      //   then help them out
+      INCR_COUNT(resize_assist) ;
+      m_resizestarted.wait() ;
+      resizeCopySegments() ;
+      return true ;
       }
    // OK, we've won the right to run the resizing
    INCR_COUNT(resize) ;
-   debug_msg("resize to %ld from %ld (thr %ld)\n",
-	     newsize,m_size,FramepaC::my_job_id) ;
+   newsize = normalizeSize(newsize) ;
+   debug_msg("resize to %ld from %ld (thr %ld)\n",newsize,m_size,FramepaC::my_job_id) ;
    Table* newtable = m_container->allocTable() ;
    newtable->init(newsize) ;
-   newtable->onRemove(m_container->onRemoveFunc()) ;
    newtable->m_container = m_container ;
-   bool success = true ;
-   if (newtable->good())
-      {
-      // link in the new table; this also makes
-      //   operations on the current table start to
-      //   forward to the new one
-      m_next_table.store(newtable) ;
-      m_resizestarted.set() ;
-      // enqueue ourself on the HashTableHelper thread
-      m_container->startResize() ;
-      // grab as many segments as we can and copy them
-      resizeCopySegments() ;
-      }
-   else
+   if (unlikely(!newtable->good()))
       {
       SystemMessage::warning("unable to resize hash table--will continue") ;
       m_container->releaseTable(newtable) ;
-      success = false ;
+      return false ;
       }
-   return success ;
+   newtable->onRemove(m_container->onRemoveFunc()) ;
+   // link in the new table; this also makes
+   //   operations on the current table start to
+   //   forward to the new one
+   m_next_table.store(newtable) ;
+   m_resizestarted.set() ;
+   // enqueue ourself on the HashTableHelper thread
+   m_container->startResize() ;
+   // grab as many segments as we can and copy them
+   resizeCopySegments() ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
