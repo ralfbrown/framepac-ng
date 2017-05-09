@@ -232,6 +232,10 @@ class PackedMultiTrie : public PackedTrie<IdxT,ValIdxT>
 
 //----------------------------------------------------------------------------
 
+// instantiations for which we have separately-compiled modules
+extern template class Trie<std::uint32_t, std::uint32_t> ;
+extern template class PackedTrie<std::uint32_t, std::uint32_t> ;
+
 } // end namespace Fr
 
 #endif /* !__Fr_TRIE_H_INCLUDED */

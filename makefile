@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4+ under Unix/Linux
-# Last change: 03may2017
+# Last change: 08may2017
 
 #########################################################################
 # define the locations of all the files
@@ -261,7 +261,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	symbol$(OBJ) symboltable$(OBJ) synchevent$(OBJ) \
 	texttransforms$(OBJ) \
 	threadpool$(OBJ) timer$(OBJ) \
-	trie$(OBJ) trie_u32$(OBJ) \
+	trie$(OBJ) trie_u32$(OBJ) ptrie_u32$(OBJ) \
 	vecsim_u32_dbl$(OBJ) vecsim_u32_flt$(OBJ) \
 	vector_obj_dbl$(OBJ) vector_obj_flt$(OBJ) \
 	vector_u32_dbl$(OBJ) vector_u32_flt$(OBJ) \
@@ -417,6 +417,7 @@ message$(OBJ):		message$(C) framepac/message.h framepac/texttransforms.h
 mmapfile$(OBJ):		mmapfile$(C) framepac/mmapfile.h framepac/file.h
 number$(OBJ):		number$(C) framepac/bignum.h framepac/rational.h
 progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
+ptrie_u32$(OBJ):	ptrie_u32$(C) template/trie.cc
 object$(OBJ):		object$(C) framepac/object.h
 objreader$(OBJ):	objreader$(C) framepac/objreader.h framepac/symbol.h framepac/bignum.h framepac/rational.h \
 			framepac/list.h framepac/builder.h
