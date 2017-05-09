@@ -67,7 +67,7 @@ class Trie
 	    void  markAsLeaf() {}
 	    void  setValue(T) {}
 	    void  setChild(unsigned N, IdxT ch) { m_children[N] = ch ; }
-	    bool  insertChild(unsigned N, Trie *) ;
+	    IdxT  insertChild(unsigned N, Trie *) ;
 	 protected:
 	    IdxT  m_children[1<<bits] ;
          } ;
@@ -99,8 +99,9 @@ class Trie
       IdxT capacity() const { return m_capacity_valueless + m_capacity_full ; }
       unsigned longestKey() const { return m_maxkey ; }
 
-      Node* node(IdxT N) const ;
       Node* rootNode() const ;
+      Node* node(IdxT N) const ;
+      ValuelessNode* valuelessNode(IdxT N) const ;
 
    protected:
       ValuelessNode** m_valueless ;
@@ -111,8 +112,11 @@ class Trie
       IdxT            m_size_full ;
       unsigned        m_maxkey ;
    private:
-      void init(IdxT capacity) ;
+      void init(IdxT cap) ;
       IdxT allocNode() ;
+      IdxT allocValuelessNode() ;
+      void releaseNode(IdxT index) ;
+      void releaseValuelessNode(IdxT index) ;
    } ;
 
 /************************************************************************/

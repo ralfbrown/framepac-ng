@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include "framepac/atomic.h"
 #include "framepac/trie.h"
 
 namespace Fr
@@ -35,7 +36,8 @@ namespace Fr
 template <typename T, typename IdxT, unsigned bits>
 void Trie<T,IdxT,bits>::init(IdxT cap)
 {
-
+   (void)cap;
+//FIXME
    return ;
 }
 
@@ -51,10 +53,39 @@ Trie<T,IdxT,bits>::~Trie()
 //----------------------------------------------------------------------------
 
 template <typename T, typename IdxT, unsigned bits>
+IdxT Trie<T,IdxT,bits>::allocValuelessNode()
+{
+   
+   return NULL_INDEX ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
 IdxT Trie<T,IdxT,bits>::allocNode()
 {
    
    return NULL_INDEX ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+void Trie<T,IdxT,bits>::releaseValuelessNode(IdxT index)
+{
+   (void)index ;
+//FIXME
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+void Trie<T,IdxT,bits>::releaseNode(IdxT index)
+{
+   (void)index ;
+//FIXME
+   return ;
 }
 
 //----------------------------------------------------------------------------
@@ -90,7 +121,7 @@ T Trie<T,IdxT,bits>::find(const uint8_t* key, unsigned keylength) const
 //----------------------------------------------------------------------------
 
 template <typename T, typename IdxT, unsigned bits>
-Node* Trie<T,IdxT,bits>::node(IdxT N) const
+typename Trie<T,IdxT,bits>::Node* Trie<T,IdxT,bits>::node(IdxT N) const
 {
    (void)N ;
 //FIXME
@@ -100,7 +131,17 @@ Node* Trie<T,IdxT,bits>::node(IdxT N) const
 //----------------------------------------------------------------------------
 
 template <typename T, typename IdxT, unsigned bits>
-Node* Trie<T,IdxT,bits>::rootNode() const
+typename Trie<T,IdxT,bits>::ValuelessNode* Trie<T,IdxT,bits>::valuelessNode(IdxT N) const
+{
+   (void)N ;
+//FIXME
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+typename Trie<T,IdxT,bits>::Node* Trie<T,IdxT,bits>::rootNode() const
 {
 //FIXME
    return nullptr ;
@@ -121,18 +162,26 @@ Trie<T,IdxT,bits>::ValuelessNode::ValuelessNode()
 //----------------------------------------------------------------------------
 
 template <typename T, typename IdxT, unsigned bits>
-bool Trie<T,IdxT,bits>::ValuelessNode::insertChild(unsigned N, Trie<T,IdxT,bits>* trie)
+IdxT Trie<T,IdxT,bits>::ValuelessNode::insertChild(unsigned N, Trie<T,IdxT,bits>* trie)
 {
    if (!childPresent(N))
       {
       IdxT new_index = trie->allocNode() ;
       if (new_index != NULL_INDEX)
 	 {
-	 setChild(N,new_index) ;
-	 return true ;
+	 // try to atomically insert the index of the new node
+	 IdxT expected = NULL_INDEX ;
+	 if (Atomic<IdxT>::ref(m_children[N]).compare_exchange_strong(expected,new_index))
+	    {
+	    return new_index ;
+	    }
+	 // if the insertion failed, that means someone else has already
+	 //   added a child, so we can release the node we just allocated
+	 //   and return the one the other thread inserted
+	 trie->releaseNode(new_index) ;
 	 }
       }
-   return false ;
+   return childIndex(N) ;
 }
 
 /************************************************************************/
