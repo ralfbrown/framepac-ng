@@ -260,7 +260,8 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	sufarray_u32u32$(OBJ) \
 	symbol$(OBJ) symboltable$(OBJ) synchevent$(OBJ) \
 	texttransforms$(OBJ) \
-	threadpool$(OBJ) timer$(OBJ) trie$(OBJ) \
+	threadpool$(OBJ) timer$(OBJ) \
+	trie$(OBJ) trie_u32$(OBJ) \
 	vecsim_u32_dbl$(OBJ) vecsim_u32_flt$(OBJ) \
 	vector_obj_dbl$(OBJ) vector_obj_flt$(OBJ) \
 	vector_u32_dbl$(OBJ) vector_u32_flt$(OBJ) \
@@ -435,7 +436,7 @@ texttransforms$(OBJ):	texttransforms$(C) framepac/texttransforms.h
 threadpool$(OBJ):	threadpool$(C) framepac/threadpool.h framepac/thread.h
 timer$(OBJ):		timer$(C) framepac/timer.h
 trie$(OBJ):		trie$(C) framepac/trie.h
-#trie_u32$(OBJ):		trie_u32$(C) framepac/trie.cc
+trie_u32$(OBJ):		trie_u32$(C) template/trie.cc
 vecsim_u32_dbl$(OBJ):	vecsim_u32_dbl$(C) template/vecsim.cc
 vecsim_u32_flt$(OBJ):	vecsim_u32_flt$(C) template/vecsim.cc
 vector_obj_dbl$(OBJ):	vector_obj_dbl$(C) framepac/vector.h

@@ -35,6 +35,8 @@ template <typename T, typename IdxT = std::uint32_t, unsigned bits=4>
 class Trie
    {
    public:
+      static constexpr IdxT ROOT_INDEX = (IdxT)0 ;
+      static constexpr IdxT NULL_INDEX = (IdxT)0 ;
       class ValuelessNode
          {
 	 public:
@@ -43,10 +45,17 @@ class Trie
 	    ~ValuelessNode() {}
 	    ValuelessNode& operator= (const ValuelessNode&) = default ;
 
-	    bool  leaf() const { return false ; }  // has no value, so by definition not a leaf
-	    bool  hasChildren() const ;
-	    bool  childPresent(unsigned N) const ;
-	    IdxT  childIndex(unsigned N) const ;
+	    bool leaf() const { return false ; }  // has no value, so by definition not a leaf
+	    bool hasChildren() const
+	       {
+		  for (size_t i = 0 ; i < lengthof(m_children) ; ++i)
+		     {
+		     if (m_children[i] != NULL_INDEX) return true ;
+		     }
+		  return false ;
+	       }
+	    bool childPresent(unsigned N) const { return m_children[N] != NULL_INDEX ; }
+	    IdxT childIndex(unsigned N) const { return m_children[N] ; }
 
 	    template <typename RetT = T>
 	    typename std::enable_if<std::is_pointer<T>::value, RetT>::type
@@ -57,7 +66,7 @@ class Trie
 
 	    void  markAsLeaf() {}
 	    void  setValue(T) {}
-	    bool  insertChild(unsigned N, class Trie *) ;
+	    bool  insertChild(unsigned N, Trie *) ;
 	 protected:
 	    IdxT  m_children[1<<bits] ;
          } ;

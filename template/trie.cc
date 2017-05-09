@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-05-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -28,9 +28,32 @@ namespace Fr
 /*	Manifest Constants						*/
 /************************************************************************/
 
+#define ROOT_INDEX 0
+
 /************************************************************************/
 /*	Methods for template class Trie					*/
 /************************************************************************/
+
+template <typename T, typename IdxT, unsigned bits>
+Trie<T,IdxT,bits>::ValuelessNode::ValuelessNode()
+{
+   for (size_t i = 0 ; i < lengthof(m_children) ; ++i)
+      m_children[i] = NULL_INDEX ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+bool Trie<T,IdxT,bits>::ValuelessNode::insertChild(unsigned N, Trie<T,IdxT,bits>* )
+{
+   (void)N ;
+//FIXME
+   return false ;
+}
+
+
+//----------------------------------------------------------------------------
 
 /************************************************************************/
 /*	Methods for template class MultiTrie				*/
