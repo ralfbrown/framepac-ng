@@ -519,8 +519,6 @@ class HashTable : public HashTableBase
 		  }
 	       return ;
 	    }
-      public:
-	 [[gnu::hot]] bool copyChainLocked(size_t bucketnum);
       protected:
 	 [[gnu::hot]] bool copyChain(size_t bucketnum) ;
 	 void waitUntilCopied(size_t bucketnum) ;

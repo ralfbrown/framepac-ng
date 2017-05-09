@@ -227,27 +227,36 @@ void HashTable<KeyT,ValT>::Table::autoResize()
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::copyChainLocked(size_t bucketnum)
+bool HashTable<KeyT,ValT>::Table::copyChain(size_t bucketnum)
 {
    Link offset ;
 #ifndef FrSINGLE_THREADED
-   // since add() can still run in parallel, we need to
-   //   start by making any deleted entries in the
-   //   chain unusable by add(), so that it doesn't
-   //   re-use them after we've skipped them during the
-   //   copy loop
-   offset = chainHead(bucketnum) ;
+   HashPtr* bucket = bucketPtr(bucketnum) ;
+   // atomically set the 'stale' bit and get the current status
+   Link status = bucket->markStaleGetStatus() ;
+   if (HashPtr::stale(status))
+      {
+      // someone else has already worked on this bucket, or a
+      //   copy/recycle() is currently running, in which case that
+      //   thread will do the copying for us
+      return HashPtr::copyDone(status) ;
+      }
+   // since an add() could still be running in parallel, we need to
+   //   start by making any deleted entries in the chain unusable by
+   //   add(), so that it doesn't re-use them after we've skipped them
+   //   during the copy loop
+   offset = bucket->first() ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
       offset = chainNext(pos) ;
       bucketPtr(pos)->markReclaiming() ;
       }
-   // the chain is now frozen -- add() can't push to
-   //   the start or re-use anything on the chain
+   // the chain is now frozen -- add() can't push to the start or
+   //   re-use anything on the chain
 #endif /* !FrSINGLE_THREADED */
    // insert all elements of the current hash bucket into the next table
-   offset = chainHead(bucketnum) ;
+   offset = bucket->first() ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
@@ -270,26 +279,6 @@ bool HashTable<KeyT,ValT>::Table::copyChainLocked(size_t bucketnum)
    //   copy proceed in the new table
    markCopyDone(bucketnum) ;
    return true ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::copyChain(size_t bucketnum)
-{
-#ifndef FrSINGLE_THREADED
-   HashPtr* bucket = bucketPtr(bucketnum) ;
-   // atomically set the 'stale' bit and get the current status
-   Link status = bucket->markStaleGetStatus() ;
-   if (HashPtr::stale(status))
-      {
-      // someone else has already worked on this bucket, or a
-      //   copy/recycle() is currently running, in which case that
-      //   thread will do the copying for us
-      return HashPtr::copyDone(status) ;
-      }
-#endif /* !FrSINGLE_THREADED */
-   return copyChainLocked(bucketnum) ;
 }
 
 //----------------------------------------------------------------------------
@@ -330,20 +319,13 @@ void HashTable<KeyT,ValT>::Table::copyChains(size_t bucketnum, size_t endpos)
    //   lead resizing thread that it needs to do a cleanup pass
    if (!complete)
       {
-      size_t old_first ;
-      do 
+      // but if there was just one skipped chain and its copy has now
+      //   completed, we don't need to say anything
+      if (last_incomplete > first_incomplete || !bucketPtr(first_incomplete)->copyDone())
 	 {
-	 old_first = m_first_incomplete.load() ;
-	 if (first_incomplete >= old_first)
-	    break ;
-	 } while (!m_first_incomplete.compare_exchange_strong(old_first,first_incomplete)) ;
-      size_t old_last ;
-      do
-	 {
-	 old_last = m_last_incomplete.load() ;
-	 if (last_incomplete <= old_last)
-	    break ;
-	 } while (!m_last_incomplete.compare_exchange_strong(old_last,last_incomplete)) ;
+	 m_first_incomplete.decreaseTo(first_incomplete) ;
+	 m_last_incomplete.increaseTo(last_incomplete) ;
+	 }
       }
    return ;
 }
