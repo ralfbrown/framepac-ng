@@ -420,6 +420,7 @@ static void reclaim_deletion(const void* input, void*)
       {
       ht->reclaimDeletions(order->threads,order->cycles) ;
       ht->updateGlobalStats() ;
+      HashT::clearPerThreadStats() ;
       }
    return ;
 }
@@ -451,8 +452,12 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
 		      uint32_t *randnums = nullptr)
 {
    ThreadPool *tpool = user_pool ? user_pool : new ThreadPool(threads) ;
-   bool must_wait = (threads != 0) ;
    if (threads == 0) threads = 1 ;
+   // use somewhat finer slices if each segment would be really large
+   for (size_t loop = 0 ; loop < 4 ; ++loop)
+      {
+      if (maxsize > 2000000 * threads && threads < 512) threads *= 2 ;
+      }
    HashRequestOrder *hashorders = new HashRequestOrder[threads] ;
    //out << "  Dispatching threads" << endl ;
    size_t slice_size = (maxsize + threads/2) / threads ;
@@ -524,12 +529,9 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
 	 }
       tpool->dispatch(&hash_dispatch<HashT>,&hashorders[i],nullptr) ;
       }
-   if (must_wait)
-      {
-      if (!terse)
-	 out << "  Waiting for thread completion" << endl ;
-      tpool->waitUntilIdle() ;
-      }
+   if (!terse)
+      out << "  Waiting for thread completion" << endl ;
+   tpool->waitUntilIdle() ;
    double walltime_noreclaim = timer.elapsedSeconds() ;
    if (ht && op == Op_REMOVE)
       {

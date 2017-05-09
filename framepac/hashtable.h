@@ -31,6 +31,7 @@
 #include "framepac/init.h"
 #include "framepac/list.h"
 #include "framepac/number.h"
+#include "framepac/semaphore.h"
 #include "framepac/symbol.h"
 #include "framepac/synchevent.h"
 #include <cassert>
@@ -298,10 +299,14 @@ class HashTableHelper
    protected:  // internal methods
       HashTableHelper() {}
       ~HashTableHelper() {}
+
       static bool initialize() ;
+      [[gnu::noreturn]] static void helperFunction() ;
 
    protected:
       static std::thread*     s_thread ;
+      static Semaphore	      s_semaphore ;
+      //static MPSC_queue<HashTableBase*>     s_queue ;
       static bool             s_initialized ;
    } ;
 

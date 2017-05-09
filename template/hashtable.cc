@@ -1869,9 +1869,10 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::assistReclaim()
 {
    // only one thread at a time needs to check
+   // (can remove this check once HashTableHelper is the only caller)
    static atom_flag being_checked ;
    if (being_checked.test_and_set())
-      return false ;
+      return true ;
    bool reclaimed = false ;
    while (true)
       {
@@ -1887,7 +1888,7 @@ bool HashTable<KeyT,ValT>::assistReclaim()
       reclaimed = true ;
       }
    being_checked.clear() ;
-   return reclaimed ;
+   return !reclaimed ;
 }
 
 /************************************************************************/

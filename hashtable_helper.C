@@ -32,6 +32,7 @@ namespace Fr
 HashTableBase* hash_table_queue = nullptr ;
 
 bool HashTableHelper::s_initialized = false ;
+Semaphore HashTableHelper::s_semaphore ; 
 std::thread* HashTableHelper::s_thread = nullptr ;
 
 /************************************************************************/
@@ -41,13 +42,12 @@ bool HashTableHelper::initialize()
 {
    if (!s_initialized)
       {
-      std::thread* thr = new thread ;
+      std::thread* thr = new thread(helperFunction) ;
       Atomic<std::thread*>& ref = Atomic<std::thread*>::ref(s_thread) ;
       std::thread* nullthr = nullptr ;
       if (ref.compare_exchange_strong(nullthr, thr))
 	 {
-      //FIXME
-
+	 thr->detach() ;
 	 s_initialized = true ;
 	 }
       else
@@ -55,9 +55,37 @@ bool HashTableHelper::initialize()
 	 // someone else beat us to installing the unique instance, so just
 	 //  delete the one we created
 	 delete thr ;
+	 s_semaphore.post() ;
 	 }
       }
    return s_initialized ;
+}
+
+//----------------------------------------------------------------------------
+
+void HashTableHelper::helperFunction()
+{
+   for ( ; ; )
+      {
+      s_semaphore.wait() ;
+#if 0
+      // pop the first item off the queue
+      HashTableBase* ht = s_queue.pop() ;
+      if (!ht)
+	 {
+	 s_semaphore.post() ;
+	 continue ;
+	 }
+      // invoke that hash table's assist function
+      bool more = ht->assistResize() ;
+      // if it returns true, there's more work to be done, so re-queue the hash table
+      if (more)
+	 {
+	 s_queue.push(ht) ;
+	 s_semaphore.post() ;
+	 }
+#endif
+      }
 }
 
 //----------------------------------------------------------------------------

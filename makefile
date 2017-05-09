@@ -497,7 +497,8 @@ framepac/file.h:	framepac/config.h
 framepac/frame.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/hashtable.h:	framepac/counter.h framepac/init.h framepac/list.h framepac/number.h framepac/symbol.h framepac/synchevent.h
+framepac/hashtable.h:	framepac/counter.h framepac/init.h framepac/list.h framepac/number.h framepac/semaphore.h \
+			framepac/symbol.h framepac/synchevent.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/list.h:	framepac/object.h

@@ -49,7 +49,7 @@ class BitVectorIter
       ~BitVectorIter() = default ;
 
       inline bool operator* () const ;
-      inline BitVectorIter& operator++ () { ++m_bitnum ; }
+      inline BitVectorIter& operator++ () { ++m_bitnum ; return *this ; }
       bool operator== (const BitVectorIter& other) const
 	 { return m_vector == other.m_vector && m_bitnum == other.m_bitnum ; }
       bool operator!= (const BitVectorIter& other) const { return !(*this == other) ; }
