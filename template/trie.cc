@@ -4,7 +4,7 @@
 /* Version 0.01, last edit 2017-03-28					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -32,8 +32,20 @@ namespace Fr
 /*	Methods for template class Trie					*/
 /************************************************************************/
 
+/************************************************************************/
+/*	Methods for template class MultiTrie				*/
+/************************************************************************/
+
+/************************************************************************/
+/*	Methods for template class PackedTrie				*/
+/************************************************************************/
+
+/************************************************************************/
+/*	Methods for template class PackedMultiTrie			*/
+/************************************************************************/
+
 
 } // end namespace Fr
 
 
-// end of file trie.C //
+// end of file trie.cc //

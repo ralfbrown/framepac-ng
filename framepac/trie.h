@@ -22,6 +22,7 @@
 #ifndef __Fr_TRIE_H_INCLUDED
 #define __Fr_TRIE_H_INCLUDED
 
+#include <type_traits>
 #include "framepac/byteorder.h"
 
 namespace Fr
@@ -42,7 +43,7 @@ class Trie
 	    ~ValuelessNode() {}
 	    ValuelessNode& operator= (const ValuelessNode&) = default ;
 
-	    bool  leaf() const { return m_leaf ; }
+	    bool  leaf() const { return false ; }  // has no value, so by definition not a leaf
 	    bool  hasChildren() const ;
 	    bool  childPresent(unsigned N) const ;
 	    IdxT  childIndex(unsigned N) const ;
@@ -54,12 +55,11 @@ class Trie
 	    typename std::enable_if<!std::is_pointer<T>::value, RetT>::type
 	    value() const { return T(0) ; }
 
-	    void  markAsLeaf() { m_leaf = true ; }
+	    void  markAsLeaf() {}
 	    void  setValue(T) {}
 	    bool  insertChild(unsigned N, class Trie *) ;
 	 protected:
 	    IdxT  m_children[1<<bits] ;
-	    bool  m_leaf ;
          } ;
       class Node : public ValuelessNode
          {
@@ -67,10 +67,15 @@ class Trie
 	    Node() ;
 	    Node(const Node&) = default ;
 	    ~Node() {}
-	    T  value() const { return m_value ; }
-	    void  setValue(T v) { m_value = v ; }
+
+	    bool  leaf() const { return m_leaf ; }
+	    void  markAsLeaf() { m_leaf = true ; }
+
+	    T value() const { return m_value ; }
+	    void setValue(T v) { m_value = v ; }
 	 protected:
-	    T  m_value ;
+	    T     m_value ;
+	    bool  m_leaf ;
          } ;
 
       Trie(IdxT capacity) ;
@@ -91,9 +96,9 @@ class Trie
       ValuelessNode** m_valueless ;
       Node**          m_nodes ;
       IdxT            m_capacity_valueless ;
-      IdXT            m_size_valueless ;
+      IdxT            m_size_valueless ;
       IdxT            m_capacity_full ;
-      IdXT            m_size_full ;
+      IdxT            m_size_full ;
       unsigned        m_maxkey ;
    private:
       void init(IdxT capacity) ;
@@ -168,7 +173,7 @@ class PackedTrie
          } ;
 
       PackedTrie() ;
-      PackedTrie(const Trie*) ;
+      PackedTrie(const Trie<T,IdxT>*) ;
       PackedTrie(const char *filename) ;
       PackedTrie(const PackedTrie&) = delete ;
       ~PackedTrie() ;
@@ -193,6 +198,8 @@ class PackedTrie
       //   node type while traversing the trie
       IdxT           m_first_valuelessnode ;
       IdxT           m_first_leaf ;
+
+      unsigned       m_maxkey ;
    } ;
 
 /************************************************************************/
@@ -217,5 +224,7 @@ class PackedMultiTrie : public PackedTrie<IdxT,ValIdxT>
 //----------------------------------------------------------------------------
 
 } // end namespace Fr
+
+#endif /* !__Fr_TRIE_H_INCLUDED */
 
 // end of file trie.h //
