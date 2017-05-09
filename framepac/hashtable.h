@@ -296,8 +296,7 @@ class HashTableBase : public Object
 class HashTableHelper
    {
    public:
-      static bool queueResize(HashTableBase* ht) ;
-      static void remove(const HashTableBase* ht) ;
+      static bool startHelper(HashTableBase* ht) ;
 
    protected:  // internal methods
       HashTableHelper() {}

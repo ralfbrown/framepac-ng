@@ -49,16 +49,6 @@ void HashTableHelper::initialize()
 
 //----------------------------------------------------------------------------
 
-void HashTableHelper::remove(const HashTableBase* ht)
-{
-   // scan the queue for the entry for 'ht' and remove it
-   (void)ht;
-//   s_queue.remove(ht) ;
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
 void HashTableHelper::helperFunction()
 {
    ThreadInit() ;
@@ -88,12 +78,11 @@ void HashTableHelper::helperFunction()
 
 //----------------------------------------------------------------------------
 
-bool HashTableHelper::queueResize(HashTableBase* ht)
+bool HashTableHelper::startHelper(HashTableBase* ht)
 {
    initialize() ;
    s_queue.push(ht) ;
    s_semaphore.post() ;
-   (void)ht;
    return true ;
 }
 
@@ -104,7 +93,7 @@ bool HashTableHelper::queueResize(HashTableBase* ht)
 void HashTableBase::startResize()
 {
    m_active_resizes++ ;
-   HashTableHelper::queueResize(this) ;
+   HashTableHelper::startHelper(this) ;
    return ;
 }
 
