@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-29					*/
+/* Version 0.01, last edit 2017-05-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -415,6 +415,16 @@ char* CFile::getCLine(size_t maxline)
       return nullptr ;
    StringBuilder str(this,maxline) ;
    return str.cstring() ;
+}
+
+//----------------------------------------------------------------------------
+
+char* CFile::getTrimmedLine(size_t maxline)
+{
+   if (!m_file || feof(m_file))
+      return nullptr ;
+   StringBuilder str(this,maxline) ;
+   return trim_whitespace(str.cstring()) ;
 }
 
 //----------------------------------------------------------------------------

@@ -39,6 +39,7 @@ class StringBuilder : public BufferBuilder<char>
       StringBuilder() {}
       StringBuilder(class Fr::CFile*, size_t maxlen = (size_t)~0) ;
       ~StringBuilder() {}
+      void append(const char* s) ;
       String *string() const { return String::create(currentBuffer(),currentLength()) ; }
       char* cstring() const ;
    } ;

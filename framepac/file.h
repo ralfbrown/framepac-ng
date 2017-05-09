@@ -101,6 +101,7 @@ class CFile
       size_t skipLines(size_t maxskip = 1) ;
       class Fr::String* getline(size_t maxline = (size_t)~0) ; // result must be freed
       char* getCLine(size_t maxline = (size_t)~0) ; // result must be freed
+      char* getTrimmedLine(size_t maxline = (size_t)~0) ; // result must be freed
       LineBatch* getlines(size_t batchsize = 0) ;
       void putc(char c) { fputc(c,m_file) ; }
       void puts(const char* s) { fputs(s,m_file) ; }

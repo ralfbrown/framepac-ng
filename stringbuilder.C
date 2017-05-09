@@ -53,6 +53,18 @@ StringBuilder::StringBuilder(CFile* file, size_t maxline)
 
 //----------------------------------------------------------------------------
 
+void StringBuilder::append(const char *s)
+{
+   if (s)
+      {
+      while (*s)
+	 append(*s++) ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 char* StringBuilder::cstring() const
 {
    size_t len = currentLength() ;
