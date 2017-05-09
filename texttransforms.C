@@ -34,7 +34,7 @@ using namespace std ;
 namespace Fr
 {
 
-static std::locale utf8locale("en_US.UTF-8") ;
+std::locale utf8locale("en_US.UTF-8") ;
 
 /************************************************************************/
 /************************************************************************/
@@ -79,6 +79,18 @@ char* skip_whitespace(char* s)
 
 //----------------------------------------------------------------------------
 
+char* skip_whitespace(char* s, std::locale& locale)
+{
+   if (s)
+      {
+      while (*s && std::use_facet<std::ctype<char> >(locale).isspace(*s))
+	 s++ ;
+      }
+   return s ;
+}
+
+//----------------------------------------------------------------------------
+
 const char* skip_whitespace(const char* s)
 {
    if (s)
@@ -96,6 +108,18 @@ char* skip_to_whitespace(char* s)
    if (s)
       {
       while (*s && !isspace(*s))
+	 s++ ;
+      }
+   return s ;
+}
+
+//----------------------------------------------------------------------------
+
+char* skip_to_whitespace(char* s, std::locale& locale)
+{
+   if (s)
+      {
+      while (*s && !std::use_facet<std::ctype<char> >(locale).isspace(*s))
 	 s++ ;
       }
    return s ;
@@ -122,6 +146,23 @@ char* trim_whitespace(char* s)
       char* nonwhite = skip_whitespace(s) ;
       char* s_end = strchr(nonwhite,'\0') ;
       while (s_end > nonwhite && isspace(s_end[-1]))
+	 s_end-- ;
+      size_t len = s_end - nonwhite ;
+      memcpy(s,nonwhite,len) ;
+      s[len] = '\0' ;
+      }
+   return s ;
+}
+
+//----------------------------------------------------------------------------
+
+char* trim_whitespace(char* s, std::locale& locale)
+{
+   if (s)
+      {
+      char* nonwhite = skip_whitespace(s,locale) ;
+      char* s_end = strchr(nonwhite,'\0') ;
+      while (s_end > nonwhite && std::use_facet<std::ctype<char> >(locale).isspace(s_end[-1]))
 	 s_end-- ;
       size_t len = s_end - nonwhite ;
       memcpy(s,nonwhite,len) ;

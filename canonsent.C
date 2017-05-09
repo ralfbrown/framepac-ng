@@ -19,49 +19,52 @@
 /*									*/
 /************************************************************************/
 
-#ifndef _Fr_BUILDER_H_INCLUDED
-#define _Fr_BUILDER_H_INCLUDED
+#include "framepac/stringbuilder.h"
+#include "framepac/texttransforms.h"
 
-#include "framepac/config.h"
+namespace Fr
+{
 
 /************************************************************************/
 /************************************************************************/
 
-namespace Fr {
+extern std::locale utf8locale ;
 
-template <typename T, size_t minsize = 200>
-class BufferBuilder
-   {
-   private:
-      T        *m_buffer = m_localbuf ;
-      size_t	m_alloc = minsize ;
-      size_t	m_currsize = 0 ;
-      T		m_localbuf[minsize] ;
-   public:
-      BufferBuilder() {}
-      BufferBuilder(const BufferBuilder&) = delete ;
-      ~BufferBuilder() ;
-      void operator= (const BufferBuilder&) = delete ;
+/************************************************************************/
+/************************************************************************/
 
-      bool preallocate(size_t newsize) ;
-      void clear() ;
+char* canonicalize_sentence(const char* sent, std::locale& locale, bool force_uppercase,
+			    const char *delim, char const* const* abbrevs)
+{
+   (void)delim; (void)abbrevs ;
 
-      void append(T value) ;
-      void remove() { if (m_currsize > 0) --m_currsize ; } // remove last-added item
+   if (!sent)
+      return nullptr ;
+   StringBuilder sb ;
+   // strip leading and trailing whitespace
+   sent = trim_whitespace(sent,locale) ;
+   if (force_uppercase)
+      {
+      uppercase_string(sent,locale) ;
+      }
+   while (*sent)
+      {
+      sent = skip_whitespace(sent,locale) ;
+//FIXME
 
-      size_t currentLength() const { return m_currsize ; }
-      T *currentBuffer() const { return m_buffer ; }
-      T *finalize() const ;
+      ++sent ;
+      }
+   return sb.cstring() ;
+}
 
-      // operator overloads
-      T *operator * () const { return m_buffer ; }
-      BufferBuilder &operator += (T value) { append(value) ; return *this ; }
-   } ;
+//----------------------------------------------------------------------------
 
-extern template class BufferBuilder<char> ;
+char* canonicalize_sentence(const char* sent, bool force_uppercase,
+			    const char *delim, char const* const* abbrevs)
+{
+   return canonicalize_sentence(sent,utf8locale,force_uppercase,delim,abbrevs) ;
+}
 
 } // end namespace Fr
 
-#endif /* !_Fr_BUILDER_H_INCLUDED */
-
-// end of file builder.h //
+// end of file canonsent.C //

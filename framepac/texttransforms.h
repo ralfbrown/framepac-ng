@@ -32,11 +32,14 @@ char* dup_string_n(const char*, size_t maxlength) ;
 
 char* skip_whitespace(char*) ;
 const char* skip_whitespace(const char*) ;
+char* skip_whitespace(char*, std::locale&) ;
 
 char* skip_to_whitespace(char*) ;
 const char* skip_to_whitespace(const char*) ;
+char* skip_to_whitespace(char*, std::locale&) ;
 
 char* trim_whitespace(char*) ;
+char* trim_whitespace(char*, std::locale&) ;
 
 void lowercase_string(char*) ;
 void uppercase_string(char*) ;
@@ -46,6 +49,11 @@ void uppercase_string(char*, std::locale&) ;
 
 //std::string lowercase_utf8_string(char*) ;
 //std::string uppercase_utf8_string(char*) ;
+
+char* canonicalize_sentence(const char*, bool force_uppercase = false, const char* delim = nullptr,
+			    char const* const* abbrevs = nullptr) ;
+char* canonicalize_sentence(const char*, std::locale&, bool force_uppercase = false,
+			    const char* delim = nullptr, char const* const* abbrevs = nullptr) ;
 
 [[gnu::format(gnu_printf,1,0)]]
 char* vaprintf(const char *fmt, va_list args) ;
