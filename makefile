@@ -417,7 +417,7 @@ message$(OBJ):		message$(C) framepac/message.h framepac/texttransforms.h
 mmapfile$(OBJ):		mmapfile$(C) framepac/mmapfile.h framepac/file.h
 number$(OBJ):		number$(C) framepac/bignum.h framepac/rational.h
 progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
-ptrie_u32$(OBJ):	ptrie_u32$(C) template/trie.cc
+ptrie_u32$(OBJ):	ptrie_u32$(C) template/ptrie.cc
 object$(OBJ):		object$(C) framepac/object.h
 objreader$(OBJ):	objreader$(C) framepac/objreader.h framepac/symbol.h framepac/bignum.h framepac/rational.h \
 			framepac/list.h framepac/builder.h
@@ -457,7 +457,13 @@ template/bufbuilder.cc:	framepac/builder.h
 template/hashtable.cc:	framepac/hashtable.h framepac/message.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+template/ptrie.cc:	framepac/trie.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 template/sufarray.cc:	framepac/sufarray.h framepac/bitvector.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/trie.cc:	framepac/trie.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/vecsim.cc:	framepac/vecsim.h

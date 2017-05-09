@@ -66,6 +66,7 @@ class Trie
 
 	    void  markAsLeaf() {}
 	    void  setValue(T) {}
+	    void  setChild(unsigned N, IdxT ch) { m_children[N] = ch ; }
 	    bool  insertChild(unsigned N, Trie *) ;
 	 protected:
 	    IdxT  m_children[1<<bits] ;
@@ -87,11 +88,11 @@ class Trie
 	    bool  m_leaf ;
          } ;
 
-      Trie(IdxT capacity) ;
+      Trie(IdxT cap) { init(cap) ; }
       ~Trie() ;
 
-      bool insert(const uint8_t *key, unsigned keylength, T value) ;
-      bool extendKey(IdxT &index, uint8_t keybyte) const ;
+      bool insert(const uint8_t* key, unsigned keylength, T value) ;
+      bool extendKey(IdxT& index, uint8_t keybyte) const ;
       T find(const uint8_t* key, unsigned keylength) const ;
 
       IdxT size() const { return m_size_valueless + m_size_full ; }
@@ -111,7 +112,7 @@ class Trie
       unsigned        m_maxkey ;
    private:
       void init(IdxT capacity) ;
-      IdxT allocateNode() ;
+      IdxT allocNode() ;
    } ;
 
 /************************************************************************/

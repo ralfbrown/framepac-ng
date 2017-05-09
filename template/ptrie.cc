@@ -19,14 +19,15 @@
 /*									*/
 /************************************************************************/
 
-#include "template/ptrie.cc"
+#include "framepac/trie.h"
 
 namespace Fr
 {
 
-// request explicit instantiation
-template class PackedTrie<std::uint32_t,std::uint32_t> ;
 
-} // end of namespace Fr
 
-// end of file ptrie_u32.C //
+
+
+} // end namespace Fr
+
+// end of file ptrie.cc //

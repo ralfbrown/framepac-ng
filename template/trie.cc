@@ -28,10 +28,86 @@ namespace Fr
 /*	Manifest Constants						*/
 /************************************************************************/
 
-#define ROOT_INDEX 0
-
 /************************************************************************/
 /*	Methods for template class Trie					*/
+/************************************************************************/
+
+template <typename T, typename IdxT, unsigned bits>
+void Trie<T,IdxT,bits>::init(IdxT cap)
+{
+
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+Trie<T,IdxT,bits>::~Trie()
+{
+   
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+IdxT Trie<T,IdxT,bits>::allocNode()
+{
+   
+   return NULL_INDEX ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+bool Trie<T,IdxT,bits>::insert(const uint8_t* key, unsigned keylength, T value)
+{
+   (void)key; (void)keylength; (void)value ;
+//FIXME
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+bool Trie<T,IdxT,bits>::extendKey(IdxT& index, uint8_t keybyte) const
+{
+   (void)index; (void)keybyte;
+//FIXME
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+T Trie<T,IdxT,bits>::find(const uint8_t* key, unsigned keylength) const
+{
+   (void)key; (void)keylength ;
+//FIXME
+   return T(0) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+Node* Trie<T,IdxT,bits>::node(IdxT N) const
+{
+   (void)N ;
+//FIXME
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+Node* Trie<T,IdxT,bits>::rootNode() const
+{
+//FIXME
+   return nullptr ;
+}
+
+/************************************************************************/
+/*	Methods for template class Trie::ValuelessNode			*/
 /************************************************************************/
 
 template <typename T, typename IdxT, unsigned bits>
@@ -45,15 +121,19 @@ Trie<T,IdxT,bits>::ValuelessNode::ValuelessNode()
 //----------------------------------------------------------------------------
 
 template <typename T, typename IdxT, unsigned bits>
-bool Trie<T,IdxT,bits>::ValuelessNode::insertChild(unsigned N, Trie<T,IdxT,bits>* )
+bool Trie<T,IdxT,bits>::ValuelessNode::insertChild(unsigned N, Trie<T,IdxT,bits>* trie)
 {
-   (void)N ;
-//FIXME
+   if (!childPresent(N))
+      {
+      IdxT new_index = trie->allocNode() ;
+      if (new_index != NULL_INDEX)
+	 {
+	 setChild(N,new_index) ;
+	 return true ;
+	 }
+      }
    return false ;
 }
-
-
-//----------------------------------------------------------------------------
 
 /************************************************************************/
 /*	Methods for template class MultiTrie				*/
