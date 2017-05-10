@@ -359,12 +359,14 @@ int List::lessThan_(const Object *obj, const Object *other)
 
 void List::StaticInitialization()
 {
+#if FIXME // needs memory manager working first
    empty_list = new List ;
    // point both head and tail of the empty list at itself; if we somehow wind
    //   up trying to deref the empty list, we'll get back another empty list
    //   instead of a null pointer
    empty_list->m_item = empty_list ;
    empty_list->m_next = empty_list ;
+#endif
    return ;
 }
 
@@ -372,8 +374,10 @@ void List::StaticInitialization()
 
 void List::StaticCleanup()
 {
+#if FIXME // needs memory manager working first
    delete empty_list ;
    empty_list = nullptr ;
+#endif
    return ;
 }
 
