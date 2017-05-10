@@ -655,7 +655,6 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize)
 template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::add(size_t hashval, KeyT key, ValT value)
 {
-   INCR_COUNT(insert) ;
    size_t bucketnum = hashval % m_size ;
    while (true)
       {
@@ -715,7 +714,6 @@ bool HashTable<KeyT,ValT>::Table::add(size_t hashval, KeyT key, ValT value)
 template <typename KeyT, typename ValT>
 ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr)
 {
-   INCR_COUNT(insert) ;
    size_t bucketnum = hashval % m_size ;
    while (true)
       {
@@ -1074,7 +1072,6 @@ HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char* name, size_t nam
       if (key)
 	 return key ;
       }
-   INCR_COUNT(insert) ;
    size_t bucketnum = hashval % m_size ;
    while (true)
       {

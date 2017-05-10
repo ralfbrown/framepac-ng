@@ -59,7 +59,7 @@
 //   can allow additional writes even before all old readers complete;
 //   if we were to wait for all readers, performance wouldn't scale as
 //   well with processor over-subscription.
-#  define FrHT_NUM_TABLES	    14
+#  define FrHT_NUM_TABLES	    4
 #endif
 
 // starting up the copying of a segment of the current hash array into
@@ -810,9 +810,9 @@ class HashTable : public HashTableBase
       bool reclaimDeletions(size_t totalfrags = 1, size_t fragnum = 0)
          { DELEGATE(reclaimDeletions(totalfrags,fragnum)) }
 
-      [[gnu::hot]] bool add(KeyT key) { DELEGATE_HASH(add(hashval,key)) }
-      [[gnu::hot]] bool add(KeyT key, ValT value) { DELEGATE_HASH(add(hashval,key,value)) }
-      [[gnu::hot]] ValT addCount(KeyT key, size_t incr) { DELEGATE_HASH(addCount(hashval,key,incr)) }
+      [[gnu::hot]] bool add(KeyT key) { INCR_COUNT(insert) ; DELEGATE_HASH(add(hashval,key)) }
+      [[gnu::hot]] bool add(KeyT key, ValT value) { INCR_COUNT(insert) ; DELEGATE_HASH(add(hashval,key,value)) }
+      [[gnu::hot]] ValT addCount(KeyT key, size_t incr) { INCR_COUNT(insert) ; DELEGATE_HASH(addCount(hashval,key,incr)) }
       bool remove(KeyT key) { DELEGATE_HASH(remove(hashval,key)) }
       [[gnu::hot]] bool contains(KeyT key) const { DELEGATE_HASH(contains(hashval,key)) }
       [[gnu::hot]] ValT lookup(KeyT key) const { DELEGATE_HASH(lookup(hashval,key)) }
@@ -836,6 +836,7 @@ class HashTable : public HashTableBase
       // special support for Fr::SymbolTableX
       [[gnu::hot]] KeyT addKey(const char *name, bool *already_existed = nullptr)
 	 {
+	    INCR_COUNT(insert) ;
 	    size_t namelen ;
 	    size_t hashval = hashVal(name,&namelen) ;
 	    DELEGATE(addKey(hashval, name, namelen, already_existed))

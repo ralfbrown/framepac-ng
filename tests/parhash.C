@@ -619,7 +619,7 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
    size_t stat_full = ht->numberOfFullNeighborhoods() ;
    size_t stat_chain_coll = ht->numberOfChainLockCollisions() ;
    size_t retries = (stat_ins_att >= stat_ins - stat_ins_dup) ? stat_ins_att - (stat_ins - stat_ins_dup) : 0 ;
-   out << "  Stat: " << (stat_ins-stat_ins_forw) << "+" << stat_ins_forw << " ins (" 
+   out << "  Stat: " << stat_ins << "+" << stat_ins_forw << " ins (" 
        << stat_ins_dup << " dup, " << retries << " retry, " << stat_ins_resize << " resz), "
        << stat_cont_succ << '/' << stat_cont << '+' << stat_cont_forw << " cont, "
        << stat_lookup_succ << '/' << stat_lookup << '+' << stat_lookup_forw << " look, "
