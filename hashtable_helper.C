@@ -53,7 +53,7 @@ void HashTableHelper::helperFunction()
 {
    ThreadInit() ;
    //FIXME FIXME: need auto thread registration ASAP
-   HashTable<uint32_t,NullObject>::threadInit();
+//   HashTable<uint32_t,NullObject>::threadInit();
    for ( ; ; )
       {
       s_semaphore.wait() ;

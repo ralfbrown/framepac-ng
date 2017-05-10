@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-07					*/
+/* Version 0.01, last edit 2017-05-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -251,7 +251,7 @@ class Allocator : public AllocatorBase
       ~Allocator() = default ;
       void operator= (const Allocator&) = delete ;
    protected:
-      typedef FramepaC::ThreadInitializer<Allocator> ThreadInitializer ;
+      typedef Fr::ThreadInitializer<Allocator> ThreadInitializer ;
    protected: // data members
       static ThreadInitializer m_threadinit ;
    } ;

@@ -696,7 +696,7 @@ class HashTable : public HashTableBase
       HashKeyValueFunc   *cleanup_fn ;	// invoke on destruction of obj
       HashKVFunc         *remove_fn ; 	// invoke on removal of entry/value
 #ifndef FrSINGLE_THREADED
-      static FramepaC::ThreadInitializer<HashTable> initializer ;
+      static Fr::ThreadInitializer<HashTable> initializer ;
       static TablePtr*    s_thread_entries ;
       static size_t       s_registered_threads ;
       static thread_local TablePtr* s_thread_record ;
@@ -734,10 +734,10 @@ class HashTable : public HashTableBase
       // set up the per-thread info needed for safe reclamation of
       //   entries and hash arrays, as well as an on-exit callback
       //   to clear that info
-   public://FIXME, should only be called from ThreadInitializer
+   public: // should only be called from ThreadInitializer
       static void threadInit() ;
-   protected:
       static void threadCleanup() ;
+   protected:
       static bool stillLive(const Table *version) ;
 
       size_t maxSize() const { return m_table.load()->m_size ; }
@@ -1025,6 +1025,9 @@ class HashTable : public HashTableBase
       [[gnu::cold]] bool verify() const { DELEGATE(verify()) }
 
    } ;
+
+template <typename KeyT, typename ValT>
+Fr::ThreadInitializer<HashTable<KeyT,ValT> > HashTable<KeyT,ValT>::initializer ;
 
 //----------------------------------------------------------------------
 // specializations: integer keys

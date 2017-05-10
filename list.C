@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.01, last edit 2017-05-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -39,7 +39,7 @@ List* List::empty_list ;
 
 // register initialization and cleanup functions for the List class as a whole
 // these will be called by Fr::Initialize() and Fr::Shutdown()
-FramepaC::Initializer<List> static_init ;
+Fr::Initializer<List> static_init ;
 
 /************************************************************************/
 /************************************************************************/

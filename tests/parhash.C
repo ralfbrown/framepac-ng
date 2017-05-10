@@ -939,6 +939,7 @@ int main(int argc, char** argv)
    int key_order { 0 } ;
    bool terse = false ;
 
+   Fr::Initialize() ;
    ArgParser cmdline_flags ;
    cmdline_flags
       .add(use_int_hashtable,"i","int","use integer-keyed hash table instead of Object-keyed")

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-05					*/
+/* Version 0.01, last edit 2017-05-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -23,15 +23,7 @@
 #include "framepac/init.h"
 
 #ifndef FrSINGLE_THREADED
-# ifdef __STDC_NO_THREADS__
-// fall back to PThreads if no C11-compliant threads
-// for a possible Win32 implementation of C11 threads, see
-// https://github.com/glfw/glfw/blob/master/deps/tinycthread.h
-#  include <errno.h>
-#  include <pthread.h>
-# else
-#  include <threads.h>
-# endif
+#include <thread>
 #endif /* !FrSINGLE_THREADED */
 
 namespace Fr
@@ -41,56 +33,17 @@ namespace Fr
 /************************************************************************/
 
 static bool initialized = false ;
+
 #ifndef FrSINGLE_THREADED
- static bool  have_thread_cleanup ;
-# ifdef __STDC_NO_THREADS__
-// fall back to PThreads
- static pthread_key_t cleanup_key ;
-# else
- static tss_t cleanup_key ;
-# endif /* __STDC_NO_THREADS__ */
+static InitializerBase* static_init_funcs ;
+static InitializerBase* static_cleanup_funcs ;
+
+static ThreadInitializerBase* registered_init_funcs ;
+static ThreadInitializerBase* registered_cleanup_funcs ;
 #endif /* !FrSINGLE_THREADED */
 
 /************************************************************************/
 /************************************************************************/
-
-//----------------------------------------------------------------------------
-
-void Shutdown()
-{
-   if (initialized)
-      {
-//FIXME
-
-      initialized = false ;
-      }
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-static void thread_cleanup(void*)
-{
-   // call any registered thread-cleanup functions
-   //FIXME
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-static void register_thread_cleanup()
-{
-#ifndef FrSINGLE_THREADED
-# ifdef __STDC_NO_THREADS__
-   // fall back to PThreads
-   have_thread_cleanup = (0 == pthread_key_create(&cleanup_key, thread_cleanup)) ;
-//FIXME
-# else
-   have_thread_cleanup = (thrd_success == tss_create(&cleanup_key, thread_cleanup)) ;
-# endif /* !__STDC_NO_THREADS__ */
-#endif /* !FrSINGLE_THREADED */
-   return ;
-}
 
 //----------------------------------------------------------------------------
 
@@ -99,76 +52,114 @@ bool Initialize()
    if (!initialized)
       {
       initialized = true ;
-      register_thread_cleanup() ;
-//FIXME
+//TODO: perform any requred FramepaC-ng initialization
+
       // install termination handler
       std::atexit(Shutdown) ;
+      // call any registered static-initialization functions
+      for (InitializerBase* init = static_init_funcs ; init ; init = init->nextInit())
+	 {
+	 init->init() ;
+	 }
       }
+   // ensure that any needed thread registration is carried out on the original thread
+   ThreadInit() ;
    return true ;
 }
 
 //----------------------------------------------------------------------------
+
+void Shutdown()
+{
+   if (initialized)
+      {
+      // call any registered static-cleanup functions
+      for (InitializerBase* cln = static_cleanup_funcs ; cln ; cln = cln->nextCleanup())
+	 {
+	 cln->cleanup() ;
+	 }
+//TODO: perform any required FramepaC-ng cleanup
+
+      initialized = false ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void RegisterStaticInit(InitializerBase *ti)
+{
+   ti->setNextInit(static_init_funcs) ;
+   static_init_funcs = ti ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void RegisterStaticCleanup(InitializerBase *ti)
+{
+   ti->setNextCleanup(static_cleanup_funcs) ;
+   static_cleanup_funcs = ti ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+#ifndef FrSINGLE_THREADED
+static thread_local bool thread_registered = false ;
+#endif /* !FrSINGLE_THREADED */
 
 bool ThreadInit()
 {
 #ifdef FrSINGLE_THREADED
    return true ;
 #else
-   void *value = (void*)1 ; //FIXME
-# ifdef __STDC_NO_THREADS__
-   //FIXME: fall back on PThreads
-   errno = pthread_setspecific(cleanup_key,value) ;
-   return errno == 0 ;
-# else
-   if (have_thread_cleanup)
+   if (!thread_registered)
       {
-      tss_set(cleanup_key, value) ;
+      // call any registered thread-initialization functions
+      for (ThreadInitializerBase* ti = registered_init_funcs ; ti ; ti = ti->nextInit())
+	 {
+	 ti->init() ;
+	 }
+      thread_registered = true ;
       }
-   return true ;
-# endif /* __STDC_NO_THREADS__ */
-   // call any registered thread-initialization functions
-//FIXME
 #endif /* FrSINGLE_THREADED */
+   return true ;
 }
 
 //----------------------------------------------------------------------------
 
 bool ThreadCleanup()
 {
-//FIXME
-   return true ;
+   if (thread_registered)
+      {
+      // invoke any registered thread-cleanup functions
+      for (ThreadInitializerBase* ti = registered_cleanup_funcs ; ti ; ti = ti->nextCleanup())
+	 {
+	 ti->cleanup() ;
+	 }
+      thread_registered = false ;
+      return true ;
+      }
+   return false ;
 }
 
 //----------------------------------------------------------------------------
 
-ThreadInitHandle *RegisterThreadInit(ThreadInitFunc *, void *)
+void RegisterThreadInit(ThreadInitializerBase *ti)
 {
-
-   return nullptr ;
+   ti->setNextInit(registered_init_funcs) ;
+   registered_init_funcs = ti ;
+   return ;
 }
 
 //----------------------------------------------------------------------------
 
-ThreadCleanupHandle *RegisterThreadCleanup(ThreadInitFunc *, void *)
+void RegisterThreadCleanup(ThreadInitializerBase *ti)
 {
-
-   return nullptr ;
-}
-
-//----------------------------------------------------------------------------
-
-bool UnregisterThreadInit(ThreadInitHandle*)
-{
-
-   return true ;
-}
-
-//----------------------------------------------------------------------------
-
-bool UnregisterThreadCleanup(ThreadCleanupHandle*)
-{
-
-   return true ;
+   ti->setNextCleanup(registered_cleanup_funcs) ;
+   registered_cleanup_funcs = ti ;
+   return ;
 }
 
 //----------------------------------------------------------------------------

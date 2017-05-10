@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-05-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -39,24 +39,19 @@ bool ThreadCleanup() ;
 
 //----------------------------------------------------------------------------
 
-typedef void (*ThreadInitFunc)(void*) ;
-typedef void (*ThreadCleanupFunc)(void*) ;
-class ThreadInitHandle ;
-class ThreadCleanupHandle ;
+class InitializerBase ;
+class ThreadInitializerBase ;
 
-ThreadInitHandle *RegisterThreadInit(ThreadInitFunc *, void *user_data) ;
-bool UnregisterThreadInit(ThreadInitHandle*) ;
+typedef void ThreadInitFunc() ;
+typedef void ThreadCleanupFunc() ;
 
-ThreadCleanupHandle *RegisterThreadCleanup(ThreadCleanupFunc *, void *user_data) ;
-bool UnregisterThreadCleanup(ThreadCleanupHandle*) ;
-
-} ; // end of namespace Fr
+void RegisterStaticInit(InitializerBase*) ;
+void RegisterStaticCleanup(InitializerBase*) ;
+void RegisterThreadInit(ThreadInitializerBase*) ;
+void RegisterThreadCleanup(ThreadInitializerBase*) ;
 
 /************************************************************************/
 /************************************************************************/
-
-namespace FramepaC
-{
 
 /************************************************************************/
 /*	global initializers			       			*/
@@ -65,13 +60,24 @@ namespace FramepaC
 class InitializerBase
    {
    public:
-      InitializerBase() : m_next(nullptr) {}
+      InitializerBase() {}
       InitializerBase(const InitializerBase&) = delete ;
       ~InitializerBase() = default ;
       void operator= (const InitializerBase&) = delete ;
 
+      InitializerBase* nextInit() const { return m_next_init ; }
+      void setNextInit(InitializerBase* nxt) { m_next_init = nxt ; }
+
+      InitializerBase* nextCleanup() const { return m_next_cleanup ; }
+      void setNextCleanup(InitializerBase* nxt) { m_next_cleanup = nxt ; }
+
+      void init() { m_init() ; }
+      void cleanup() { m_cleanup() ; }
    protected:
-      InitializerBase *m_next ;
+      InitializerBase* m_next_init { nullptr } ;
+      InitializerBase* m_next_cleanup { nullptr } ;
+      ThreadInitFunc*  m_init { nullptr } ;
+      ThreadInitFunc*  m_cleanup { nullptr } ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -91,20 +97,23 @@ class Initializer : InitializerBase
       struct hasCleanup : C, addCleanup {} ;
 
       template <class T>
-      static int callInit( decltype(T::StaticInitialization)* ) { return 0 ; }
+      int registerInit( decltype(T::StaticInitialization)* ) { return 0 ; }
       template <class T>
-      static char callInit( T* ) { C::StaticInitialization() ; return 0 ; }
+      char registerInit( T* )
+	 { m_init = C::StaticInitialization ; RegisterStaticInit(this) ; return 0 ; }
 
       template <class T>
-      static int callCleanup( decltype(T::StaticCleanup)* ) { return 0 ; }
+      int registerCleanup( decltype(T::StaticCleanup)* ) { return 0 ; }
       template <class T>
-      static char callCleanup( T* ) { C::StaticCleanup() ; return 0 ; }
+      char registerCleanup( T* )
+	 { m_cleanup = C::StaticCleanup ; RegisterStaticCleanup(this) ; return 0 ; }
    public:
-      Initializer() : InitializerBase() {}
-      ~Initializer() { cleanup() ; }
-
-      void init() { (void)callInit<hasInit>(nullptr) ; }
-      void cleanup() { (void)callCleanup<hasCleanup>(nullptr) ; }
+      Initializer() : InitializerBase()
+	 {
+	 registerInit<hasInit>(nullptr) ;
+	 registerCleanup<hasCleanup>(nullptr) ; 
+	 }
+      ~Initializer() {}
    } ;
 
 /************************************************************************/
@@ -114,13 +123,24 @@ class Initializer : InitializerBase
 class ThreadInitializerBase
    {
    public:
-      ThreadInitializerBase() : m_next(nullptr) {}
+      ThreadInitializerBase() {}
       ThreadInitializerBase(const InitializerBase&) = delete ;
       ~ThreadInitializerBase() = default ;
       void operator= (const ThreadInitializerBase&) = delete ;
 
+      ThreadInitializerBase* nextInit() const { return m_next_init ; }
+      void setNextInit(ThreadInitializerBase* nxt) { m_next_init = nxt ; }
+
+      ThreadInitializerBase* nextCleanup() const { return m_next_cleanup ; }
+      void setNextCleanup(ThreadInitializerBase* nxt) { m_next_cleanup = nxt ; }
+
+      void init() { m_init() ; }
+      void cleanup() { m_cleanup() ; }
    protected:
-      ThreadInitializerBase *m_next ;
+      ThreadInitializerBase* m_next_init { nullptr } ;
+      ThreadInitializerBase* m_next_cleanup { nullptr } ;
+      ThreadInitFunc*        m_init { nullptr } ;
+      ThreadInitFunc*        m_cleanup { nullptr } ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -140,25 +160,28 @@ class ThreadInitializer : ThreadInitializerBase
       struct hasCleanup : C, addCleanup {} ;
 
       template <class T>
-      static int callInit( decltype(T::threadInit)* ) { return 0 ; }
+      int registerInit( decltype(T::threadInit)* ) { return 0 ; }
       template <class T>
-      static char callInit( T* ) { C::threadInit() ; return 0 ; }
+      char registerInit( T* )
+	 { m_init = C::threadInit ; RegisterThreadInit(this) ; return 0 ; }
 
       template <class T>
-      static int callCleanup( decltype(T::threadCleanup)* ) { return 0 ; }
+      int registerCleanup( decltype(T::threadCleanup)* ) { return 0 ; }
       template <class T>
-      static char callCleanup( T* ) { C::threadCleanup() ; return 0 ; }
+      char registerCleanup( T* )
+	 { m_cleanup = C::threadCleanup ; RegisterThreadCleanup(this) ; return 0 ; }
    public:
-      ThreadInitializer() : ThreadInitializerBase() {}
-      ~ThreadInitializer() { cleanup() ; }
-
-      void init() { (void)callInit<hasInit>(nullptr) ; }
-      void cleanup() { (void)callCleanup<hasCleanup>(nullptr) ; }
+      ThreadInitializer() : ThreadInitializerBase()
+	 {
+	    registerInit<hasInit>(nullptr) ;
+	    registerCleanup<hasCleanup>(nullptr) ;
+	 }
+      ~ThreadInitializer() {}
    } ;
 
 //----------------------------------------------------------------------------
 
-} ; // end namespace FramepaC
+} ; // end namespace Fr
 
 #endif /* !__FrINIT_H_INCLUDED */
 
