@@ -1610,7 +1610,15 @@ HashTable<KeyT,ValT>::~HashTable()
       {
       if (cleanup_fn)
 	 {
+#if 0
+	 for (const auto entry : *this)
+	    {
+	    std::va_list args ;
+	    cleanup_fn(entry.first,entry.second,args) ;
+	    }
+#else
 	 this->iterate(cleanup_fn) ;
+#endif /* 0 */
 	 cleanup_fn = nullptr ;
 	 }
       if (remove_fn)

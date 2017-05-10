@@ -27,6 +27,7 @@
 #include <climits>
 #include <iostream>
 #include <type_traits>
+#include <utility>
 #include "framepac/counter.h"
 #include "framepac/init.h"
 #include "framepac/list.h"
@@ -245,6 +246,9 @@ class HashPtr
 
 namespace Fr
 {
+
+// forward declaration
+template <typename KeyT, typename ValT, typename RetT> class HashTableIter ;
 
 /************************************************************************/
 /*	Forward declaration for Fr::SymbolTable				*/
@@ -476,6 +480,7 @@ class HashTable : public HashTableBase
 	 // maintaining the count of elements in the table is too much of a bottleneck under high load,
 	 //   so we'll punt and simply scan the hash array if someone needs that count
 	 size_t currentSize() const { return countItems() ; }
+	 size_t capacity() const { return  m_fullsize ; }
 	 Table *next() const { return m_next_table.load() ; }
 	 Table *nextFree() const { return m_next_free.load() ; }
 	 KeyT getKey(size_t N) const { return m_entries[N].getKey() ; }
@@ -591,6 +596,12 @@ class HashTable : public HashTableBase
 
 	 void replaceValue(size_t pos, ValT new_value) ;
 
+	 //============== Iterators ================
+	 bool iterateVA(HashKeyValueFunc *func, std::va_list args) const ;
+	 bool iterateAndClearVA(HashKeyValueFunc *func, std::va_list args) const ;
+	 bool iterateAndModifyVA(HashKeyPtrFunc *func, std::va_list args) const ;
+	 List *allKeys() const ;
+
 	 //================= Content Statistics ===============
 	 [[gnu::cold]] size_t countItems() const ;
 	 [[gnu::cold]] size_t countItems(bool remove_dups) ;
@@ -598,12 +609,6 @@ class HashTable : public HashTableBase
 	 [[gnu::cold]] size_t chainLength(size_t bucketnum) const ;
 	 [[gnu::cold]] size_t *chainLengths(size_t &max_length) const ;
 	 [[gnu::cold]] size_t *neighborhoodDensities(size_t &num_densities) const ;
-
-	 //============== Iterators ================
-	 bool iterateVA(HashKeyValueFunc *func, std::va_list args) const ;
-	 bool iterateAndClearVA(HashKeyValueFunc *func, std::va_list args) const ;
-	 bool iterateAndModifyVA(HashKeyPtrFunc *func, std::va_list args) const ;
-	 List *allKeys() const ;
 
 	 //============== Debugging Support ================
 	 [[gnu::cold]] bool verify() const ;
@@ -798,9 +803,8 @@ class HashTable : public HashTableBase
       HashTable(const HashTable &ht) ;
       virtual ~HashTable() ;
 
-      bool resizeTo(size_t newsize)
-	 { DELEGATE(resize(newsize)) }
-      bool reserve_(size_t newsize) { DELEGATE(resize(newsize) ; }
+      bool resizeTo(size_t newsize) { DELEGATE(resize(newsize)) ; }
+      bool reserve_(size_t newsize) { DELEGATE(resize(newsize)) ; }
       void reserve(size_t newsize) { reserve_(newsize) ; }
 
       bool reclaimDeletions(size_t totalfrags = 1, size_t fragnum = 0)
@@ -866,6 +870,11 @@ class HashTable : public HashTableBase
 	 { DELEGATE(neighborhoodDensities(num_densities)) }
 
       // ========== Iterators ===========
+      inline HashTableIter<KeyT,ValT,ValT> begin() const ;
+      inline HashTableIter<KeyT,ValT,const ValT> cbegin() const ;
+      inline HashTableIter<KeyT,ValT,ValT> end() const ;
+      inline HashTableIter<KeyT,ValT,const ValT> cend() const ;
+
       bool iterateVA(HashKeyValueFunc *func, std::va_list args) const
          { DELEGATE(iterateVA(func,args)) }
       bool iterate(HashKeyValueFunc *func,...) const
@@ -1002,10 +1011,10 @@ class HashTable : public HashTableBase
       // get size of buffer needed to display the string representation of the hash table
       // NOTE: will not be valid if there are any add/remove/resize calls between calling
       //   this function and using displayValue(); user must ensure locking if multithreaded
-      size_t cStringLength_(size_t wrap_at, size_t indent) const { DELEGATE(cStringLength(wrap_at,indent))) }
+      size_t cStringLength_(size_t wrap_at, size_t indent) const { DELEGATE(cStringLength(wrap_at,indent)) ; }
 
-      virtual ostream& printValue(ostream &output) const { DELEGATE(printValue(output)) }
-      virtual char* displayValue(char *buffer) const { DELEGATE(displayValue(buffer)) }
+      virtual ostream& printValue(ostream &output) const { DELEGATE(printValue(output)) ; }
+      virtual char* displayValue(char *buffer) const { DELEGATE(displayValue(buffer)) ; }
       virtual bool expand(size_t incr)
 	 {
 	    if (incr < FrHASHTABLE_MIN_INCREMENT)
@@ -1095,6 +1104,101 @@ inline bool HashTable<const Symbol*,NullObject>::isEqualFull(const Symbol* key1,
    if (key1 == key2)
       return true ;
    return (key1 && key2 && strcmp(key1->name(),key2->name()) == 0) ;
+}
+
+/************************************************************************/
+/*	Declarations for class HashTableIter				*/
+/************************************************************************/
+
+template <typename KeyT, typename ValT, typename RetT>
+class HashTableIter
+   {
+   public:
+      HashTableIter(typename HashTable<KeyT,ValT>::Table* table, size_t index = 0)
+	 {
+	    m_table = table  ;
+	    size_t cap = table->capacity() ;
+	    while (index < cap && !table->activeEntry(index))
+	       ++index ;
+	    m_index = index ;
+	    return ;
+	 }
+      HashTableIter(const HashTableIter& o)
+	 {
+	    m_table = o.m_table ;
+	    m_index = o.m_index ;
+	    return;
+	 }
+      ~HashTableIter() {}
+
+      inline std::pair<KeyT,RetT&> operator* () const ;
+      inline HashTableIter& operator++ () ;
+      bool operator== (const HashTableIter& o) const { return m_table == o.m_table && m_index == o.m_index ; }
+      bool operator!= (const HashTableIter& o) const { return m_table != o.m_table || m_index != o.m_index ; }
+   protected:
+      typename HashTable<KeyT,ValT>::Table* m_table ;
+      size_t                       m_index ;
+   } ;
+
+/************************************************************************/
+/*	Member functions for template class HashTableIter		*/
+/************************************************************************/
+
+template <typename KeyT, typename ValT, typename RetT>
+HashTableIter<KeyT,ValT,RetT>& HashTableIter<KeyT,ValT,RetT>::operator++ ()
+{
+   while (m_index < m_table->capacity())
+      {
+      ++m_index ;
+      if (m_table->activeEntry(m_index))
+	 break ;
+      }
+   return *this ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT, typename RetT>
+std::pair<KeyT,RetT&> HashTableIter<KeyT,ValT,RetT>::operator* () const
+{
+   KeyT key = m_table->getKey(m_index) ;
+   ValT* valptr = m_table->getValuePtr(m_index) ;
+   return std::pair<KeyT,RetT&>(key,*valptr) ;
+}
+
+/************************************************************************/
+/*	Member functions for template class HashTableIter		*/
+/************************************************************************/
+
+// these need to be defined *after* the members of HashTableIter due to the
+//  circular dependendy between the types
+
+template <typename KeyT, typename ValT>
+HashTableIter<KeyT,ValT,ValT> HashTable<KeyT,ValT>::begin() const
+{
+   return HashTableIter<KeyT,ValT,ValT>(m_table.load(),0) ;
+}
+
+template <typename KeyT, typename ValT>
+HashTableIter<KeyT,ValT,const ValT> HashTable<KeyT,ValT>::cbegin() const
+{
+   return HashTableIter<KeyT,ValT,const ValT>(m_table.load(),0) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
+HashTableIter<KeyT,ValT,ValT> HashTable<KeyT,ValT>::end() const
+{
+   Table* table = m_table.load() ;
+   return HashTableIter<KeyT,ValT,ValT>(table,table->capacity()) ; 
+}
+
+template <typename KeyT, typename ValT>
+HashTableIter<KeyT,ValT,const ValT> HashTable<KeyT,ValT>::cend() const
+{
+   Table* table = m_table.load() ;
+   return HashTableIter<KeyT,ValT,const ValT>(table,table->capacity()) ; 
 }
 
 /************************************************************************/

@@ -38,7 +38,7 @@ using namespace Fr ;
 // uncomment the following line to show statistcs on the lengths
 //   of the chains in the hash array
 #define SHOW_CHAINS
-//#define SHOW_LOST_CHAINS
+#define SHOW_LOST_CHAINS
 
 // uncomment the following line to show the population densities within
 //   the search window around each location in the hash array
@@ -729,20 +729,6 @@ static void swap_segments(KeyT *keys, size_t numkeys, size_t threads)
 
 //----------------------------------------------------------------------
 
-#if defined(SHOW_LOST_CHAINS)
-template <typename KeyT, typename ValT>
-static bool show_lost_keys(KeyT key, ValT, va_list args)
-{
-   FrVarArg(ostream*,out) ;
-   FrVarArg(size_t*,count) ;
-   ++(*count) ; 
-   (*out) << " #" << *count << ": " << key << endl ;
-   return true ;
-}
-#endif /* SHOW_CHAINS */
-
-//----------------------------------------------------------------------
-
 template <class HashT, typename KeyT>
 static void run_tests(size_t threads, size_t startsize, size_t maxsize,
 		      size_t cycles, KeyT *keys, uint32_t *randnums, ostream &out,
@@ -823,7 +809,11 @@ static void run_tests(size_t threads, size_t startsize, size_t maxsize,
       // try to display the lost deletions
       out << "lost keys:" << endl ;
       size_t count = 0 ;
-      ht->iterate(show_lost_keys,&out,&count) ;
+      for (const auto entry : *ht)
+	 {
+	 ++count ;
+	 out << " #" << count << ": " << entry.first << endl ;
+	 }
       out << "(end of list)" << endl ;
       }
 #endif /* SHOW_LOST_CHAINS */
