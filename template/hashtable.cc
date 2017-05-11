@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-07					*/
+/* Version 0.01, last edit 2017-05-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -1332,56 +1332,6 @@ bool HashTable<KeyT,ValT>::Table::iterateVA(HashKeyValueFunc* func, std::va_list
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::iterateAndClearVA(HashKeyValueFunc* func, std::va_list args) const
-{
-   bool success = true ;
-   for (size_t i = 0 ; i < m_fullsize && success ; ++i)
-      {
-      if (!activeEntry(i))
-	 continue ;
-      ValT value = getValue(i) ;
-      KeyT key = getKey(i) ;
-      // if the item hasn't been removed while we were getting it,
-      //   call the processing function
-      if (key == Entry::DELETED())
-	 continue ;
-      std::va_list argcopy ;
-      va_copy(argcopy,args) ;
-      success = func(key,value,argcopy) ;
-      va_end(argcopy) ;
-      if (success)
-	 m_entries[i].setValue(nullVal()) ;
-      }
-   return success ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::iterateAndModifyVA(HashKeyPtrFunc* func, std::va_list args) const
-{
-   bool success = true ;
-   for (size_t i = 0 ; i < m_fullsize && success ; ++i)
-      {
-      if (!activeEntry(i))
-	 continue ;
-      ValT* valptr = getValuePtr(i) ;
-      KeyT key = getKey(i) ;
-      // if the item hasn't been removed while we were getting it,
-      //   call the processing function
-      if (key == Entry::DELETED())
-	 continue ;
-      std::va_list argcopy ;
-      va_copy(argcopy,args) ;
-      success = func(key,valptr,argcopy) ;
-      va_end(argcopy) ;
-      }
-   return success ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
 Object* HashTable<KeyT,ValT>::Table::makeObject(KeyT key)
 {
    return (Object*)key ;
@@ -1607,15 +1557,13 @@ HashTable<KeyT,ValT>::~HashTable()
       {
       if (cleanup_fn)
 	 {
-#if 0
-	 for (const auto entry : *this)
+	 for (size_t i = 0 ; i < table->m_fullsize ; ++i)
 	    {
-	    std::va_list args ;
-	    cleanup_fn(entry.first,entry.second,args) ;
+	    if (table->activeEntry(i))
+	       {
+	       cleanup_fn(this,table->getKey(i),table->getValue(i)) ;
+	       }
 	    }
-#else
-	 this->iterate(cleanup_fn) ;
-#endif /* 0 */
 	 cleanup_fn = nullptr ;
 	 }
       if (remove_fn)
@@ -1791,7 +1739,6 @@ void HashTable<KeyT,ValT>::threadInit()
       do {
          s_thread_record->init(&s_table,head) ;
          } while (!Atomic<TablePtr*>::ref(s_thread_entries).compare_exchange_weak(head,s_thread_record)) ;
-      /*atomic_incr*/++s_registered_threads ;
       }
 #endif /* FrSINGLE_THREADED */
    return ;
@@ -1808,7 +1755,6 @@ void HashTable<KeyT,ValT>::threadCleanup()
    if (s_thread_record->initialized())
       {
       // unlink from the list of all thread-local table pointers
-      //FIXME: make updates atomic to prevent list corruption
       TablePtr* prev = nullptr ;
       TablePtr* curr = s_thread_entries ;
       while (curr && curr->m_table != &Atomic<Table*>::ref(s_table))
@@ -1823,7 +1769,6 @@ void HashTable<KeyT,ValT>::threadCleanup()
 	    prev->m_next = curr->m_next ;
 	 else
 	    s_thread_entries = curr->m_next ;
-	 --s_registered_threads ;
 	 }
       s_thread_record->clear() ;
       }
@@ -1872,11 +1817,9 @@ bool HashTable<KeyT,ValT>::assistResize()
 
 #ifndef FrSINGLE_THREADED
 template <typename KeyT, typename ValT>
-thread_local typename HashTable<KeyT,ValT>::Table* HashTable<KeyT,ValT>::s_table = nullptr ;
-template <typename KeyT, typename ValT>
 typename HashTable<KeyT,ValT>::TablePtr* HashTable<KeyT,ValT>::s_thread_entries = nullptr ;
 template <typename KeyT, typename ValT>
-size_t HashTable<KeyT,ValT>::s_registered_threads = 0 ;
+thread_local typename HashTable<KeyT,ValT>::Table* HashTable<KeyT,ValT>::s_table = nullptr ;
 template <typename KeyT, typename ValT>
 thread_local typename HashTable<KeyT,ValT>::TablePtr* HashTable<KeyT,ValT>::s_thread_record = nullptr ;
 #endif /* !FrSINGLE_THREADED */

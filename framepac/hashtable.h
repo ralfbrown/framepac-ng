@@ -326,9 +326,10 @@ template <typename KeyT, typename ValT>
 class HashTable : public HashTableBase
    {
    public:
-      typedef bool HashKeyValueFunc(KeyT key, ValT value,std::va_list) ;
+      typedef void HashTableCleanupFunc(HashTable* ht, KeyT key, ValT value) ;
       typedef bool HashKVFunc(KeyT key, ValT value) ;
-      typedef bool HashKeyPtrFunc(KeyT key, ValT *,std::va_list) ;
+      typedef bool HashKeyValueFunc(KeyT key, ValT value, std::va_list) ;
+      typedef bool HashKeyPtrFunc(KeyT key, ValT *, std::va_list) ;
 
       // incorporate the auxiliary classes
       typedef FramepaC::Link Link ;
@@ -598,8 +599,6 @@ class HashTable : public HashTableBase
 
 	 //============== Iterators ================
 	 bool iterateVA(HashKeyValueFunc *func, std::va_list args) const ;
-	 bool iterateAndClearVA(HashKeyValueFunc *func, std::va_list args) const ;
-	 bool iterateAndModifyVA(HashKeyPtrFunc *func, std::va_list args) const ;
 	 List *allKeys() const ;
 
 	 //================= Content Statistics ===============
@@ -694,16 +693,15 @@ class HashTable : public HashTableBase
          } ;
       //------------------------
    protected: // members
-      Atomic<Table*>   	  m_table ;	// pointer to currently-active m_tables[] entry
-      Atomic<Table*>	  m_oldtables { nullptr } ;  // start of list of currently-live hash arrays
-      Atomic<Table*>	  m_freetables { nullptr } ;
-      Table		  m_tables[FrHT_NUM_TABLES] ;// hash array, chains, and associated data
-      HashKeyValueFunc   *cleanup_fn ;	// invoke on destruction of obj
-      HashKVFunc         *remove_fn ; 	// invoke on removal of entry/value
+      Atomic<Table*>   	    m_table ;	// pointer to currently-active m_tables[] entry
+      Atomic<Table*>	    m_oldtables { nullptr } ;  // start of list of currently-live hash arrays
+      Atomic<Table*>	    m_freetables { nullptr } ;
+      Table		    m_tables[FrHT_NUM_TABLES] ;// hash array, chains, and associated data
+      HashTableCleanupFunc* cleanup_fn ;	// invoke on destruction of obj
+      HashKVFunc*           remove_fn ; 	// invoke on removal of entry/value
 #ifndef FrSINGLE_THREADED
       static Fr::ThreadInitializer<HashTable> initializer ;
       static TablePtr*    s_thread_entries ;
-      static size_t       s_registered_threads ;
       static thread_local TablePtr* s_thread_record ;
       static thread_local Table*    s_table ; // thread's announcement which hash table it's using
 #endif /* FrSINGLE_THREADED */
@@ -886,32 +884,10 @@ class HashTable : public HashTableBase
 	    va_end(args) ;
 	    return success ;
 	 }
-      bool iterateAndClearVA(HashKeyValueFunc *func, std::va_list args)
-	 { DELEGATE(iterateAndClearVA(func,args)) }
-      bool iterateAndClear(HashKeyValueFunc *func,...)
-	 {
-	    std::va_list args ;
-	    va_start(args,func) ;
-	    bool success = iterateAndClearVA(func,args) ;
-	    va_end(args) ;
-	    return success ;
-	 }
-      //  iterateAndModify is not safe in the presence of parallel remove() calls!
-      bool iterateAndModifyVA(HashKeyPtrFunc *func, std::va_list args)
-	 { DELEGATE(iterateAndModifyVA(func,args)) }
-      //  iterateAndModify is not safe in the presence of parallel remove() calls!
-      bool iterateAndModify(HashKeyPtrFunc *func,...)
-	 {
-	    std::va_list args ;
-	    va_start(args,func) ;
-	    bool success = iterateAndModifyVA(func,args) ;
-	    va_end(args) ;
-	    return success ;
-	 }
       List *allKeys() const { DELEGATE(allKeys()) }
 
       // set callback function to be invoked when the hash table is deleted
-      void onDelete(HashKeyValueFunc *func) { cleanup_fn = func ; }
+      void onDelete(HashTableCleanupFunc *func) { cleanup_fn = func ; }
       // set callback function to be invoked when an entry is deleted; this
       //   permits the associated value for the entry to be freed
       void onRemove(HashKVFunc *func)
@@ -925,7 +901,7 @@ class HashTable : public HashTableBase
       size_t currentSize() const { DELEGATE(currentSize()) }
       size_t maxCapacity() const { DELEGATE(m_fullsize) }
       bool isPacked() const { return false ; }  // backwards compatibility
-      HashKeyValueFunc *cleanupFunc() const { return cleanup_fn ; }
+      HashTableCleanupFunc *cleanupFunc() const { return cleanup_fn ; }
       HashKVFunc *onRemoveFunc() const { return remove_fn ; }
 
       // =============== Background Processing =================

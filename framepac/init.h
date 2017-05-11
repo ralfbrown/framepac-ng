@@ -47,8 +47,12 @@ typedef void ThreadCleanupFunc() ;
 
 void RegisterStaticInit(InitializerBase*) ;
 void RegisterStaticCleanup(InitializerBase*) ;
+
 void RegisterThreadInit(ThreadInitializerBase*) ;
+void UnregisterThreadInit(ThreadInitializerBase*) ;
+
 void RegisterThreadCleanup(ThreadInitializerBase*) ;
+void UnregisterThreadCleanup(ThreadInitializerBase*) ;
 
 /************************************************************************/
 /************************************************************************/
@@ -176,7 +180,11 @@ class ThreadInitializer : ThreadInitializerBase
 	    registerInit<hasInit>(nullptr) ;
 	    registerCleanup<hasCleanup>(nullptr) ;
 	 }
-      ~ThreadInitializer() {}
+      ~ThreadInitializer()
+	 {
+	    UnregisterThreadInit(this) ;
+	    UnregisterThreadCleanup(this) ;
+	 }
    } ;
 
 //----------------------------------------------------------------------------

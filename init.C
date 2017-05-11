@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-09					*/
+/* Version 0.01, last edit 2017-05-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include <cstdlib>
+#include <mutex>
 #include "framepac/init.h"
 
 #ifndef FrSINGLE_THREADED
@@ -40,6 +41,8 @@ static InitializerBase* static_cleanup_funcs ;
 
 static ThreadInitializerBase* registered_init_funcs ;
 static ThreadInitializerBase* registered_cleanup_funcs ;
+
+static std::mutex registry_lock ;
 #endif /* !FrSINGLE_THREADED */
 
 /************************************************************************/
@@ -136,6 +139,9 @@ bool ThreadCleanup()
       // invoke any registered thread-cleanup functions
       for (ThreadInitializerBase* ti = registered_cleanup_funcs ; ti ; ti = ti->nextCleanup())
 	 {
+	 // do so under a lock so that the cleanup function doesn't need to take any
+	 //   precautions against reentrant calls
+	 std::lock_guard<std::mutex> guard(registry_lock) ;
 	 ti->cleanup() ;
 	 }
       thread_registered = false ;
@@ -159,6 +165,50 @@ void RegisterThreadCleanup(ThreadInitializerBase *ti)
 {
    ti->setNextCleanup(registered_cleanup_funcs) ;
    registered_cleanup_funcs = ti ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void UnregisterThreadInit(ThreadInitializerBase *ti)
+{
+   std::lock_guard<std::mutex> guard(registry_lock) ;
+   if (registered_init_funcs == ti)
+      {
+      registered_init_funcs = ti->nextInit() ;
+      return ;
+      }
+   if (!registered_init_funcs)
+      return;
+   ThreadInitializerBase* prev = registered_init_funcs ;
+   ThreadInitializerBase* next ;
+   while ((next = prev->nextInit()) != nullptr)
+      {
+      if (next == ti)
+	 prev->setNextInit(ti->nextInit()) ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void UnregisterThreadCleanup(ThreadInitializerBase *ti)
+{
+   std::lock_guard<std::mutex> guard(registry_lock) ;
+   if (registered_cleanup_funcs == ti)
+      {
+      registered_cleanup_funcs = ti->nextCleanup() ;
+      return ;
+      }
+   if (!registered_cleanup_funcs)
+      return;
+   ThreadInitializerBase* prev = registered_cleanup_funcs ;
+   ThreadInitializerBase* next ;
+   while ((next = prev->nextCleanup()) != nullptr)
+      {
+      if (next == ti)
+	 prev->setNextCleanup(ti->nextCleanup()) ;
+      }
    return ;
 }
 
