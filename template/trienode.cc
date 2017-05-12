@@ -40,12 +40,16 @@ TrieNodeValueless<IdxT,bits>::TrieNodeValueless()
 //----------------------------------------------------------------------------
 
 template <typename IdxT, unsigned bits>
-bool TrieNodeValueless<IdxT,bits>::setChild(unsigned N, IdxT ch)
+IdxT TrieNodeValueless<IdxT,bits>::setChild(unsigned N, IdxT ch)
 {
    // CAS in the child; if that fails, someone else beat us to the insertion,
    //  so we should then discard the new node and use the one the other thread
    //  inserted
-   return Atomic<IdxT>::ref(m_children[N]).compare_exchange_strong(NULL_INDEX,ch) ;
+   IdxT expected = NULL_INDEX ;
+   if (Atomic<IdxT>::ref(m_children[N]).compare_exchange_strong(expected,ch))
+      return ch ;
+   else
+      return expected ;
 }
 
 /************************************************************************/

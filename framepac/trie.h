@@ -51,10 +51,10 @@ class TrieNodeValueless
 	       }
 	    return false ;
 	 }
-      bool childPresent(unsigned N) const { return m_children[N] != NULL_INDEX ; }
+      bool hasChild(unsigned N) const { return m_children[N] != NULL_INDEX ; }
       IdxT childIndex(unsigned N) const { return m_children[N] ; }
 
-      bool  setChild(unsigned N, IdxT ch) ;
+      IdxT  setChild(unsigned N, IdxT ch) ;
    protected:
       IdxT  m_children[1<<bits] ;
    } ;
@@ -120,10 +120,12 @@ class Trie
       Node* node(IdxT N) const { return &m_nodes[N] ; }
 
    protected:
+      std::mutex      m_valueless_mutex ;
       ValuelessNode*  m_valueless ;
-      Node*           m_nodes ;
       IdxT            m_capacity_valueless ;
       IdxT            m_size_valueless ;
+      std::mutex      m_full_mutex ;
+      Node*           m_nodes ;
       IdxT            m_capacity_full ;
       IdxT            m_size_full ;
       unsigned        m_maxkey ;
@@ -134,6 +136,7 @@ class Trie
       void releaseNode(IdxT index) ;
       void releaseValuelessNode(IdxT index) ;
       ValuelessNode* valuelessNode(IdxT N) const { return &m_valueless[N] ; }
+      void insertChild(IdxT& index, uint8_t keybyte) ;
       bool enumerateVA(uint8_t* keybuf, size_t keylen, IdxT node, EnumFunc* fn, std::va_list args) const  ;
    } ;
 

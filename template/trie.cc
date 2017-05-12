@@ -23,6 +23,7 @@
 #include "framepac/atomic.h"
 #include "framepac/memory.h"
 #include "framepac/trie.h"
+#include "template/trienode.cc"
 
 namespace Fr
 {
@@ -74,7 +75,8 @@ Trie<T,IdxT,bits>::~Trie()
 template <typename T, typename IdxT, unsigned bits>
 IdxT Trie<T,IdxT,bits>::allocValuelessNode()
 {
-   // TODO: make thread-safe
+   std::lock_guard<std::mutex> guard(m_valueless_mutex) ;
+   // TODO: can we do this more efficiently than with a lock?
    if (m_size_valueless >= m_capacity_valueless)
       {
       // reallocate the node buffer
@@ -100,7 +102,8 @@ IdxT Trie<T,IdxT,bits>::allocValuelessNode()
 template <typename T, typename IdxT, unsigned bits>
 IdxT Trie<T,IdxT,bits>::allocNode()
 {
-   // TODO: make thread-safe
+   std::lock_guard<std::mutex> guard(m_full_mutex) ;
+   // TODO: can we do this more efficiently than with a lock?
    if (m_size_full >= m_capacity_full)
       {
       // reallocate the node buffer
@@ -126,8 +129,9 @@ IdxT Trie<T,IdxT,bits>::allocNode()
 template <typename T, typename IdxT, unsigned bits>
 void Trie<T,IdxT,bits>::releaseValuelessNode(IdxT index)
 {
+   std::lock_guard<std::mutex> guard(m_valueless_mutex) ;
    if (index != NULL_INDEX && index + 1 == m_size_valueless)
-      --m_size_valueless ;  //TODO: make atomic with CAS
+      --m_size_valueless ;  //TODO: make atomic with CAS?
    return ;
 }
 
@@ -136,8 +140,62 @@ void Trie<T,IdxT,bits>::releaseValuelessNode(IdxT index)
 template <typename T, typename IdxT, unsigned bits>
 void Trie<T,IdxT,bits>::releaseNode(IdxT index)
 {
+   std::lock_guard<std::mutex> guard(m_full_mutex) ;
    if (index != NULL_INDEX && index + 1 == m_size_full)
-      --m_size_full ;  //TODO: make atomic with CAS
+      --m_size_full ;  //TODO: make atomic with CAS?
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+void Trie<T,IdxT,bits>::insertChild(IdxT &index, uint8_t keybyte)
+{
+   static_assert( bits >= 2 && bits <= 4, "Trie only supports 2/3/4 bits per level") ;
+   constexpr uint8_t mask = (1<<bits) - 1 ;
+   constexpr unsigned iter = (7 + bits) / bits ;
+   ValuelessNode* n = node(index) ;
+   for (unsigned shift = (iter-1)*bits ; shift > 0 ; shift -= bits)
+      {
+      unsigned childnum = (keybyte >> shift) & mask ;
+      if (n->hasChild(childnum))
+	 {
+	 index = n->childIndex(childnum) ;
+	 }
+      else
+	 {
+	 // insert a ValuelessNode
+	 IdxT new_idx = allocValuelessNode() ;
+	 index = n->setChild(childnum,new_idx) ;
+	 if (index != new_idx)
+	    {
+	    // someone else already inserted a child, so use that one instead
+	    //   of the new node we just allocated
+	    releaseValuelessNode(new_idx) ;
+	    }
+	 }
+      if (shift > bits)
+	 n = valuelessNode(index) ;
+      else
+	 n = node(index) ;
+      }
+   // insert the final full Node
+   keybyte &= mask ;
+   if (n->hasChild(keybyte))
+      {
+      index = n->childIndex(keybyte) ;
+      }
+   else
+      {
+      IdxT new_idx = allocNode() ;
+      index = n->setChild(index,new_idx) ;
+      if (index != new_idx)
+	 {
+	 // someone else already inserted a child, so use that one instead
+	 //   of the new node we just allocated
+	 releaseNode(new_idx) ;
+	 }
+      }
    return ;
 }
 
@@ -147,8 +205,17 @@ template <typename T, typename IdxT, unsigned bits>
 bool Trie<T,IdxT,bits>::insert(const uint8_t* key, unsigned keylength, T value)
 {
    static_assert( bits >= 2 && bits <= 4, "Trie only supports 2/3/4 bits per level") ;
-   (void)key; (void)keylength; (void)value ;
-//FIXME
+   IdxT index = ROOT_INDEX ;
+   for (unsigned i = 0 ; i < keylength ; ++i)
+      {
+      insertChild(index,key[i]) ;
+      }
+   if (index != NULL_INDEX || keylength > 0)
+      {
+      Node* n = node(index) ;
+      if (n) n->setValue(value) ;
+      return true ;
+      }
    return false ;
 }
 
@@ -158,9 +225,28 @@ template <typename T, typename IdxT, unsigned bits>
 bool Trie<T,IdxT,bits>::extendKey(IdxT& index, uint8_t keybyte) const
 {
    static_assert( bits >= 2 && bits <= 4, "Trie only supports 2/3/4 bits per level") ;
-   (void)index; (void)keybyte;
-//FIXME
-   return false ;
+   constexpr uint8_t mask = (1<<bits) - 1 ;
+   constexpr unsigned iter = (7 + bits) / bits ;
+   IdxT childindex = index ;
+   ValuelessNode* n = node(childindex) ;
+   // descend through the intermediate valuelessNodes
+   for (unsigned shift = (iter-1)*bits ; shift > 0 ; shift -= bits)
+      {
+      unsigned childnum = (keybyte >> shift) & mask ;
+      childindex = n->childIndex(childnum) ;
+      if (childindex == NULL_INDEX)
+	 return false ;
+      if (shift > bits)
+	 n = valuelessNode(childindex) ;
+      else
+	 n = node(childindex) ;
+      }
+   // process the final full node
+   childindex = n->childIndex(keybyte & mask) ;
+   if (childindex == NULL_INDEX)
+      return false ;
+   index = childindex ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
@@ -230,37 +316,7 @@ bool Trie<T,IdxT,bits>::enumerateVA(EnumFunc* fn, std::va_list args) const
    return enumerateVA(key,0,ROOT_INDEX,fn,args) ;
 }
 
-/************************************************************************/
-/*	Methods for template class Trie::ValuelessNode			*/
-/************************************************************************/
-
-#if 0  // move into Trie::insert
-template <typename T, typename IdxT, unsigned bits>
-IdxT Trie<T,IdxT,bits>::ValuelessNode::insertChild(unsigned N, Trie<T,IdxT,bits>* trie)
-{
-   if (!this->childPresent(N))
-      {
-      IdxT new_index = trie->allocValuelessNode() ;
-      if (new_index != NULL_INDEX)
-	 {
-	 // try to atomically insert the index of the new node
-	 IdxT expected = NULL_INDEX ;
-	 if (Atomic<IdxT>::ref(this->m_children[N]).compare_exchange_strong(expected,new_index))
-	    {
-	    return new_index ;
-	    }
-	 // if the insertion failed, that means someone else has already
-	 //   added a child, so we can release the node we just allocated
-	 //   and return the one the other thread inserted
-	 trie->releaseValuelessNode(new_index) ;
-	 }
-      }
-   return this->childIndex(N) ;
-}
-#endif
-
 
 } // end namespace Fr
-
 
 // end of file trie.cc //
