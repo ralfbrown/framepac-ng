@@ -22,6 +22,14 @@
 #ifndef _Fr_BIDINDEX_H_INCLUDED
 #define _Fr_BIDINDEX_H_INCLUDED
 
+// FIX to allow old and new FramepaC to co-exist
+#undef FrHASHTABLE_MIN_SIZE
+#undef FrHASHTABLE_SEARCHRANGE
+#undef INCR_COUNT
+#undef DECR_COUNT
+#undef FrMAKE_INTEGER_HASHTABLE_CLASS
+#undef FrMAKE_SYMBOL_HASHTABLE_CLASS
+
 #include "framepac/hashtable.h"
 //FIXME: until hashtable.h is fixed
 //#include "framepac/symbol.h"

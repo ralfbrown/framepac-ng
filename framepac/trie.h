@@ -23,6 +23,7 @@
 #define __Fr_TRIE_H_INCLUDED
 
 #include <cstdarg>
+#include <mutex>
 #include <type_traits>
 #include "framepac/byteorder.h"
 
