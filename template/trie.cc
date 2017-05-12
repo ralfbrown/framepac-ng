@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-08					*/
+/* Version 0.01, last edit 2017-05-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -19,7 +19,9 @@
 /*									*/
 /************************************************************************/
 
+#include <memory.h>
 #include "framepac/atomic.h"
+#include "framepac/memory.h"
 #include "framepac/trie.h"
 
 namespace Fr
@@ -35,12 +37,15 @@ namespace Fr
 
 template <typename T, typename IdxT, unsigned bits>
 void Trie<T,IdxT,bits>::init(IdxT cap)
-   : m_capacity_valueless(cap), m_size_valueless(1),
-     m_capacity_full(cap), m_size_full(1), m_maxkey(0)
 {
+   m_maxkey = 0 ;
    // size_full and size_valueless need to be nonzero, because 0 is a null pointer
-   m_valueless = new ValuelessNode[cap] ;
+   m_size_full = 1 ;
+   m_size_valueless = 1 ;
+   m_capacity_full = cap ;
+   m_capacity_valueless = cap ;
    m_nodes = new Node[cap] ;
+   m_valueless = new ValuelessNode[cap] ;
    if (!m_valueless)
       {
       m_capacity_valueless = 0 ;
@@ -74,7 +79,7 @@ IdxT Trie<T,IdxT,bits>::allocValuelessNode()
       {
       // reallocate the node buffer
       IdxT newcap = (m_capacity_valueless <= 500 ? 1000 : 3*m_capacity_valueless/2) ;
-      new_nodes = new Node[newcap] ;
+      Node* new_nodes = new Node[newcap] ;
       if (new_nodes)
 	 {
 	 memcpy(new_nodes,m_valueless,m_capacity_valueless*sizeof(Node)) ;
@@ -100,7 +105,7 @@ IdxT Trie<T,IdxT,bits>::allocNode()
       {
       // reallocate the node buffer
       IdxT newcap = (m_capacity_full <= 500 ? 1000 : 3*m_capacity_full/2) ;
-      new_nodes = new Node[newcap] ;
+      Node* new_nodes = new Node[newcap] ;
       if (new_nodes)
 	 {
 	 memcpy(new_nodes,m_nodes,m_capacity_full*sizeof(Node)) ;
@@ -161,7 +166,7 @@ bool Trie<T,IdxT,bits>::extendKey(IdxT& index, uint8_t keybyte) const
 template <typename T, typename IdxT, unsigned bits>
 IdxT Trie<T,IdxT,bits>::findNode(const uint8_t* key, unsigned keylength) const
 {
-   IdxT index = ROOT_NODE ;
+   IdxT index = ROOT_INDEX ;
    for (size_t i = 0 ; i < keylength ; ++i)
       {
       if (!extendKey(index,key[i]))
@@ -177,7 +182,7 @@ T Trie<T,IdxT,bits>::find(const uint8_t* key, unsigned keylength) const
 {
    IdxT n = findNode(key,keylength) ;
    if (n != ROOT_INDEX || node(n)->leaf())
-      return n->value() ;
+      return node(n)->value() ;
    return T(0) ;
 }
 
@@ -204,7 +209,7 @@ bool Trie<T,IdxT,bits>::enumerateVA(uint8_t* keybuf, size_t keylen, IdxT node_id
       {
       std::va_list argcopy ;
       va_copy(args,argcopy) ;
-      if (!fn(keybuf,keylen,args))
+      if (!fn(keybuf,keylen,n->value(),argcopy))
 	 return false ;
       }
    return true ; 
