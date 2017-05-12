@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include "framepac/atomic.h"
 #include "framepac/trie.h"
 
 namespace Fr

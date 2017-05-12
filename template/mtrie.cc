@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-08					*/
+/* Version 0.01, last edit 2017-05-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -25,7 +25,7 @@ namespace Fr
 {
 
 /************************************************************************/
-/*	Methods for template class PackedTrie				*/
+/*	Methods for template class MultiTrie				*/
 /************************************************************************/
 
 

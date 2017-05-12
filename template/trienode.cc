@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-08					*/
+/* Version 0.01, last edit 2017-03-28					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -19,19 +19,42 @@
 /*									*/
 /************************************************************************/
 
+#include "framepac/atomic.h"
 #include "framepac/trie.h"
 
 namespace Fr
 {
 
 /************************************************************************/
-/*	Methods for template class PackedTrie				*/
+/*	Methods for template class TrieNodeValueless			*/
 /************************************************************************/
 
+template <typename IdxT, unsigned bits>
+TrieNodeValueless<IdxT,bits>::TrieNodeValueless()
+{
+   for (size_t i = 0 ; i < 1<<bits ; ++i)
+      m_children[i] = NULL_INDEX ;
+   return  ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, unsigned bits>
+bool TrieNodeValueless<IdxT,bits>::setChild(unsigned N, IdxT ch)
+{
+   // CAS in the child; if that fails, someone else beat us to the insertion,
+   //  so we should then discard the new node and use the one the other thread
+   //  inserted
+   return Atomic<IdxT>::ref(m_children[N]).compare_exchange_strong(NULL_INDEX,ch) ;
+}
+
+/************************************************************************/
+/*	Methods for template class TrieNode				*/
+/************************************************************************/
 
 
 
 
 } // end namespace Fr
 
-// end of file ptrie.cc //
+// end of file trienode.cc //

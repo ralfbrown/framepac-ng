@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-08					*/
+/* Version 0.01, last edit 2017-05-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -31,78 +31,102 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
+template <typename IdxT, unsigned bits>
+class TrieNodeValueless
+   {
+   public:
+      static constexpr IdxT NULL_INDEX = (IdxT)0 ;
+   public:
+      TrieNodeValueless() ;
+      TrieNodeValueless(const TrieNodeValueless&) = default ;
+      ~TrieNodeValueless() {}
+      TrieNodeValueless& operator= (const TrieNodeValueless&) = default ;
+
+      bool leaf() const { return false ; }  // has no value, so by definition not a leaf
+      bool hasChildren() const
+	 {
+	    for (size_t i = 0 ; i < lengthof(m_children) ; ++i)
+	       {
+	       if (m_children[i] != NULL_INDEX) return true ;
+	       }
+	    return false ;
+	 }
+      bool childPresent(unsigned N) const { return m_children[N] != NULL_INDEX ; }
+      IdxT childIndex(unsigned N) const { return m_children[N] ; }
+
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value, RetT>::type
+      value() const { return (T)nullptr ; }
+      template <typename RetT = T>
+      typename std::enable_if<!std::is_pointer<T>::value, RetT>::type
+      value() const { return T(0) ; }
+
+      void  markAsLeaf() {}
+      void  setValue(T) {}
+      bool  setChild(unsigned N, IdxT ch) ;
+   protected:
+      IdxT  m_children[1<<bits] ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, unsigned bits>
+class Node : public ValuelessNode<IdxT,bits>
+   {
+   public:
+      TrieNode() : ValuelessNode(), m_leaf(false) {}
+      TrieNode(T v, bool lf = false) : ValuelessNode(), m_value(v), m_leaf(lf) {}
+      TrieNode(const TrieNode&) = default ;
+      ~TrieNode() {}
+
+      bool  leaf() const { return m_leaf ; }
+      void  markAsLeaf() { m_leaf = true ; }
+
+      T value() const { return m_value ; }
+      void setValue(T v) { m_value = v ; }
+   protected:
+      T     m_value ;
+      bool  m_leaf ;
+   } ;
+
+//----------------------------------------------------------------------------
+
 template <typename T, typename IdxT = std::uint32_t, unsigned bits=4>
 class Trie
    {
    public:
       static constexpr IdxT ROOT_INDEX = (IdxT)0 ;
-      static constexpr IdxT NULL_INDEX = (IdxT)0 ;
-      class ValuelessNode
-         {
-	 public:
-	    ValuelessNode() ;
-	    ValuelessNode(const ValuelessNode&) = default ;
-	    ~ValuelessNode() {}
-	    ValuelessNode& operator= (const ValuelessNode&) = default ;
+      static constexpr IdxT NULL_INDEX = ValuelessNode::NULL_INDEX ;
+      typedef bool EnumFunc(const uint8_t *key, unsigned keylen, T value, std::va_list user_args) ;
+      typedef TrieNodeValueless<IdxT,bits> ValuelessNode ;
+      typedef TrieNode<IdxT,bits> Node ;
 
-	    bool leaf() const { return false ; }  // has no value, so by definition not a leaf
-	    bool hasChildren() const
-	       {
-		  for (size_t i = 0 ; i < lengthof(m_children) ; ++i)
-		     {
-		     if (m_children[i] != NULL_INDEX) return true ;
-		     }
-		  return false ;
-	       }
-	    bool childPresent(unsigned N) const { return m_children[N] != NULL_INDEX ; }
-	    IdxT childIndex(unsigned N) const { return m_children[N] ; }
-
-	    template <typename RetT = T>
-	    typename std::enable_if<std::is_pointer<T>::value, RetT>::type
-	    value() const { return (T)nullptr ; }
-	    template <typename RetT = T>
-	    typename std::enable_if<!std::is_pointer<T>::value, RetT>::type
-	    value() const { return T(0) ; }
-
-	    void  markAsLeaf() {}
-	    void  setValue(T) {}
-	    void  setChild(unsigned N, IdxT ch) { m_children[N] = ch ; }
-	    IdxT  insertChild(unsigned N, Trie *) ;
-	 protected:
-	    IdxT  m_children[1<<bits] ;
-         } ;
-      class Node : public ValuelessNode
-         {
-	 public:
-	    Node() ;
-	    Node(const Node&) = default ;
-	    ~Node() {}
-
-	    bool  leaf() const { return m_leaf ; }
-	    void  markAsLeaf() { m_leaf = true ; }
-
-	    T value() const { return m_value ; }
-	    void setValue(T v) { m_value = v ; }
-	    IdxT  insertChild(unsigned N, Trie *) ;
-	 protected:
-	    T     m_value ;
-	    bool  m_leaf ;
-         } ;
-
-      Trie(IdxT cap) { init(cap) ; }
+      // construct an empty trie, optionally pre-allocating nodes
+      Trie(IdxT cap = 0) { init(cap) ; }
       ~Trie() ;
 
       bool insert(const uint8_t* key, unsigned keylength, T value) ;
       bool extendKey(IdxT& index, uint8_t keybyte) const ;
+      IdxT findNode(const uint8_t* key, unsigned keylength) const ;
       T find(const uint8_t* key, unsigned keylength) const ;
+      bool contains(const uint8_t* key, unsigned keylength) const ;
 
       IdxT size() const { return m_size_valueless + m_size_full ; }
       IdxT capacity() const { return m_capacity_valueless + m_capacity_full ; }
       unsigned longestKey() const { return m_maxkey ; }
 
-      Node* rootNode() const ;
-      Node* node(IdxT N) const ;
-      ValuelessNode* valuelessNode(IdxT N) const ;
+      bool enumerateVA(EnumFunc* fn, std::va_list args) const ;
+      bool enumerate(EnumFunc* fn, ...) const
+	 {
+	    std::va_list args ;
+	    va_start(fn,args) ;
+	    bool status = enumerateVA(fn,args) ;
+	    va_end(args) ;
+	    return status ;
+	 }
+
+      Node* rootNode() const { return &m_nodes[ROOT_INDEX] ; }
+      Node* node(IdxT N) const { return &m_nodes[N] ; }
 
    protected:
       ValuelessNode** m_valueless ;
@@ -118,6 +142,8 @@ class Trie
       IdxT allocValuelessNode() ;
       void releaseNode(IdxT index) ;
       void releaseValuelessNode(IdxT index) ;
+      ValuelessNode* valuelessNode(IdxT N) const { return &m_valueless[N] ; }
+      bool enumerateVA(uint8_t* keybuf, size_t keylen, IdxT node, EnumFunc* fn, std::va_list args) const  ;
    } ;
 
 /************************************************************************/

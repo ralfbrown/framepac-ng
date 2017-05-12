@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4+ under Unix/Linux
-# Last change: 08may2017
+# Last change: 11may2017
 
 #########################################################################
 # define the locations of all the files
@@ -457,6 +457,12 @@ template/bufbuilder.cc:	framepac/builder.h
 template/hashtable.cc:	framepac/hashtable.h framepac/message.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+template/mtrie.cc:	framepac/trie.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/pmtrie.cc:	framepac/trie.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 template/ptrie.cc:	framepac/trie.h
 	$(TOUCH) $@ $(BITBUCKET)
 
@@ -464,6 +470,9 @@ template/sufarray.cc:	framepac/sufarray.h framepac/bitvector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/trie.cc:	framepac/trie.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/trienode.cc:	framepac/trie.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/vecsim.cc:	framepac/vecsim.h
