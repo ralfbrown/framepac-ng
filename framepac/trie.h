@@ -256,7 +256,13 @@ class PackedMultiTrie : public PackedTrie<IdxT,ValIdxT>
 //----------------------------------------------------------------------------
 
 // instantiations for which we have separately-compiled modules
+
+typedef Trie<std::uint32_t, std::uint32_t> NybbleTrieInteger ;
 extern template class Trie<std::uint32_t, std::uint32_t> ;
+typedef Trie<double, std::uint32_t> NybbleTrieFloat ;
+extern template class Trie<double, std::uint32_t> ;
+
+typedef PackedTrie<std::uint32_t, std::uint32_t> PackedTrieInteger ;
 extern template class PackedTrie<std::uint32_t, std::uint32_t> ;
 
 } // end namespace Fr

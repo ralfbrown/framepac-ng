@@ -1,5 +1,5 @@
-# Makefile for FramepaC-ng, using GCC 4+ under Unix/Linux
-# Last change: 11may2017
+# Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
+# Last change: 12may2017
 
 #########################################################################
 # define the locations of all the files
@@ -261,7 +261,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	symbol$(OBJ) symboltable$(OBJ) synchevent$(OBJ) \
 	texttransforms$(OBJ) \
 	threadpool$(OBJ) timer$(OBJ) \
-	trie$(OBJ) trie_u32$(OBJ) ptrie_u32$(OBJ) \
+	trie$(OBJ) trie_u32dbl$(OBJ) trie_u32u32$(OBJ) ptrie_u32$(OBJ) \
 	vecsim_u32_dbl$(OBJ) vecsim_u32_flt$(OBJ) \
 	vector_obj_dbl$(OBJ) vector_obj_flt$(OBJ) \
 	vector_u32_dbl$(OBJ) vector_u32_flt$(OBJ) \
@@ -437,7 +437,8 @@ texttransforms$(OBJ):	texttransforms$(C) framepac/texttransforms.h
 threadpool$(OBJ):	threadpool$(C) framepac/threadpool.h framepac/thread.h
 timer$(OBJ):		timer$(C) framepac/timer.h
 trie$(OBJ):		trie$(C) framepac/trie.h
-trie_u32$(OBJ):		trie_u32$(C) template/trie.cc
+trie_u32dbl$(OBJ):	trie_u32dbl$(C) template/trie.cc
+trie_u32u32$(OBJ):	trie_u32u32$(C) template/trie.cc
 vecsim_u32_dbl$(OBJ):	vecsim_u32_dbl$(C) template/vecsim.cc
 vecsim_u32_flt$(OBJ):	vecsim_u32_flt$(C) template/vecsim.cc
 vector_obj_dbl$(OBJ):	vector_obj_dbl$(C) framepac/vector.h

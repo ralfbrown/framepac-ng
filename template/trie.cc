@@ -39,9 +39,8 @@ template <typename T, typename IdxT, unsigned bits>
 void Trie<T,IdxT,bits>::init(IdxT cap)
 {
    m_maxkey = 0 ;
-   // size_full and size_valueless need to be nonzero, because 0 is a null pointer
-   m_size_full = 1 ;
-   m_size_valueless = 1 ;
+   m_size_full = 0 ;
+   m_size_valueless = 0 ;
    m_capacity_full = cap ;
    m_capacity_valueless = cap ;
    m_nodes = new Node[cap] ;
@@ -54,6 +53,7 @@ void Trie<T,IdxT,bits>::init(IdxT cap)
       {
       m_capacity_full = 0 ;
       }
+   (void)allocNode() ; // reserve the root node, which must be a full node because we could have an empty key
    return ;
 }
 
@@ -146,6 +146,7 @@ void Trie<T,IdxT,bits>::releaseNode(IdxT index)
 template <typename T, typename IdxT, unsigned bits>
 bool Trie<T,IdxT,bits>::insert(const uint8_t* key, unsigned keylength, T value)
 {
+   static_assert( bits >= 2 && bits <= 4, "Trie only supports 2/3/4 bits per level") ;
    (void)key; (void)keylength; (void)value ;
 //FIXME
    return false ;
@@ -156,6 +157,7 @@ bool Trie<T,IdxT,bits>::insert(const uint8_t* key, unsigned keylength, T value)
 template <typename T, typename IdxT, unsigned bits>
 bool Trie<T,IdxT,bits>::extendKey(IdxT& index, uint8_t keybyte) const
 {
+   static_assert( bits >= 2 && bits <= 4, "Trie only supports 2/3/4 bits per level") ;
    (void)index; (void)keybyte;
 //FIXME
    return false ;
@@ -203,6 +205,7 @@ template <typename T, typename IdxT, unsigned bits>
 bool Trie<T,IdxT,bits>::enumerateVA(uint8_t* keybuf, size_t keylen, IdxT node_id,
 				    EnumFunc* fn, std::va_list args) const
 {
+   static_assert( bits >= 2 && bits <= 4, "Trie only supports 2/3/4 bits per level") ;
 //FIXME: need to recursively descend
    Node* n = node(node_id) ;
    if (n->leaf())
