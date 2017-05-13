@@ -375,7 +375,7 @@ int CFile::getc_nonws()
 
 //----------------------------------------------------------------------------
 
-void CFile::skipWS()
+void CFile::skipAllWS()
 {
    int c ;
    while (!eof())
@@ -384,6 +384,25 @@ void CFile::skipWS()
       if (c == EOF)
 	 return;
       if (!isspace(c))
+	 {
+	 ungetc(c) ;
+	 return ;
+	 }
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void CFile::skipWS()
+{
+   int c ;
+   while (!eof())
+      {
+      c = getc() ;
+      if (c == EOF)
+	 return;
+      if (c == '\n' || !isspace(c))
 	 {
 	 ungetc(c) ;
 	 return ;
@@ -404,6 +423,35 @@ size_t CFile::skipLines(size_t maxskip)
       for (c = getc() ; c != EOF && c != '\r' && c != '\n' ; c = getc())
 	 {
 	 // ignore the character
+	 }
+      if (c == '\r')
+	 {
+	 // check for CRLF sequence
+	 c = getc() ;
+	 if (c != EOF && c != '\n')
+	    ungetc(c) ;
+	 }
+      skipped++ ;
+      }
+   return skipped ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t CFile::skipBlankLines(size_t maxskip)
+{
+   size_t skipped = 0 ;
+   while (!eof() && skipped < maxskip)
+      {
+      // skip a line
+      int c ;
+      for (c = getc() ; c != EOF && c != '\r' && c != '\n' ; c = getc())
+	 {
+	 if (!isspace(c))
+	    {
+	    ungetc(c) ;
+	    break ;
+	    }
 	 }
       if (c == '\r')
 	 {

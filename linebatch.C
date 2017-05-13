@@ -103,17 +103,61 @@ bool LineBatch::append(char* ln)
    return true ;
 }
 
+//----------------------------------------------------------------------------
+
+bool LineBatch::applyVA(LineEditFunc* fn, va_list args)
+{
+   if (!fn)
+      return false ;
+   for (size_t i = 0 ; i < size() ; ++i)
+      {
+      std::va_list argcopy ;
+      va_copy(argcopy,args) ;
+      char* edited = fn(m_lines[i],argcopy) ;
+      if (edited)
+	 m_lines[i] = edited ;
+      else
+	 return false ;
+      }
+   return true ;
+}
+
 /************************************************************************/
 /*	Methods for class CFile						*/
 /************************************************************************/
 
-LineBatch* CFile::getlines(size_t batchsize)
+LineBatch* CFile::getLines(size_t batchsize)
 {
    LineBatch* batch = new LineBatch(batchsize) ;
    while (!eof() && batch->size() < batch->capacity())
       {
       char* line = getCLine() ;
       batch->append(line) ;
+      }
+   return batch ;
+}
+
+//----------------------------------------------------------------------------
+
+LineBatch* CFile::getLines(size_t batchsize, int mono_skip)
+{
+   LineBatch* batch = new LineBatch(batchsize) ;
+   if (batch)
+      {
+      while (!eof() && batch->size() < batch->capacity())
+	 {
+	 // read the next non-blank line from the file
+	 // if mono_skip < 0, we skip the first of each pair and read the second
+	 // if mono_skip > 0, we read the first of each pair and skip the second
+	 skipBlankLines() ;
+	 skipLines((mono_skip<0) ? 1 : 0) ;
+	 char* line = getTrimmedLine() ;
+	 skipLines((mono_skip>0) ? 1 : 0) ;
+	 if (line && *line)
+	    batch->append(line) ;
+	 else
+	    delete[] line ;
+	 }
       }
    return batch ;
 }

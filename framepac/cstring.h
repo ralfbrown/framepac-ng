@@ -32,9 +32,9 @@ class CString
    public:
       CString() noexcept : _s(nullptr) {}
       CString(const char *string) noexcept : _s(string) {}
-      CString(const CString& other) noexcept : _s(other._s) {}
-      ~CString() {}
-      CString& operator= (const CString& other) { _s = other._s ; return *this ; }
+      CString(const CString& other) = default ;
+      ~CString() = default ;
+      CString& operator= (const CString& other) = default ;
 
       void clear() { _s = nullptr ; }
 
@@ -44,6 +44,7 @@ class CString
       bool equal(const CString& s) const ;
       int compare(const CString* s) const ;
       int compare(const CString& s) const ;
+      CString clone() const { return CString(_s) ; }
 
       // accessors
       const char *str() const { return _s ; }
@@ -60,6 +61,8 @@ class CString
       unsigned displayLength() const { return 0 ; }
       char *displayValue(char *buf) { return buf ; }
 
+      bool operator== (const CString& other) const { return _s == other._s ; }
+      bool operator!= (const CString& other) const { return _s != other._s ; }
    private:
       const char *_s ;
    } ;

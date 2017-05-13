@@ -22,6 +22,7 @@
 #ifndef _Fr_FILE_H_INCLUDED
 #define _Fr_FILE_H_INCLUDED
 
+#include <cstdarg>
 #include <cstdio>
 #include "framepac/config.h"
 
@@ -37,15 +38,18 @@ class String ;
 class LineBatch
    {
    public:
+      typedef char* LineEditFunc(char* line, std::va_list args) ;
+   public:
       LineBatch(size_t init_capacity = 0) ;
       ~LineBatch() ;
 
       size_t capacity() const { return m_capacity ; }
       size_t size() const { return m_count ; }
 
-      const char** begin() const { return const_cast<const char**>(m_lines) ; }
+      // iterator support
+      char** begin() const { return m_lines ; }
       const char** cbegin() const { return const_cast<const char**>(m_lines) ; }
-      const char** end() const { return const_cast<const char**>(m_lines + m_count) ; }
+      char** end() const { return m_lines + m_count ; }
       const char** cend() const { return const_cast<const char**>(m_lines + m_count) ; }
 
       void clear() ;
@@ -54,6 +58,16 @@ class LineBatch
 
       const char* line(size_t N) const { return (N < size()) ?  m_lines[N] : nullptr ; }
       const char* operator[] (size_t N) const { return m_lines[N] ; }
+
+      bool applyVA(LineEditFunc* fn, std::va_list args) ;
+      bool apply(LineEditFunc* fn, ...)
+	 {
+	    std::va_list args ;
+	    va_start(args,fn) ;
+	    bool status = applyVA(fn,args) ;
+	    va_end(args) ;
+	    return status ;
+	 }
 
    protected:
       bool expandTo(size_t newsize) ;
@@ -98,12 +112,15 @@ class CFile
       int getc_nonws() ;
       int ungetc(int c) { return std::ungetc(c,m_file) ; }
       bool gets(char* buf, size_t buflen) { return m_file ? fgets(buf,buflen,m_file) != nullptr : false ; }
-      void skipWS() ;
+      void skipWS() ;   	// skip whitespace within a single line
+      void skipAllWS() ;	// skip until a non-whitespace char is seen, may skip multiple lines
       size_t skipLines(size_t maxskip = 1) ;
+      size_t skipBlankLines(size_t maxskip = (size_t)~0) ;
       class Fr::String* getline(size_t maxline = (size_t)~0) ; // result must be freed
       char* getCLine(size_t maxline = (size_t)~0) ; // result must be freed
       char* getTrimmedLine(size_t maxline = (size_t)~0) ; // result must be freed
-      LineBatch* getlines(size_t batchsize = 0) ;
+      LineBatch* getLines(size_t batchsize = 0) ;
+      LineBatch* getLines(size_t batchsize, int mono_skip) ;
       void putc(char c) { fputc(c,m_file) ; }
       void puts(const char* s) { fputs(s,m_file) ; }
       void putlines(const LineBatch* batch) ;

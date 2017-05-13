@@ -150,6 +150,14 @@ bool SystemMessage::fatal(const char* fmt, ...)
 
 //----------------------------------------------------------------------------
 
+bool SystemMessage::nomemory(const char* msg)
+{
+   instance().showError(msg) ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
 bool SystemMessage::prog_error(const char* fmt, ...)
 {
    va_list args ;

@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include <cstddef> //TMP
 #include "framepac/memory.h"
 
 namespace FramepaC
@@ -28,9 +29,9 @@ namespace FramepaC
 /************************************************************************/
 
 Slab::Slab()
-   : m_header(), m_footer()
+   : m_info(), m_header(), m_footer()
 {
-
+   static_assert(offsetof(Slab,m_header) == 64, "wrong alignment") ;
    return ;
 }
 
@@ -46,13 +47,25 @@ Slab::~Slab()
 
 void* Slab::allocObject()
 {
-   alloc_size_t free = m_footer.f.m_firstfree ;
+   if (m_header.m_freelist)
+      {
+      m_header.m_freecount-- ;
+      void* obj = ((char*)this) + m_header.m_freelist ;
+      m_header.m_freelist = *((alloc_size_t*)obj) ;
+      return obj ;
+      }
+   // our local freelist was empty, so grab any objects on the remote-free list
+   alloc_size_t free = m_footer.m_firstfree.exchange(0) ;
    if (!free)
       return nullptr ;
-   alloc_size_t* obj = (alloc_size_t*)(((char*)this) + free) ;
-   m_footer.f.m_numfree-- ;
-   m_footer.f.m_firstfree = *obj ;
-   return obj ;
+   // point the local freelist at the objects we've just reclaimed
+   m_header.m_freelist = free ;
+   m_header.m_freecount = 1 ;
+   while ((free = *((alloc_size_t*)(((char*)this)+free))) != 0)
+      {
+      m_header.m_freecount++ ;
+      }
+   return allocObject() ;
 }
 
 //----------------------------------------------------------------------------
@@ -62,10 +75,19 @@ void Slab::releaseObject(void* obj)
    if (!obj)
       return ;
    alloc_size_t freeobj = (alloc_size_t)(((uintptr_t)obj) & (SLAB_SIZE - 1)) ;
+   if (freeobj < offsetof(Slab,m_buffer))
+      return ;
+   //if (our-slab) {
+   *((alloc_size_t*)(this + freeobj)) = m_header.m_freelist ;
+   m_header.m_freelist = freeobj ;
+   m_header.m_freecount++ ;
+   if (m_header.m_freecount == m_info.m_objcount) { /*release slab*/ }
+#if 0
+   //} else {
    alloc_size_t* nextptr = ((alloc_size_t*)obj) ;
-   *nextptr = m_footer.f.m_firstfree.load() ;
-   m_footer.f.m_numfree++ ;
-   m_footer.f.m_firstfree = freeobj ;
+   *nextptr = m_footer.m_firstfree.load() ;
+   m_footer.m_firstfree = freeobj ;
+#endif
    return ;
 }
 

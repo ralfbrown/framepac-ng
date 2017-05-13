@@ -49,8 +49,12 @@ extern size_t num_small_primes ;
 
 namespace Fr {
 
+#undef FrSPIN_COUNT
 #define FrSPIN_COUNT 20
+
+#undef FrYIELD_COUNT
 #define FrYIELD_COUNT 50
+
 #define FramepaC_display_width 132
 
 } // end namespace Fr

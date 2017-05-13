@@ -357,7 +357,7 @@ class HashTable : public HashTableBase
 	 void *operator new(size_t,void *where) { return where ; }
 	 static KeyT copy(KeyT obj)
 	    {
-	       return obj ? static_cast<KeyT>((Object*)obj->clone()) : nullKey() ;
+	       return obj ? static_cast<KeyT>(obj->clone()) : nullKey() ;
 	    }
 	 void init()
 	    {
@@ -403,7 +403,7 @@ class HashTable : public HashTableBase
 	 bool updateKey(KeyT expected, KeyT desired)
 	    { return m_key.compare_exchange_strong(expected,desired) ; }
 	 KeyT copyName() const { return copy(m_key) ; }
-	 bool isActive() const { return m_key != DELETED() ; }
+	 bool isActive() const { return m_key.load() != DELETED() ; }
 
 	 template <typename RetT = ValT>
 	 typename std::enable_if<std::is_empty<ValT>::value,RetT>::type
@@ -458,8 +458,8 @@ class HashTable : public HashTableBase
       public: // data members
 	 if_INTERLEAVED(HashPtr  m_info ;)
       protected: // members
-	 Fr::Atomic<KeyT>  m_key ;
-	 ValT              m_value[std::is_empty<ValT>::value ? 0 : 1] ;
+	 Atomic<KeyT> m_key ;
+	 ValT         m_value[std::is_empty<ValT>::value ? 0 : 1] ;
       } ;
       //------------------------
       // encapsulate all of the fields which must be atomically swapped at the end of a resize()

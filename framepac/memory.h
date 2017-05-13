@@ -79,14 +79,14 @@ class Slab
       void* operator new(size_t, void* where) { return where ; }
 
       SlabGroup* containingGroup() const
-         { return reinterpret_cast<SlabGroup*>(const_cast<Slab*>(this) - m_header.m_slab_id) ; }
+         { return reinterpret_cast<SlabGroup*>(const_cast<Slab*>(this) - m_info.m_slab_id) ; }
 
       static alloc_size_t slabOffset(void* block)
 	 { return (alloc_size_t)(((uintptr_t)block) & (SLAB_SIZE-1)) ; }
       static const ObjectVMT* VMT(const void* block)
          { // convert the pointer to the allocated block into a pointer to the slab
 	    Slab* slab = (Slab*)(((uintptr_t)block)&~(SLAB_SIZE-1)) ;
-	    return slab->m_header.m_vmt ; }
+	    return slab->m_info.m_vmt ; }
 
       void linkSlab(Slab*& listhead) ;
       void unlinkSlab(Slab*& listhead) ;
@@ -98,44 +98,48 @@ class Slab
    private:
       // group together all the header fields, so that we can use a single sizeof()
       //   in computing the header size
-      class SlabHeader
+      class alignas(64) SlabInfo   // ensure separate cache line for the SlabInfo and SlabHeader
          {
 	 public:
 	    const ObjectVMT* m_vmt ;		// should be first to avoid having to add an offset
+	    Slab*            m_nextslab { nullptr };
+	    Slab*            m_prevslab { nullptr };
+	    // m_owner ;
 	    alloc_size_t     m_objsize ;
 	    uint16_t         m_objcount ;
 	    uint16_t         m_slab_id ;
+         } ;
+      class SlabHeader
+         {
+	 public:
+	    alloc_size_t     m_freelist ;
+	    uint16_t         m_freecount ;
 	 public:
 	    //SlabHeader() = default ;
 	    ~SlabHeader() = default ;
          } ;
-      // group together all the footer fields, so that we can use a single sizeof()
-      //   in computing the footer size
+      // group together all the footer fields, so that we can use a
+      //   single sizeof() in computing the footer size
       class SlabFooter
          {
 	 public:
-	    Slab*             m_nextslab { nullptr };
-	    // put the pointer to the first item on the freelist and the
-	    //   count of used items into a single structure to make it
-	    //   easier to perform an atomic CAS when updating
-	    union {
-	       struct {
-		  Fr::Atomic<alloc_size_t> m_firstfree ;
-		  Fr::Atomic<uint16_t>     m_numfree ;
-	       } f ;
-	       Fr::Atomic<uint32_t> m_freeinfo ;
-	    } ;
+	    Fr::Atomic<alloc_size_t> m_firstfree ;
+
 	 public:
-	    SlabFooter() {}
-	    ~SlabFooter() {} ;
+	    SlabFooter() { m_firstfree.store(0) ; }
+	    ~SlabFooter() {}
          } ;
+   public:
+      static constexpr size_t DATA_SIZE = SLAB_SIZE - sizeof(SlabInfo) - sizeof(SlabHeader) - sizeof(SlabFooter) ;
    private:
+      SlabInfo   m_info ;
       SlabHeader m_header ;
-      uint8_t  m_buffer[SLAB_SIZE - sizeof(SlabHeader) - sizeof(SlabFooter)] ;
+      uint8_t  m_buffer[DATA_SIZE] ;
       // we put info that is modified by threads other than the slab's
       //   current owner at the end of the slab to ensure that it is
       //   in a different cache line than the unchanging but
-      //   frequently-read header info
+      //   frequently-read header info and the data that the owner is
+      //   constantly changing
       SlabFooter m_footer ;
       friend class SlabGroup ;
    } ;

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-29					*/
+/* Version 0.01, last edit 2017-05-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -47,6 +47,7 @@ class SystemMessage
       _attr_printf_ static bool warning(const char* fmt, ...) ;
       _attr_printf_ static bool error(const char* fmt, ...) ;
       _attr_printf_ static bool fatal(const char* fmt, ...) ;
+      _attr_printf_ static bool nomemory(const char* msg) ;
       _attr_printf_ static bool prog_error(const char* fmt, ...) ;
       _attr_printf_ static bool missed_case(const char* fmt, ...) ;
       static bool no_memory(const char* msg) ;
