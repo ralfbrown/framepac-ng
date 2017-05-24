@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-07					*/
+/* Version 0.01, last edit 2017-05-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -217,6 +217,8 @@ class HashPtr
       void markReclaimed() { m_first.fetch_and_relax(~reclaim_mask) ; }
       Link markStaleGetStatus() { return m_first.fetch_or(stale_mask) & ~link_mask ; }
       bool markCopyDone() { return m_first.test_and_set_bit(copied_bit) ; }
+
+      
    protected:
       Fr::Atomic<Link> m_first ;	// offset of first entry in hash bucket
       Fr::Atomic<Link> m_next ;		// pointer to next entry in current chain
@@ -326,15 +328,26 @@ template <typename KeyT, typename ValT>
 class HashTable : public HashTableBase
    {
    public:
-      typedef void HashTableCleanupFunc(HashTable* ht, KeyT key, ValT value) ;
-      typedef bool HashKVFunc(KeyT key, ValT value) ;
-      typedef bool HashKeyValueFunc(KeyT key, ValT value, std::va_list) ;
-      typedef bool HashKeyPtrFunc(KeyT key, ValT *, std::va_list) ;
-
+      // typedefs for compatibility with C++ STL
+      typedef KeyT key_type ;
+      typedef ValT value_type ;
+      typedef std::size_t size_type ;
+      typedef std::ptrdiff_t difference_type ;
+      //typedef X hasher ;
+      //typedef Y key_equal ;
+      typedef ValT& reference ;
+      typedef const ValT& const_reference ;
+      
       // incorporate the auxiliary classes
       typedef FramepaC::Link Link ;
       typedef FramepaC::HashPtr HashPtr ;
       typedef FramepaC::HashTable_Stats HashTable_Stats ;
+
+      // the types of the various callback functions
+      typedef void HashTableCleanupFunc(HashTable* ht, KeyT key, ValT value) ;
+      typedef bool HashKVFunc(KeyT key, ValT value) ;
+      typedef bool HashKeyValueFunc(KeyT key, ValT value, std::va_list) ;
+      typedef bool HashKeyPtrFunc(KeyT key, ValT *, std::va_list) ;
 
       // avoid 0-as-null-pointer warnings from compiler
       template <typename RetT = KeyT>
@@ -606,8 +619,8 @@ class HashTable : public HashTableBase
 	 [[gnu::cold]] size_t countItems(bool remove_dups) ;
 	 [[gnu::cold]] size_t countDeletedItems() const ;
 	 [[gnu::cold]] size_t chainLength(size_t bucketnum) const ;
-	 [[gnu::cold]] size_t *chainLengths(size_t &max_length) const ;
-	 [[gnu::cold]] size_t *neighborhoodDensities(size_t &num_densities) const ;
+	 [[gnu::cold]] size_t* chainLengths(size_t &max_length) const ;
+	 [[gnu::cold]] size_t* neighborhoodDensities(size_t &num_densities) const ;
 
 	 //============== Debugging Support ================
 	 [[gnu::cold]] bool verify() const ;
@@ -863,9 +876,9 @@ class HashTable : public HashTableBase
 	 { DELEGATE(countItems(remove_dups)) }
       [[gnu::cold]] size_t countDeletedItems() const
 	 { DELEGATE(countDeletedItems()) }
-      [[gnu::cold]] size_t *chainLengths(size_t &max_length) const
+      [[gnu::cold]] size_t* chainLengths(size_t &max_length) const
          { DELEGATE(chainLengths(max_length)) }
-      [[gnu::cold]] size_t *neighborhoodDensities(size_t &num_densities) const
+      [[gnu::cold]] size_t* neighborhoodDensities(size_t &num_densities) const
 	 { DELEGATE(neighborhoodDensities(num_densities)) }
 
       // ========== Iterators ===========

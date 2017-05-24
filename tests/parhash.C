@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-05					*/
+/* Version 0.01, last edit 2017-05-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2015,2017 Carnegie Mellon University			*/
@@ -20,7 +20,9 @@
 /************************************************************************/
 
 #include <iomanip>
+#include <pthread.h>
 #include <sstream>
+#include <unordered_set>
 #include "framepac/argparser.h"
 #include "framepac/hashtable.h"
 #include "framepac/message.h"
@@ -46,6 +48,21 @@ using namespace Fr ;
 
 #define INTEGER_TYPE uint32_t
 
+// uncomment the next line to add synchronization to STLset accesses
+#define STL_MUTEX
+
+// how should synchronization handle contention?  Uncomment to spin,
+//   comment out to use blocking condition variable
+#define STL_MUTEX_SPIN
+
+// without synchronization in class STLset, we can only write from one thread
+//   at a time; if synchronization is implemented, we can use as many threads as we want
+#ifdef STL_MUTEX
+# define STL_WRITE_THREADS threads
+#else
+# define STL_WRITE_THREADS 1
+#endif
+
 /************************************************************************/
 /*	Type declarations						*/
 /************************************************************************/
@@ -57,6 +74,7 @@ static Symbol* add_symbol(SymbolTable* /*symtab*/, const char* /*name*/)
 
 enum Operation
 {
+   Op_NONE,
    Op_GENSYM,
    Op_ADD,
    Op_CHECK,
@@ -71,7 +89,7 @@ enum Operation
    Op_RECLAIM
 } ;
 
-typedef void HashRequestFunc(class HashRequestOrder *) ;
+typedef void HashRequestFunc(class HashRequestOrder*) ;
 
 class HashRequestOrder
    {
@@ -80,7 +98,7 @@ class HashRequestOrder
       size_t	  size ;
       size_t	  cycles ;
       size_t	  id ;
-      size_t	  threads ;
+      size_t	  slices ;
       size_t	  slice_start ;
       size_t	  slice_size ;
       size_t	  current_cycle ;
@@ -97,6 +115,198 @@ class HashRequestOrder
    public:
       HashRequestOrder() { current_cycle = 0 ; }
       ~HashRequestOrder() {}
+   } ;
+
+// STL_MUTEX_SPIN variant is a non-distributed version of Dmitry
+// Vyukov's distributed reader-writer lock from www.1024cores.net
+class RWLock
+   {
+   public:
+      RWLock()
+#ifdef STL_MUTEX_SPIN
+	 : m_critsect(), m_write(false), m_readers(0)
+	 {
+#else
+	 {
+	 pthread_rwlock_init(&m_lock,nullptr) ;
+#endif /* STL_MUTEX_SPIN */
+	 }
+      ~RWLock()
+	 {
+#ifdef STL_MUTEX_SPIN
+#else
+	 pthread_rwlock_destroy(&m_lock) ;
+#endif /* STL_MUTEX_SPIN */
+	 }
+      void readStart()
+	 {
+#ifdef STL_MUTEX_SPIN
+	 m_readers++ ;
+	 if (m_write)
+	    {
+	    // cancel read request until writer completes
+	    m_readers-- ;
+	    m_critsect.lock() ;
+	    m_readers++ ;
+	    m_critsect.unlock() ;
+	    }
+	 memoryBarrier() ;
+#else
+	 (void)pthread_rwlock_rdlock(&m_lock) ;
+#endif /* STL_MUTEX_SPIN */
+	 }
+      void readDone()
+	 {
+#ifdef STL_MUTEX_SPIN
+	 memoryBarrier() ;
+	 m_readers-- ;
+#else
+	 (void)pthread_rwlock_unlock(&m_lock) ;
+#endif /* STL_MUTEX_SPIN */
+	 }
+      void writeStart()
+	 {
+#ifdef STL_MUTEX_SPIN
+	 m_critsect.lock() ;
+	 m_write = true ;
+	 memoryBarrier() ;
+#else
+	 (void)pthread_rwlock_wrlock(&m_lock) ;
+#endif /* STL_MUTEX_SPIN */
+	 }
+      void writeDone()
+	 {
+#ifdef STL_MUTEX_SPIN
+	 m_write = false ;
+	 m_critsect.unlock() ;
+#else
+	 (void)pthread_rwlock_unlock(&m_lock) ;
+#endif /* STL_MUTEX_SPIN */
+	 }
+   protected:
+#ifdef STL_MUTEX_SPIN
+      CriticalSection  m_critsect ;
+      atom_bool        m_write ;
+      atom_int	       m_readers ;
+#else
+      pthread_rwlock_t m_lock ;
+#endif /* STL_MUTEX_SPIN */
+   } ;
+
+class ScopedReadLock
+   {
+   public:
+      ScopedReadLock(RWLock& lock)
+#ifdef STL_MUTEX
+	 : m_lock(lock)
+	 {
+	 lock.readStart() ;
+#else
+	 {
+	 (void)lock ;
+#endif /* STL_MUTEX */
+	 }
+      ~ScopedReadLock()
+	 {
+#ifdef STL_MUTEX
+	 m_lock.readDone() ;
+#endif /* STL_MUTEX */
+	 }
+   protected:
+#ifdef STL_MUTEX
+      RWLock& m_lock ;
+#endif /* STL_MUTEX */
+   } ;
+
+class ScopedWriteLock
+   {
+   public:
+      ScopedWriteLock(RWLock& lock)
+#ifdef STL_MUTEX
+	 : m_lock(lock)
+	 {
+	 lock.writeStart() ;
+#else
+	 {
+	 (void)lock ;
+#endif /* STL_MUTEX */
+	 }
+      ~ScopedWriteLock()
+	 {
+#ifdef STL_MUTEX
+	 m_lock.writeDone() ;
+#endif /* STL_MUTEX */
+	 }
+   protected:
+#ifdef STL_MUTEX
+      RWLock& m_lock ;
+#endif /* STL_MUTEX */
+   } ;
+   
+class STLset : public unordered_set<INTEGER_TYPE>
+   {
+   public:
+      STLset(size_t init_size) : unordered_set<INTEGER_TYPE>(init_size)
+	 {
+	 }
+      ~STLset() = default ;
+
+      bool add(INTEGER_TYPE key)
+	 {
+	    ScopedWriteLock _(m_lock) ;
+	    return insert(key).second ;
+	 }
+      bool contains(INTEGER_TYPE key)
+	 {
+	    ScopedReadLock _(m_lock) ;
+	    return count(key) != 0 ;
+	 }
+      bool remove(INTEGER_TYPE key)
+	 {
+	    ScopedWriteLock _(m_lock) ;
+	    return erase(key) != 0 ;
+	 }
+      size_t* chainLengths(size_t& max_length) const { max_length = 0 ; return nullptr ; }
+      size_t* neighborhoodDensities(size_t& num_densities) const { num_densities = 0 ; return nullptr ; }
+      using unordered_set<INTEGER_TYPE>::begin ;
+      using unordered_set<INTEGER_TYPE>::cbegin ;
+      using unordered_set<INTEGER_TYPE>::end ;
+      using unordered_set<INTEGER_TYPE>::cend ;
+      static void threadInit() {}
+      void clearGlobalStats() {}
+      static void clearPerThreadStats() {}
+      void updateGlobalStats() {}
+      void reclaimDeletions(size_t, size_t) {}
+      size_t currentSize() const { return size() ; }
+      size_t countItems() const { return size() ; }
+      size_t countDeletedItems() const { return 0 ; }
+      size_t numberOfInsertions() const { return 0 ; }
+      size_t numberOfDupInsertions() const { return 0 ; }
+      size_t numberOfInsertionAttempts() const { return 0 ; }
+      size_t numberOfForwardedInsertions() const { return 0 ; }
+      size_t numberOfResizeInsertions() const { return 0 ; }
+      size_t numberOfContainsCalls() const { return 0 ; }
+      size_t numberOfSuccessfulContains() const { return 0 ; }
+      size_t numberOfForwardedContains() const { return 0 ; }
+      size_t numberOfLookups() const { return 0 ; }
+      size_t numberOfSuccessfulLookups() const { return 0 ; }
+      size_t numberOfForwardedLookups() const { return 0 ; }
+      size_t numberOfRemovals() const { return 0 ; }
+      size_t numberOfItemsRemoved() const { return 0 ; }
+      size_t numberOfForwardedRemovals() const { return 0 ; }
+      size_t numberOfResizes() const { return 0 ; }
+      size_t numberOfResizeAssists() const { return 0 ; }
+      size_t numberOfResizeWaits() const { return 0 ; }
+      size_t numberOfReclamations() const { return 0 ; }
+      size_t numberOfFullNeighborhoods() const { return 0 ; }
+      size_t numberOfChainLockCollisions() const { return 0 ; }
+      size_t numberOfSpins() const { return 0 ; }
+      size_t numberOfYields() const { return 0 ; }
+      size_t numberOfSleeps() const { return 0 ; }
+      size_t numberOfCASCollisions() const { return 0 ; }
+      size_t numberOfResizeCleanups() const { return 0 ; }
+   private:
+      RWLock m_lock ;
    } ;
 
 /************************************************************************/
@@ -167,15 +377,22 @@ static void print_msg(ostream& out, const char* fmt, ...)
 /************************************************************************/
 /************************************************************************/
 
-static void hash_gensym(HashRequestOrder *order)
+static void hash_nop(HashRequestOrder*)
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+static void hash_gensym(HashRequestOrder* order)
 {
    my_job_id = order->id ;
    size_t slice_end = order->slice_start + order->slice_size ;
-   Symbol **syms = order->syms ;
+   Symbol** syms = order->syms ;
    // generate the symbols in multiple interleaved passes so that we
    //   don't end up with strictly increasing (and thus well-cached)
    //   hash keys during insertion
-   SymbolTable *symtab = current_symtab() ;
+   SymbolTable* symtab = current_symtab() ;
    size_t passes = 53 ;
    for (size_t pass = 0 ; pass < passes ; ++pass)
       {
@@ -208,12 +425,12 @@ static void err_msg(const char* what, size_t id, KeyT obj)
 //----------------------------------------------------------------------
 
 template <class HashT, typename KeyT>
-static void hash_add(HashRequestOrder *order)
+static void hash_add(HashRequestOrder* order)
 {
    my_job_id = order->id ;
    size_t slice_end = order->slice_start + order->slice_size ;
-   HashT *ht = (HashT*)order->ht ;
-   KeyT *syms  = (KeyT*)order->syms ;
+   HashT* ht = (HashT*)order->ht ;
+   KeyT* syms  = (KeyT*)order->syms ;
    for (size_t i = order->slice_start ; i < slice_end ; ++i)
       {
       if (ht->add(syms[i]))
@@ -227,13 +444,13 @@ static void hash_add(HashRequestOrder *order)
 //----------------------------------------------------------------------
 
 template <class HashT, typename KeyT>
-static void hash_check(HashRequestOrder *order)
+static void hash_check(HashRequestOrder* order)
 {
    my_job_id = order->id ;
    bool missing = (bool)order->extra_arg ;
    size_t slice_end = order->slice_start + order->slice_size ;
-   HashT *ht = (HashT*)order->ht ;
-   KeyT *syms  = (KeyT*)order->syms ;
+   HashT* ht = (HashT*)order->ht ;
+   KeyT* syms  = (KeyT*)order->syms ;
    if (missing)
       {
       for (size_t i = order->slice_start ; i < slice_end ; ++i)
@@ -265,7 +482,7 @@ static void hash_check(HashRequestOrder *order)
 
 //----------------------------------------------------------------------
 
-static bool find_Symbol(const Symbol *sym)
+static bool find_Symbol(const Symbol* sym)
 {
 //FIXME   return sym ? findSymbol(sym->symbolName()) != nullptr : false;
    (void)sym;
@@ -274,17 +491,17 @@ static bool find_Symbol(const Symbol *sym)
 
 static bool find_Symbol(INTEGER_TYPE) { return false ; }
 
-//static const char *sym_name(const Symbol *sym) { return sym->symbolName() ; }
-static const char *sym_name(const Symbol * /*sym*/) { return nullptr ; } //FIXME
+//static const char* sym_name(const Symbol* sym) { return sym->symbolName() ; }
+static const char* sym_name(const Symbol* /*sym*/) { return nullptr ; } //FIXME
 
-static const char *sym_name(INTEGER_TYPE) { return "" ; }
+static const char* sym_name(INTEGER_TYPE) { return "" ; }
 
 template <class HashT, typename KeyT>
-static void hash_checksyms(HashRequestOrder *order)
+static void hash_checksyms(HashRequestOrder* order)
 {
    my_job_id = order->id ;
    size_t slice_end = order->slice_start + order->slice_size ;
-   KeyT *syms  = (KeyT*)order->syms ;
+   KeyT* syms  = (KeyT*)order->syms ;
    for (size_t i = order->slice_start ; i < slice_end ; ++i)
       {
       if (!find_Symbol(syms[i]) && order->strict)
@@ -303,12 +520,12 @@ static void hash_checksyms(HashRequestOrder *order)
 //----------------------------------------------------------------------
 
 template <class HashT, typename KeyT>
-static void hash_remove(HashRequestOrder *order)
+static void hash_remove(HashRequestOrder* order)
 {
    my_job_id = order->id ;
    size_t slice_end = order->slice_start + order->slice_size ;
-   HashT *ht = (HashT*)order->ht ;
-   KeyT *syms  = (KeyT*)order->syms ;
+   HashT* ht = (HashT*)order->ht ;
+   KeyT* syms  = (KeyT*)order->syms ;
    for (size_t i = order->slice_start ; i < slice_end ; ++i)
       {
       if (!ht->remove(syms[i]) && order->strict)
@@ -322,13 +539,13 @@ static void hash_remove(HashRequestOrder *order)
 //----------------------------------------------------------------------
 
 template <class HashT, typename KeyT>
-static void hash_random(HashRequestOrder *order)
+static void hash_random(HashRequestOrder* order)
 {
    my_job_id = order->id ;
    unsigned remove_frac = order->extra_arg ;
-   HashT *ht = (HashT*)order->ht ;
-   KeyT *syms = (KeyT*)order->syms ;
-   uint32_t *randnums = order->randnums + order->slice_start ;
+   HashT* ht = (HashT*)order->ht ;
+   KeyT* syms = (KeyT*)order->syms ;
+   uint32_t* randnums = order->randnums + order->slice_start ;
    for (size_t i = 0 ; i < order->slice_size ; ++i)
       {
       size_t which = randnums[i] ;
@@ -359,12 +576,12 @@ static void hash_random(HashRequestOrder *order)
 //----------------------------------------------------------------------
 
 template <class HashT, typename KeyT>
-static void hash_random_add(HashRequestOrder *order)
+static void hash_random_add(HashRequestOrder* order)
 {
    my_job_id = order->id ;
-   HashT *ht = (HashT*)order->ht ;
-   KeyT *syms = (KeyT*)order->syms ;
-   uint32_t *randnums = order->randnums + order->slice_start ;
+   HashT* ht = (HashT*)order->ht ;
+   KeyT* syms = (KeyT*)order->syms ;
+   uint32_t* randnums = order->randnums + order->slice_start ;
    for (size_t i = 0 ; i < order->slice_size ; ++i)
       {
       size_t which = randnums[i] ;
@@ -380,10 +597,10 @@ static void hash_random_add(HashRequestOrder *order)
 //----------------------------------------------------------------------
 
 template <class HashT>
-static void hash_dispatch(const void *input, void * /*output*/ )
+static void hash_dispatch(const void* input, void* /*output*/ )
 {
    HashT::threadInit() ;  // should not be needed once HashTable is completely fixed
-   HashRequestOrder *order = (HashRequestOrder*)input ;
+   HashRequestOrder* order = (HashRequestOrder*)input ;
    my_job_id = order->id ;
    order->current_cycle = 1 ;
    while (order->current_cycle <= order->cycles)
@@ -414,11 +631,11 @@ template <class HashT>
 static void reclaim_deletion(const void* input, void*)
 {
    HashT::threadInit() ;  // should not be needed once HashTable is completely fixed
-   const HashRequestOrder *order = reinterpret_cast<const HashRequestOrder*>(input) ;
+   const HashRequestOrder* order = reinterpret_cast<const HashRequestOrder*>(input) ;
    HashT* ht = (HashT*)order->ht ;
    if (ht)
       {
-      ht->reclaimDeletions(order->threads,order->cycles) ;
+      ht->reclaimDeletions(order->slices,order->cycles) ;
       ht->updateGlobalStats() ;
       HashT::clearPerThreadStats() ;
       }
@@ -428,15 +645,15 @@ static void reclaim_deletion(const void* input, void*)
 //----------------------------------------------------------------------
 
 template <class HashT>
-static void reclaim_deletions(HashT* ht, ThreadPool* tpool, HashRequestOrder* hashorders, size_t threads)
+static void reclaim_deletions(HashT* ht, ThreadPool* tpool, HashRequestOrder* hashorders, size_t slices)
 {
    if (ht)
       {
-      for (size_t i = 0 ; i < threads ; ++i)
+      for (size_t i = 0 ; i < slices ; ++i)
 	 {
 	 hashorders[i].ht = (void*)ht ;
 	 hashorders[i].cycles = i ;
-	 hashorders[i].threads = threads ;
+	 hashorders[i].slices = slices ;
 	 tpool->dispatch(&reclaim_deletion<HashT>,&hashorders[i],nullptr) ;
 	 }
       tpool->waitUntilIdle() ;
@@ -447,27 +664,31 @@ static void reclaim_deletions(HashT* ht, ThreadPool* tpool, HashRequestOrder* ha
 //----------------------------------------------------------------------
 
 template <class HashT, typename KeyT>
-static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_t cycles, HashT *ht,
-		      size_t maxsize, KeyT *syms, enum Operation op, bool terse, bool strict = true,
-		      uint32_t *randnums = nullptr)
+static void hash_test(ThreadPool* user_pool, ostream& out, size_t threads, size_t cycles, HashT* ht,
+		      size_t maxsize, KeyT* syms, enum Operation op, bool terse, double overhead = 0.0,
+		      bool strict = true, uint32_t* randnums = nullptr)
 {
-   ThreadPool *tpool = user_pool ? user_pool : new ThreadPool(threads) ;
-   if (threads == 0) threads = 1 ;
+   // if we are not protecting STL unordered_set from concurrent writes, we may
+   //   get a value for 'threads' that is less than the number of threads in the
+   //   given thread pool; in that case, instantiate a private pool with just the
+   //   requested number of threads
+   if (threads <= 1) user_pool = nullptr ;
+   ThreadPool* tpool = user_pool ? user_pool : new ThreadPool(threads) ;
+   size_t slices = (threads == 0) ? 1 : threads ;
    // use somewhat finer slices if each segment would be really large
    for (size_t loop = 0 ; loop < 4 ; ++loop)
       {
-      if (maxsize > 2000000 * threads && threads < 512) threads *= 2 ;
+      if (maxsize > 2000000 * slices && slices < 512) slices *= 2 ;
       }
-   HashRequestOrder *hashorders = new HashRequestOrder[threads] ;
-   //out << "  Dispatching threads" << endl ;
-   size_t slice_size = (maxsize + threads/2) / threads ;
+   HashRequestOrder* hashorders = new HashRequestOrder[slices] ;
+   size_t slice_size = (maxsize + slices/2) / slices ;
    if (ht)
       {
       ht->clearGlobalStats() ;
       ht->clearPerThreadStats() ;
       }
    Timer timer ;
-   for (size_t i = 0 ; i < threads ; ++i)
+   for (size_t i = 0 ; i < slices ; ++i)
       {
       hashorders[i].op = op ;
       hashorders[i].size = maxsize ;
@@ -479,14 +700,17 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
       hashorders[i].m_terse = terse ;
       hashorders[i].cycles = cycles ;
       hashorders[i].id = i+1 ;
-      hashorders[i].threads = threads ;
+      hashorders[i].slices = slices ;
       hashorders[i].pool = tpool ;
       hashorders[i].slice_start = i * slice_size ;
-      hashorders[i].slice_size = (i+1 < threads) ? slice_size : (maxsize - hashorders[i].slice_start) ;
+      hashorders[i].slice_size = (i+1 < slices) ? slice_size : (maxsize - hashorders[i].slice_start) ;
       hashorders[i].extra_arg = 0 ;
       hashorders[i].total_ops = 0 ;
       switch (op)
 	 {
+	 case Op_NONE:
+	    hashorders[i].func = hash_nop ;
+	    break ;
 	 case Op_GENSYM:
 	    hashorders[i].func = hash_gensym ;
 	    break ;
@@ -532,20 +756,29 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
    if (!terse)
       out << "  Waiting for thread completion" << endl ;
    tpool->waitUntilIdle() ;
+   if (op == Op_NONE)
+      {
+      delete[] hashorders ;
+      if (!user_pool)
+	 delete tpool ;
+      return ;
+      }
    double walltime_noreclaim = timer.elapsedSeconds() ;
+   if (walltime_noreclaim > overhead) walltime_noreclaim -= overhead ;
    if (ht && op == Op_REMOVE)
       {
-      reclaim_deletions(ht,tpool,hashorders,threads) ;
+      reclaim_deletions(ht,tpool,hashorders,slices) ;
       }
    double time = timer.cpuSeconds() ;
    double walltime = timer.elapsedSeconds() ;
+   if (walltime > overhead) walltime -= overhead ;
    size_t ops = cycles * maxsize ;
    if (op == Op_RANDOM || op == Op_RANDOM_LOWREMOVE || op == Op_RANDOM_HIGHREMOVE ||
        op == Op_RANDOM_NOREMOVE)
       {
       // sum up the per-thread counts of operations performed
       ops = 0 ;
-      for (size_t i = 0 ; i < threads ; ++i)
+      for (size_t i = 0 ; i < slices ; ++i)
 	 {
 	 ops += hashorders[i].total_ops ;
 	 }
@@ -580,7 +813,7 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
       {
       if (deleted > 0)
 	 {
-	 reclaim_deletions(ht,tpool,hashorders,threads) ;
+	 reclaim_deletions(ht,tpool,hashorders,slices) ;
 	 out << "   Pending deletions: " << deleted << " marked for deletion, "
 	     << (ht ? ht->countDeletedItems() : 0) << " after reclamation"
 	     << endl ;
@@ -619,23 +852,32 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
    size_t stat_full = ht->numberOfFullNeighborhoods() ;
    size_t stat_chain_coll = ht->numberOfChainLockCollisions() ;
    size_t retries = (stat_ins_att >= stat_ins - stat_ins_dup) ? stat_ins_att - (stat_ins - stat_ins_dup) : 0 ;
-   out << "  Stat: " << stat_ins << "+" << stat_ins_forw << " ins (" 
-       << stat_ins_dup << " dup, " << retries << " retry, " << stat_ins_resize << " resz), "
-       << stat_cont_succ << '/' << stat_cont << '+' << stat_cont_forw << " cont, "
-       << stat_lookup_succ << '/' << stat_lookup << '+' << stat_lookup_forw << " look, "
-       << stat_rem_count << '/' << stat_rem << '+' << stat_rem_forw << " rem"
-       << endl ;
-   out << "  Admn: " << stat_resize << " resizes (" << stat_resize_assist << " assists, "
-       << stat_wait << " waits), " << stat_full << " congest, "
-       << stat_reclam << " reclam, " << stat_chain_coll << " chainlock" << endl ;
+   if (!terse && (stat_ins || stat_cont || stat_lookup || stat_rem))
+      {
+      out << "  Stat: " << stat_ins << "+" << stat_ins_forw << " ins (" 
+	  << stat_ins_dup << " dup, " << retries << " retry, " << stat_ins_resize << " resz), "
+	  << stat_cont_succ << '/' << stat_cont << '+' << stat_cont_forw << " cont, "
+	  << stat_lookup_succ << '/' << stat_lookup << '+' << stat_lookup_forw << " look, "
+	  << stat_rem_count << '/' << stat_rem << '+' << stat_rem_forw << " rem"
+	  << endl ;
+      }
+   if (!terse && (stat_resize || stat_resize_assist || stat_wait || stat_full || stat_reclam || stat_chain_coll))
+      {
+      out << "  Admn: " << stat_resize << " resizes (" << stat_resize_assist << " assists, "
+	  << stat_wait << " waits), " << stat_full << " congest, "
+	  << stat_reclam << " reclam, " << stat_chain_coll << " chainlock" << endl ;
+      }
 #ifndef FrSINGLE_THREADED
    size_t stat_spin = ht->numberOfSpins() ;
    size_t stat_yield = ht->numberOfYields() ;
    size_t stat_sleep = ht->numberOfSleeps() ;
    size_t stat_CAS = ht->numberOfCASCollisions() ;
    size_t stat_resize_cleanup = ht->numberOfResizeCleanups() ;
-   out << "  Thrd: " << stat_spin << " spins, " << stat_yield << " yields, " << stat_sleep << " sleeps, "
-       << stat_CAS << " CAS, " << stat_resize_cleanup << " resize cleanups" << endl ;
+   if (!terse && (stat_spin || stat_yield || stat_sleep || stat_CAS || stat_resize_cleanup))
+      {
+      out << "  Thrd: " << stat_spin << " spins, " << stat_yield << " yields, " << stat_sleep << " sleeps, "
+	  << stat_CAS << " CAS, " << stat_resize_cleanup << " resize cleanups" << endl ;
+      }
 #endif /* !FrSINGLE_THREADED */
 #endif /* FrHASHTABLE_STATS */
    return  ;
@@ -643,7 +885,7 @@ static void hash_test(ThreadPool *user_pool, ostream &out, size_t threads, size_
 
 //----------------------------------------------------------------------
 
-static void print_stats(ostream &out, size_t *values, size_t max_value,	bool nonzero_only)
+static void print_stats(ostream &out, size_t* values, size_t max_value, bool nonzero_only)
 {
    size_t first = 0 ;
    for (size_t i = 0 ; i <= max_value && values[i] == 0 ; i++)
@@ -673,7 +915,7 @@ static void print_stats(ostream &out, size_t *values, size_t max_value,	bool non
 
 //----------------------------------------------------------------------
 
-static void print_chain_lengths(ostream &out, size_t which, size_t *chains, size_t max_chain)
+static void print_chain_lengths(ostream &out, size_t which, size_t* chains, size_t max_chain)
 {
    if (max_chain > 0 && chains)
       {
@@ -685,7 +927,7 @@ static void print_chain_lengths(ostream &out, size_t which, size_t *chains, size
 
 //----------------------------------------------------------------------
 
-static void print_neighborhoods(ostream &out, size_t which, size_t *neighborhoods, size_t max_neighbors)
+static void print_neighborhoods(ostream &out, size_t which, size_t* neighborhoods, size_t max_neighbors)
 {
    if (max_neighbors > 0 && neighborhoods)
       {
@@ -698,7 +940,7 @@ static void print_neighborhoods(ostream &out, size_t which, size_t *neighborhood
 //----------------------------------------------------------------------
 
 template <typename KeyT>
-static void swap_segments(KeyT *keys, size_t numkeys, size_t threads)
+static void swap_segments(KeyT* keys, size_t numkeys, size_t threads)
 {
    // because we set up the 'keys' array with the first half containing
    //   keys that are in the hash table and the second half with keys
@@ -729,82 +971,12 @@ static void swap_segments(KeyT *keys, size_t numkeys, size_t threads)
 
 //----------------------------------------------------------------------
 
-template <class HashT, typename KeyT>
-static void run_tests(size_t threads, size_t startsize, size_t maxsize,
-		      size_t cycles, KeyT *keys, uint32_t *randnums, ostream &out,
-		      bool terse)
+template <class HashT>
+static void lost_chains(ostream& out, HashT* ht, size_t* chains, size_t max_chain)
 {
-   if_SHOW_CHAINS(size_t *chains[6]);
-   if_SHOW_CHAINS(size_t max_chain[6]) ;
-   if_SHOW_NEIGHBORS(size_t *neighborhoods[5]) ;
-   if_SHOW_NEIGHBORS(size_t max_neighbors[5]) ;
-
-   HashT *ht = new HashT(startsize) ;
-   ThreadPool tpool(threads) ;
-   out << "Filling hash table      " << endl ;
-   hash_test(&tpool,out,threads,1,ht,maxsize,keys,Op_ADD,terse) ;
-   if_SHOW_CHAINS(chains[0] = ht->chainLengths(max_chain[0]));
-   if_SHOW_NEIGHBORS(neighborhoods[0] = ht->neighborhoodDensities(max_neighbors[0])) ;
-   out << "Lookups (100% present)  " << endl ;
-   hash_test(&tpool,out,threads,cycles,ht,maxsize,keys,Op_CHECK,terse) ;
-   out << "Lookups (50% present)   " << endl ;
-   size_t half_cycles = (cycles + 1) / 2 ;
-   swap_segments(keys,2*maxsize,threads) ;
-   hash_test(&tpool,out,threads,half_cycles,ht,2*maxsize,keys,Op_CHECK,terse,false) ;
-   swap_segments(keys,2*maxsize,threads) ;
-   out << "Lookups (0% present)    " << endl ;
-   hash_test(&tpool,out,threads,cycles,ht,maxsize,keys+maxsize,Op_CHECKMISS,terse) ;
-   out << "Emptying hash table     " << endl ;
-   hash_test(&tpool,out,threads,1,ht,maxsize,keys,Op_REMOVE,terse) ;
-   out << "Lookups in empty table  " << endl ;
-   hash_test(&tpool,out,threads,cycles,ht,maxsize,keys,Op_CHECKMISS,terse) ;
-   delete ht ;
-   ht = new HashT(startsize) ;
-   out << "Random additions        " << endl ;
-   hash_test(&tpool,out,threads,half_cycles,ht,maxsize,keys,Op_RANDOM_ADDONLY,terse,true,
-	     randnums) ;
-   if_SHOW_CHAINS(chains[1] = ht->chainLengths(max_chain[1])) ;
-   out << "Emptying hash table     " << endl ;
-   hash_test(&tpool,out,threads,1,ht,maxsize,keys,Op_REMOVE,terse,false) ;
-   delete ht ;
-   ht = new HashT(startsize) ;
-   out << "Random ops (del=1)      " << endl ;
-   hash_test(&tpool,out,threads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,true,
-	     randnums + maxsize/2 - 1) ;
-   if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
-   out << "Random ops (del=1,full) " << endl ;
-   hash_test(&tpool,out,threads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,true,
-	     randnums + maxsize/2 - 1) ;
-   if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
-   out << "Emptying hash table     " << endl ;
-   hash_test(&tpool,out,threads,1,ht,maxsize,keys,Op_REMOVE,terse,false) ;
-   delete ht ;
-   ht = new HashT(startsize) ;
-   out << "Random ops (del=3)      " << endl ;
-   hash_test(&tpool,out,threads,cycles,ht,maxsize,keys,Op_RANDOM,terse,true,
-	     randnums + maxsize - 1) ;
-   if_SHOW_CHAINS(chains[3] = ht->chainLengths(max_chain[3])) ;
-   if_SHOW_NEIGHBORS(neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1])) ;
-   out << "Emptying hash table     " << endl ;
-   hash_test(&tpool,out,threads,1,ht,maxsize,keys,Op_REMOVE,terse,false) ;
-   delete ht  ;
-   ht = new HashT(startsize) ;
-   out << "Random ops (del=7)      " << endl ;
-   hash_test(&tpool,out,threads,cycles,ht,maxsize,keys,Op_RANDOM,terse,true,
-	     randnums + maxsize - 1) ;
-   if_SHOW_CHAINS(chains[4] = ht->chainLengths(max_chain[4])) ;
-   if_SHOW_NEIGHBORS(neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1])) ;
-   out << "Emptying hash table     " << endl ;
-   hash_test(&tpool,out,threads,1,ht,maxsize,keys,Op_REMOVE,terse,false) ;
-   if_SHOW_CHAINS(chains[5] = ht->chainLengths(max_chain[5])) ;
-#ifdef SHOW_CHAINS
-   for (size_t i = 0 ; i < 6 ; i++)
-      {
-      print_chain_lengths(out,i,chains[i],max_chain[i]) ;
-      delete [] chains[i] ;
-      }
+   (void)out; (void)ht; (void)chains; (void)max_chain;
 #if defined(SHOW_LOST_CHAINS)
-   if (chains[5] && max_chain[5] > 0)
+   if (chains && max_chain > 0)
       {
       // try to display the lost deletions
       out << "lost keys:" << endl ;
@@ -817,13 +989,127 @@ static void run_tests(size_t threads, size_t startsize, size_t maxsize,
       out << "(end of list)" << endl ;
       }
 #endif /* SHOW_LOST_CHAINS */
+   return ;
+}
+
+//----------------------------------------------------------------------
+      
+template<>
+void lost_chains(ostream& out, STLset* ht, size_t* chains, size_t max_chain)
+{
+   (void)out; (void)ht; (void)chains; (void)max_chain;
+#if defined(SHOW_LOST_CHAINS)
+   if (chains && max_chain > 0)
+      {
+      // try to display the lost deletions
+      out << "lost keys:" << endl ;
+      size_t count = 0 ;
+      for (const auto entry : *ht)
+	 {
+	 ++count ;
+	 out << " #" << count << ": " << entry << endl ;
+	 }
+      out << "(end of list)" << endl ;
+      }
+#endif /* SHOW_LOST_CHAINS */
+   return ;
+}
+
+//----------------------------------------------------------------------
+      
+template <class HashT, typename KeyT>
+static void run_tests(size_t threads, size_t writethreads, size_t startsize, size_t maxsize,
+		      size_t cycles, KeyT* keys, uint32_t* randnums, ostream &out,
+		      bool terse)
+{
+   if_SHOW_CHAINS(size_t* chains[6]);
+   if_SHOW_CHAINS(size_t max_chain[6]) ;
+   if_SHOW_NEIGHBORS(size_t* neighborhoods[5]) ;
+   if_SHOW_NEIGHBORS(size_t max_neighbors[5]) ;
+
+   HashT* ht = new HashT(startsize) ;
+   ThreadPool tpool(threads) ;
+   out << "Checking overhead (NOP) " << endl ;
+   Timer timer  ;
+   hash_test(&tpool,out,threads,1,ht,maxsize,keys,Op_NONE,true) ;
+   double overhead = timer.elapsedSeconds() ;
+   out << "   overhead = " << 1000.0*overhead << "ms" << endl ;
+   out << "Filling hash table      " << endl ;
+   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_ADD,terse,overhead) ;
+   if_SHOW_CHAINS(chains[0] = ht->chainLengths(max_chain[0]));
+   if_SHOW_NEIGHBORS(neighborhoods[0] = ht->neighborhoodDensities(max_neighbors[0])) ;
+   out << "Lookups (100% present)  " << endl ;
+   hash_test(&tpool,out,threads,cycles,ht,maxsize,keys,Op_CHECK,terse,overhead) ;
+   out << "Lookups (50% present)   " << endl ;
+   size_t half_cycles = (cycles + 1) / 2 ;
+   swap_segments(keys,2*maxsize,threads) ;
+   hash_test(&tpool,out,threads,half_cycles,ht,2*maxsize,keys,Op_CHECK,terse,overhead,false) ;
+   swap_segments(keys,2*maxsize,threads) ;
+   out << "Lookups (0% present)    " << endl ;
+   hash_test(&tpool,out,threads,cycles,ht,maxsize,keys+maxsize,Op_CHECKMISS,terse,overhead) ;
+   out << "Emptying hash table     " << endl ;
+   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead) ;
+   out << "Lookups in empty table  " << endl ;
+   hash_test(&tpool,out,threads,cycles,ht,maxsize,keys,Op_CHECKMISS,terse,overhead) ;
+   delete ht ;
+   ht = new HashT(startsize) ;
+   out << "Random additions        " << endl ;
+   hash_test(&tpool,out,writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_ADDONLY,terse,overhead,true,
+	     randnums) ;
+   if_SHOW_CHAINS(chains[1] = ht->chainLengths(max_chain[1])) ;
+   out << "Emptying hash table     " << endl ;
+   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+   delete ht ;
+   ht = new HashT(startsize) ;
+   out << "Random ops (del=1)      " << endl ;
+   hash_test(&tpool,out,writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
+	     randnums + maxsize/2 - 1) ;
+   if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
+   out << "Random ops (del=1,full) " << endl ;
+   hash_test(&tpool,out,writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
+	     randnums + maxsize/2 - 1) ;
+   if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
+   out << "Emptying hash table     " << endl ;
+   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+   delete ht ;
+   ht = new HashT(startsize) ;
+   out << "Random ops (del=3)      " << endl ;
+   hash_test(&tpool,out,writethreads,cycles,ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
+	     randnums + maxsize - 1) ;
+   if_SHOW_CHAINS(chains[3] = ht->chainLengths(max_chain[3])) ;
+   if_SHOW_NEIGHBORS(neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1])) ;
+   out << "Emptying hash table     " << endl ;
+   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+   delete ht  ;
+   ht = new HashT(startsize) ;
+   out << "Random ops (del=7)      " << endl ;
+   hash_test(&tpool,out,writethreads,cycles,ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
+	     randnums + maxsize - 1) ;
+   if_SHOW_CHAINS(chains[4] = ht->chainLengths(max_chain[4])) ;
+   if_SHOW_NEIGHBORS(neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1])) ;
+   out << "Emptying hash table     " << endl ;
+   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+   if_SHOW_CHAINS(chains[5] = ht->chainLengths(max_chain[5])) ;
+#ifdef SHOW_CHAINS
+   if (!terse)
+      {
+      for (size_t i = 0 ; i < 6 ; i++)
+	 {
+	 print_chain_lengths(out,i,chains[i],max_chain[i]) ;
+	 delete [] chains[i] ;
+	 }
+      lost_chains<HashT>(out,ht,chains[5],max_chain[5]) ;
+      }
 #endif /* SHOW_CHAINS */
    delete ht ;
 #ifdef SHOW_NEIGHBORHOODS
-   for (size_t i = 0 ; i < 2 ; i++)
+   if (!terse)
       {
-      print_neighborhoods(out,i,neighborhoods[i],max_neighbors[i]) ;
-      delete [] neighborhoods[i] ;
+      for (size_t i = 0 ; i < 2 ; i++)
+	 {
+	 print_neighborhoods(out,i,neighborhoods[i],max_neighbors[i]) ;
+	 delete [] neighborhoods[i] ;
+	 }
       }
 #endif /* SHOW_NEIGHBORHOODS */
    return  ;
@@ -835,8 +1121,7 @@ void hash_command(ostream &out, int threads, bool terse, uint32_t* randnums,
 		  size_t startsize, size_t maxsize, size_t cycles)
 {
    out << "Parallel (threaded) Object Hash Table operations" << endl << endl ;
-   Symbol **keys = new Symbol*[2*maxsize] ;
-   out << "Preparing symbols       " << endl ;
+   Symbol** keys = new Symbol*[2*maxsize] ;
    // speed up symbol creation and avoid memory fragmentation by
    //  expanding the symbol table to hold all the symbols we will
    //  create
@@ -844,21 +1129,20 @@ void hash_command(ostream &out, int threads, bool terse, uint32_t* randnums,
    size_t needed = 2*maxsize ;//FIXME
    needed *= 1.33 ; // gensyms tend to cluster in the table, since they are so similar in name
 //FIXME   curr_symtab->expandTo(needed+1000) ;
+   out << "Preparing symbols       " << endl ;
    hash_test(nullptr,out,threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_GENSYM,terse) ;
    out << "Checking symbols        " << endl ;
    hash_test(nullptr,out,threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_CHECKSYMS,terse) ;
-   run_tests<ObjHashTable>(threads,startsize,maxsize,cycles,keys,randnums,out,terse) ;
+   run_tests<ObjHashTable>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse) ;
    delete[] keys ;
    return ;
 }
 
 //----------------------------------------------------------------------
 
-void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, size_t startsize,
-		   size_t maxsize, size_t cycles, size_t order, size_t stride)
+static INTEGER_TYPE* gen_keys(ostream& out, size_t maxsize, size_t order, size_t stride)
 {
-   out << "Parallel (threaded) Integer Hash Table operations" << endl << endl ;
-   INTEGER_TYPE *keys = new INTEGER_TYPE[2*maxsize] ;
+   INTEGER_TYPE* keys = new INTEGER_TYPE[2*maxsize] ;
    if (order == 0)
       {
       out << "Generating sequential keys" << endl ;
@@ -870,7 +1154,7 @@ void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, si
       // generate a randomly-distributed set of 32-bit integers, less the reserved values
       out << "Generating random keys" << endl ;
 #if 0
-      RandomInteger rand(0xFFFFFFFC) ;
+      RandomInteger rand(0xFFFFFFFE) ;
       if (order == 2)
 	 rand.seed(31415926) ;
       for (size_t i = 0 ; i < 2*maxsize ; ++i)
@@ -887,7 +1171,7 @@ void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, si
 	 do {
 	 seed = ((uint64_t)seed * 48271UL) % INT32_MAX ;
 	 // skip the special reserved values, just in case we hit them
-	 } while (seed >= (uint32_t)~2) ;
+	 } while (seed >= (uint32_t)~1) ;
 	 }
 #endif
       }
@@ -909,7 +1193,29 @@ void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, si
 	    }
 	 }
       }
-   run_tests<HashSet_U32>(threads,startsize,maxsize,cycles,keys,randnums,out,terse) ;
+   return keys ;
+}
+
+//----------------------------------------------------------------------
+
+void stlset_command(ostream &out, int threads, bool terse, uint32_t* randnums, size_t startsize,
+		    size_t maxsize, size_t cycles, size_t order, size_t stride)
+{
+   out << "Parallel (threaded) STL integer unordered_set operations" << endl << endl ;
+   INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride) ;
+   run_tests<STLset>(threads,STL_WRITE_THREADS,startsize,maxsize,cycles,keys,randnums,out,terse) ;
+   delete[] keys ;
+   return ;
+}
+
+//----------------------------------------------------------------------
+
+void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, size_t startsize,
+		   size_t maxsize, size_t cycles, size_t order, size_t stride)
+{
+   out << "Parallel (threaded) Integer Hash Table operations" << endl << endl ;
+   INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride) ;
+   run_tests<HashSet_U32>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse) ;
    delete[] keys ;
    return ;
 }
@@ -919,8 +1225,9 @@ void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, si
 
 int main(int argc, char** argv)
 {
-   const char* operation ;
+//   const char* operation ;
    bool use_int_hashtable ;
+   bool use_STL_unorderedset ;
    int threads { 0 } ;
    size_t start_size { 1 } ;
    size_t grow_size ;
@@ -933,7 +1240,8 @@ int main(int argc, char** argv)
    ArgParser cmdline_flags ;
    cmdline_flags
       .add(use_int_hashtable,"i","int","use integer-keyed hash table instead of Object-keyed")
-      .add(operation,"f","function","")
+      .add(use_STL_unorderedset,"I","stl","use STL unordered_set with integer keys, not FramepaC hashtable")
+//      .add(operation,"f","function","")
       .add(grow_size,"g","","")
       .add(threads,"j","threads","")
       .add(key_order,"k","keys","key order: 0=seq, 1=random, 2=fixrandom, 3=stride",0,3)
@@ -961,13 +1269,17 @@ int main(int argc, char** argv)
    else
       {
       cout << "Generating random numbers for randomized tests" << endl ;
-      uint32_t *randnums = new uint32_t[2*grow_size] ;
+      uint32_t* randnums = new uint32_t[2*grow_size] ;
       RandomInteger rand(grow_size) ;
       for (size_t i = 0 ; i < 2*grow_size ; i++)
 	 {
 	 randnums[i] = rand() ;
 	 }
-      if (use_int_hashtable)
+      if (use_STL_unorderedset)
+	 {
+	 stlset_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride) ;
+	 }
+      else if (use_int_hashtable)
 	 ihash_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride) ;
       else
 	 hash_command(cout,threads,terse,randnums,start_size,grow_size,repetitions) ;

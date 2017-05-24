@@ -86,7 +86,8 @@ class WorkOrder
 class WorkQueue
    {
    public:
-      WorkQueue() {}
+      WorkQueue()
+	 { for (size_t i = 0 ; i < lengthof(m_orders) ; ++i) m_orders[i] = nullptr ; }
       WorkQueue(const WorkQueue&) = delete ;
       ~WorkQueue() ;
       WorkQueue& operator= (const WorkQueue&) = delete ;

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-09					*/
+/* Version 0.01, last edit 2017-05-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -27,6 +27,10 @@
 #include "framepac/atomic.h"
 #include "framepac/init.h"
 #include "framepac/objectvmt.h"
+
+#ifndef CHAR_BIT
+# define CHAR_BIT 8
+#endif
 
 /************************************************************************/
 /************************************************************************/
@@ -167,6 +171,7 @@ class SlabGroup
       SlabGroup* m_prev { nullptr };
       Slab*      m_freeslabs { nullptr };
       unsigned   m_numfree { lengthof(m_slabs) };
+      size_t	 m_freemask[(SLAB_GROUP_SIZE/sizeof(size_t))/CHAR_BIT] ;
    protected:
       void* operator new(size_t sz) ;
       void operator delete(void* grp) ;

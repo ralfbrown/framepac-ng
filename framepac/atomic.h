@@ -651,7 +651,7 @@ class Atomic
 	 {
 	    T list ;
 	    do {
-	       list = this->load(std::memory_order_consume) ;
+	       list = this->load(std::memory_order_acquire) ;
 	       node.next(list) ;
 	       } while (!this->compare_exchange_weak(list,node)) ;
 	 }
