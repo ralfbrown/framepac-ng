@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-04					*/
+/* Version 0.01, last edit 2017-05-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -49,23 +49,22 @@ void* Slab::allocObject()
 {
    if (m_header.m_freelist)
       {
-      m_header.m_freecount-- ;
+      m_header.m_usedcount++ ;
       void* obj = ((char*)this) + m_header.m_freelist ;
       m_header.m_freelist = *((alloc_size_t*)obj) ;
       return obj ;
       }
    // our local freelist was empty, so grab any objects on the remote-free list
-   alloc_size_t free = m_footer.m_firstfree.exchange(0) ;
-   if (!free)
+   auto free = m_footer.grabList() ;
+   if (free.second)  // if count == 0
       return nullptr ;
    // point the local freelist at the objects we've just reclaimed
-   m_header.m_freelist = free ;
-   m_header.m_freecount = 1 ;
-   while ((free = *((alloc_size_t*)(((char*)this)+free))) != 0)
-      {
-      m_header.m_freecount++ ;
-      }
-   return allocObject() ;
+   m_header.m_freelist = free.first ;
+   m_header.m_usedcount -= free.second ;
+   m_header.m_usedcount++ ;
+   void* obj = ((char*)this) + m_header.m_freelist ;
+   m_header.m_freelist = *((alloc_size_t*)obj) ;
+   return obj ;
 }
 
 //----------------------------------------------------------------------------
@@ -74,20 +73,18 @@ void Slab::releaseObject(void* obj)
 {
    if (!obj)
       return ;
-   alloc_size_t freeobj = (alloc_size_t)(((uintptr_t)obj) & (SLAB_SIZE - 1)) ;
-   if (freeobj < offsetof(Slab,m_buffer))
-      return ;
-   //if (our-slab) {
-   *((alloc_size_t*)(this + freeobj)) = m_header.m_freelist ;
-   m_header.m_freelist = freeobj ;
-   m_header.m_freecount++ ;
-   if (m_header.m_freecount == m_info.m_objcount) { /*release slab*/ }
-#if 0
-   //} else {
-   alloc_size_t* nextptr = ((alloc_size_t*)obj) ;
-   *nextptr = m_footer.m_firstfree.load() ;
-   m_footer.m_firstfree = freeobj ;
-#endif
+#ifndef FrSINGLE_THREADED
+   if (this_thread::get_id() != m_info.m_owner)
+      {
+      m_footer.link(obj) ;
+      }
+   else
+#endif /* !FrSINGLE_THREADED */
+      {
+      *((alloc_size_t*)obj) = m_header.m_freelist ;
+      m_header.m_freelist = slabOffset(obj) ;
+      if (--m_header.m_usedcount == 0) { /*release slab*/ }
+      }
    return ;
 }
 

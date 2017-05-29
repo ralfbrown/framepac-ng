@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-22					*/
+/* Version 0.01, last edit 2017-05-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -85,12 +85,13 @@ class Slab
       SlabGroup* containingGroup() const
          { return reinterpret_cast<SlabGroup*>(const_cast<Slab*>(this) - m_info.m_slab_id) ; }
 
+      static Slab* slab(const void* block)
+	 { return (Slab*)(((uintptr_t)block)&~(SLAB_SIZE-1)) ; }
       static alloc_size_t slabOffset(void* block)
 	 { return (alloc_size_t)(((uintptr_t)block) & (SLAB_SIZE-1)) ; }
       static const ObjectVMT* VMT(const void* block)
-         { // convert the pointer to the allocated block into a pointer to the slab
-	    Slab* slab = (Slab*)(((uintptr_t)block)&~(SLAB_SIZE-1)) ;
-	    return slab->m_info.m_vmt ; }
+         { // convert the pointer to the allocated block into a pointer to the slab, then index off that
+	    return slab(block)->m_info.m_vmt ; }
 
       void linkSlab(Slab*& listhead) ;
       void unlinkSlab(Slab*& listhead) ;
@@ -108,16 +109,16 @@ class Slab
 	    const ObjectVMT* m_vmt ;		// should be first to avoid having to add an offset
 	    Slab*            m_nextslab { nullptr };
 	    Slab*            m_prevslab { nullptr };
-	    // m_owner ;
-	    alloc_size_t     m_objsize ;
-	    uint16_t         m_objcount ;
-	    uint16_t         m_slab_id ;
+	    std::thread::id  m_owner ;
+	    alloc_size_t     m_objsize ;	// bytes per object
+	    uint16_t         m_objcount ;	// number of objects in this slab
+	    uint16_t         m_slab_id ; 	// index within SlabGroup
          } ;
       class SlabHeader
          {
 	 public:
-	    alloc_size_t     m_freelist ;
-	    uint16_t         m_freecount ;
+	    alloc_size_t     m_freelist ;	// first free object, or 0
+	    uint16_t         m_usedcount ;	// number of objects being used; release Slab when it reaches 0
 	 public:
 	    //SlabHeader() = default ;
 	    ~SlabHeader() = default ;
@@ -127,11 +128,27 @@ class Slab
       class SlabFooter
          {
 	 public:
-	    Fr::Atomic<alloc_size_t> m_firstfree ;
-
-	 public:
-	    SlabFooter() { m_firstfree.store(0) ; }
+	    SlabFooter() { m_ptr_count.store(0) ; }
 	    ~SlabFooter() {}
+	    void link(void* obj)
+	       {
+	       uint32_t ofs = slabOffset(obj) ;
+	       uint32_t expected = m_ptr_count ;
+	       uint32_t new_value ;
+	       do {
+	          *((alloc_size_t*)obj) = (alloc_size_t)expected ;
+	          new_value = ((expected & 0xFFFF0000) + 0x10000) | ofs ;
+	          } while (!m_ptr_count.compare_exchange_weak(expected,new_value)) ;
+	       }
+	    std::pair<alloc_size_t,uint16_t> grabList()
+	       {
+	       // grab the entire freelist by atomically swapping it with zero
+	       uint32_t val = m_ptr_count.exchange(0) ;
+	       // split up the retrieved result into pointer and count
+	       return std::pair<alloc_size_t,uint16_t>(val&0xFFFF,val>>16) ;
+	       }
+      	 protected:
+	    Fr::Atomic<uint32_t> m_ptr_count ;
          } ;
    public:
       static constexpr size_t DATA_SIZE = SLAB_SIZE - sizeof(SlabInfo) - sizeof(SlabHeader) - sizeof(SlabFooter) ;
@@ -171,7 +188,7 @@ class SlabGroup
       SlabGroup* m_prev { nullptr };
       Slab*      m_freeslabs { nullptr };
       unsigned   m_numfree { lengthof(m_slabs) };
-      size_t	 m_freemask[(SLAB_GROUP_SIZE/sizeof(size_t))/CHAR_BIT] ;
+      alignas(64) size_t m_freemask[(SLAB_GROUP_SIZE/sizeof(size_t))/CHAR_BIT] ;
    protected:
       void* operator new(size_t sz) ;
       void operator delete(void* grp) ;
@@ -179,8 +196,7 @@ class SlabGroup
       void unlink() ;
    } ;
 
-// end of namespace FramepaC
-}
+} // end namespace FramepaC
 
 /************************************************************************/
 

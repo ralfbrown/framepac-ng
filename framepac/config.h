@@ -88,21 +88,21 @@ namespace FramepaC
 //   typical 256KB 4-way cache, a slab size of 64KB would put EVERY
 //   SlabFooter in the same cache set!)
 // MUST BE A POWER OF TWO
-const int SLAB_SIZE = 8192 ;
+constexpr int SLAB_SIZE = 4096 ;
 
 // number of slabs to allocate from the OS at once; higher values
 //   reduce OS overhead and reduce the wastage due to the need to
 //   align on the slab size, but may lead to wasted memory.
 //   Setting this to one less than a power of two will make SlabGroups
 //   use up memory in powers of two
-// 1024 slabs of 8192 bytes = 8MB
-const int SLAB_GROUP_SIZE = 1024 ;
+// 4096 slabs of 4096 bytes = 16MB
+constexpr int SLAB_GROUP_SIZE = 4095 ;
 
 // granularity of allocation sizes for Symbol
-const int SYMBOL_NAME_GRAN = 8 ;
+constexpr int SYMBOL_NAME_GRAN = 8 ;
 
 // granularity of allocation sizes for ShortConstString
-const int STRING_LEN_GRAN = 8 ;
+constexpr int STRING_LEN_GRAN = 8 ;
 
 } ;
 
