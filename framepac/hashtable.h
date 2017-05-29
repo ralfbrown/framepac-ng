@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-22					*/
+/* Version 0.01, last edit 2017-05-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -330,13 +330,26 @@ class HashTable : public HashTableBase
    public:
       // typedefs for compatibility with C++ STL
       typedef KeyT key_type ;
-      typedef ValT value_type ;
+      typedef ValT mappped_type ;
+      typedef std::pair<const KeyT,ValT> value_type ;
       typedef std::size_t size_type ;
       typedef std::ptrdiff_t difference_type ;
       //typedef X hasher ;
       //typedef Y key_equal ;
       typedef ValT& reference ;
       typedef const ValT& const_reference ;
+      typedef HashTableIter<KeyT,ValT,ValT> iterator ;
+      typedef HashTableIter<KeyT,ValT,const ValT> const_iterator ;  //FIXME??
+      //typedef ??? local_iterator ;
+      //typedef ??? const_local_iterator ;
+      // unsupported features of C++ unordered_map/unordered_set:
+      //  1. nodes are not individually allocated, so there is no way to have a custom allocator
+      //   typedef UNAVAILABLE allocator_type ;
+      //   typedef UNAVAILABLE pointer ;     // std::allocator_traits<Allocator>::pointer
+      //   typedef UNAVAILABLE const_pointer ;
+      //  2. because nodes are not individually allocated, we also can't have a C++17 node_handle
+      //     which causes destruction of node
+      //   typedef UNAVAILABLE node_handle ;
       
       // incorporate the auxiliary classes
       typedef FramepaC::Link Link ;
@@ -368,10 +381,12 @@ class HashTable : public HashTableBase
       {
       public: // methods
 	 void *operator new(size_t,void *where) { return where ; }
-	 static KeyT copy(KeyT obj)
-	    {
-	       return obj ? static_cast<KeyT>(obj->clone()) : nullKey() ;
-	    }
+	 template <typename K_T = KeyT>
+	 static typename std::enable_if<std::is_pointer<KeyT>::value,K_T>::type
+	 copy(KeyT obj) { return obj ? static_cast<KeyT>(obj->clone()) : nullKey() ; }
+	 template <typename K_T = KeyT>
+	 static typename std::enable_if<!std::is_pointer<KeyT>::value,K_T>::type
+	 copy(KeyT obj) { return KeyT(obj) ; }
 	 void init()
 	    {
 	       m_key = DELETED() ;
@@ -468,11 +483,11 @@ class HashTable : public HashTableBase
 	       return m_key ? m_key->displayLength() : 3 ;
 	    }
 #endif /* FIXME */
-      public: // data members
-	 if_INTERLEAVED(HashPtr  m_info ;)
       protected: // members
 	 Atomic<KeyT> m_key ;
 	 ValT         m_value[std::is_empty<ValT>::value ? 0 : 1] ;
+      public: // data members
+	 if_INTERLEAVED(HashPtr  m_info ;)
       } ;
       //------------------------
       // encapsulate all of the fields which must be atomically swapped at the end of a resize()
@@ -610,6 +625,33 @@ class HashTable : public HashTableBase
 
 	 void replaceValue(size_t pos, ValT new_value) ;
 
+	 // ========== STL compatibility ==========
+	 // clear()
+	 // insert()
+	 // insert_or_assign()
+	 // emplace()
+	 // emplace_hint()
+	 // try_emplace()
+	 size_t erase(size_t hashval, const KeyT& key) { return remove(hashval,key) ? 1 : 0 ; }
+	 // ValT& at(const KeyT& key) throws(std::out_of_range) ;
+	 // const ValT& at(const KeyT& key) const throws(std::out_of_range) ;
+	 // ValT& operator[]( const Key& key) ;
+	 size_t count(size_t hashval, const KeyT& key) { return contains(hashval,key) ? 1 : 0 ; }
+	 // find()
+	 // equal_range()
+
+	 size_t bucket_count() const { return m_size ; }
+	 size_t max_bucket_count() const { return m_fullsize ; }
+	 [[gnu::cold]] size_t bucket_size(size_t bucketnum) const ;
+	 size_t bucket(KeyT key) const { return hashVal(key) % m_size ; }
+
+	 float load_factor() const { return countItems() / m_size ; }
+
+	 // rehash()
+	 // reserve()
+	 // hash_function
+	 // key_eq
+
 	 //============== Iterators ================
 	 bool iterateVA(HashKeyValueFunc *func, std::va_list args) const ;
 	 List *allKeys() const ;
@@ -618,7 +660,6 @@ class HashTable : public HashTableBase
 	 [[gnu::cold]] size_t countItems() const ;
 	 [[gnu::cold]] size_t countItems(bool remove_dups) ;
 	 [[gnu::cold]] size_t countDeletedItems() const ;
-	 [[gnu::cold]] size_t chainLength(size_t bucketnum) const ;
 	 [[gnu::cold]] size_t* chainLengths(size_t &max_length) const ;
 	 [[gnu::cold]] size_t* neighborhoodDensities(size_t &num_densities) const ;
 
@@ -816,7 +857,6 @@ class HashTable : public HashTableBase
 
       bool resizeTo(size_t newsize) { DELEGATE(resize(newsize)) ; }
       bool reserve_(size_t newsize) { DELEGATE(resize(newsize)) ; }
-      void reserve(size_t newsize) { reserve_(newsize) ; }
 
       bool reclaimDeletions(size_t totalfrags = 1, size_t fragnum = 0)
          { DELEGATE(reclaimDeletions(totalfrags,fragnum)) }
@@ -881,11 +921,53 @@ class HashTable : public HashTableBase
       [[gnu::cold]] size_t* neighborhoodDensities(size_t &num_densities) const
 	 { DELEGATE(neighborhoodDensities(num_densities)) }
 
+      // ========== STL compatibility ==========
+      void clear()
+	 { DELEGATE(clear()) }
+      // std::pair<iterator,bool> insert( const value_type& value) ;
+      // std::pair<iterator,bool> insert_or_assign(const key_type& key, value_type& val) ;
+      // emplace()
+      // emplace_hint()
+      // try_emplace()
+      size_t erase(const KeyT& key)
+	 { DELEGATE_HASH(erase(hashval,key)) }
+      // ValT& at(const KeyT& key) ;
+      // const ValT& at(const KeyT& key) const ;
+      // operator[]
+      size_t count(const KeyT& key) const
+	 { DELEGATE_HASH(count(hashval,key)) }
+      // iterator find(const KeyT& key) ;
+      // const_iterator find(const KeyT& key) const ;
+      // std::pair<iterator,iterator> equal_range(const KeyT& key) ;
+      // std::pair<const_iterator,const_iterator> equal_range(const KeyT& key) const ;
+
+      size_t bucket_count() const
+	 { DELEGATE(bucket_count()) }
+      size_t max_bucket_count() const
+	 { DELEGATE(max_bucket_count()) }
+      size_t bucket_size(size_t N) const
+	 { DELEGATE(bucket_size(N)) }
+      size_t bucket(KeyT key) const
+	 { DELEGATE(bucket(key)) }
+
+      void rehash(size_t count) { if (count) resizeTo(count) ; else reserve(countItems()) ; }
+      void reserve(size_t count) { rehash((size_t)(1 + count / 0.9f)) ; }
+      float load_factor() const
+	 { DELEGATE(load_factor()) }
+
+      // since automatic resizing happens due to filled neighborhoods, we just provide dummy max_load_factor
+      //   functions
+      float max_load_factor() const { return 1.0f ; }
+      void max_load_factor(float) {}
+
+      // hash_function
+      // key_eq
+
       // ========== Iterators ===========
-      inline HashTableIter<KeyT,ValT,ValT> begin() const ;
-      inline HashTableIter<KeyT,ValT,const ValT> cbegin() const ;
-      inline HashTableIter<KeyT,ValT,ValT> end() const ;
-      inline HashTableIter<KeyT,ValT,const ValT> cend() const ;
+      inline iterator begin() const ;
+      inline const_iterator cbegin() const ;
+      inline iterator end() const ;
+      inline const_iterator cend() const ;
 
       bool iterateVA(HashKeyValueFunc *func, std::va_list args) const
          { DELEGATE(iterateVA(func,args)) }
@@ -911,7 +993,7 @@ class HashTable : public HashTableBase
 	 }
 
       // access to internal state
-      size_t currentSize() const { DELEGATE(currentSize()) }
+      size_t currentSize() const { DELEGATE(countItems()) }
       size_t maxCapacity() const { DELEGATE(m_fullsize) }
       bool isPacked() const { return false ; }  // backwards compatibility
       HashTableCleanupFunc *cleanupFunc() const { return cleanup_fn ; }
@@ -1041,9 +1123,6 @@ inline bool HashTable<K,V>::isEqual(const K key1, const K key2) \
 { return key1 == key2 ; } \
 \
 template <> \
-inline K HashTable<K,V>::Entry::copy(const K obj) { return obj ; } \
-\
-template <> \
 inline Object* HashTable<K,V>::Table::makeObject(K key) \
 { return Integer::create(key) ; }	 \
 \
@@ -1070,8 +1149,8 @@ template <> \
 inline bool HashTable<const Symbol*,V>::isEqual(const Symbol* key1, const Symbol* key2) \
 { return (size_t)key1 == (size_t)key2 ; }			  \
 \
-template <> \
-inline const Symbol* HashTable<const Symbol* ,V>::Entry::copy(const Symbol* obj) { return obj ; } \
+template <> template <>	\
+inline const Symbol* HashTable<const Symbol* ,V>::Entry::copy<const Symbol*>(const Symbol* obj) { return obj ; } \
 \
 extern template class HashTable<const Symbol*,V> ; \
 typedef HashTable<const Symbol*,V> NAME ;
@@ -1121,8 +1200,22 @@ class HashTableIter
 	 }
       ~HashTableIter() {}
 
-      inline std::pair<KeyT,RetT&> operator* () const ;
-      inline HashTableIter& operator++ () ;
+      std::pair<KeyT,RetT&> operator* () const
+	 {
+	 KeyT key = m_table->getKey(m_index) ;
+	 ValT* valptr = m_table->getValuePtr(m_index) ;
+	 return std::pair<KeyT,RetT&>(key,*valptr) ;
+	 }
+      HashTableIter& operator++ ()
+	 {
+	 while (m_index < m_table->capacity())
+	    {
+	    ++m_index ;
+	    if (m_table->activeEntry(m_index))
+	       break ;
+	    }
+	 return *this ;
+	 }
       bool operator== (const HashTableIter& o) const { return m_table == o.m_table && m_index == o.m_index ; }
       bool operator!= (const HashTableIter& o) const { return m_table != o.m_table || m_index != o.m_index ; }
    protected:
@@ -1131,64 +1224,38 @@ class HashTableIter
    } ;
 
 /************************************************************************/
-/*	Member functions for template class HashTableIter		*/
-/************************************************************************/
-
-template <typename KeyT, typename ValT, typename RetT>
-HashTableIter<KeyT,ValT,RetT>& HashTableIter<KeyT,ValT,RetT>::operator++ ()
-{
-   while (m_index < m_table->capacity())
-      {
-      ++m_index ;
-      if (m_table->activeEntry(m_index))
-	 break ;
-      }
-   return *this ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT, typename RetT>
-std::pair<KeyT,RetT&> HashTableIter<KeyT,ValT,RetT>::operator* () const
-{
-   KeyT key = m_table->getKey(m_index) ;
-   ValT* valptr = m_table->getValuePtr(m_index) ;
-   return std::pair<KeyT,RetT&>(key,*valptr) ;
-}
-
-/************************************************************************/
-/*	Member functions for template class HashTableIter		*/
+/*	Member functions for template class HashTable			*/
 /************************************************************************/
 
 // these need to be defined *after* the members of HashTableIter due to the
 //  circular dependendy between the types
 
 template <typename KeyT, typename ValT>
-HashTableIter<KeyT,ValT,ValT> HashTable<KeyT,ValT>::begin() const
+typename HashTable<KeyT,ValT>::iterator HashTable<KeyT,ValT>::begin() const
 {
-   return HashTableIter<KeyT,ValT,ValT>(m_table.load(),0) ;
+   return iterator(m_table.load(),0) ;
 }
 
 template <typename KeyT, typename ValT>
-HashTableIter<KeyT,ValT,const ValT> HashTable<KeyT,ValT>::cbegin() const
+typename HashTable<KeyT,ValT>::const_iterator HashTable<KeyT,ValT>::cbegin() const
 {
-   return HashTableIter<KeyT,ValT,const ValT>(m_table.load(),0) ;
+   return const_iterator(m_table.load(),0) ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-HashTableIter<KeyT,ValT,ValT> HashTable<KeyT,ValT>::end() const
+typename HashTable<KeyT,ValT>::iterator HashTable<KeyT,ValT>::end() const
 {
    Table* table = m_table.load() ;
-   return HashTableIter<KeyT,ValT,ValT>(table,table->capacity()) ; 
+   return iterator(table,table->capacity()) ; 
 }
 
 template <typename KeyT, typename ValT>
-HashTableIter<KeyT,ValT,const ValT> HashTable<KeyT,ValT>::cend() const
+typename HashTable<KeyT,ValT>::const_iterator HashTable<KeyT,ValT>::cend() const
 {
    Table* table = m_table.load() ;
-   return HashTableIter<KeyT,ValT,const ValT>(table,table->capacity()) ; 
+   return const_iterator(table,table->capacity()) ; 
 }
 
 /************************************************************************/

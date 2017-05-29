@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-10					*/
+/* Version 0.01, last edit 2017-05-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -1236,11 +1236,11 @@ size_t HashTable<KeyT,ValT>::Table::countDeletedItems() const
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-size_t HashTable<KeyT,ValT>::Table::chainLength(size_t bucketnum) const
+size_t HashTable<KeyT,ValT>::Table::bucket_size(size_t bucketnum) const
 {
    Link status ;
    Link offset = chainHead(bucketnum,status) ;
-   FORWARD_IF_COPIED(chainLength(bucketnum),none) ;
+   FORWARD_IF_COPIED(bucket_size(bucketnum),none) ;
    size_t len = 0 ;
    while (FramepaC::NULLPTR != offset)
       {
@@ -1258,15 +1258,15 @@ size_t* HashTable<KeyT,ValT>::Table::chainLengths(size_t &max_length) const
 {
    if (next())
       return next()->chainLengths(max_length) ;
-   size_t* lengths = new size_t[2*searchrange+2] ;
-   for (size_t i = 0 ; i <= 2*searchrange+1 ; i++)
+   size_t* lengths = new size_t[searchrange+2] ;
+   for (size_t i = 0 ; i <= searchrange+1 ; i++)
       {
       lengths[i] = 0 ;
       }
    max_length = 0 ;
    for (size_t i = 0 ; i < m_fullsize ; ++i)
       {
-      size_t len = chainLength(i) ;
+      size_t len = bucket_size(i) ;
       if (len > max_length)
 	 max_length = len ;
       lengths[len]++ ;
