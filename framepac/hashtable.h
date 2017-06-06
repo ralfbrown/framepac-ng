@@ -632,11 +632,9 @@ class HashTable : public HashTableBase
 	 // emplace()
 	 // emplace_hint()
 	 // try_emplace()
-	 size_t erase(size_t hashval, const KeyT& key) { return remove(hashval,key) ? 1 : 0 ; }
 	 // ValT& at(const KeyT& key) throws(std::out_of_range) ;
 	 // const ValT& at(const KeyT& key) const throws(std::out_of_range) ;
 	 // ValT& operator[]( const Key& key) ;
-	 size_t count(size_t hashval, const KeyT& key) { return contains(hashval,key) ? 1 : 0 ; }
 	 // find()
 	 // equal_range()
 
@@ -929,13 +927,11 @@ class HashTable : public HashTableBase
       // emplace()
       // emplace_hint()
       // try_emplace()
-      size_t erase(const KeyT& key)
-	 { DELEGATE_HASH(erase(hashval,key)) }
+      size_t erase(const KeyT& key) { return remove(key) ? 1 : 0 ; }
       // ValT& at(const KeyT& key) ;
       // const ValT& at(const KeyT& key) const ;
       // operator[]
-      size_t count(const KeyT& key) const
-	 { DELEGATE_HASH(count(hashval,key)) }
+      size_t count(const KeyT& key) const { return contains(key) ? 1 : 0 ; }
       // iterator find(const KeyT& key) ;
       // const_iterator find(const KeyT& key) const ;
       // std::pair<iterator,iterator> equal_range(const KeyT& key) ;
