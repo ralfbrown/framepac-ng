@@ -1181,11 +1181,11 @@ inline bool HashTable<const Symbol*,NullObject>::isEqualFull(const Symbol* key1,
 /*	Declarations for class HashTableIter				*/
 /************************************************************************/
 
-template <typename KeyT, typename ValT, typename RetT>
-class HashTableIter
+template <typename KeyT, typename ValT>
+class HashTableIterBase
    {
    public:
-      HashTableIter(typename HashTable<KeyT,ValT>::Table* table, size_t index = 0)
+      HashTableIterBase(typename HashTable<KeyT,ValT>::Table* table, size_t index = 0)
 	 {
 	    m_table = table  ;
 	    size_t cap = table->capacity() ;
@@ -1194,21 +1194,15 @@ class HashTableIter
 	    m_index = index ;
 	    return ;
 	 }
-      HashTableIter(const HashTableIter& o)
+      HashTableIterBase(const HashTableIterBase& o)
 	 {
 	    m_table = o.m_table ;
 	    m_index = o.m_index ;
 	    return;
 	 }
-      ~HashTableIter() {}
+      ~HashTableIterBase() {}
 
-      std::pair<KeyT,RetT&> operator* () const
-	 {
-	 KeyT key = m_table->getKey(m_index) ;
-	 ValT* valptr = m_table->getValuePtr(m_index) ;
-	 return std::pair<KeyT,RetT&>(key,*valptr) ;
-	 }
-      HashTableIter& operator++ ()
+      HashTableIterBase& operator++ ()
 	 {
 	 while (m_index < m_table->capacity())
 	    {
@@ -1218,43 +1212,91 @@ class HashTableIter
 	    }
 	 return *this ;
 	 }
-      bool operator== (const HashTableIter& o) const { return m_table == o.m_table && m_index == o.m_index ; }
-      bool operator!= (const HashTableIter& o) const { return m_table != o.m_table || m_index != o.m_index ; }
+      bool operator== (const HashTableIterBase& o) const { return m_table == o.m_table && m_index == o.m_index ; }
+      bool operator!= (const HashTableIterBase& o) const { return m_table != o.m_table || m_index != o.m_index ; }
    protected:
       typename HashTable<KeyT,ValT>::Table* m_table ;
       size_t                       m_index ;
+   } ;
+   
+template <typename KeyT, typename ValT, typename RetT>
+class HashTableIter : public HashTableIterBase<KeyT,ValT>
+   {
+   public:
+      HashTableIter(typename HashTable<KeyT,ValT>::Table* table, size_t index = 0)
+	 : HashTableIterBase<KeyT,ValT>(table,index)
+	 {}
+      using HashTableIterBase<KeyT,ValT>::m_table ;
+      using HashTableIterBase<KeyT,ValT>::m_index ;
+      
+      std::pair<KeyT,RetT&> operator* () const
+	 {
+	 size_t idx = m_index ;
+	 KeyT key = m_table->getKey(idx) ;
+	 ValT* valptr = m_table->getValuePtr(idx) ;
+	 return std::pair<KeyT,RetT&>(key,*valptr) ;
+	 }
    } ;
 
 /************************************************************************/
 /*	Declarations for class HashTableLocalIter			*/
 /************************************************************************/
 
-template <typename KeyT, typename ValT, typename RetT>
-class HashTableLocalIter
+template <typename KeyT, typename ValT>
+class HashTableLocalIterBase
    {
    public:
-      HashTableLocalIter(typename HashTable<KeyT,ValT>::Table* table, size_t bucket, FramepaC::Link index)
+      HashTableLocalIterBase(typename HashTable<KeyT,ValT>::Table* table, size_t bucket, FramepaC::Link index)
 	 {
 	    m_table = table  ;
 	    m_bucket = bucket ;
 	    m_index = index ;
 	    return ;
 	 }
-      HashTableLocalIter(typename HashTable<KeyT,ValT>::Table* table, size_t bucket)
+      HashTableLocalIterBase(typename HashTable<KeyT,ValT>::Table* table, size_t bucket)
 	 {
 	    m_table = table  ;
 	    m_bucket = bucket ;
 	    m_index = table->chainHead(bucket) ;
 	    return ;
 	 }
-      HashTableLocalIter(const HashTableLocalIter& o)
+      HashTableLocalIterBase(const HashTableLocalIterBase& o)
 	 {
 	    m_table = o.m_table ;
 	    m_bucket = o.m_bucket ;
 	    m_index = o.m_index ;
 	    return;
 	 }
-      ~HashTableLocalIter() {}
+      ~HashTableLocalIterBase() {}
+
+      HashTableLocalIterBase& operator++ ()
+	 {
+	 index = m_table->chainNext(m_bucket) ;
+	 return *this ;
+	 }
+      bool operator== (const HashTableLocalIterBase& o) const
+	 { return m_table == o.m_table && m_bucket + m_index == o.m_bucket + o.m_index ; }
+      bool operator!= (const HashTableLocalIterBase& o) const
+	 { return m_table != o.m_table || m_bucket + m_index != o.m_bucket + o.m_index ; }
+   protected:
+      typename HashTable<KeyT,ValT>::Table* m_table ;
+      size_t                       m_bucket ;
+      FramepaC::Link		   m_index ;
+   } ;
+
+template <typename KeyT, typename ValT, typename RetT>
+class HashTableLocalIter : public HashTableLocalIterBase<KeyT,ValT>
+   {
+   public:
+      HashTableLocalIter(typename HashTable<KeyT,ValT>::Table* table, size_t bucket, FramepaC::Link index)
+	 : HashTableLocalIterBase<KeyT,ValT>(table,bucket,index)
+	 {}
+      HashTableLocalIter(typename HashTable<KeyT,ValT>::Table* table, size_t bucket)
+	 : HashTableLocalIterBase<KeyT,ValT>(table,bucket)
+	 {}
+      using HashTableLocalIterBase<KeyT,ValT>::m_table ;
+      using HashTableLocalIterBase<KeyT,ValT>::m_bucket ;
+      using HashTableLocalIterBase<KeyT,ValT>::m_index ;
 
       std::pair<KeyT,RetT&> operator* () const
 	 {
@@ -1263,21 +1305,8 @@ class HashTableLocalIter
 	 ValT* valptr = m_table->getValuePtr(idx) ;
 	 return std::pair<KeyT,RetT&>(key,*valptr) ;
 	 }
-      HashTableLocalIter& operator++ ()
-	 {
-	 index = m_table->chainNext(m_bucket) ;
-	 return *this ;
-	 }
-      bool operator== (const HashTableLocalIter& o) const
-	 { return m_table == o.m_table && m_bucket + m_index == o.m_bucket + o.m_index ; }
-      bool operator!= (const HashTableLocalIter& o) const
-	 { return m_table != o.m_table || m_bucket + m_index != o.m_bucket + o.m_index ; }
-   protected:
-      typename HashTable<KeyT,ValT>::Table* m_table ;
-      size_t                       m_bucket ;
-      FramepaC::Link		   m_index ;
    } ;
-
+   
 /************************************************************************/
 /*	Member functions for template class HashTable			*/
 /************************************************************************/
