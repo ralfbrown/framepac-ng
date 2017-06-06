@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-24					*/
+/* Version 0.01, last edit 2017-06-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -32,6 +32,17 @@
 # define CHAR_BIT 8
 #endif
 
+/************************************************************************/
+/************************************************************************/
+
+namespace Fr
+{
+
+// forward declaration
+class AllocatorBase ;
+
+} // end namespace Fr
+   
 /************************************************************************/
 /************************************************************************/
 
@@ -98,24 +109,38 @@ class Slab
       void* initFreelist(unsigned objsize) ;
       static unsigned bufferSize() { return sizeof(m_buffer) ; }
 
+      // information about this slab
+      const ObjectVMT* VMT() const { return m_info.m_vmt ; }
+      bool onlySlab() const { return m_info.m_nextslab == this && m_info.m_prevslab == this ; }
+      Slab* nextSlab() const { return m_info.m_nextslab ; }
+      Slab* prevSlab() const { return m_info.m_prevslab ; }
+      Fr::AllocatorBase* owningAllocator() const { return m_info.m_allocator ; }
+      std::thread::id owningThread() const { return m_info.m_owner ; }
       size_t objectSize() const { return m_info.m_objsize ; }
+      size_t objectCount() const { return m_info.m_objcount ; }
+      size_t objectsInUse() const
+	 { size_t used = m_header.m_usedcount, freed = m_footer.freeCount() ;
+	   return used >= freed ? used - freed : 0 ; }
+      size_t slabOffset() const { return m_info.m_slab_id ; }
 
       void* allocObject() ;
       void releaseObject(void* obj) ;
    private:
-      // group together all the header fields, so that we can use a single sizeof()
-      //   in computing the header size
+      // group together all the header fields
+      // First, all of the fields which are unaffected by allocations/deallocations
       class alignas(64) SlabInfo   // ensure separate cache line for the SlabInfo and SlabHeader
          {
 	 public:
-	    const ObjectVMT* m_vmt ;		// should be first to avoid having to add an offset
-	    Slab*            m_nextslab { nullptr };
-	    Slab*            m_prevslab { nullptr };
-	    std::thread::id  m_owner ;
-	    alloc_size_t     m_objsize ;	// bytes per object
-	    uint16_t         m_objcount ;	// number of objects in this slab
-	    uint16_t         m_slab_id ; 	// index within SlabGroup
+	    const ObjectVMT*   m_vmt ;		// should be first to avoid having to add an offset
+	    Slab*              m_nextslab { nullptr };
+	    Slab*              m_prevslab { nullptr };
+	    Fr::AllocatorBase* m_allocator ;	// the Allocator to which this slab "belongs"
+	    std::thread::id    m_owner ;	// the thread that initially allocated this slab
+	    alloc_size_t       m_objsize ;	// bytes per object
+	    uint16_t           m_objcount ;	// number of objects in this slab
+	    uint16_t           m_slab_id ; 	// index within SlabGroup
          } ;
+      // Next, the fields that only the owning thread modifies.  These do not require any synchronization.
       class SlabHeader
          {
 	 public:
@@ -125,8 +150,9 @@ class Slab
 	    //SlabHeader() = default ;
 	    ~SlabHeader() = default ;
          } ;
-      // group together all the footer fields, so that we can use a
-      //   single sizeof() in computing the footer size
+      // group together all the footer fields, so that we can use a single sizeof() in computing the footer size
+      // the footer contains all of the fields that may be modified by any thread and thus require atomic
+      //   accesses
       class SlabFooter
          {
 	 public:
@@ -149,6 +175,7 @@ class Slab
 	       // split up the retrieved result into pointer and count
 	       return std::pair<alloc_size_t,uint16_t>(val&0xFFFF,val>>16) ;
 	       }
+	    size_t freeCount() const { return m_ptr_count.load() >> 16 ; }
       	 protected:
 	    Fr::Atomic<uint32_t> m_ptr_count ;
          } ;
@@ -212,8 +239,9 @@ class AllocatorBase
    public:
       AllocatorBase(unsigned objsize) : m_objsize(objsize)
 	 { m_slabs = nullptr ; m_freelist = nullptr ; m_pending = nullptr ; }
-      AllocatorBase(const AllocatorBase&) = delete ;
       ~AllocatorBase() ;
+      // allocators are not copyable
+      AllocatorBase(const AllocatorBase&) = delete ;
       void operator= (const AllocatorBase&) = delete ;
 
       [[gnu::hot]] [[gnu::malloc]]
