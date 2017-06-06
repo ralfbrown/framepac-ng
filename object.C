@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.01, last edit 2017-06-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -75,21 +75,19 @@ char *Object::cString(size_t wrap_at, size_t indent) const
 
 //----------------------------------------------------------------------------
 
-size_t Object::cStringLength_(const Object *obj, size_t wrap_at, size_t indent)
+size_t Object::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent)
 {
-   (void)obj; (void)wrap_at; (void)indent; //FIXME
-   return 0 ; //FIXME
+   return snprintf(nullptr,0,"%*s#Object<%lu>",(int)indent,"",(unsigned long)obj) ;
 }
 
 //----------------------------------------------------------------------------
 
-bool Object::toCstring_(const Object *obj, char *buffer, size_t buflen, size_t wrap_at, size_t indent)
+bool Object::toCstring_(const Object *obj, char *buffer, size_t buflen, size_t /*wrap_at*/, size_t indent)
 {
-   (void)obj; (void)buflen; (void)wrap_at; (void)indent; //FIXME
    if (!buffer)
       return false ;
-
-   return false ; //FIXME
+   size_t count = snprintf(buffer,buflen,"%*s#Object<%lu>%c",(int)indent,"",(unsigned long)obj,'\0') ;
+   return count <= buflen ;
 }
 
 //----------------------------------------------------------------------------

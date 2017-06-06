@@ -98,6 +98,8 @@ class Slab
       void* initFreelist(unsigned objsize) ;
       static unsigned bufferSize() { return sizeof(m_buffer) ; }
 
+      size_t objectSize() const { return m_info.m_objsize ; }
+
       void* allocObject() ;
       void releaseObject(void* obj) ;
    private:

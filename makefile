@@ -253,7 +253,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	init$(OBJ) linebatch$(OBJ) random$(OBJ) \
 	integer$(OBJ) jsonreader$(OBJ) list$(OBJ) map$(OBJ) matrix$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
-	object$(OBJ) objreader$(OBJ) printf$(OBJ) \
+	nonobject$(OBJ) object$(OBJ) objreader$(OBJ) printf$(OBJ) \
 	rational$(OBJ) slab$(OBJ) \
 	slabgroup$(OBJ) \
 	sparsematrix$(OBJ) string$(OBJ) stringbuilder$(OBJ) \
@@ -415,13 +415,14 @@ map$(OBJ):		map$(C) framepac/map.h
 matrix$(OBJ):		matrix$(C) framepac/matrix.h
 message$(OBJ):		message$(C) framepac/message.h framepac/texttransforms.h
 mmapfile$(OBJ):		mmapfile$(C) framepac/mmapfile.h framepac/file.h
+nonobject$(OBJ):	nonobject$(C) framepac/nonobject.h
 number$(OBJ):		number$(C) framepac/bignum.h framepac/rational.h
-progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
-ptrie_u32$(OBJ):	ptrie_u32$(C) template/ptrie.cc
 object$(OBJ):		object$(C) framepac/object.h
 objreader$(OBJ):	objreader$(C) framepac/objreader.h framepac/symbol.h framepac/bignum.h framepac/rational.h \
 			framepac/list.h framepac/builder.h
 printf$(OBJ):		printf$(C) framepac/texttransforms.h
+progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
+ptrie_u32$(OBJ):	ptrie_u32$(C) template/ptrie.cc
 random$(OBJ):		random$(C) framepac/random.h
 rational$(OBJ):		rational$(C) framepac/rational.h
 slab$(OBJ):		slab$(C) framepac/memory.h
@@ -529,6 +530,9 @@ framepac/matrix.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/memory.h:	framepac/atomic.h framepac/init.h framepac/objectvmt.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/nonobject.h: framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/number.h:	framepac/object.h

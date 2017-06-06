@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.01, last edit 2017-06-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -94,6 +94,9 @@ class Object
       FrVIRTFUNC0(void,free,free_,) ;
       // use shallowFree() on a shallowCopy(); shallow and deep copies are the same for most objects
       FrVIRTFUNC0(void,shallowFree,shallowFree_,) ;
+      // *** reclamation for non-Object items
+      static void releaseSlab_(FramepaC::Slab*) ;
+      void releaseSlab(FramepaC::Slab* s) const { FramepaC::Slab::VMT(this)->releaseSlab_(s) ; }
 
       // *** dynamic type determination ***
       // name of the actual type of the current object
@@ -173,39 +176,40 @@ class Object
 
    } ;
 
-inline Object *Object::shallowCopy_(const Object *obj) { return clone_(obj) ; }
-inline void Object::free_(Object *) {}
+inline Object* Object::shallowCopy_(const Object *obj) { return clone_(obj) ; }
+inline void Object::free_(Object*) {}
 inline void Object::shallowFree_(Object *obj) { free_(obj) ; }
-inline const char *Object::typeName_(const Object *) { return "Object" ; }
-inline bool Object::isArray_(const Object *) { return false ; }
-inline bool Object::isBigNum_(const Object *) { return false ; }
-inline bool Object::isBitVector_(const Object *) { return false ; }
-inline bool Object::isComplex_(const Object *) { return false ; }
-inline bool Object::isFloat_(const Object *) { return false ; }
-inline bool Object::isInteger_(const Object *) { return false ; }
-inline bool Object::isList_(const Object *) { return false ; }
-inline bool Object::isMap_(const Object *) { return false ; }
-inline bool Object::isNumber_(const Object *) { return false ; }
-inline bool Object::isRational_(const Object *) { return false ; }
-inline bool Object::isSparseVector_(const Object *) { return false ; }
-inline bool Object::isString_(const Object *) { return false ; }
-inline bool Object::isSymbol_(const Object *) { return false ; }
-inline bool Object::isSymbolTable_(const Object *) { return false ; }
-inline bool Object::isVector_(const Object *) { return false ; }
+inline void Object::releaseSlab_(FramepaC::Slab*) {}
+inline const char* Object::typeName_(const Object*) { return "Object" ; }
+inline bool Object::isArray_(const Object*) { return false ; }
+inline bool Object::isBigNum_(const Object*) { return false ; }
+inline bool Object::isBitVector_(const Object*) { return false ; }
+inline bool Object::isComplex_(const Object*) { return false ; }
+inline bool Object::isFloat_(const Object*) { return false ; }
+inline bool Object::isInteger_(const Object*) { return false ; }
+inline bool Object::isList_(const Object*) { return false ; }
+inline bool Object::isMap_(const Object*) { return false ; }
+inline bool Object::isNumber_(const Object*) { return false ; }
+inline bool Object::isRational_(const Object*) { return false ; }
+inline bool Object::isSparseVector_(const Object*) { return false ; }
+inline bool Object::isString_(const Object*) { return false ; }
+inline bool Object::isSymbol_(const Object*) { return false ; }
+inline bool Object::isSymbolTable_(const Object*) { return false ; }
+inline bool Object::isVector_(const Object*) { return false ; }
 
-inline size_t Object::size_(const Object *) { return 0 ; }
-inline bool Object::empty_(const Object *obj) { return size_(obj) == 0 ; }
-inline Object *Object::front_(Object *obj) { return obj ; }
+inline size_t Object::size_(const Object*) { return 0 ; }
+inline bool Object::empty_(const Object* obj) { return size_(obj) == 0 ; }
+inline Object *Object::front_(Object* obj) { return obj ; }
 inline const Object *Object::front_const(const Object *obj) { return obj ; }
-inline const char *Object::stringValue_(const Object *) { return nullptr ; }
-inline double Object::floatValue_(const Object *) { return 0.0 ; }
-inline double Object::imagValue_(const Object *) { return 0.0 ; }
-inline long Object::intValue_(const Object *) { return 0 ; }
+inline const char *Object::stringValue_(const Object*) { return nullptr ; }
+inline double Object::floatValue_(const Object*) { return 0.0 ; }
+inline double Object::imagValue_(const Object*) { return 0.0 ; }
+inline long Object::intValue_(const Object*) { return 0 ; }
 
-inline bool Object::equal_(const Object *obj, const Object *other) { return obj == other ; }
+inline bool Object::equal_(const Object* obj, const Object* other) { return obj == other ; }
 
-inline Object *Object::next_(const Object *) { return nullptr ; }
-inline ObjectIter &Object::next_iter(const Object *,ObjectIter &it) { it.m_object = nullptr ; return it ; }
+inline Object* Object::next_(const Object*) { return nullptr ; }
+inline ObjectIter& Object::next_iter(const Object*,ObjectIter& it) { it.m_object = nullptr ; return it ; }
 
 //----------------------------------------------------------------------------
 

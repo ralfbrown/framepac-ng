@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-06-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -158,6 +158,8 @@ class Object_VMT
       FrVIRTIMPL0(void,free_,) ;
       // use shallowFree() on a shallowCopy()
       FrVIRTIMPL0(void,shallowFree_,) ;
+      // *** reclamation for non-Object items
+      void (*releaseSlab_)(class Slab*) = &ObjT::releaseSlab_ ;
 
       // *** standard info functions ***
       FrVIRTIMPL0(size_t,size_,const) ;
