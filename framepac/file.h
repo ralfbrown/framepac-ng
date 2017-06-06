@@ -95,7 +95,7 @@ class CFile
       CFile(FILE*) ;
       ~CFile() ;
       void operator= (const CFile&) = delete ;
-      operator bool () const { return m_file != nullptr ; }
+      explicit operator bool () const { return m_file != nullptr ; }
 
       void writeComplete() { m_complete = true ; }
       FILE* fp() const { return m_file ; }
