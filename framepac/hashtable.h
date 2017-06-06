@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-29					*/
+/* Version 0.01, last edit 2017-06-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -249,8 +249,9 @@ class HashPtr
 namespace Fr
 {
 
-// forward declaration
+// forward declarations
 template <typename KeyT, typename ValT, typename RetT> class HashTableIter ;
+template <typename KeyT, typename ValT, typename RetT> class HashTableLocalIter ;
 
 /************************************************************************/
 /*	Forward declaration for Fr::SymbolTable				*/
@@ -340,8 +341,8 @@ class HashTable : public HashTableBase
       typedef const ValT& const_reference ;
       typedef HashTableIter<KeyT,ValT,ValT> iterator ;
       typedef HashTableIter<KeyT,ValT,const ValT> const_iterator ;  //FIXME??
-      //typedef ??? local_iterator ;
-      //typedef ??? const_local_iterator ;
+      typedef HashTableLocalIter<KeyT,ValT,ValT> local_iterator ;
+      typedef HashTableLocalIter<KeyT,ValT,const ValT> const_local_iterator ;
       // unsupported features of C++ unordered_map/unordered_set:
       //  1. nodes are not individually allocated, so there is no way to have a custom allocator
       //   typedef UNAVAILABLE allocator_type ;
@@ -965,6 +966,11 @@ class HashTable : public HashTableBase
       inline iterator end() const ;
       inline const_iterator cend() const ;
 
+      inline local_iterator begin(int bucket) const ;
+      inline const_local_iterator cbegin(int bucket) const ;
+      inline local_iterator end(int bucket) const ;
+      inline const_local_iterator cend(int bucket) const ;
+
       bool iterateVA(HashKeyValueFunc *func, std::va_list args) const
          { DELEGATE(iterateVA(func,args)) }
       bool iterate(HashKeyValueFunc *func,...) const
@@ -1220,6 +1226,59 @@ class HashTableIter
    } ;
 
 /************************************************************************/
+/*	Declarations for class HashTableLocalIter			*/
+/************************************************************************/
+
+template <typename KeyT, typename ValT, typename RetT>
+class HashTableLocalIter
+   {
+   public:
+      HashTableLocalIter(typename HashTable<KeyT,ValT>::Table* table, size_t bucket, FramepaC::Link index)
+	 {
+	    m_table = table  ;
+	    m_bucket = bucket ;
+	    m_index = index ;
+	    return ;
+	 }
+      HashTableLocalIter(typename HashTable<KeyT,ValT>::Table* table, size_t bucket)
+	 {
+	    m_table = table  ;
+	    m_bucket = bucket ;
+	    m_index = table->chainHead(bucket) ;
+	    return ;
+	 }
+      HashTableLocalIter(const HashTableLocalIter& o)
+	 {
+	    m_table = o.m_table ;
+	    m_bucket = o.m_bucket ;
+	    m_index = o.m_index ;
+	    return;
+	 }
+      ~HashTableLocalIter() {}
+
+      std::pair<KeyT,RetT&> operator* () const
+	 {
+	 size_t idx = (m_bucket + m_index) % m_table->bucket_count() ;
+	 KeyT key = m_table->getKey(idx) ;
+	 ValT* valptr = m_table->getValuePtr(idx) ;
+	 return std::pair<KeyT,RetT&>(key,*valptr) ;
+	 }
+      HashTableLocalIter& operator++ ()
+	 {
+	 index = m_table->chainNext(m_bucket) ;
+	 return *this ;
+	 }
+      bool operator== (const HashTableLocalIter& o) const
+	 { return m_table == o.m_table && m_bucket + m_index == o.m_bucket + o.m_index ; }
+      bool operator!= (const HashTableLocalIter& o) const
+	 { return m_table != o.m_table || m_bucket + m_index != o.m_bucket + o.m_index ; }
+   protected:
+      typename HashTable<KeyT,ValT>::Table* m_table ;
+      size_t                       m_bucket ;
+      FramepaC::Link		   m_index ;
+   } ;
+
+/************************************************************************/
 /*	Member functions for template class HashTable			*/
 /************************************************************************/
 
@@ -1253,6 +1312,39 @@ typename HashTable<KeyT,ValT>::const_iterator HashTable<KeyT,ValT>::cend() const
    Table* table = m_table.load() ;
    return const_iterator(table,table->capacity()) ; 
 }
+
+// these need to be defined *after* the members of HashTableLocalIter due to the
+//  circular dependendy between the types
+
+#if 0
+template <typename KeyT, typename ValT>
+typename HashTable<KeyT,ValT>::local_iterator HashTable<KeyT,ValT>::begin(int bucket) const
+{
+   return local_iterator(m_table.load(),bucket,0) ;
+}
+
+template <typename KeyT, typename ValT>
+typename HashTable<KeyT,ValT>::const_local_iterator HashTable<KeyT,ValT>::cbegin(int bucket) const
+{
+   return const_local_iterator(m_table.load(),bucket,0) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
+typename HashTable<KeyT,ValT>::local_iterator HashTable<KeyT,ValT>::end(int bucket) const
+{
+   Table* table = m_table.load() ;
+   return local_iterator(table,bucket,FramepaC::NULLPTR) ;
+}
+
+template <typename KeyT, typename ValT>
+typename HashTable<KeyT,ValT>::const_local_iterator HashTable<KeyT,ValT>::cend(int bucket) const
+{
+   Table* table = m_table.load() ;
+   return const_local_iterator(table,bucket,FramepaC::NULLPTR) ;
+}
+#endif
 
 /************************************************************************/
 
