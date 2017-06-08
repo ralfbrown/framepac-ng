@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-06					*/
+/* Version 0.01, last edit 2017-06-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -45,18 +45,11 @@ Slab::~Slab()
 
 //----------------------------------------------------------------------------
 
-void* Slab::allocObject()
+void* Slab::reclaimForeignFrees()
 {
-   if (m_header.m_freelist)
-      {
-      m_header.m_usedcount++ ;
-      void* obj = ((char*)this) + m_header.m_freelist ;
-      m_header.m_freelist = *((alloc_size_t*)obj) ;
-      return obj ;
-      }
-   // our local freelist was empty, so grab any objects on the remote-free list
+   // grab any objects on the remote-free list
    auto free = m_footer.grabList() ;
-   if (free.second)  // if count == 0
+   if (free.second == 0)  // if count == 0
       return nullptr ;
    // point the local freelist at the objects we've just reclaimed
    m_header.m_freelist = free.first ;
@@ -71,8 +64,6 @@ void* Slab::allocObject()
 
 void Slab::releaseObject(void* obj)
 {
-   if (!obj)
-      return ;
 #ifndef FrSINGLE_THREADED
    if (this_thread::get_id() != m_info.m_owner)
       {

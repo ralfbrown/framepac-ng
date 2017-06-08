@@ -335,8 +335,8 @@ class HashTable : public HashTableBase
       typedef std::pair<const KeyT,ValT> value_type ;
       typedef std::size_t size_type ;
       typedef std::ptrdiff_t difference_type ;
-      //typedef X hasher ;
-      //typedef Y key_equal ;
+      //typedef X hasher ;	// specialize HashTable::hashVal() instead
+      //typedef Y key_equal ;	// specialize HashTable::isEqual() instead
       typedef ValT& reference ;
       typedef const ValT& const_reference ;
       typedef HashTableIter<KeyT,ValT,ValT> iterator ;
@@ -1087,6 +1087,7 @@ class HashTable : public HashTableBase
       //   this function and using displayValue(); user must ensure locking if multithreaded
       size_t cStringLength_(size_t wrap_at, size_t indent) const { DELEGATE(cStringLength(wrap_at,indent)) ; }
 
+#if 0
       virtual ostream& printValue(ostream &output) const { DELEGATE(printValue(output)) ; }
       virtual char* displayValue(char *buffer) const { DELEGATE(displayValue(buffer)) ; }
       virtual bool expand(size_t incr)
@@ -1102,8 +1103,8 @@ class HashTable : public HashTableBase
 	       resizeTo(newsize) ;
 	    return true ;
 	 }
-      virtual bool hashp() const { return true ; }
-
+#endif
+      
       //  =========== Debugging Support ============
       [[gnu::cold]] bool verify() const { DELEGATE(verify()) }
 
