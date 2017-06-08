@@ -675,8 +675,9 @@ static void hash_test(ThreadPool* user_pool, ostream& out, size_t threads, size_
    if (threads <= 1) user_pool = nullptr ;
    ThreadPool* tpool = user_pool ? user_pool : new ThreadPool(threads) ;
    size_t slices = (threads == 0) ? 1 : threads ;
-   // use somewhat finer slices if each segment would be really large
-   for (size_t loop = 0 ; loop < 4 ; ++loop)
+   // use somewhat finer slices if each segment would be really large,
+   //   to avoid the case where one slice takes much longer than others
+   for (size_t loop = 1 ; loop <= 2 ; ++loop)
       {
       if (maxsize > 2000000 * slices && slices < 512) slices *= 2 ;
       }
