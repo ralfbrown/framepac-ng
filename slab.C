@@ -81,17 +81,43 @@ void Slab::releaseObject(void* obj)
 
 //----------------------------------------------------------------------------
 
-void Slab::linkSlab(Slab*& /*listhead*/)
+void Slab::linkSlab(Slab*& listhead)
 {
-   //TODO
+   if (listhead == nullptr)
+      listhead = this ;
+   else
+      {
+      // link in the current slab following the item at the head of the list
+      Slab* next = listhead->nextSlab() ;
+      m_info.m_prevslab = listhead ;
+      m_info.m_nextslab = next ;
+      next->m_info.m_prevslab = this ;
+      listhead->m_info.m_nextslab = this ;
+      }
    return ;
 }
 
 //----------------------------------------------------------------------------
 
-void Slab::unlinkSlab(Slab*& /*listhead*/)
+void Slab::unlinkSlab(Slab*& listhead)
 {
-   //TODO
+   Slab* prev = prevSlab() ;
+   Slab* next = nextSlab() ;
+   if (prev == next)
+      {
+      // if there's only the current slab, set the list to NULL
+      listhead = nullptr ;
+      }
+   else
+      {
+      // unlink the slab from the list
+      prev->m_info.m_nextslab = next ;
+      next->m_info.m_prevslab = prev ;
+      if (listhead == this)
+	 listhead = next ;
+      }
+   //TODO: return slab to SlabGroup's freelist
+
    return ;
 }
 
