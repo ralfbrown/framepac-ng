@@ -282,7 +282,7 @@ DISTFILES= LICENSE COPYING makefile .gitignore *.C *.h framepac/*.h template/*.c
 LIBRARY = $(PACKAGE)$(LIB)
 
 # the executable(s) to be built for testing the package
-TESTPROGS = $(BINDIR)/argparser$(EXE) $(BINDIR)/parhash$(EXE) $(BINDIR)/tpool$(EXE)
+TESTPROGS = $(BINDIR)/argparser$(EXE) $(BINDIR)/parhash$(EXE) $(BINDIR)/tpool$(EXE) $(BINDIR)/membench$(EXE)
 
 # the object modules needed to build the test program
 TESTOBJS = $(TESTPROG)$(OBJ)
@@ -360,6 +360,9 @@ $(LIBINSTDIR)/$(LIBRARY): $(LIBRARY)
 ## the dependencies for each module of the full package
 
 $(BINDIR)/argparser$(EXE):	tests/argparser$(OBJ) $(LIBRARY)
+		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
+
+$(BINDIR)/membench$(EXE):	tests/membench$(OBJ) $(LIBRARY)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
 $(BINDIR)/parhash$(EXE):	tests/parhash$(OBJ) $(LIBRARY)
