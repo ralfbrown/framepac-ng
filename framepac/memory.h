@@ -239,7 +239,7 @@ class AllocatorBase
 	 { }
       AllocatorBase(unsigned objsize, unsigned align) : m_objsize(objsize), m_alignment(align)
 	 { }
-      ~AllocatorBase() ;
+      ~AllocatorBase() { /* FIXME */ }
       // allocators are not copyable
       AllocatorBase(const AllocatorBase&) = delete ;
       void operator= (const AllocatorBase&) = delete ;
