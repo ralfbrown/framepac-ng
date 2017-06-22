@@ -225,32 +225,99 @@ class SlabGroup
 
 /************************************************************************/
 
+namespace FramepaC
+{
+constexpr unsigned MAX_ALLOCATOR_TYPES = 500 ;
+} // end namespace FramepaC
+
 // public classes, types, and functions
 
 namespace Fr
 {
 
-class AllocatorBase
+class AllocatorTLS
+   {
+   public:
+      FramepaC::Slab* m_currslab ;
+   } ;
+
+class AllocatorSharedInfo
+   {
+   public:
+      AllocatorSharedInfo() = default ;
+      AllocatorSharedInfo(const FramepaC::Object_VMT_Base* vmt, FramepaC::alloc_size_t objsize)
+	 : m_vmt(vmt), m_objsize(objsize), m_alignment(alignof(double)), m_orphans(nullptr)
+	 {
+	 if (objsize < alignof(double)) m_alignment = objsize ;
+	 }
+      AllocatorSharedInfo(const FramepaC::Object_VMT_Base* vmt, FramepaC::alloc_size_t objsize,
+	 unsigned alignment)
+	 : m_vmt(vmt), m_objsize(objsize), m_alignment(alignment), m_orphans(nullptr)
+	 {
+	 }
+      ~AllocatorSharedInfo() {}
+   public: // data members
+      const FramepaC::Object_VMT_Base* m_vmt ;
+      FramepaC::alloc_size_t       m_objsize ;
+      unsigned			   m_alignment { alignof(double) } ;
+      FramepaC::Slab*              m_orphans ;  // slabs which used to belong to terminated threads
+   } ;
+
+class Allocator
    {
    protected:
       typedef FramepaC::Slab Slab ;
+      typedef Fr::ThreadInitializer<Allocator> ThreadInitializer ;
    public:
-      AllocatorBase(const FramepaC::Object_VMT_Base* vmt, unsigned objsize) : m_vmt(vmt), m_objsize(objsize)
-	 { }
-      AllocatorBase(const FramepaC::Object_VMT_Base* vmt, unsigned objsize, unsigned align)
-	 : m_vmt(vmt), m_objsize(objsize), m_alignment(align)
-	 { }
-      ~AllocatorBase() { /* FIXME */ }
+      Allocator(const FramepaC::Object_VMT_Base* vmt, unsigned objsize) ;
+      Allocator(const FramepaC::Object_VMT_Base* vmt, unsigned objsize, unsigned align) ;
+      ~Allocator() {}
       // allocators are not copyable
-      AllocatorBase(const AllocatorBase&) = delete ;
-      void operator= (const AllocatorBase&) = delete ;
+      Allocator(const Allocator&) = delete ;
+      void operator= (const Allocator&) = delete ;
 
-      // we need access to the per-thread list of allocated slabs even when the caller doesn't know the exact
-      //   instantiation of Allocator being used.  Since there's no easy way to get and store the address of the
-      //   per-thread instance of the list pointer, we resort to virtual functions to get the current value of the
-      //   pointer and to swap a new value into the pointer
-      virtual Slab* getSlabList() const = 0 ;
-      virtual Slab* updateSlabList(Slab* slb) = 0 ;
+      [[gnu::hot]] [[gnu::malloc]]
+      void* allocate()
+	 {
+	 Slab* slb = s_tls[m_type].m_currslab ;
+	 void* item = slb ? slb->allocObject() : nullptr ;
+	 return item ? item : allocate_more() ;
+	 }
+      [[gnu::hot]]
+      void release(void* blk)
+	 {
+	 if (blk)
+	    {
+	    Slab* slb = Slab::slab(blk) ;
+	    slb->releaseObject(blk) ;
+	    // set the 'current' pointer to the slab containing the just-released block.  This ensures
+	    //   that the next allocation can grab an object without needing to search, and will generally
+	    //   also result in the allocated memory still being in cache
+	    s_tls[m_type].m_currslab = slb ;
+	    }
+	 }
+
+      size_t reclaim() ;
+
+      static void threadCleanup()
+	 {
+	 // we are about to orphan all of the slabs owned by the terminating thread, so make sure
+	 //   some other thread adopts them....
+//FIXME
+	 return ;
+	 }
+
+   protected:
+      // get the per-thread list of allocated slabs
+      Slab* getSlabList() const { return s_tls[m_type].m_currslab ; }
+
+      // update the per-thread list of allocated slabs
+      Slab* updateSlabList(Slab* slb)
+	 {
+	 Slab* prev = s_tls[m_type].m_currslab ;
+	 s_tls[m_type].m_currslab = slb ;
+	 return prev ;
+	 }
 
       static void* allocateObject(Slab*& slablist)
          {
@@ -277,119 +344,36 @@ class AllocatorBase
 	 return  nullptr ;
 	 }
 
-   protected:
-      const FramepaC::Object_VMT_Base* m_vmt ;
-      FramepaC::alloc_size_t       m_objsize ;
-      unsigned			   m_alignment { alignof(double) } ;
-      // each thread maintains a small pool of available Slabs for use by any instantiation of Allocator<> to reduce
-      //   the frequency with which the global slab pool needs to be accessed (which could incur contention).  If we
-      //   need another Slab while the pool is empty, we allocate N Slabs from the global pool; if releasing a Slab
-      //   causes the pool to grow to 2N, we return N Slabs back to the global pool.
-      static thread_local Slab*    m_local_free_slabs ;
-      static thread_local unsigned m_local_free_count ;
-      
-   } ;
-
-//----------------------------------------------------------------------------
-
-template <class ObjT>
-class Allocator : public AllocatorBase
-   {
-   protected:
-      typedef FramepaC::Slab Slab ;
-      typedef FramepaC::SlabGroup SlabGroup ;
-      typedef Fr::ThreadInitializer<Allocator> ThreadInitializer ;
-
-   public:
-      Allocator(const FramepaC::Object_VMT_Base* vmt, unsigned extra = 0)
-	 : AllocatorBase(vmt,sizeof(ObjT)+extra)
-	 {
-	 /*assert(sizeof(ObjT)+extra <= FramepaC::SLAB_SIZE/8) ;*/
-	 }
-      Allocator(const FramepaC::Object_VMT_Base* vmt, unsigned extra, unsigned align)
-	 : AllocatorBase(vmt,sizeof(ObjT)+extra,align)
-	 {
-	 /*assert(sizeof(ObjT)+extra <= FramepaC::SLAB_SIZE/8) ;*/
-	 }
-      ~Allocator() = default ;
-      // allocators are not copyable
-      Allocator(const Allocator&) = delete ;
-      void operator= (const Allocator&) = delete ;
-
-      [[gnu::hot]] [[gnu::malloc]]
-      void* allocate()
-	 {
-	 Slab* slb = m_vmt->m_currslab[0] ;
-	 void* item = slb ? slb->allocObject() : nullptr ;
-	 return item ? item : allocate_more() ;
-	 }
-      [[gnu::hot]]
-      void release(void* blk)
-	 {
-	 if (blk)
-	    {
-	    Slab* slb = Slab::slab(blk) ;
-	    slb->releaseObject(blk) ;
-	    // set the 'current' pointer to the slab containing the just-released block.  This ensures
-	    //   that the next allocation can grab an object without needing to search, and will generally
-	    //   also result in the allocated memory still being in cache
-	    m_vmt->m_currslab[0] = slb ;
-	    }
-	 }
-      size_t reclaim() ;
-	 
-      // get the per-thread list of allocated slabs
-      virtual Slab* getSlabList() const { return m_vmt->m_currslab[0] ; }
-
-      // update the per-thread list of allocated slabs
-      virtual Slab* updateSlabList(Slab* slb)
-	 {
-	 Slab* prev = m_vmt->m_currslab[0] ;
-	 m_vmt->m_currslab[0] = slb ;
-	 return prev ;
-	 }
-
-   protected: // methods
       void* allocate_more()
 	 {
-	 void* item = allocateObject(m_vmt->m_currslab[0]) ;
+	 void* item = allocateObject(s_tls[m_type].m_currslab) ;
 	 if (item) return item ;
 	 // no unallocated object found, so allocate a new Slab
-	 Slab* new_slab = SlabGroup::allocateSlab() ;
-	 item = new_slab->initFreelist(m_objsize) ;
+	 Slab* new_slab = FramepaC::SlabGroup::allocateSlab() ;
+	 item = new_slab->initFreelist(s_shared[m_type].m_objsize) ;
 	 // and insert it on our list of owned slabs
-	 new_slab->linkSlab(m_vmt->m_currslab[0]) ;
+	 new_slab->linkSlab(s_tls[m_type].m_currslab) ;
 	 return item ;
 	 }
 
-      static void threadInit()
-	 {
-	 }
-      static void threadCleanup()
-	 {
-	 // we are about to orphan all of the slabs owned by the terminating thread, so make sure
-	 //   some other thread adopts them....
-//FIXME
-	 return ;
-	 }
-
    protected: // data members
-      static ThreadInitializer  m_threadinit ;
-      static Slab*              m_orphans ;  // slabs which used to belong to terminated threads
+      unsigned			   m_type { 0 } ; //FIXME
+      static AllocatorSharedInfo   s_shared[FramepaC::MAX_ALLOCATOR_TYPES] ;
+      static thread_local AllocatorTLS s_tls[FramepaC::MAX_ALLOCATOR_TYPES] ;
+      
+      // each thread maintains a small pool of available Slabs for use by any instantiation of Allocator to reduce
+      //   the frequency with which the global slab pool needs to be accessed (which could incur contention).  If we
+      //   need another Slab while the pool is empty, we allocate N Slabs from the global pool; if releasing a Slab
+      //   causes the pool to grow to 2N, we return N Slabs back to the global pool.
+      static thread_local Slab*    s_local_free_slabs ;
+      static thread_local unsigned s_local_free_count ;
+      
+      static ThreadInitializer     s_threadinit ;
    } ;
 
-//template <class ObjT>
-//ThreadInitializer Allocator<ObjT>::m_threadinit ;
-//template <class ObjT>
-//thread_local Slab* Allocator<ObjT>::m_currslab ;
-
 //----------------------------------------------------------------------------
-//  a class to wrap various instantiations of Allocator<NonObject> for allocating
+//  a class to wrap various instantiations of Allocator on NonObject for allocating
 //    fixed-size chunks of uninitialized memory
-
-class NonObject ; // forward declaration
-template <> size_t Allocator<NonObject>::reclaim() ;
-extern template class Allocator<NonObject> ;
 
 class SmallAlloc
    {
@@ -406,7 +390,7 @@ class SmallAlloc
       ~SmallAlloc() ;
 
    protected:
-      Allocator<NonObject>* m_allocator ;
+      Allocator* m_allocator ;
    } ;
 
 //----------------------------------------------------------------------------

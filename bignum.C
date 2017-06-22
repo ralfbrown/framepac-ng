@@ -29,11 +29,7 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-// request explicit instantiation; we declared it "extern" in the header so this
-//   will be the only copy of the non-inlined code generated in object modules
-template class Allocator<BigNum> ;
-
-Allocator<BigNum> BigNum::s_allocator(FramepaC::Object_VMT<BigNum>::instance()) ;
+Allocator BigNum::s_allocator(FramepaC::Object_VMT<BigNum>::instance(),sizeof(BigNum)) ;
 
 /************************************************************************/
 /************************************************************************/

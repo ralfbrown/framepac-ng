@@ -27,11 +27,7 @@
 namespace Fr
 {
 
-// request explicit instantiation; we declared it "extern" in the header so this
-//   will be the only copy of the non-inlined code generated in object modules
-template class Allocator<SymbolTable> ;
-
-Allocator<SymbolTable> SymbolTable::s_allocator(FramepaC::Object_VMT<SymbolTable>::instance()) ;
+Allocator SymbolTable::s_allocator(FramepaC::Object_VMT<SymbolTable>::instance(),sizeof(SymbolTable)) ;
 
 /************************************************************************/
 /************************************************************************/

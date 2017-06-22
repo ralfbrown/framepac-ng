@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -41,7 +41,7 @@ class Rational : public Number
       static Rational *create(const char *) ;
 
    private: // static members
-      static Allocator<Rational> s_allocator ;
+      static Allocator s_allocator ;
    private:
       mpq_t m_value ;
    protected: // creation/destruction
@@ -89,12 +89,7 @@ class Rational : public Number
       static mpz_t bignumValue(const Object *) ;
    } ;
 
-//----------------------------------------------------------------------------
-
-extern template class Allocator<Rational> ;
-
-// end of namespace Fr
-} ;
+} ; // end namespace Fr
 
 /************************************************************************/
 /************************************************************************/

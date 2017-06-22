@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -70,7 +70,7 @@ class Array : public Object
       ArrayIter cend() const { return ArrayIter(m_array + size()) ; }
 
    private: // static members
-      static Allocator<Array> s_allocator ;
+      static Allocator s_allocator ;
    private:
       Object **m_array ;
       size_t   m_size ;
@@ -130,11 +130,6 @@ class Array : public Object
       static ObjectIter& next_(const Object*, ObjectIter& it) { it.incrIndex() ; return it ; }
    } ;
 
-//----------------------------------------------------------------------------
-
-extern template class Allocator<Array> ;
-
-// end of namespace Fr
-} ;
+} ; // end namespace Fr
 
 // end of file array.h //

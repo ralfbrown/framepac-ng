@@ -103,7 +103,7 @@ class Integer : public Number
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
    private: // static members
-      static Allocator<Integer> s_allocator ;
+      static Allocator s_allocator ;
    private:
       long int m_value ;
    protected: // creation/destruction
@@ -174,7 +174,7 @@ class Float : public Number
       static Float *create(const char *) ;
 
    private: // static members
-      static Allocator<Float> s_allocator ;
+      static Allocator s_allocator ;
    private:
       double m_value ;
    protected: // creation/destruction
@@ -234,13 +234,7 @@ class Float : public Number
       static ObjectIter cend_(const Object *) ;
    } ;
 
-//----------------------------------------------------------------------------
-
-extern template class Allocator<Integer> ;
-extern template class Allocator<Float> ;
-
-// end of namespace Fr
-} ;
+} ; // end namespace Fr
 
 /************************************************************************/
 /************************************************************************/

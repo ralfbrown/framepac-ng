@@ -27,11 +27,7 @@
 namespace Fr
 {
 
-// request explicit instantiation; we declared it "extern" in the header so this
-//   will be the only copy of the non-inlined code generated in object modules
-template class Allocator<Frame> ;
-
-Allocator<Frame> Frame::s_allocator(FramepaC::Object_VMT<Frame>::instance()) ;
+Allocator Frame::s_allocator(FramepaC::Object_VMT<Frame>::instance(),sizeof(Frame)) ;
 
 /************************************************************************/
 /*	Methods for class Frame						*/

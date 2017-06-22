@@ -28,12 +28,8 @@
 namespace Fr
 {
 
-// request explicit instantiation; we declared it "extern" in the header so this
-//   will be the only copy of the non-inlined code generated in object modules
-template class Allocator<List> ;
-
 // define the static members of List
-Allocator<List> List::s_allocator(FramepaC::Object_VMT<List>::instance()) ;
+Allocator List::s_allocator(FramepaC::Object_VMT<List>::instance(),sizeof(List)) ;
 List* List::empty_list ;
 
 // register initialization and cleanup functions for the List class as a whole

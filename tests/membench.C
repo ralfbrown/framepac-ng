@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-21					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -22,7 +22,6 @@
 #include <iomanip>
 #include "framepac/argparser.h"
 #include "framepac/memory.h"
-#include "framepac/nonobject.h"
 #include "framepac/threadpool.h"
 #include "framepac/timer.h"
 

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -78,7 +78,7 @@ class Symbol : public Object
       Symbol *next() const { return nullptr ; }
 
    private: // static members
-      static Allocator<Symbol> s_allocator ;
+      static Allocator s_allocator ;
    protected:
       Object *m_binding ;
       uint8_t m_symtab_id ;
@@ -171,11 +171,11 @@ class SymbolTable : public Object
       Symbol* add(const char* name) ;
       
    private: // static members
-      static Allocator<SymbolTable> s_allocator ;
+      static Allocator s_allocator ;
    private:
       static const unsigned num_allocators =
 	 (Fr::SYMBOL_MAX_NAME+FramepaC::SYMBOL_NAME_GRAN-1)/FramepaC::SYMBOL_NAME_GRAN ;
-      static Allocator<Symbol> *m_allocators[num_allocators] ;//FIXME
+      static Allocator *m_allocators[num_allocators] ;//FIXME
    private:
       Map m_symbols ;
 
@@ -224,13 +224,7 @@ class SymbolTable : public Object
    } ;
 
 
-//----------------------------------------------------------------------------
-
-extern template class Allocator<Symbol> ;
-extern template class Allocator<SymbolTable> ;
-
-// end of namespace Fr
-} ;
+} ; // end namespace Fr
 
 /************************************************************************/
 /************************************************************************/

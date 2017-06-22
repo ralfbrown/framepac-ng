@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-08					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -90,7 +90,7 @@ class BitVector : public Object
       BitVectorIter cend() const { return BitVectorIter(this,size()) ; }
 
    private: // static members
-      static Allocator<BitVector> s_allocator ;
+      static Allocator s_allocator ;
 
    protected: // construction/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-29					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -81,7 +81,7 @@ class Map : public Object
       MapIter cend() const { return MapIter(const_cast<Map*>(this),size()) ; }
 
    private: // static members
-      static Allocator<Map> s_allocator ;
+      static Allocator s_allocator ;
    private:
       size_t m_size ;
       std::map<Object,Object> m_map ;
@@ -133,12 +133,7 @@ class Map : public Object
       // *** iterator support ***
    } ;
 
-//----------------------------------------------------------------------------
-
-extern template class Allocator<Map> ;
-
-// end of namespace Fr
-} ;
+} ; // end namespace Fr
 
 /************************************************************************/
 /************************************************************************/

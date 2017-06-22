@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -85,7 +85,7 @@ class List : public Object
       void setNext(List* nxt) { m_next = nxt ; }
 
    private: // static members
-      static Allocator<List> s_allocator ;
+      static Allocator s_allocator ;
       static List *empty_list ;
    private:
       List   *m_next ;
@@ -178,10 +178,6 @@ class ListBuilder
 
 inline Object* ListIter::operator* () const { return m_list->front() ; }
 inline ListIter& ListIter::operator++ () { if (m_list != List::empty_list) m_list = m_list->next() ; return *this ; }
-
-//----------------------------------------------------------------------------
-
-extern template class Allocator<List> ;
 
 /************************************************************************/
 /************************************************************************/

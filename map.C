@@ -28,11 +28,7 @@
 namespace Fr
 {
 
-// request explicit instantiation; we declared it "extern" in the header so this
-//   will be the only copy of the non-inlined code generated in object modules
-template class Allocator<Map> ;
-
-Allocator<Map> Map::s_allocator(FramepaC::Object_VMT<Map>::instance()) ;
+Allocator Map::s_allocator(FramepaC::Object_VMT<Map>::instance(),sizeof(Map)) ;
 
 /************************************************************************/
 /************************************************************************/
