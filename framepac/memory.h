@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-07					*/
+/* Version 0.01, last edit 2017-06-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -373,15 +373,40 @@ class Allocator : public AllocatorBase
    protected: // data members
       static ThreadInitializer  m_threadinit ;
       static thread_local Slab* m_currslab ; // head of doubly-linked circular list of slabs owned by thread
+      static Slab*              m_orphans ;  // slabs which used to belong to terminated threads
       const FramepaC::Object_VMT<ObjT>* m_vmt ;
    } ;
-
-} ;
 
 //template <class ObjT>
 //ThreadInitializer Allocator<ObjT>::m_threadinit ;
 //template <class ObjT>
 //thread_local Slab* Allocator<ObjT>::m_currslab ;
+
+//----------------------------------------------------------------------------
+//  a class to wrap various instantiations of Allocator<NonObject> for allocating
+//    fixed-size chunks of uninitialized memory
+
+class NonObject ; // forward declaration
+template <> size_t Allocator<NonObject>::reclaim() ;
+extern template class Allocator<NonObject> ;
+
+class SmallAlloc
+   {
+   public:
+      static SmallAlloc* create(size_t objsize) ;
+
+      void* allocate() { return m_allocator->allocate() ; }
+      void release(void* blk) { m_allocator->release(blk) ; }
+
+      size_t reclaim() { return m_allocator->reclaim() ; }
+
+   private:
+      SmallAlloc() ;
+      ~SmallAlloc() ;
+
+   protected:
+      Allocator<NonObject>* m_allocator ;
+   } ;
 
 //----------------------------------------------------------------------------
 
@@ -413,6 +438,8 @@ class LocalAlloc
       const T& operator [] (size_t idx) const { return m_buffer[idx] ; }
       operator T* () { return m_buffer ; }
    } ;
+
+} ; // end namespace Fr
 
 #endif /* !__Fr_MEMORY_H_INCLUDED */
 

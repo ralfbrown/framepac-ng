@@ -89,18 +89,43 @@ void benchmark_suballocator(size_t size, size_t iterations)
            "of " << iterations << " times.\n"
 	<< endl ;
    LocalAlloc<void*,30000> blocks(size) ;
+   SmallAlloc* allocator = SmallAlloc::create(16) ;
    Timer timer ;
-   //FIXME: use nonObject allocator of size 16 instead
-   FramepaC::Object_VMT<NonObject> nonobj_vmt ;
-   Allocator<NonObject> allocator(&nonobj_vmt) ;
    for (size_t pass = 0 ; pass < iterations ; ++pass)
       {
       for (size_t i = 0 ; i < size ; ++i)
-	 blocks[i] = allocator.allocate() ;
+	 blocks[i] = allocator->allocate() ;
       for (size_t i = 0 ; i < size ; ++i)
-	 allocator.release(blocks[i]) ;
+	 allocator->release(blocks[i]) ;
       }
+   allocator->reclaim() ;
    show_test_time(timer,size,iterations,true) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+struct BatchInfo
+   {
+      SmallAlloc* allocator ;
+      void**      blocks ;
+      size_t      batch_size ;
+      size_t      iterations ;
+   } ;
+
+void run_suballocator_batch(const void* input, void* /*output*/)
+{
+   const BatchInfo* info = reinterpret_cast<const BatchInfo*>(input) ;
+   void** blocks = info->blocks ;
+   size_t batch_size = info->batch_size ;
+   SmallAlloc* allocator = info->allocator ;
+   for (size_t pass = 0 ; pass < info->iterations ; ++pass)
+      {
+      for (size_t i = 0 ; i < batch_size ; ++i)
+	 blocks[i] = allocator->allocate() ;
+      for (size_t i = 0 ; i < batch_size ; ++i)
+	 allocator->release(blocks[i]) ;
+      }
    return ;
 }
 
@@ -108,13 +133,31 @@ void benchmark_suballocator(size_t size, size_t iterations)
 
 void benchmark_suballocator_parallel(size_t threads, size_t size, size_t iterations)
 {
+   ThreadPool tpool(threads) ;
+   if (threads == 0) threads = 1 ;
+   size_t batch_count = threads >= 4 ? 2 * threads : 4 ;
+   size_t batch_size = (size + batch_count - 1) / batch_count ;
+   size = batch_count * batch_size ;
    cout << "Benchmark of memory sub-allocator speed (multiple threads)\n\n"
            "We allocate and then release " << size << " 16-byte objects a total\n"
-           "of " << iterations << " times using " << threads << " concurrent threads.\n"
+           "of " << iterations << " times split across " << threads << " concurrent threads.\n"
 	<< endl ;
-   cerr << "threaded benchmark not implemented yet" << endl ;
-   ThreadPool tpool(threads) ;
-//FIXME
+   LocalAlloc<void*,30000> blocks(size) ;
+   SmallAlloc* allocator = SmallAlloc::create(16) ;
+   Timer timer ;
+   LocalAlloc<BatchInfo> batch_info(batch_count) ;
+   for (size_t batch = 0 ; batch < batch_count ; ++batch)
+      {
+      BatchInfo& info = batch_info[batch] ;
+      info.allocator = allocator ;
+      info.blocks = &blocks[batch*batch_size] ;
+      info.batch_size = batch_size ;
+      info.iterations = iterations ;
+      tpool.dispatch(run_suballocator_batch,&info) ;
+      }
+   tpool.waitUntilIdle() ;
+   allocator->reclaim() ;
+   show_test_time(timer,size,iterations,true) ;
    return ;
 }
 

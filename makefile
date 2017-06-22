@@ -255,7 +255,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
 	nonobject$(OBJ) object$(OBJ) objreader$(OBJ) printf$(OBJ) \
 	rational$(OBJ) slab$(OBJ) \
-	slabgroup$(OBJ) \
+	slabgroup$(OBJ) smallalloc$(OBJ) \
 	sparsematrix$(OBJ) string$(OBJ) stringbuilder$(OBJ) \
 	sufarray_u32u32$(OBJ) \
 	symbol$(OBJ) symboltable$(OBJ) synchevent$(OBJ) \
@@ -430,6 +430,7 @@ random$(OBJ):		random$(C) framepac/random.h
 rational$(OBJ):		rational$(C) framepac/rational.h
 slab$(OBJ):		slab$(C) framepac/memory.h
 slabgroup$(OBJ):	slabgroup$(C) framepac/memory.h
+smallalloc$(OBJ):	smallalloc$(C) framepac/memory.h
 sparsematrix$(OBJ):	sparsematrix$(C) framepac/matrix.h
 string$(OBJ):		string$(C) framepac/string.h
 stringbuilder$(OBJ):	stringbuilder$(C) framepac/stringbuilder.h framepac/file.h
