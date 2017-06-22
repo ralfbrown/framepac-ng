@@ -32,9 +32,6 @@ using namespace FramepaC ;
 namespace Fr
 {
 
-template <typename ObjT>
-thread_local Slab* Allocator<ObjT>::m_currslab ;
-
 /************************************************************************/
 /*	Methods for class Allocator					*/
 /************************************************************************/

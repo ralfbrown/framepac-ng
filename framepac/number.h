@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-02					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -61,6 +61,7 @@ class Number : public Object
       // use shallowFree() on a shallowCopy()
       static void shallowFree_(Object *obj) { delete (Number*)obj ; }
 
+#if 0
       // *** I/O ***
       // generate printed representation into a buffer
       static size_t cStringLength_(const Object *,size_t wrap_at, size_t indent) ;
@@ -69,6 +70,7 @@ class Number : public Object
       static size_t jsonStringLength_(const Object *, bool wrap, size_t indent) ;
       static bool toJSONString_(const Object *, char *buffer, size_t buflen, bool wrap,
 				size_t indent) ;
+#endif
 
       // *** standard info functions ***
       static size_t size_(const Object *obj) { return obj ? 1 : 0 ; }

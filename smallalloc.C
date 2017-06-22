@@ -36,9 +36,6 @@ size_t Allocator<NonObject>::reclaim()
    return 0 ;
 }
 
-template <>
-thread_local FramepaC::Slab* Allocator<NonObject>::m_currslab = nullptr ;
-
 template class Allocator<NonObject> ;
 
 /************************************************************************/

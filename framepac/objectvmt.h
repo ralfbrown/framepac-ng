@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-05					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -75,19 +75,6 @@
    ret name(t1 a1, t2 a2, t3 a3, t4 a4) isconst	        		\
       { return reinterpret_cast<ret>(FramepaC::Slab::isconst##VMT(this)->altname(this,a1,a2,a3,a4)) ; }
 
-// in Object_VMT, we just store a pointer to the proper type's
-// non-virtual implementation method.
-#define FrVIRTIMPL0(ret,name,isconst)					\
-   ret (*name)(isconst Fr::Object*) = &ObjT::name ;
-#define FrVIRTIMPL1(ret,name,isconst,t1,a1)				\
-   ret (*name)(isconst Fr::Object*,t1) = &ObjT::name ;
-#define FrVIRTIMPL2(ret,name,isconst,t1,a1,t2,a2)			\
-   ret (*name)(isconst Fr::Object*,t1,t2) = &ObjT::name ;
-#define FrVIRTIMPL3(ret,name,isconst,t1,a1,t2,a2,t3,a3)			\
-   ret (*name)(isconst Fr::Object*,t1,t2,t3) = &ObjT::name ;
-#define FrVIRTIMPL4(ret,name,isconst,t1,a1,t2,a2,t3,a3,t4,a4)		\
-   ret (*name)(isconst Fr::Object*,t1,t2,t3,t4) = &ObjT::name ;
-
 /************************************************************************/
 /************************************************************************/
 
@@ -139,85 +126,154 @@ class ObjectIter // : std::iterator<std::input_iterator_tag,Object*,std::ptrdiff
 namespace FramepaC
 {
 
+
+class Object_VMT_Base
+   {
+   public:
+      Object_VMT_Base(unsigned /*subtypes*/)
+	 {
+	 }
+      ~Object_VMT_Base() = default ;
+
+      // *** destroying ***
+      void (*free_)(Fr::Object*) ;
+      // use shallowFree() on a shallowCopy()
+      void (*shallowFree_)(Fr::Object*) ;
+      // *** reclamation for non-Object items
+      void (*releaseSlab_)(class Slab*) ;
+
+      // *** standard info functions ***
+      size_t (*size_)(const Fr::Object*) ;
+      bool (*empty_)(const Fr::Object*) ;
+
+      // *** iterator support ***
+      Fr::Object* (*next_)(const Fr::Object*) ;
+      Fr::ObjectIter& (*next_iter)(const Fr::Object*, Fr::ObjectIter& it) ;
+
+      // *** copying ***
+      Fr::ObjectPtr (*clone_)(const Fr::Object*) ;
+      Fr::Object* (*shallowCopy_)(const Fr::Object*) ;
+      Fr::ObjectPtr (*subseq_int)(const Fr::Object*, size_t start,size_t stop) ;
+      Fr::ObjectPtr (*subseq_iter)(const Fr::Object*, Fr::ObjectIter start,Fr::ObjectIter stop) ;
+
+      // *** comparison functions ***
+      size_t (*hashValue_)(const Fr::Object*) ;
+      bool (*equal_)(const Fr::Object*, const Fr::Object* other) ;
+      int (*compare_)(const Fr::Object*, const Fr::Object* other) ;
+      // comparison function for STL algorithms
+      int (*lessThan_)(const Fr::Object*, const Fr::Object* other) ;
+
+      // *** standard access functions ***
+      Fr::Object* (*front_)(Fr::Object*) ;
+      const Fr::Object* (*front_const)(const Fr::Object*) ;
+      const char * (*stringValue_)(const Fr::Object*) ;
+      double (*floatValue_)(const Fr::Object*) ;
+      double (*imagValue_)(const Fr::Object*) ;
+      long int (*intValue_)(const Fr::Object*) ;
+      mpz_t (*bignumValue_)(const Fr::Object*) ;
+      mpq_t (*rationalValue_)(const Fr::Object*) ;
+
+      // *** dynamic type determination ***
+      // name of the actual type of the current object
+      const char* (*typeName_)(const Fr::Object*) ;
+      // type determination predicates
+      bool (*isArray_)(const Fr::Object*) ;
+      bool (*isBigNum_)(const Fr::Object*) ;
+      bool (*isBitVector_)(const Fr::Object*) ;
+      bool (*isComplex_)(const Fr::Object*) ;
+      bool (*isFloat_)(const Fr::Object*) ;
+      bool (*isInteger_)(const Fr::Object*) ;
+      bool (*isList_)(const Fr::Object*) ;
+      bool (*isMap_)(const Fr::Object*) ;
+      bool (*isNumber_)(const Fr::Object*) ;
+      bool (*isRational_)(const Fr::Object*) ;
+      bool (*isSparseVector_)(const Fr::Object*) ;
+      bool (*isString_)(const Fr::Object*) ;
+      bool (*isSymbolTable_)(const Fr::Object*) ;
+      bool (*isSymbol_)(const Fr::Object*) ;
+      bool (*isVector_)(const Fr::Object*) ;
+
+      // *** I/O ***
+      // generate printed representation into a buffer
+      size_t (*cStringLength_)(const Fr::Object*, size_t wrap_at, size_t indent) ;
+      size_t (*jsonStringLength_)(const Fr::Object*, bool wrap, size_t indent) ;
+      bool (*toCstring_)(const Fr::Object*, char* buffer, size_t buflen, size_t wrap_at, size_t indent) ;
+      bool (*toJSONString_)(const Fr::Object*, char* buffer, size_t buflen, bool wrap, size_t indent) ;
+
+   public:  // data members
+      mutable Slab* m_currslab[1] ; // FIXME
+      Slab* m_orphans[1] ; // FIXME
+} ;
+
 //----------------------------------------------------------------------------
 // polymorphic companion class to Object hierarchy
 
-template <class ObjT>
-class Object_VMT
+template <class ObjT, unsigned SubTypes = 1>
+class Object_VMT : public Object_VMT_Base
    {
+   public:
+      // since this is a Singleton class, we have a function to return the single instance of the class
+      static const Object_VMT* instance()
+	 {
+	 static const Object_VMT single_instance(SubTypes) ;
+	 return &single_instance ;
+	 }
+
    private:
       // don't allow allocation on the heap
       void *operator new(size_t) = delete ;
       void *operator new(size_t,void*) = delete ;
       void operator delete(void*) = delete ;
-   public:
-      Object_VMT() = default ;
+      // don't allow user to instantiate -- must go through instance()
+      Object_VMT(unsigned num_subtypes) : Object_VMT_Base(num_subtypes)
+	 {
+	 free_ = &ObjT::free_ ;
+	 shallowFree_ = &ObjT::shallowFree_ ;
+	 releaseSlab_ = &ObjT::releaseSlab_ ;
+	 size_ = &ObjT::size_ ;
+	 empty_ = &ObjT::empty_ ;
+	 next_ = &ObjT::next_ ;
+	 next_iter = &ObjT::next_iter ;
+	 clone_ = &ObjT::clone_ ;
+	 shallowCopy_ = &ObjT::shallowCopy_ ;
+	 subseq_int = &ObjT::subseq_int ;
+	 subseq_iter = &ObjT::subseq_iter ;
+	 hashValue_ = &ObjT::hashValue_ ;
+	 equal_ = &ObjT::equal_ ;
+	 compare_ = &ObjT::compare_ ;
+	 lessThan_ = &ObjT::lessThan_ ;
+	 front_ = &ObjT::front_ ;
+	 front_const = &ObjT::front_const ;
+	 stringValue_ = &ObjT::stringValue_ ;
+	 floatValue_ = &ObjT::floatValue_ ;
+	 imagValue_ = &ObjT::imagValue_ ;
+	 intValue_ = &ObjT::intValue_ ;
+	 bignumValue_ = &ObjT::bignumValue_ ;
+	 rationalValue_ = &ObjT::rationalValue_ ;
+	 typeName_ = &ObjT::typeName_ ;
+	 isArray_ = &ObjT::isArray_ ;
+	 isBigNum_ = &ObjT::isBigNum_ ;
+	 isBitVector_ = &ObjT::isBitVector_ ;
+	 isComplex_ = &ObjT::isComplex_ ;
+	 isFloat_ = &ObjT::isFloat_ ;
+	 isInteger_ = &ObjT::isInteger_ ;
+	 isMap_ = &ObjT::isMap_ ;
+	 isNumber_ = &ObjT::isNumber_ ;
+	 isRational_ = &ObjT::isRational_ ;
+	 isSparseVector_ = &ObjT::isSparseVector_ ;
+	 isString_ = &ObjT::isString_ ;
+	 isSymbolTable_ = &ObjT::isSymbolTable_ ;
+	 isSymbol_ = &ObjT::isSymbol_ ;
+	 isVector_ = &ObjT::isVector_ ;
+	 cStringLength_ = &ObjT::cStringLength_ ;
+	 jsonStringLength_ = &ObjT::jsonStringLength_ ;
+	 toCstring_ = &ObjT::toCstring_ ;
+	 toJSONString_ = &ObjT::toJSONString_ ;
+	 }
       ~Object_VMT() = default ;
 
-      // *** destroying ***
-      FrVIRTIMPL0(void,free_,) ;
-      // use shallowFree() on a shallowCopy()
-      FrVIRTIMPL0(void,shallowFree_,) ;
-      // *** reclamation for non-Object items
-      void (*releaseSlab_)(class Slab*) = &ObjT::releaseSlab_ ;
-
-      // *** standard info functions ***
-      FrVIRTIMPL0(size_t,size_,const) ;
-      FrVIRTIMPL0(bool,empty_,const) ;
-
-      // *** iterator support ***
-      FrVIRTIMPL0(Fr::Object*,next_,const) ;
-      FrVIRTIMPL1(Fr::ObjectIter&,next_iter,const,Fr::ObjectIter&,it) ;
-
-      // *** copying ***
-      FrVIRTIMPL0(Fr::ObjectPtr,clone_,const) ;
-      FrVIRTIMPL0(Fr::Object*,shallowCopy_,const) ;
-      FrVIRTIMPL2(Fr::ObjectPtr,subseq_int,const,size_t,start,size_t,stop) ;
-      FrVIRTIMPL2(Fr::ObjectPtr,subseq_iter,const,Fr::ObjectIter,start,Fr::ObjectIter,stop) ;
-
-      // *** comparison functions ***
-      FrVIRTIMPL0(size_t,hashValue_,const) ;
-      FrVIRTIMPL1(bool,equal_,const,const Fr::Object*,other) ;
-      FrVIRTIMPL1(int,compare_,const,const Fr::Object*,other) ;
-      // comparison function for STL algorithms
-      FrVIRTIMPL1(int,lessThan_,const,const Fr::Object*,other) ;
-
-      // *** standard access functions ***
-      FrVIRTIMPL0(Fr::Object*,front_,) ;
-      FrVIRTIMPL0(const Fr::Object*,front_const,const) ;
-      FrVIRTIMPL0(const char *,stringValue_,const) ;
-      FrVIRTIMPL0(double,floatValue_,const) ;
-      FrVIRTIMPL0(double,imagValue_,const) ;
-      FrVIRTIMPL0(long int,intValue_,const) ;
-      FrVIRTIMPL0(mpz_t,bignumValue_,const) ;
-      FrVIRTIMPL0(mpq_t,rationalValue_,const) ;
-
-      // *** dynamic type determination ***
-      // name of the actual type of the current object
-      FrVIRTIMPL0(const char*,typeName_,const) ;
-      // type determination predicates
-      FrVIRTIMPL0(bool,isArray_,const) ;
-      FrVIRTIMPL0(bool,isBigNum_,const) ;
-      FrVIRTIMPL0(bool,isBitVector_,const) ;
-      FrVIRTIMPL0(bool,isComplex_,const) ;
-      FrVIRTIMPL0(bool,isFloat_,const) ;
-      FrVIRTIMPL0(bool,isInteger_,const) ;
-      FrVIRTIMPL0(bool,isList_,const) ;
-      FrVIRTIMPL0(bool,isMap_,const) ;
-      FrVIRTIMPL0(bool,isNumber_,const) ;
-      FrVIRTIMPL0(bool,isRational_,const) ;
-      FrVIRTIMPL0(bool,isSparseVector_,const) ;
-      FrVIRTIMPL0(bool,isString_,const) ;
-      FrVIRTIMPL0(bool,isSymbolTable_,const) ;
-      FrVIRTIMPL0(bool,isSymbol_,const) ;
-      FrVIRTIMPL0(bool,isVector_,const) ;
-
-      // *** I/O ***
-      // generate printed representation into a buffer
-      FrVIRTIMPL2(size_t,cStringLength_,const,size_t,wrap_at,size_t,indent) ;
-      FrVIRTIMPL2(size_t,jsonStringLength_,const,bool,wrap,size_t,indent) ;
-      FrVIRTIMPL4(bool,toCstring_,const,char*,buffer,size_t,buflen,size_t,wrap_at,size_t,indent) ;
-      FrVIRTIMPL4(bool,toJSONString_,const,char*,buffer,size_t,buflen,bool,wrap,size_t,indent) ;
+   private: // data members
+      static thread_local Slab* m_currslab_local[SubTypes] ;
    } ;
 
 typedef class Object_VMT<Fr::Object> ObjectVMT ;

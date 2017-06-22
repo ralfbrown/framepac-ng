@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-05					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -27,7 +27,7 @@ using namespace Fr ;
 namespace Fr
 {
 
-/*static*/ const FramepaC::Object_VMT<NonObject> nonobject_vmt ;
+// /*static*/ const FramepaC::Object_VMT<NonObject> nonobject_vmt ;
 
 /************************************************************************/
 /*	Methods for class NonObject					*/

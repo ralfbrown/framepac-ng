@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-05					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -33,8 +33,7 @@ namespace Fr
 //   will be the only copy of the non-inlined code generated in object modules
 template class Allocator<BigNum> ;
 
-static const FramepaC::Object_VMT<BigNum> bignum_vmt ;
-Allocator<BigNum> BigNum::s_allocator(&bignum_vmt) ;
+Allocator<BigNum> BigNum::s_allocator(FramepaC::Object_VMT<BigNum>::instance()) ;
 
 /************************************************************************/
 /************************************************************************/

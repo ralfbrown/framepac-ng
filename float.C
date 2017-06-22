@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -34,8 +34,7 @@ namespace Fr
 //   will be the only copy of the non-inlined code generated in object modules
 template class Allocator<Float> ;
 
-static const FramepaC::Object_VMT<Float> float_vmt ;
-Allocator<Float> Float::s_allocator(&float_vmt) ;
+Allocator<Float> Float::s_allocator(FramepaC::Object_VMT<Float>::instance()) ;
 
 /************************************************************************/
 /************************************************************************/

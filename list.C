@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-09					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -33,8 +33,7 @@ namespace Fr
 template class Allocator<List> ;
 
 // define the static members of List
-static const FramepaC::Object_VMT<List> list_vmt ;
-Allocator<List> List::s_allocator(&list_vmt) ;
+Allocator<List> List::s_allocator(FramepaC::Object_VMT<List>::instance()) ;
 List* List::empty_list ;
 
 // register initialization and cleanup functions for the List class as a whole
