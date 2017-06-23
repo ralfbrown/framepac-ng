@@ -253,27 +253,27 @@ class Allocator
 	 {
 	 public:
 	    SharedInfo() = default ;
-	    SharedInfo(const FramepaC::Object_VMT_Base* vmt, FramepaC::alloc_size_t objsize)
-	       : m_vmt(vmt), m_orphans(nullptr), m_objsize(objsize), m_alignment(alignof(double))
+	    SharedInfo(const FramepaC::ObjectVMT* vmt, FramepaC::alloc_size_t objsize)
+	       : m_vmt(vmt), m_objsize(objsize)
 	       {
 		  if (objsize < alignof(double)) m_alignment = objsize ;
 	       }
-	    SharedInfo(const FramepaC::Object_VMT_Base* vmt, FramepaC::alloc_size_t objsize,
+	    SharedInfo(const FramepaC::ObjectVMT* vmt, FramepaC::alloc_size_t objsize,
 	       unsigned alignment)
-	       : m_vmt(vmt), m_orphans(nullptr), m_objsize(objsize), m_alignment(alignment)
+	       : m_vmt(vmt), m_objsize(objsize), m_alignment(alignment)
 	       {
 	       }
 	    ~SharedInfo() {}
 	 public: // data members
-	    const FramepaC::Object_VMT_Base* m_vmt ;
-	    FramepaC::Slab*                  m_orphans ;  // slabs which used to belong to terminated threads
-	    FramepaC::alloc_size_t           m_objsize ;
-	    unsigned			     m_alignment { alignof(double) } ;
+	    const FramepaC::ObjectVMT* m_vmt ;
+	    FramepaC::Slab*            m_orphans { nullptr } ;  // slabs which used to belong to terminated threads
+	    FramepaC::alloc_size_t     m_objsize ;
+	    unsigned		       m_alignment { alignof(double) } ;
 	 } ;
       
    public:
-      Allocator(const FramepaC::Object_VMT_Base* vmt, unsigned objsize) ;
-      Allocator(const FramepaC::Object_VMT_Base* vmt, unsigned objsize, unsigned align) ;
+      Allocator(const FramepaC::ObjectVMT* vmt, unsigned objsize) ;
+      Allocator(const FramepaC::ObjectVMT* vmt, unsigned objsize, unsigned align) ;
       ~Allocator() {}
       // allocators are not copyable
       Allocator(const Allocator&) = delete ;

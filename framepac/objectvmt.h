@@ -127,13 +127,13 @@ namespace FramepaC
 {
 
 
-class Object_VMT_Base
+class ObjectVMT
    {
    public:
-      Object_VMT_Base(unsigned /*subtypes*/)
+      ObjectVMT(unsigned /*subtypes*/)
 	 {
 	 }
-      ~Object_VMT_Base() = default ;
+      ~ObjectVMT() = default ;
 
       // *** destroying ***
       void (*free_)(Fr::Object*) ;
@@ -209,7 +209,7 @@ class Object_VMT_Base
 // polymorphic companion class to Object hierarchy
 
 template <class ObjT, unsigned SubTypes = 1>
-class Object_VMT : public Object_VMT_Base
+class Object_VMT : public ObjectVMT
    {
    public:
       // since this is a Singleton class, we have a function to return the single instance of the class
@@ -225,7 +225,7 @@ class Object_VMT : public Object_VMT_Base
       void *operator new(size_t,void*) = delete ;
       void operator delete(void*) = delete ;
       // don't allow user to instantiate -- must go through instance()
-      Object_VMT(unsigned num_subtypes) : Object_VMT_Base(num_subtypes)
+      Object_VMT(unsigned num_subtypes) : ObjectVMT(num_subtypes)
 	 {
 	 free_ = &ObjT::free_ ;
 	 shallowFree_ = &ObjT::shallowFree_ ;
@@ -275,9 +275,6 @@ class Object_VMT : public Object_VMT_Base
    private: // data members
       static thread_local Slab* m_currslab_local[SubTypes] ;
    } ;
-
-typedef class Object_VMT<Fr::Object> ObjectVMT ;
-extern template class Object_VMT<Fr::Object> ;
 
 } // end namespace FramepaC
 

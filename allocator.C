@@ -65,7 +65,7 @@ class too_many_allocators : public std::bad_alloc
 /*	Methods for class Allocator					*/
 /************************************************************************/
 
-static unsigned find_match(Allocator::SharedInfo* info, const FramepaC::Object_VMT_Base* vmt,
+static unsigned find_match(Allocator::SharedInfo* info, const FramepaC::ObjectVMT* vmt,
    unsigned objsize, unsigned align)
 {
    unsigned existing = num_allocators ;
@@ -88,7 +88,7 @@ static unsigned find_match(Allocator::SharedInfo* info, const FramepaC::Object_V
 
 //----------------------------------------------------------------------------
 
-Allocator::Allocator(const FramepaC::Object_VMT_Base* vmt, unsigned objsize)
+Allocator::Allocator(const FramepaC::ObjectVMT* vmt, unsigned objsize)
 {
    unsigned align = alignof(double) ;
    if (objsize < align)
@@ -99,7 +99,7 @@ Allocator::Allocator(const FramepaC::Object_VMT_Base* vmt, unsigned objsize)
 
 //----------------------------------------------------------------------------
 
-Allocator::Allocator(const FramepaC::Object_VMT_Base* vmt, unsigned objsize, unsigned align)
+Allocator::Allocator(const FramepaC::ObjectVMT* vmt, unsigned objsize, unsigned align)
 {
    m_type = find_match(s_shared,vmt,objsize,align) ;
    return ;
