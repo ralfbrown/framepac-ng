@@ -371,7 +371,7 @@ $(BINDIR)/parhash$(EXE):	tests/parhash$(OBJ) $(LIBRARY)
 $(BINDIR)/tpool$(EXE):		tests/tpool$(OBJ) $(LIBRARY)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
-allocator$(OBJ):	allocator$(C) framepac/memory.h
+allocator$(OBJ):	allocator$(C) framepac/atomic.h framepac/memory.h
 argopt$(OBJ):		argopt$(C) template/argopt.cc
 argopt_real$(OBJ):	argopt_real$(C) template/argopt.cc
 argparser$(OBJ):	argparser$(C) framepac/argparser.h

@@ -91,6 +91,7 @@ class Slab
       void linkSlab(Slab*& listhead) ;
       void unlinkSlab(Slab*& listhead) ;
       void linkToSelf() { m_info.m_nextslab = m_info.m_prevslab = this ; }
+      void setNextSlab(Slab* next) { m_info.m_nextslab = next ; }
       void* initFreelist(unsigned objsize) ;
       static unsigned bufferSize() { return sizeof(m_buffer) ; }
 
@@ -235,39 +236,41 @@ constexpr unsigned MAX_ALLOCATOR_TYPES = 500 ;
 namespace Fr
 {
 
-class AllocatorTLS
-   {
-   public:
-      FramepaC::Slab* m_currslab ;
-   } ;
-
-class AllocatorSharedInfo
-   {
-   public:
-      AllocatorSharedInfo() = default ;
-      AllocatorSharedInfo(const FramepaC::Object_VMT_Base* vmt, FramepaC::alloc_size_t objsize)
-	 : m_vmt(vmt), m_objsize(objsize), m_alignment(alignof(double)), m_orphans(nullptr)
-	 {
-	 if (objsize < alignof(double)) m_alignment = objsize ;
-	 }
-      AllocatorSharedInfo(const FramepaC::Object_VMT_Base* vmt, FramepaC::alloc_size_t objsize,
-	 unsigned alignment)
-	 : m_vmt(vmt), m_objsize(objsize), m_alignment(alignment), m_orphans(nullptr)
-	 {
-	 }
-      ~AllocatorSharedInfo() {}
-   public: // data members
-      const FramepaC::Object_VMT_Base* m_vmt ;
-      FramepaC::alloc_size_t       m_objsize ;
-      unsigned			   m_alignment { alignof(double) } ;
-      FramepaC::Slab*              m_orphans ;  // slabs which used to belong to terminated threads
-   } ;
+//----------------------------------------------------------------------------
 
 class Allocator
    {
    protected:
       typedef FramepaC::Slab Slab ;
       typedef Fr::ThreadInitializer<Allocator> ThreadInitializer ;
+   public:
+      class TLS
+	 {
+	 public:
+	    FramepaC::Slab* m_currslab ;
+	 } ;
+      class SharedInfo
+	 {
+	 public:
+	    SharedInfo() = default ;
+	    SharedInfo(const FramepaC::Object_VMT_Base* vmt, FramepaC::alloc_size_t objsize)
+	       : m_vmt(vmt), m_orphans(nullptr), m_objsize(objsize), m_alignment(alignof(double))
+	       {
+		  if (objsize < alignof(double)) m_alignment = objsize ;
+	       }
+	    SharedInfo(const FramepaC::Object_VMT_Base* vmt, FramepaC::alloc_size_t objsize,
+	       unsigned alignment)
+	       : m_vmt(vmt), m_orphans(nullptr), m_objsize(objsize), m_alignment(alignment)
+	       {
+	       }
+	    ~SharedInfo() {}
+	 public: // data members
+	    const FramepaC::Object_VMT_Base* m_vmt ;
+	    FramepaC::Slab*                  m_orphans ;  // slabs which used to belong to terminated threads
+	    FramepaC::alloc_size_t           m_objsize ;
+	    unsigned			     m_alignment { alignof(double) } ;
+	 } ;
+      
    public:
       Allocator(const FramepaC::Object_VMT_Base* vmt, unsigned objsize) ;
       Allocator(const FramepaC::Object_VMT_Base* vmt, unsigned objsize, unsigned align) ;
@@ -299,13 +302,7 @@ class Allocator
 
       size_t reclaim() ;
 
-      static void threadCleanup()
-	 {
-	 // we are about to orphan all of the slabs owned by the terminating thread, so make sure
-	 //   some other thread adopts them....
-//FIXME
-	 return ;
-	 }
+      static void threadCleanup() ;
 
    protected:
       // get the per-thread list of allocated slabs
@@ -357,9 +354,9 @@ class Allocator
 	 }
 
    protected: // data members
-      unsigned			   m_type { 0 } ; //FIXME
-      static AllocatorSharedInfo   s_shared[FramepaC::MAX_ALLOCATOR_TYPES] ;
-      static thread_local AllocatorTLS s_tls[FramepaC::MAX_ALLOCATOR_TYPES] ;
+      unsigned		       m_type { 0 } ;
+      static SharedInfo        s_shared[FramepaC::MAX_ALLOCATOR_TYPES] ;
+      static thread_local TLS  s_tls[FramepaC::MAX_ALLOCATOR_TYPES] ;
       
       // each thread maintains a small pool of available Slabs for use by any instantiation of Allocator to reduce
       //   the frequency with which the global slab pool needs to be accessed (which could incur contention).  If we
