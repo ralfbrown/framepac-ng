@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-07					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -74,7 +74,7 @@ void Slab::releaseObject(void* obj)
       {
       *((alloc_size_t*)obj) = m_header.m_freelist ;
       m_header.m_freelist = slabOffset(obj) ;
-      if (--m_header.m_usedcount == 0) { VMT()->releaseSlab_(this) ; }
+      if (--m_header.m_usedcount == 0) { Fr::Allocator::releaseSlab(this) ; }
       }
    return ;
 }

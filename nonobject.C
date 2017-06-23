@@ -33,14 +33,6 @@ namespace Fr
 /*	Methods for class NonObject					*/
 /************************************************************************/
 
-void NonObject::releaseSlab_(FramepaC::Slab*)
-{
-//FIXME
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
 size_t NonObject::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent)
 {
    return snprintf(nullptr,0,"%*s#NonObject<%lu>",(int)indent,"",(unsigned long)obj) ;

@@ -137,8 +137,6 @@ class ObjectVMT
       void (*free_)(Fr::Object*) ;
       // use shallowFree() on a shallowCopy()
       void (*shallowFree_)(Fr::Object*) ;
-      // *** reclamation for non-Object items
-      void (*releaseSlab_)(class Slab*) ;
 
       // *** standard info functions ***
       size_t (*size_)(const Fr::Object*) ;
@@ -197,10 +195,6 @@ class ObjectVMT
       size_t (*jsonStringLength_)(const Fr::Object*, bool wrap, size_t indent) ;
       bool (*toCstring_)(const Fr::Object*, char* buffer, size_t buflen, size_t wrap_at, size_t indent) ;
       bool (*toJSONString_)(const Fr::Object*, char* buffer, size_t buflen, bool wrap, size_t indent) ;
-
-   public:  // data members
-      mutable Slab* m_currslab[1] ; // FIXME
-      Slab* m_orphans[1] ; // FIXME
 } ;
 
 //----------------------------------------------------------------------------
@@ -227,7 +221,6 @@ class Object_VMT : public ObjectVMT
 	 {
 	 free_ = &ObjT::free_ ;
 	 shallowFree_ = &ObjT::shallowFree_ ;
-	 releaseSlab_ = &ObjT::releaseSlab_ ;
 	 size_ = &ObjT::size_ ;
 	 empty_ = &ObjT::empty_ ;
 	 next_ = &ObjT::next_ ;

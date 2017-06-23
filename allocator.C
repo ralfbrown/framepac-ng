@@ -107,6 +107,18 @@ Allocator::Allocator(const FramepaC::ObjectVMT* vmt, unsigned objsize, unsigned 
 
 //----------------------------------------------------------------------------
 
+void Allocator::releaseSlab(FramepaC::Slab* slb)
+{
+   unsigned index = slb->owningAllocator() ;
+   if (s_tls[index].m_currslab == slb)
+      {
+//FIXME
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 static void orphan_slabs(FramepaC::Slab*& currlist, FramepaC::Slab*& orphans)
 {
    Slab* slabs = currlist ;

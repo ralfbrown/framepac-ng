@@ -35,17 +35,6 @@
 /************************************************************************/
 /************************************************************************/
 
-namespace Fr
-{
-
-// forward declaration
-class AllocatorBase ;
-
-} // end namespace Fr
-   
-/************************************************************************/
-/************************************************************************/
-
 // private classes, types, and functions
 namespace FramepaC
 {
@@ -100,7 +89,7 @@ class Slab
       bool onlySlab() const { return m_info.m_nextslab == this && m_info.m_prevslab == this ; }
       Slab* nextSlab() const { return m_info.m_nextslab ; }
       Slab* prevSlab() const { return m_info.m_prevslab ; }
-      Fr::AllocatorBase* owningAllocator() const { return m_info.m_allocator ; }
+      unsigned owningAllocator() const { return m_info.m_alloc_index ; }
       std::thread::id owningThread() const { return m_info.m_owner ; }
       size_t objectSize() const { return m_info.m_objsize ; }
       size_t objectCount() const { return m_info.m_objcount ; }
@@ -130,12 +119,11 @@ class Slab
 	    const ObjectVMT*   m_vmt ;		// should be first to avoid having to add an offset
 	    Slab*              m_nextslab { nullptr };
 	    Slab*              m_prevslab { nullptr };
-	    Fr::AllocatorBase* m_allocator ;	// the Allocator to which this slab "belongs"
-	    Slab**	       m_slablistptr ;	// the per-thread pointer in the owning Allocator
 	    std::thread::id    m_owner ;	// the thread that initially allocated this slab
 	    alloc_size_t       m_objsize ;	// bytes per object
 	    uint16_t           m_objcount ;	// number of objects in this slab
 	    uint16_t           m_slab_id ; 	// index within SlabGroup
+	    uint16_t	       m_alloc_index ;	// the Allocator to which this slab "belongs"
          } ;
       // Next, the fields that only the owning thread modifies.  These do not require any synchronization.
       class SlabHeader
@@ -300,6 +288,7 @@ class Allocator
 	    }
 	 }
 
+      static void releaseSlab(FramepaC::Slab* slb) ;
       size_t reclaim() ;
 
       static void threadCleanup() ;

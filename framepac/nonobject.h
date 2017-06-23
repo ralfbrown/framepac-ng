@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-05					*/
+/* Version 0.01, last edit 2017-06-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -44,9 +44,6 @@ class NonObject : public Object
       static Object* shallowCopy_(const Object*) { return nullptr ; }
       static ObjectPtr subseq_int(const Object */*obj*/, size_t /*start*/, size_t /*stop*/) { return ObjectPtr(nullptr) ; }
       static ObjectPtr subseq_iter(const Object */*obj*/, ObjectIter /*start*/, ObjectIter /*stop*/) { return ObjectPtr(nullptr) ; }
-
-      // *** reclamation for non-Object items
-      static void releaseSlab_(FramepaC::Slab*) ;
 
       // name of the actual type of the current object
       static const char* typeName_(const Object *) { return "NonObject" ; }
