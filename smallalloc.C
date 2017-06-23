@@ -29,23 +29,29 @@ namespace Fr
 /*	Methods for class SmallAlloc					*/
 /************************************************************************/
 
-SmallAlloc::SmallAlloc()
-{
-   return  ;
-}
-
-//----------------------------------------------------------------------------
-
-SmallAlloc::~SmallAlloc()
-{
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
 SmallAlloc* SmallAlloc::create(size_t objsize)
 {
-   (void)objsize ;
+   if (objsize > 512) //FIXME
+      return nullptr ;
+   Allocator *allocator = new Allocator(FramepaC::Object_VMT<NonObject>::instance(),objsize) ;
+   if (allocator)
+      {
+      return new SmallAlloc(allocator) ;
+      }
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+SmallAlloc* SmallAlloc::create(size_t objsize, size_t align)
+{
+   if (objsize > 512) //FIXME
+      return nullptr ;
+   Allocator *allocator = new Allocator(FramepaC::Object_VMT<NonObject>::instance(),objsize,align) ;
+   if (allocator)
+      {
+      return new SmallAlloc(allocator) ;
+      }
    return nullptr ;
 }
 

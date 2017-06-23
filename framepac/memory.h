@@ -376,6 +376,7 @@ class SmallAlloc
    {
    public:
       static SmallAlloc* create(size_t objsize) ;
+      static SmallAlloc* create(size_t objsize, size_t align) ;
 
       void* allocate() { return m_allocator->allocate() ; }
       void release(void* blk) { m_allocator->release(blk) ; }
@@ -383,8 +384,8 @@ class SmallAlloc
       size_t reclaim() { return m_allocator->reclaim() ; }
 
    private:
-      SmallAlloc() ;
-      ~SmallAlloc() ;
+      SmallAlloc(Allocator* alloc) { m_allocator = alloc ; }
+      ~SmallAlloc() { delete m_allocator ; }
 
    protected:
       Allocator* m_allocator ;
