@@ -28,9 +28,19 @@
 #include "framepac/init.h"
 #include "framepac/objectvmt.h"
 
+/************************************************************************/
+/*	Manifest Constants						*/
+/************************************************************************/
+
 #ifndef CHAR_BIT
 # define CHAR_BIT 8
 #endif
+
+namespace FramepaC
+{
+constexpr unsigned LOCAL_SLABCACHE_LOWWATER = 16 ;
+constexpr unsigned LOCAL_SLABCACHE_HIGHWATER = 32 ;
+} // end namespace FramepaC
 
 /************************************************************************/
 /************************************************************************/
@@ -81,6 +91,7 @@ class Slab
       void unlinkSlab(Slab*& listhead) ;
       void linkToSelf() { m_info.m_nextslab = m_info.m_prevslab = this ; }
       void setNextSlab(Slab* next) { m_info.m_nextslab = next ; }
+      void setPrevSlab(Slab* prev) { m_info.m_prevslab = prev ; }
       void* initFreelist(unsigned objsize) ;
       static unsigned bufferSize() { return sizeof(m_buffer) ; }
 
@@ -119,6 +130,7 @@ class Slab
 	    const ObjectVMT*   m_vmt ;		// should be first to avoid having to add an offset
 	    Slab*              m_nextslab { nullptr };
 	    Slab*              m_prevslab { nullptr };
+	    Slab*              m_freelist { nullptr }; // next slab containing unallocated objects
 	    std::thread::id    m_owner ;	// the thread that initially allocated this slab
 	    alloc_size_t       m_objsize ;	// bytes per object
 	    uint16_t           m_objcount ;	// number of objects in this slab
@@ -163,6 +175,7 @@ class Slab
 	    size_t freeCount() const { return m_ptr_count.load() >> 16 ; }
       	 protected:
 	    Fr::Atomic<uint32_t> m_ptr_count ;
+	    Fr::Atomic<Slab*>    m_freelist { nullptr }; // next slab containing unallocated objects
          } ;
    public:
       static constexpr size_t DATA_SIZE = SLAB_SIZE - sizeof(SlabInfo) - sizeof(SlabHeader) - sizeof(SlabFooter) ;
@@ -335,7 +348,17 @@ class Allocator
 	 void* item = allocateObject(s_tls[m_type].m_currslab) ;
 	 if (item) return item ;
 	 // no unallocated object found, so allocate a new Slab
-	 Slab* new_slab = FramepaC::SlabGroup::allocateSlab() ;
+	 Slab* new_slab ;
+	 if (s_local_free_slabs)
+	    {
+	    new_slab = s_local_free_slabs ;
+	    s_local_free_slabs = new_slab->nextSlab() ;
+	    --s_local_free_count ;
+	    }
+	 else
+	    {
+	    new_slab = FramepaC::SlabGroup::allocateSlab() ;
+	    }
 	 item = new_slab->initFreelist(s_shared[m_type].m_objsize) ;
 	 // and insert it on our list of owned slabs
 	 new_slab->linkSlab(s_tls[m_type].m_currslab) ;

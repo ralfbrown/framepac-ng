@@ -45,9 +45,11 @@ class NonObject : public Object
       static ObjectPtr subseq_int(const Object */*obj*/, size_t /*start*/, size_t /*stop*/) { return ObjectPtr(nullptr) ; }
       static ObjectPtr subseq_iter(const Object */*obj*/, ObjectIter /*start*/, ObjectIter /*stop*/) { return ObjectPtr(nullptr) ; }
 
+      // type determination predicates
+      static bool isObject_(const Object*) { return false ; }
       // name of the actual type of the current object
       static const char* typeName_(const Object *) { return "NonObject" ; }
-
+      
       // *** standard info functions ***
       static size_t size_(const Object* o) { return FramepaC::Slab::slab(o)->objectSize() ; }
       static bool empty_(const Object*) { return false ; }

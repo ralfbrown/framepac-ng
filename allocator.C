@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-07					*/
+/* Version 0.01, last edit 2017-06-23					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -109,10 +109,35 @@ Allocator::Allocator(const FramepaC::ObjectVMT* vmt, unsigned objsize, unsigned 
 
 void Allocator::releaseSlab(FramepaC::Slab* slb)
 {
+   // unlink the slab from the doubly-linked list
+   Slab* nextslab = slb->nextSlab() ;
+   Slab* prevslab = slb->prevSlab() ;
+   prevslab->setNextSlab(nextslab) ;
+   nextslab->setPrevSlab(prevslab) ;
+   if (nextslab == slb)			// only slab remaining?
+      nextslab = nullptr ;
    unsigned index = slb->owningAllocator() ;
    if (s_tls[index].m_currslab == slb)
       {
-//FIXME
+      s_tls[index].m_currslab = nextslab ;
+      }
+   // cache a small number of freed slabs to avoid global allocations
+   if (s_local_free_count < FramepaC::LOCAL_SLABCACHE_HIGHWATER)
+      {
+      slb->setNextSlab(s_local_free_slabs) ;
+      s_local_free_slabs = slb ;
+      ++s_local_free_count ;
+      }
+   else
+      {
+      // return the slab to the containing group
+      SlabGroup* group = slb->containingGroup() ;
+      group->releaseSlab(slb) ;
+      //TODO: return a batch of slabs so that we get down to the low-water mark on locally-cached slabs
+//!!!      while (s_local_free_count > FramepaC::LOCAL_SLABCACHE_LOWWATER)
+	 {
+
+	 }
       }
    return ;
 }

@@ -108,6 +108,7 @@ class Object
       FrVIRTFUNC0(bool,isList,isList_,const) ;
       FrVIRTFUNC0(bool,isMap,isMap_,const) ;
       FrVIRTFUNC0(bool,isNumber,isNumber_,const) ;
+      FrVIRTFUNC0(bool,isObject,isObject_,const) ;
       FrVIRTFUNC0(bool,isRational,isRational_,const) ;
       FrVIRTFUNC0(bool,isSparseVector,isSparseVector_,const) ;
       FrVIRTFUNC0(bool,isString,isString_,const) ;
@@ -186,6 +187,7 @@ inline bool Object::isInteger_(const Object*) { return false ; }
 inline bool Object::isList_(const Object*) { return false ; }
 inline bool Object::isMap_(const Object*) { return false ; }
 inline bool Object::isNumber_(const Object*) { return false ; }
+inline bool Object::isObject_(const Object*) { return true ; }
 inline bool Object::isRational_(const Object*) { return false ; }
 inline bool Object::isSparseVector_(const Object*) { return false ; }
 inline bool Object::isString_(const Object*) { return false ; }

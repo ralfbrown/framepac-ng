@@ -182,6 +182,7 @@ class ObjectVMT
       bool (*isList_)(const Fr::Object*) ;
       bool (*isMap_)(const Fr::Object*) ;
       bool (*isNumber_)(const Fr::Object*) ;
+      bool (*isObject_)(const Fr::Object*) ;
       bool (*isRational_)(const Fr::Object*) ;
       bool (*isSparseVector_)(const Fr::Object*) ;
       bool (*isString_)(const Fr::Object*) ;
@@ -250,6 +251,7 @@ class Object_VMT : public ObjectVMT
 	 isInteger_ = &ObjT::isInteger_ ;
 	 isMap_ = &ObjT::isMap_ ;
 	 isNumber_ = &ObjT::isNumber_ ;
+	 isObject_ = &ObjT::isObject_ ;
 	 isRational_ = &ObjT::isRational_ ;
 	 isSparseVector_ = &ObjT::isSparseVector_ ;
 	 isString_ = &ObjT::isString_ ;
