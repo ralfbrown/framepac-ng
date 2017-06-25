@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-23					*/
+/* Version 0.01, last edit 2017-06-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -117,9 +117,9 @@ void Allocator::releaseSlab(FramepaC::Slab* slb)
    if (nextslab == slb)			// only slab remaining?
       nextslab = nullptr ;
    unsigned index = slb->owningAllocator() ;
-   if (s_tls[index].m_currslab == slb)
+   if (s_tls[index].m_allocslabs == slb)
       {
-      s_tls[index].m_currslab = nextslab ;
+      s_tls[index].m_allocslabs = nextslab ;
       }
    // cache a small number of freed slabs to avoid global allocations
    if (s_local_free_count < FramepaC::LOCAL_SLABCACHE_HIGHWATER)
@@ -140,6 +140,43 @@ void Allocator::releaseSlab(FramepaC::Slab* slb)
 	 }
       }
    return ;
+}
+
+//----------------------------------------------------------------------------
+
+void* Allocator::allocate_more()
+{
+   // reclaim all foreign frees
+   while (s_tls[m_type].m_foreignfree)
+      {
+      Slab* slb = s_tls[m_type].m_foreignfree ;
+      s_tls[m_type].m_foreignfree = slb->nextForeignFree() ;
+      slb->reclaimForeignFrees() ;
+      slb->setNextFreeSlab(s_tls[m_type].m_freelist) ;
+      s_tls[m_type].m_freelist = slb ;
+      }
+   void* item ;
+   if (s_tls[m_type].m_freelist)
+      {
+      (void)s_tls[m_type].m_freelist->allocObject(item) ;
+      return item ;
+      }
+   // no unallocated object found, so allocate a new Slab
+   Slab* new_slab ;
+   if (s_local_free_slabs)
+      {
+      new_slab = s_local_free_slabs ;
+      s_local_free_slabs = new_slab->nextSlab() ;
+      --s_local_free_count ;
+      }
+   else
+      {
+      new_slab = FramepaC::SlabGroup::allocateSlab() ;
+      }
+   item = new_slab->initFreelist(s_shared[m_type].m_objsize) ;
+   // and insert it on our list of owned slabs
+   new_slab->linkSlab(s_tls[m_type].m_allocslabs) ;
+   return item ;
 }
 
 //----------------------------------------------------------------------------
@@ -170,7 +207,7 @@ void Allocator::threadCleanup()
    // cycle through all allocators and move the slabs owned by the current thread onto the non-TLS list m_orphans
    for (unsigned i = 0 ; i < num_allocators ; ++i)
       {
-      orphan_slabs(s_tls[i].m_currslab,s_shared[i].m_orphans) ;
+      orphan_slabs(s_tls[i].m_allocslabs,s_shared[i].m_orphans) ;
       }
    return ;
 }

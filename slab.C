@@ -62,19 +62,31 @@ void* Slab::reclaimForeignFrees()
 
 //----------------------------------------------------------------------------
 
-void Slab::releaseObject(void* obj)
+   
+void Slab::releaseObject(void* obj, Slab*& freelist)
 {
 #ifndef FrSINGLE_THREADED
    if (this_thread::get_id() != m_info.m_owner)
       {
       m_footer.link(obj) ;
+      //FIXME: deal with slab-list on foreign frees
       }
    else
 #endif /* !FrSINGLE_THREADED */
       {
-      *((alloc_size_t*)obj) = m_header.m_freelist ;
+      alloc_size_t old_freelist = m_header.m_freelist ;
+      *((alloc_size_t*)obj) = old_freelist ;
       m_header.m_freelist = slabOffset(obj) ;
-      if (--m_header.m_usedcount == 0) { Fr::Allocator::releaseSlab(this) ; }
+      if (--m_header.m_usedcount == 0)
+	 {
+	 Fr::Allocator::releaseSlab(this) ;
+	 }
+      else if (old_freelist == 0)
+	 {
+	 // this was the first object freed, so add the slab to the list of slabs with available objects
+	 setNextFreeSlab(freelist) ;
+	 freelist = this ;
+	 }
       }
    return ;
 }

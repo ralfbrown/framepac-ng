@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-21					*/
+/* Version 0.01, last edit 2017-06-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -92,6 +92,8 @@ class Slab
       void linkToSelf() { m_info.m_nextslab = m_info.m_prevslab = this ; }
       void setNextSlab(Slab* next) { m_info.m_nextslab = next ; }
       void setPrevSlab(Slab* prev) { m_info.m_prevslab = prev ; }
+      void setNextFreeSlab(Slab* next) { m_info.m_freelist = next ; }
+      void setNextForeignFree(Slab* next) { m_footer.setFreeSlabList(next) ; }//FIXME?
       void* initFreelist(unsigned objsize) ;
       static unsigned bufferSize() { return sizeof(m_buffer) ; }
 
@@ -100,6 +102,8 @@ class Slab
       bool onlySlab() const { return m_info.m_nextslab == this && m_info.m_prevslab == this ; }
       Slab* nextSlab() const { return m_info.m_nextslab ; }
       Slab* prevSlab() const { return m_info.m_prevslab ; }
+      Slab* nextFreeSlab() const { return m_info.m_freelist ; }
+      Slab* nextForeignFree() const { return m_footer.freeSlabList() ; }
       unsigned owningAllocator() const { return m_info.m_alloc_index ; }
       std::thread::id owningThread() const { return m_info.m_owner ; }
       size_t objectSize() const { return m_info.m_objsize ; }
@@ -109,18 +113,17 @@ class Slab
 	   return used >= freed ? used - freed : 0 ; }
       size_t slabOffset() const { return m_info.m_slab_id ; }
 
-      [[gnu::hot]] [[gnu::malloc]]
-      void* allocObject()
+      [[gnu::hot]]
+      bool allocObject(void*& item)
 	 {
-	 if (!m_header.m_freelist)
-	    return nullptr ;
+	 //assert(m_header.m_freelist != 0) ;
 	 m_header.m_usedcount++ ;
-	 void* obj = ((char*)this) + m_header.m_freelist ;
-	 m_header.m_freelist = *((alloc_size_t*)obj) ;
-	 return obj ;
+	 item = ((char*)this) + m_header.m_freelist ;
+	 m_header.m_freelist = *((alloc_size_t*)item) ;
+	 return m_header.m_freelist != 0 ;
 	 }
       void* reclaimForeignFrees() ;
-      void releaseObject(void* obj) ;
+      void releaseObject(void* obj, Slab*& freelist) ;
    private:
       // group together all the header fields
       // First, all of the fields which are unaffected by allocations/deallocations within this slab
@@ -131,6 +134,7 @@ class Slab
 	    Slab*              m_nextslab { nullptr };
 	    Slab*              m_prevslab { nullptr };
 	    Slab*              m_freelist { nullptr }; // next slab containing unallocated objects
+	    Fr::Atomic<Slab*>* m_foreignlist { nullptr }; // pointer to thread-local list of foreign frees
 	    std::thread::id    m_owner ;	// the thread that initially allocated this slab
 	    alloc_size_t       m_objsize ;	// bytes per object
 	    uint16_t           m_objcount ;	// number of objects in this slab
@@ -173,6 +177,8 @@ class Slab
 	       return std::pair<alloc_size_t,uint16_t>(val&0xFFFF,val>>16) ;
 	       }
 	    size_t freeCount() const { return m_ptr_count.load() >> 16 ; }
+	    Slab* freeSlabList() const { return m_freelist ; }
+	    void setFreeSlabList(Slab* slb) { m_freelist = slb ; }
       	 protected:
 	    Fr::Atomic<uint32_t> m_ptr_count ;
 	    Fr::Atomic<Slab*>    m_freelist { nullptr }; // next slab containing unallocated objects
@@ -248,7 +254,9 @@ class Allocator
       class TLS
 	 {
 	 public:
-	    FramepaC::Slab* m_currslab ;
+	    FramepaC::Slab* m_allocslabs ;
+	    FramepaC::Slab* m_freelist ;
+	    FramepaC::Slab* m_foreignfree ;
 	 } ;
       class SharedInfo
 	 {
@@ -283,9 +291,18 @@ class Allocator
       [[gnu::hot]] [[gnu::malloc]]
       void* allocate()
 	 {
-	 Slab* slb = s_tls[m_type].m_currslab ;
-	 void* item = slb ? slb->allocObject() : nullptr ;
-	 return item ? item : allocate_more() ;
+	 Slab* slb = s_tls[m_type].m_freelist ;
+	 while (slb)
+	    {
+	    void* item ;
+	    if (!slb->allocObject(item))
+	       {
+	       slb = slb->nextFreeSlab() ;
+	       s_tls[m_type].m_freelist = slb ;
+	       }
+	    if (item) return item ;
+	    }
+	 return allocate_more() ;
 	 }
       [[gnu::hot]]
       void release(void* blk)
@@ -293,11 +310,7 @@ class Allocator
 	 if (blk)
 	    {
 	    Slab* slb = Slab::slab(blk) ;
-	    slb->releaseObject(blk) ;
-	    // set the 'current' pointer to the slab containing the just-released block.  This ensures
-	    //   that the next allocation can grab an object without needing to search, and will generally
-	    //   also result in the allocated memory still being in cache
-	    s_tls[m_type].m_currslab = slb ;
+	    slb->releaseObject(blk,s_tls[m_type].m_freelist) ;
 	    }
 	 }
 
@@ -308,62 +321,17 @@ class Allocator
 
    protected:
       // get the per-thread list of allocated slabs
-      Slab* getSlabList() const { return s_tls[m_type].m_currslab ; }
+      Slab* getSlabList() const { return s_tls[m_type].m_allocslabs ; }
 
       // update the per-thread list of allocated slabs
       Slab* updateSlabList(Slab* slb)
 	 {
-	 Slab* prev = s_tls[m_type].m_currslab ;
-	 s_tls[m_type].m_currslab = slb ;
+	 Slab* prev = s_tls[m_type].m_allocslabs ;
+	 s_tls[m_type].m_allocslabs = slb ;
 	 return prev ;
 	 }
 
-      static void* allocateObject(Slab*& slablist)
-         {
-	 if (slablist)
-	    {
-	    void* item = slablist->reclaimForeignFrees() ;
-	    if (item) return item ;
-	    // no reclaimable object, so advance around the circular list of owned slabs looking for one with
-	    //   unallocated objects
-	    for (Slab* slb = slablist->nextSlab() ; slb != slablist ; slb = slb->nextSlab())
-	       {
-	       item = slb->allocObject() ;
-	       if (!item)
-		  item = slb->reclaimForeignFrees() ;
-	       if (item)
-		  {
-		  // set the current slab to be the one we just found, so that we don't have to repeat the search
-		  //   for the next allocation request
-		  slablist = slb ;
-		  return item ;
-		  }
-	       }
-	    }
-	 return  nullptr ;
-	 }
-
-      void* allocate_more()
-	 {
-	 void* item = allocateObject(s_tls[m_type].m_currslab) ;
-	 if (item) return item ;
-	 // no unallocated object found, so allocate a new Slab
-	 Slab* new_slab ;
-	 if (s_local_free_slabs)
-	    {
-	    new_slab = s_local_free_slabs ;
-	    s_local_free_slabs = new_slab->nextSlab() ;
-	    --s_local_free_count ;
-	    }
-	 else
-	    {
-	    new_slab = FramepaC::SlabGroup::allocateSlab() ;
-	    }
-	 item = new_slab->initFreelist(s_shared[m_type].m_objsize) ;
-	 // and insert it on our list of owned slabs
-	 new_slab->linkSlab(s_tls[m_type].m_currslab) ;
-	 return item ;
-	 }
+      void* allocate_more() ;
 
    protected: // data members
       unsigned		       m_type { 0 } ;
