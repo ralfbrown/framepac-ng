@@ -68,14 +68,14 @@ class too_many_allocators : public std::bad_alloc
 static unsigned find_match(Allocator::SharedInfo* info, const FramepaC::ObjectVMT* vmt,
    unsigned objsize, unsigned align)
 {
-   unsigned existing = num_allocators ;
+   unsigned existing { num_allocators } ;
    for (unsigned i = 0 ; i < existing ; ++i)
       {
       if (info[i].m_vmt == vmt && info[i].m_objsize == objsize && info[i].m_alignment == align)
 	 return i ;
       }
    // if we get here, there was no matching allocator, so generate a new one
-   unsigned idx = num_allocators++ ;
+   unsigned idx { num_allocators++ } ;
    if (idx < MAX_ALLOCATOR_TYPES)
       {
       new (&info[idx]) Allocator::SharedInfo(vmt,objsize,align) ;
@@ -90,7 +90,7 @@ static unsigned find_match(Allocator::SharedInfo* info, const FramepaC::ObjectVM
 
 Allocator::Allocator(const FramepaC::ObjectVMT* vmt, unsigned objsize)
 {
-   unsigned align = alignof(double) ;
+   unsigned align { alignof(double) } ;
    if (objsize < align)
       align = objsize ;
    m_type = find_match(s_shared,vmt,objsize,align) ;
@@ -110,13 +110,13 @@ Allocator::Allocator(const FramepaC::ObjectVMT* vmt, unsigned objsize, unsigned 
 void Allocator::releaseSlab(FramepaC::Slab* slb)
 {
    // unlink the slab from the doubly-linked list
-   Slab* nextslab = slb->nextSlab() ;
-   Slab* prevslab = slb->prevSlab() ;
+   Slab* nextslab { slb->nextSlab() } ;
+   Slab* prevslab { slb->prevSlab() } ;
    prevslab->setNextSlab(nextslab) ;
    nextslab->setPrevSlab(prevslab) ;
    if (nextslab == slb)			// only slab remaining?
       nextslab = nullptr ;
-   unsigned index = slb->owningAllocator() ;
+   unsigned index { slb->owningAllocator() } ;
    if (s_tls[index].m_allocslabs == slb)
       {
       s_tls[index].m_allocslabs = nextslab ;
@@ -131,7 +131,7 @@ void Allocator::releaseSlab(FramepaC::Slab* slb)
    else
       {
       // return the slab to the containing group
-      SlabGroup* group = slb->containingGroup() ;
+      SlabGroup* group { slb->containingGroup() } ;
       group->releaseSlab(slb) ;
       //TODO: return a batch of slabs so that we get down to the low-water mark on locally-cached slabs
 //!!!      while (s_local_free_count > FramepaC::LOCAL_SLABCACHE_LOWWATER)
@@ -147,13 +147,52 @@ void Allocator::releaseSlab(FramepaC::Slab* slb)
 void* Allocator::allocate_more()
 {
    // reclaim all foreign frees
-   while (s_tls[m_type].m_foreignfree)
+   // first, atomically grab the list of slabs with foreign-freed objects
+   Slab* freelist { Atomic<Slab*>::ref(s_tls[m_type].m_foreignfree).exchange(nullptr) } ;
+   // then iterate through the list, accumulating the number of slabs and min/max available objects per slab
+   size_t count { 0 } ;
+   unsigned min_used { ~0U } ;
+   unsigned max_used { 0 } ;
+   while (freelist)
       {
-      Slab* slb = s_tls[m_type].m_foreignfree ;
-      s_tls[m_type].m_foreignfree = slb->nextForeignFree() ;
+      count++ ;
+      Slab* slb { freelist } ;
+      freelist = freelist->nextFreeSlab() ;
       slb->reclaimForeignFrees() ;
+      size_t in_use { slb->objectsInUse() } ;
+      if (in_use < min_used) min_used = in_use ;
+      if (in_use > max_used) max_used = in_use ;
       slb->setNextFreeSlab(s_tls[m_type].m_freelist) ;
       s_tls[m_type].m_freelist = slb ;
+      }
+   // if we have multiple Slabs, release any which are completely unused back to the general pool
+   if (count > 1 && min_used == 0)
+      {
+      Slab* slb { s_tls[m_type].m_freelist } ;
+      freelist = nullptr ;
+      if (max_used == 0)
+	 {
+	 Slab* currslab { slb } ;
+	 slb = slb->nextFreeSlab() ;
+	 currslab->setNextFreeSlab(nullptr) ;
+	 freelist = currslab ;
+	 }
+      while (slb)
+	 {
+	 Slab* currslab { slb } ;
+	 slb = slb->nextFreeSlab() ;
+	 if (currslab->objectsInUse() == 0)
+	    {
+	    // release back to general pool
+	    //FIXME
+	    }
+	 else
+	    {
+	    currslab->setNextFreeSlab(freelist) ;
+	    freelist = currslab ;
+	    }
+	 }
+      s_tls[m_type].m_freelist = freelist ;
       }
    void* item ;
    if (s_tls[m_type].m_freelist)
@@ -183,11 +222,11 @@ void* Allocator::allocate_more()
 
 static void orphan_slabs(FramepaC::Slab*& currlist, FramepaC::Slab*& orphans)
 {
-   Slab* slabs = currlist ;
+   Slab* slabs { currlist } ;
    if (slabs)
       {
       currlist = nullptr ;
-      Slab* tail = slabs ;
+      Slab* tail { slabs } ;
       while (tail->nextSlab())
 	 {
 	 tail = tail->nextSlab() ;
