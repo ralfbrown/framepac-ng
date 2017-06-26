@@ -274,10 +274,10 @@ class Allocator
 	       }
 	    ~SharedInfo() {}
 	 public: // data members
-	    const FramepaC::ObjectVMT* m_vmt ;
-	    FramepaC::Slab*            m_orphans { nullptr } ;  // slabs which used to belong to terminated threads
-	    FramepaC::alloc_size_t     m_objsize ;
-	    unsigned		       m_alignment { alignof(double) } ;
+	    const FramepaC::ObjectVMT*  m_vmt ;
+	    Fr::Atomic<FramepaC::Slab*> m_orphans { nullptr } ;  // slabs which used to belong to terminated threads
+	    FramepaC::alloc_size_t      m_objsize ;
+	    unsigned		        m_alignment { alignof(double) } ;
 	 } ;
       
    public:

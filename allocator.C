@@ -208,6 +208,26 @@ void* Allocator::allocate_more()
       s_local_free_slabs = new_slab->nextSlab() ;
       --s_local_free_count ;
       }
+   else if (s_shared[m_type].m_orphans)
+      {
+      // adopt an orphaned slab
+      new_slab = s_shared[m_type].m_orphans ;
+      Slab* next ;
+      do {
+         if (!new_slab)
+	    break ;
+         next = new_slab->nextSlab() ;
+	 } while (!s_shared[m_type].m_orphans.compare_exchange_weak(new_slab,next)) ;
+      if (new_slab)
+	 {
+	 // adopt the slab
+	 }
+      else
+	 {
+	 // we were unable to grab an orphaned slab, so allocate a new one
+	 new_slab = FramepaC::SlabGroup::allocateSlab() ;
+	 }
+      }
    else
       {
       new_slab = FramepaC::SlabGroup::allocateSlab() ;
@@ -220,25 +240,6 @@ void* Allocator::allocate_more()
 
 //----------------------------------------------------------------------------
 
-static void orphan_slabs(FramepaC::Slab*& currlist, FramepaC::Slab*& orphans)
-{
-   Slab* slabs { currlist } ;
-   if (slabs)
-      {
-      currlist = nullptr ;
-      Slab* tail { slabs } ;
-      while (tail->nextSlab())
-	 {
-	 tail = tail->nextSlab() ;
-	 }
-      tail->setNextSlab(orphans) ;
-      orphans = slabs ;
-      }
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
 void Allocator::threadCleanup()
 {
    // we are about to orphan all of the slabs owned by the terminating thread, so make sure
@@ -246,7 +247,21 @@ void Allocator::threadCleanup()
    // cycle through all allocators and move the slabs owned by the current thread onto the non-TLS list m_orphans
    for (unsigned i = 0 ; i < num_allocators ; ++i)
       {
-      orphan_slabs(s_tls[i].m_allocslabs,s_shared[i].m_orphans) ;
+      Slab* slabs { s_tls[i].m_allocslabs } ;
+      if (!slabs)
+	 continue ;
+      // find the last slab in the list
+      Slab* tail { slabs } ;
+      while (tail->nextSlab())
+	 {
+	 tail = tail->nextSlab() ;
+	 }
+      // link the entire list into the orphans list in one step
+      Slab* orphans ;
+      orphans = s_shared[i].m_orphans ;
+      do {
+         tail->setNextSlab(orphans) ;
+         } while (!s_shared[i].m_orphans.compare_exchange_weak(orphans,slabs)) ;
       }
    return ;
 }
