@@ -70,7 +70,7 @@ SlabGroup::SlabGroup()
 void* SlabGroup::operator new(size_t sz)
 {
    void* alloc ;
-   return (posix_memalign(&alloc,sizeof(Slab),sz) ) ? alloc : nullptr ;
+   return (posix_memalign(&alloc,sizeof(Slab),sz) ) ? nullptr : alloc ;
 }
 
 //----------------------------------------------------------------------------
