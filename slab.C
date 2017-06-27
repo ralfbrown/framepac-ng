@@ -95,8 +95,16 @@ void Slab::releaseObject(void* obj, Slab*& freelist)
 
 void Slab::linkSlab(Slab*& listhead)
 {
+#ifndef FrSINGLE_THREADED
+   // claim ownership of the slab by the current thread
+   m_info.m_owner = this_thread::get_id() ;
+#endif /* !FrSINGLE_THREADED */
    if (listhead == nullptr)
+      {
       listhead = this ;
+      m_info.m_prevslab = this ;
+      m_info.m_nextslab = this ;
+      }
    else
       {
       // link in the current slab following the item at the head of the list
