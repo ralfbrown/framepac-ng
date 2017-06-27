@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-31					*/
+/* Version 0.01, last edit 2017-06-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -29,8 +29,8 @@ namespace FramepaC
 /************************************************************************/
 /************************************************************************/
 
-SlabGroup* SlabGroup::s_grouplist_fwd = nullptr ;
-SlabGroup* SlabGroup::s_grouplist_rev = nullptr ;
+SlabGroup* SlabGroup::s_grouplist { nullptr } ;
+SlabGroup* SlabGroup::s_freelist { nullptr } ;
 mutex SlabGroup::s_mutex ;
 
 /************************************************************************/
@@ -42,11 +42,26 @@ mutex SlabGroup::s_mutex ;
 
 SlabGroup::SlabGroup()
 {
-   lock_guard<mutex> lock(s_mutex) ;
-   m_next = s_grouplist_fwd ;
-   s_grouplist_fwd = this ;
-   if (!s_grouplist_rev)
-      s_grouplist_rev = this ;
+   // set up the linked list of free slabs
+   m_slabs[0].setNextSlab(nullptr) ;
+   for (size_t i = 1 ; i < SLAB_GROUP_SIZE ; ++i)
+      {
+      m_slabs[i].setNextSlab(&m_slabs[i-1]) ;
+      }
+   m_freeslabs = &m_slabs[SLAB_GROUP_SIZE-1] ;
+   // link the new group into the doubly-linked circular list of SlabGroups
+   lock_guard<mutex> _(s_mutex) ;
+   if (s_grouplist)
+      {
+      m_next = s_grouplist ;
+      m_prev = s_grouplist->m_prev ;
+      s_grouplist->m_prev = this ;
+      }
+   else
+      {
+      m_next = m_prev = this ;
+      }
+   s_grouplist = this ;
    return ;
 }
 
@@ -70,15 +85,17 @@ void SlabGroup::operator delete(void* grp)
 
 void SlabGroup::unlink()
 {
-   lock_guard<mutex> lock(s_mutex) ;
-   if (m_prev)
-      m_prev->m_next = m_next ;
+   lock_guard<mutex> _(s_mutex) ;
+   if (m_prev == this && m_next == this)
+      s_grouplist = nullptr ;		// this was the last SlabGroup
    else
-      s_grouplist_fwd = m_next ;
-   if (m_next)
-      m_next->m_prev = m_prev ;
-   else
-      s_grouplist_rev = m_prev ;
+      {
+      SlabGroup* prev = m_prev ;
+      SlabGroup* next = m_next ;
+      prev->m_next = next ;
+      next->m_prev = prev ;
+      s_grouplist = next ;
+      }
    return ;
 }
 
@@ -86,19 +103,46 @@ void SlabGroup::unlink()
 
 Slab* SlabGroup::allocateSlab()
 {
-   //!!!SlabGroup* sg = new SlabGroup ;
-   //!!!m_numfree-- ;
-
-   return nullptr ; //FIXME
+   Fr::Atomic<SlabGroup*>& freelist { Fr::Atomic<SlabGroup*>::ref(s_freelist) } ;
+   if (freelist)
+      {
+      // allocate an available Slab
+      lock_guard<mutex> _(s_mutex) ;
+      SlabGroup* sg = s_freelist ;
+      Slab* slb = sg->m_freeslabs ;
+      sg->m_freeslabs = slb->nextSlab() ;
+      if (--sg->m_numfree == 0)
+	 {
+	 // remove the slabgroup from the list of groups with free slabs
+	 s_freelist = sg->m_nextfree ;
+	 }
+      return slb ;
+      }
+   // no slabs available, so allocate a new SlabGroup
+   SlabGroup* sg = new SlabGroup ;
+   // and grab the first slab off of its freelist
+   lock_guard<mutex> _(s_mutex) ;
+   Slab* slb = sg->m_freeslabs ;
+   sg->m_freeslabs = slb->nextSlab() ;
+   return slb ;
 }
 
 //----------------------------------------------------------------------------
 
-void SlabGroup::releaseSlab(Slab* )
+void SlabGroup::releaseSlab(Slab* slb)
 {
-   //!!!m_numfree++ ;
-   //FIXME
-
+   SlabGroup* sg = slb->containingGroup() ;
+   lock_guard<mutex> _(s_mutex) ;
+   // add slab to list of free slabs in its group
+   slb->setNextSlab(sg->m_freeslabs) ;
+   sg->m_freeslabs = slb ;
+   // update statistics
+   if (sg->m_numfree++ == 0)
+      {
+      // first free slab added to this group, so link it into the list of groups with free slabs
+      sg->m_nextfree = s_freelist ;
+      s_freelist = sg ;
+      }
    return ;
 }
 

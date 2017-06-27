@@ -209,18 +209,19 @@ class SlabGroup
       void operator= (const SlabGroup&) = delete ;
 
       static Slab* allocateSlab() ;
-      void releaseSlab(Slab* slab) ;
+      static void releaseSlab(Slab* slab) ;
 
    private:
       static mutex s_mutex ;
-      static SlabGroup* s_grouplist_fwd ;
-      static SlabGroup* s_grouplist_rev ;
+      static SlabGroup* s_grouplist ;
+      static SlabGroup* s_freelist ;
    private:
       Slab m_slabs[SLAB_GROUP_SIZE] ;
-      SlabGroup* m_next ;
-      SlabGroup* m_prev { nullptr };
-      Slab*      m_freeslabs { nullptr };
-      unsigned   m_numfree { lengthof(m_slabs) };
+      Fr::Atomic<SlabGroup*> m_next ;
+      Fr::Atomic<SlabGroup*> m_prev { nullptr };
+      Fr::Atomic<SlabGroup*> m_nextfree { nullptr };
+      Fr::Atomic<Slab*>      m_freeslabs { nullptr };
+      Fr::atom_uint          m_numfree { lengthof(m_slabs) };
       alignas(64) size_t m_freemask[(SLAB_GROUP_SIZE/sizeof(size_t))/CHAR_BIT] ;
    protected:
       void* operator new(size_t sz) ;
