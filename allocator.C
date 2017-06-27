@@ -131,8 +131,7 @@ void Allocator::releaseSlab(FramepaC::Slab* slb)
    else
       {
       // return the slab to the containing group
-      SlabGroup* group { slb->containingGroup() } ;
-      group->releaseSlab(slb) ;
+      SlabGroup::releaseSlab(slb) ;
       //TODO: return a batch of slabs so that we get down to the low-water mark on locally-cached slabs
 //!!!      while (s_local_free_count > FramepaC::LOCAL_SLABCACHE_LOWWATER)
 	 {
@@ -184,7 +183,7 @@ void* Allocator::allocate_more()
 	 if (currslab->objectsInUse() == 0)
 	    {
 	    // release back to general pool
-	    //FIXME
+	    SlabGroup::releaseSlab(currslab) ;
 	    }
 	 else
 	    {
@@ -262,6 +261,14 @@ void Allocator::threadCleanup()
       do {
          tail->setNextSlab(orphans) ;
          } while (!s_shared[i].m_orphans.compare_exchange_weak(orphans,slabs)) ;
+      }
+   // return the cache of unused slabs to the global pool
+   while (s_local_free_slabs)
+      {
+      Slab* slb = s_local_free_slabs ;
+      s_local_free_slabs = slb->nextSlab() ;
+      SlabGroup::releaseSlab(slb) ;
+      --s_local_free_count ;
       }
    return ;
 }
