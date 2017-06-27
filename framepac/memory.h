@@ -216,13 +216,13 @@ class SlabGroup
       static SlabGroup* s_grouplist ;
       static SlabGroup* s_freelist ;
    private:
-      Slab m_slabs[SLAB_GROUP_SIZE] ;
-      Fr::Atomic<SlabGroup*> m_next ;
-      Fr::Atomic<SlabGroup*> m_prev { nullptr };
-      Fr::Atomic<SlabGroup*> m_nextfree { nullptr };
-      Fr::Atomic<Slab*>      m_freeslabs { nullptr };
-      Fr::atom_uint          m_numfree { lengthof(m_slabs) };
-      alignas(64) size_t m_freemask[(SLAB_GROUP_SIZE/sizeof(size_t))/CHAR_BIT] ;
+      Slab           m_slabs[SLAB_GROUP_SIZE] ;
+      SlabGroup*     m_next ;
+      SlabGroup*     m_prev ;
+      SlabGroup*     m_nextfree { nullptr } ;
+      SlabGroup**    m_prevfree { nullptr } ;
+      Slab*          m_freeslabs { nullptr } ;
+      unsigned       m_numfree { lengthof(m_slabs) } ;
    protected:
       void* operator new(size_t sz) ;
       void operator delete(void* grp) ;
