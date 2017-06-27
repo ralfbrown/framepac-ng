@@ -231,7 +231,7 @@ void* Allocator::allocate_more()
       {
       new_slab = FramepaC::SlabGroup::allocateSlab() ;
       }
-   item = new_slab->initFreelist(s_shared[m_type].m_objsize) ;
+   item = new_slab->initFreelist(s_shared[m_type].m_objsize,s_shared[m_type].m_alignment) ;
    // and insert it on our list of owned slabs
    new_slab->linkSlab(s_tls[m_type].m_allocslabs) ;
    return item ;

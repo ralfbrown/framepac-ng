@@ -135,10 +135,37 @@ void Slab::unlinkSlab(Slab*& listhead)
 
 //----------------------------------------------------------------------------
 
-void* Slab::initFreelist(unsigned /*listhead*/)
+void* Slab::initFreelist(unsigned objsize, unsigned align)
 {
-   //TODO
-   return nullptr ;
+   // round up the object size to the next higher multiple of 'align'
+   unsigned multiple { (objsize + align - 1) / align } ;
+   objsize = align * multiple ;
+   // align the start of the buffer
+   void* buf = m_buffer ;
+   size_t space = sizeof(m_buffer) ;
+   if (!std::align(align,objsize,buf,space))
+      {
+      // error: unable to fit an object of 'objsize' bytes with alignment 'align' into m_buffer
+//FIXME
+      return nullptr ;
+      }
+   // compute the number of objects the slab can hold
+   size_t objcount { space / objsize } ;
+   m_info.m_objsize = objsize ;
+   m_info.m_objcount = objcount ;
+   // and link together all but one of the objects
+   alloc_size_t prev = 0 ;
+   for (size_t i = 1 ; i < objcount ; ++i)
+      {
+      char* currobj = ((char*)buf) + i*objsize ;
+      alloc_size_t curr = slabOffset(currobj) ;
+      *((alloc_size_t*)currobj) = prev ;
+      prev = curr ;
+      }
+   // set the start of the freelist to the last object added to the linked list
+   m_header.m_freelist = prev ;
+   m_header.m_usedcount = 1 ;		// the object we're returning is in use
+   return buf ;
 }
 
 //----------------------------------------------------------------------------

@@ -94,7 +94,7 @@ class Slab
       void setPrevSlab(Slab* prev) { m_info.m_prevslab = prev ; }
       void setNextFreeSlab(Slab* next) { m_info.m_freelist = next ; }
       void setNextForeignFree(Slab* next) { m_footer.setFreeSlabList(next) ; }//FIXME?
-      void* initFreelist(unsigned objsize) ;
+      void* initFreelist(unsigned objsize, unsigned align) ;
       static unsigned bufferSize() { return sizeof(m_buffer) ; }
 
       // information about this slab
