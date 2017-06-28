@@ -236,21 +236,21 @@ class SlabGroup
    public:
       SlabGroup() ;
       SlabGroup(const SlabGroup&) = delete ;
-      ~SlabGroup() { unlink() ; }
+      ~SlabGroup() { }
       void operator= (const SlabGroup&) = delete ;
 
       static Slab* allocateSlab() ;
       static void releaseSlab(Slab* slab) ;
 
    private:
-      static mutex      s_mutex ;
+      static mutex      s_grouplist_mutex ;
       static mutex      s_freelist_mutex ;
       static SlabGroup* s_grouplist ;
       static SlabGroup* s_freelist ;
    private:
       Slab           m_slabs[SLAB_GROUP_SIZE] ;
       SlabGroup*     m_next ;
-      SlabGroup*     m_prev ;
+      SlabGroup**    m_prev ;
       SlabGroup*     m_nextfree { nullptr } ;
       SlabGroup**    m_prevfree { nullptr } ;
       Slab*          m_freeslabs { nullptr } ;
@@ -260,7 +260,8 @@ class SlabGroup
       void* operator new(size_t sz) ;
       void operator delete(void* grp) ;
    protected:
-      void unlink() ;
+      void pushGroup() ;
+      void unlinkGroup() ;
       void pushFreeGroup() ;
       void unlinkFreeGroup() ;
       static Slab* popFreeSlab() ;

@@ -169,12 +169,14 @@ void benchmark_suballocator_parallel(size_t threads, size_t size, size_t iterati
 {
    ThreadPool tpool(threads) ;
    if (threads == 0) threads = 1 ;
-   size_t batch_count = threads >= 4 ? 2 * threads : 4 ;
+//   size_t batch_count = threads >= 4 ? 2 * threads : 4 ;
+   size_t batch_count = threads >= 1 ? threads : 1 ;
    size_t batch_size = (size + batch_count - 1) / batch_count ;
    size = batch_count * batch_size ;
    cout << "Benchmark of memory sub-allocator speed (multiple threads)\n\n"
-           "We allocate and then release " << size << " 16-byte objects a total\n"
-           "of " << iterations << " times split across " << threads << " concurrent threads.\n"
+           "We allocate and then release " << batch_size << " 16-byte objects in each\n"
+           "of " << batch_count << " batches running in " << threads << " concurrent threads\n"
+           "a total of " << iterations  << " times.\n"
 	<< endl ;
    LocalAlloc<void*,30000> blocks(size) ;
    SmallAlloc* allocator = SmallAlloc::create(16) ;
