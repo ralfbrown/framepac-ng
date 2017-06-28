@@ -144,6 +144,9 @@ Slab* SlabGroup::allocateSlab()
 void SlabGroup::releaseSlab(Slab* slb)
 {
    SlabGroup* sg = slb->containingGroup() ;
+#ifndef FrSINGLE_THREADED
+   slb->clearOwner() ;
+#endif /* !FrSINGLE_THREADED */
    lock_guard<mutex> _(s_freelist_mutex) ;
    // add slab to list of free slabs in its group
    slb->setNextSlab(sg->m_freeslabs) ;

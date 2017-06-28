@@ -109,7 +109,7 @@ Allocator::Allocator(const FramepaC::ObjectVMT* vmt, unsigned objsize, unsigned 
 
 void Allocator::releaseSlab(FramepaC::Slab* slb)
 {
-   // unlink the slab from the doubly-linked list
+   // unlink the slab from the doubly-linked list of allocated slabs
    Slab* nextslab { slb->nextSlab() } ;
    Slab* prevslab { slb->prevSlab() } ;
    prevslab->setNextSlab(nextslab) ;
@@ -161,20 +161,16 @@ void* Allocator::allocate_more()
       size_t in_use { slb->objectsInUse() } ;
       if (in_use < min_used) min_used = in_use ;
       if (in_use > max_used) max_used = in_use ;
-      slb->setNextFreeSlab(s_tls[m_type].m_freelist) ;
-      s_tls[m_type].m_freelist = slb ;
+      slb->pushFreeSlab(s_tls[m_type].m_freelist) ;
       }
-   // if we have multiple Slabs, release any which are completely unused back to the general pool
+   // if we have multiple Slabs on the freelist, release any which are completely unused back to the general pool
    if (count > 1 && min_used == 0)
       {
       Slab* slb { s_tls[m_type].m_freelist } ;
-      freelist = nullptr ;
       if (max_used == 0)
 	 {
-	 Slab* currslab { slb } ;
+	 // leave one slab on the freelist if all are completely unused
 	 slb = slb->nextFreeSlab() ;
-	 currslab->setNextFreeSlab(nullptr) ;
-	 freelist = currslab ;
 	 }
       while (slb)
 	 {
@@ -183,15 +179,10 @@ void* Allocator::allocate_more()
 	 if (currslab->objectsInUse() == 0)
 	    {
 	    // release back to general pool
+	    currslab->unlinkFreeSlab() ;
 	    SlabGroup::releaseSlab(currslab) ;
 	    }
-	 else
-	    {
-	    currslab->setNextFreeSlab(freelist) ;
-	    freelist = currslab ;
-	    }
 	 }
-      s_tls[m_type].m_freelist = freelist ;
       }
    void* item ;
    if (s_tls[m_type].m_freelist)
@@ -236,8 +227,7 @@ void* Allocator::allocate_more()
    new_slab->linkSlab(s_tls[m_type].m_allocslabs) ;
    if (new_slab->objectsAvailable())
       {
-      new_slab->setNextFreeSlab(s_tls[m_type].m_freelist) ;
-      s_tls[m_type].m_freelist = new_slab ;
+      new_slab->pushFreeSlab(s_tls[m_type].m_freelist) ;
       }
    return item ;
 }

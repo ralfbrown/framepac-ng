@@ -90,11 +90,38 @@ class Slab
       void linkSlab(Slab*& listhead) ;
       void unlinkSlab(Slab*& listhead) ;
       void linkToSelf() { m_info.m_nextslab = m_info.m_prevslab = this ; }
+      void pushFreeSlab(Slab*& listhead)
+	 {
+	 this->m_info.m_nextfree = listhead ;
+	 this->m_info.m_prevfree = &listhead ;
+	 if (listhead) listhead->m_info.m_prevfree = &(this->m_info.m_nextfree) ;
+	 listhead = this ;
+	 }
+      static Slab* popFreeSlab(Slab*& listhead)
+	 {
+	 Slab* slb = listhead ;
+	 if (slb)
+	    {
+	    listhead = listhead->m_info.m_nextfree ;
+	    if (listhead) listhead->m_info.m_prevfree = &listhead ;
+	    }
+	 return slb ;
+	 }
+      void unlinkFreeSlab()
+	 {
+	 Slab** prev = m_info.m_prevfree ;
+	 if (!prev) return  ;
+	 Slab* next = m_info.m_nextfree ;
+	 (*prev) = next ;
+	 if (next) next->m_info.m_prevfree = prev ;
+	 prev = nullptr ;
+	 }
       void setNextSlab(Slab* next) { m_info.m_nextslab = next ; }
       void setPrevSlab(Slab* prev) { m_info.m_prevslab = prev ; }
-      void setNextFreeSlab(Slab* next) { m_info.m_freelist = next ; }
       void setNextForeignFree(Slab* next) { m_footer.setFreeSlabList(next) ; }//FIXME?
       void setSlabID(unsigned id) { m_info.m_slab_id = id ; }
+      void clearOwner() ;
+      alloc_size_t makeFreeList(unsigned objsize, unsigned align) ;
       void* initFreelist(unsigned objsize, unsigned align) ;
       static unsigned bufferSize() { return sizeof(m_buffer) ; }
 
@@ -103,7 +130,7 @@ class Slab
       bool onlySlab() const { return m_info.m_nextslab == this && m_info.m_prevslab == this ; }
       Slab* nextSlab() const { return m_info.m_nextslab ; }
       Slab* prevSlab() const { return m_info.m_prevslab ; }
-      Slab* nextFreeSlab() const { return m_info.m_freelist ; }
+      Slab* nextFreeSlab() const { return m_info.m_nextfree ; }
       Slab* nextForeignFree() const { return m_footer.freeSlabList() ; }
       unsigned owningAllocator() const { return m_info.m_alloc_index ; }
       std::thread::id owningThread() const { return m_info.m_owner ; }
@@ -136,7 +163,8 @@ class Slab
 	    const ObjectVMT*   m_vmt ;		// should be first to avoid having to add an offset
 	    Slab*              m_nextslab { nullptr };
 	    Slab*              m_prevslab { nullptr };
-	    Slab*              m_freelist { nullptr }; // next slab containing unallocated objects
+	    Slab*              m_nextfree { nullptr }; // next slab containing unallocated objects
+	    Slab**             m_prevfree { nullptr }; // ptr to freelist predecessor's 'next' pointer
 	    Fr::Atomic<Slab*>* m_foreignlist { nullptr }; // pointer to thread-local list of foreign frees
 	    std::thread::id    m_owner ;	// the thread that initially allocated this slab
 	    alloc_size_t       m_objsize ;	// bytes per object
@@ -148,8 +176,8 @@ class Slab
       class SlabHeader
          {
 	 public:
-	    alloc_size_t     m_freelist ;	// first free object, or 0
-	    uint16_t         m_usedcount ;	// number of objects being used; release Slab when it reaches 0
+	    alloc_size_t     m_freelist { 0 } ;	// first free object, or 0
+	    uint16_t         m_usedcount { 0 } ;// number of objects being used; release Slab when it reaches 0
 	 public:
 	    //SlabHeader() = default ;
 	    ~SlabHeader() = default ;
@@ -183,7 +211,7 @@ class Slab
 	    Slab* freeSlabList() const { return m_freelist ; }
 	    void setFreeSlabList(Slab* slb) { m_freelist = slb ; }
       	 protected:
-	    Fr::Atomic<uint32_t> m_ptr_count ;
+	    Fr::Atomic<uint32_t> m_ptr_count { 0 } ;
 	    Fr::Atomic<Slab*>    m_freelist { nullptr }; // next slab containing unallocated objects
          } ;
    public:
@@ -302,8 +330,7 @@ class Allocator
 	    void* item ;
 	    if (!slb->allocObject(item))
 	       {
-	       slb = slb->nextFreeSlab() ;
-	       s_tls[m_type].m_freelist = slb ;
+	       slb->unlinkFreeSlab() ;
 	       }
 	    if (item) return item ;
 	    }

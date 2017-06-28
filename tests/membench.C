@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-06-28					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -88,7 +88,7 @@ void benchmark_suballocator(size_t size, size_t iterations)
            "of " << iterations << " times.\n"
 	<< endl ;
    SmallAlloc* allocator = SmallAlloc::create(16) ;
-   LocalAlloc<void*,30000> blocks(size+(size/100)) ;
+   LocalAlloc<void*,30000> blocks(size) ;
    Timer timer ;
    for (size_t pass = 0 ; pass < iterations ; ++pass)
       {
@@ -105,14 +105,20 @@ void benchmark_suballocator(size_t size, size_t iterations)
            "the allocator works entirely from thread-local slabs.\n"
 	<< endl ;
    // allocate 1.01 times as many blocks as requested
-   for (size_t i = 0 ; i < size + (size/100) ; ++i)
-      blocks[i] = allocator->allocate() ;
-   // free all of the blocks except every hundredth one
-   size_t count = 0 ;
-   for (size_t i = 0 ; i < size + (size/100) ; ++i)
+   LocalAlloc<void*> dummy(1+size/100) ;
+   dummy[(1+size/100)-1] = nullptr ;
+   for (size_t i = 0 ; i < size ; ++i)
       {
-      if (++count % 100 != 0)
-	 allocator->release(blocks[i]) ;
+      blocks[i] = allocator->allocate() ;
+      if (i % 100 == 0)
+	 dummy[i/100] = allocator->allocate() ;
+      }
+   // free all of the blocks except every hundredth one, which will
+   //   prevent the allocator from returning the memory to the
+   //   operating system
+   for (size_t i = 0 ; i < size ; ++i)
+      {
+      allocator->release(blocks[i]) ;
       }
    timer.restart() ;
    for (size_t pass = 0 ; pass < iterations ; ++pass)
@@ -124,6 +130,10 @@ void benchmark_suballocator(size_t size, size_t iterations)
       }
    allocator->reclaim() ;
    show_test_time(timer,size,iterations,true) ;
+   for (size_t i = 0 ; i < 1+size/100 ; ++i)
+      {
+      allocator->release(dummy[i]) ;
+      }
    return ;
 }
 

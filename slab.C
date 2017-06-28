@@ -79,13 +79,13 @@ void Slab::releaseObject(void* obj, Slab*& freelist)
       m_header.m_freelist = slabOffset(obj) ;
       if (--m_header.m_usedcount == 0)
 	 {
+	 unlinkFreeSlab() ;
 	 Fr::Allocator::releaseSlab(this) ;
 	 }
       else if (old_freelist == 0)
 	 {
 	 // this was the first object freed, so add the slab to the list of slabs with available objects
-	 setNextFreeSlab(freelist) ;
-	 freelist = this ;
+	 pushFreeSlab(freelist) ;
 	 }
       }
    return ;
@@ -119,6 +119,14 @@ void Slab::linkSlab(Slab*& listhead)
 
 //----------------------------------------------------------------------------
 
+void Slab::clearOwner()
+{
+   m_info.m_owner = (thread::id)0 ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 void Slab::unlinkSlab(Slab*& listhead)
 {
    Slab* prev = prevSlab() ;
@@ -143,7 +151,7 @@ void Slab::unlinkSlab(Slab*& listhead)
 
 //----------------------------------------------------------------------------
 
-void* Slab::initFreelist(unsigned objsize, unsigned align)
+alloc_size_t Slab::makeFreeList(unsigned objsize, unsigned align)
 {
    // round up the object size to the next higher multiple of 'align'
    unsigned multiple { (objsize + align - 1) / align } ;
@@ -155,25 +163,41 @@ void* Slab::initFreelist(unsigned objsize, unsigned align)
       {
       // error: unable to fit an object of 'objsize' bytes with alignment 'align' into m_buffer
 //FIXME
-      return nullptr ;
+      return 0 ;
       }
    // compute the number of objects the slab can hold
    size_t objcount { space / objsize } ;
    m_info.m_objsize = objsize ;
    m_info.m_objcount = objcount ;
-   // and link together all but one of the objects
    alloc_size_t prev = 0 ;
-   for (size_t i = 1 ; i < objcount ; ++i)
-      {
-      char* currobj = ((char*)buf) + i*objsize ;
-      alloc_size_t curr = slabOffset(currobj) ;
-      *((alloc_size_t*)currobj) = prev ;
-      prev = curr ;
+   if (objcount >= 2)			// require at least two objects so we don't have to special-case
+      {		      			//   the 'full slab' condition during allocation
+      //  link together all of the objects
+      for (size_t i = 0 ; i < objcount ; ++i)
+	 {
+         char* currobj = ((char*)buf) + i*objsize ;
+	 alloc_size_t curr = slabOffset(currobj) ;
+	 *((alloc_size_t*)currobj) = prev ;
+	 prev = curr ;
+         }
       }
    // set the start of the freelist to the last object added to the linked list
    m_header.m_freelist = prev ;
-   m_header.m_usedcount = 1 ;		// the object we're returning is in use
-   return buf ;
+   m_header.m_usedcount = 0 ;
+   return prev ;
+}
+
+//----------------------------------------------------------------------------
+
+void* Slab::initFreelist(unsigned objsize, unsigned align)
+{
+   alloc_size_t first = makeFreeList(objsize, align) ;
+   if (!first)
+      return nullptr ;
+   // pop the first entry off the free list
+   void* item ;
+   (void)allocObject(item) ;
+   return item ;
 }
 
 //----------------------------------------------------------------------------
