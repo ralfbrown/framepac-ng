@@ -88,6 +88,7 @@ void SlabGroup::operator delete(void* grp)
 
 void SlabGroup::unlink()
 {
+   unlinkFreeGroup() ;
    lock_guard<mutex> _(s_mutex) ;
    if (m_prev == this && m_next == this)
       s_grouplist = nullptr ;		// this was the last SlabGroup
@@ -104,38 +105,66 @@ void SlabGroup::unlink()
 
 //----------------------------------------------------------------------------
 
-Slab* SlabGroup::allocateSlab()
+void SlabGroup::unlinkFreeGroup()
 {
-   Fr::Atomic<SlabGroup*>& freelist { Fr::Atomic<SlabGroup*>::ref(s_freelist) } ;
-   if (freelist)
+   if (m_prevfree)			// is this slab on the freelist?
       {
-      // allocate an available Slab
       lock_guard<mutex> _(s_freelist_mutex) ;
-      SlabGroup* sg = s_freelist ;
-      Slab* slb = sg->m_freeslabs ;
-      sg->m_freeslabs = slb->nextSlab() ;
-      if (--sg->m_numfree == 0)
-	 {
-	 // remove the slabgroup from the list of groups with free slabs
-	 s_freelist = sg->m_nextfree ;
-	 if (s_freelist)
-	    s_freelist->m_prevfree = &s_freelist ;
-	 }
-      return slb ;
+      SlabGroup* next = m_nextfree ;
+      (*m_prevfree) = next ;
+      if (next)
+	 next->m_prevfree = m_prevfree ;
       }
-   // no slabs available, so allocate a new SlabGroup
-   SlabGroup* sg = new SlabGroup ;
-   // grab the first slab off of its freelist
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void SlabGroup::pushFreeGroup()
+{
+   lock_guard<mutex> _(s_freelist_mutex) ;
+   m_prevfree = &s_freelist ;
+   m_nextfree = s_freelist ;
+   if (s_freelist)
+      s_freelist->m_prevfree = &this->m_nextfree ;
+   s_freelist = this ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+Slab* SlabGroup::popFreeSlab()
+{
+   SlabGroup *sg = s_freelist ;
+   if (!sg) return nullptr ;
+   // allocate an available Slab from the group's freelist
+   lock_guard<mutex> lock(sg->m_mutex) ;
    Slab* slb = sg->m_freeslabs ;
    sg->m_freeslabs = slb->nextSlab() ;
-   sg->m_numfree-- ;
-   // and link the group into the list of groups with free slabs
-   lock_guard<mutex> _(s_freelist_mutex) ;
-   sg->m_prevfree = &s_freelist ;
-   sg->m_nextfree = s_freelist ;
-   if (s_freelist)
-      s_freelist->m_prevfree = &sg->m_nextfree ;
-   s_freelist = sg ;
+   if (--sg->m_numfree == 0)		// is group now completely allocated?
+      {
+      // remove the slabgroup from the list of groups with free slabs
+      sg->unlinkFreeGroup() ;
+      }
+   return slb ;
+}
+
+//----------------------------------------------------------------------------
+
+Slab* SlabGroup::allocateSlab()
+{
+   Slab* slb = popFreeSlab() ;
+   while (!slb)
+      {
+      // no slabs available, so allocate a new SlabGroup
+      SlabGroup* sg = new SlabGroup ;
+      if (!sg)
+	 return nullptr ;
+      // link the group into the list of groups with free slabs
+      sg->pushFreeGroup() ;
+      // and retry the allocation
+      slb = popFreeSlab() ;
+      }
    return slb ;
 }
 
@@ -147,7 +176,7 @@ void SlabGroup::releaseSlab(Slab* slb)
 #ifndef FrSINGLE_THREADED
    slb->clearOwner() ;
 #endif /* !FrSINGLE_THREADED */
-   lock_guard<mutex> _(s_freelist_mutex) ;
+   lock_guard<mutex> _(sg->m_mutex) ;
    // add slab to list of free slabs in its group
    slb->setNextSlab(sg->m_freeslabs) ;
    sg->m_freeslabs = slb ;
@@ -156,19 +185,11 @@ void SlabGroup::releaseSlab(Slab* slb)
    if (sg->m_numfree == 1)
       {
       // first free slab added to this group, so link it into the list of groups with free slabs
-      sg->m_prevfree = &s_freelist ;
-      sg->m_nextfree = s_freelist ;
-      if (s_freelist)
-	 s_freelist->m_prevfree = &sg->m_nextfree ;
-      s_freelist = sg ;
+      sg->pushFreeGroup() ;
       }
    else if (sg->m_numfree == lengthof(m_slabs))
       {
       // this group is now completely unused, so return it to the operating system
-      SlabGroup* next = sg->m_nextfree ;
-      (*sg->m_prevfree) = next ;
-      if (next)
-	 next->m_prevfree = sg->m_prevfree ;
       delete sg ;
       }
    return ;

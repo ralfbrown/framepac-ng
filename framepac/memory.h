@@ -255,11 +255,15 @@ class SlabGroup
       SlabGroup**    m_prevfree { nullptr } ;
       Slab*          m_freeslabs { nullptr } ;
       unsigned       m_numfree { lengthof(m_slabs) } ;
+      std::mutex     m_mutex ;
    protected:
       void* operator new(size_t sz) ;
       void operator delete(void* grp) ;
    protected:
       void unlink() ;
+      void pushFreeGroup() ;
+      void unlinkFreeGroup() ;
+      static Slab* popFreeSlab() ;
    } ;
 
 } // end namespace FramepaC
