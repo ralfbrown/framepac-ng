@@ -94,6 +94,7 @@ class Slab
       void setPrevSlab(Slab* prev) { m_info.m_prevslab = prev ; }
       void setNextFreeSlab(Slab* next) { m_info.m_freelist = next ; }
       void setNextForeignFree(Slab* next) { m_footer.setFreeSlabList(next) ; }//FIXME?
+      void setSlabID(unsigned id) { m_info.m_slab_id = id ; }
       void* initFreelist(unsigned objsize, unsigned align) ;
       static unsigned bufferSize() { return sizeof(m_buffer) ; }
 
@@ -212,7 +213,8 @@ class SlabGroup
       static void releaseSlab(Slab* slab) ;
 
    private:
-      static mutex s_mutex ;
+      static mutex      s_mutex ;
+      static mutex      s_freelist_mutex ;
       static SlabGroup* s_grouplist ;
       static SlabGroup* s_freelist ;
    private:

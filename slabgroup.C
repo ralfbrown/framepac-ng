@@ -32,6 +32,7 @@ namespace FramepaC
 SlabGroup* SlabGroup::s_grouplist { nullptr } ;
 SlabGroup* SlabGroup::s_freelist { nullptr } ;
 mutex SlabGroup::s_mutex ;
+mutex SlabGroup::s_freelist_mutex ;
 
 /************************************************************************/
 /************************************************************************/
@@ -44,9 +45,11 @@ SlabGroup::SlabGroup()
 {
    // set up the linked list of free slabs
    m_slabs[0].setNextSlab(nullptr) ;
+   m_slabs[0].setSlabID(0) ;
    for (size_t i = 1 ; i < lengthof(m_slabs) ; ++i)
       {
       m_slabs[i].setNextSlab(&m_slabs[i-1]) ;
+      m_slabs[i].setSlabID(i) ;
       }
    m_freeslabs = &m_slabs[SLAB_GROUP_SIZE-1] ;
    // link the new group into the doubly-linked circular list of SlabGroups
@@ -107,7 +110,7 @@ Slab* SlabGroup::allocateSlab()
    if (freelist)
       {
       // allocate an available Slab
-      lock_guard<mutex> _(s_mutex) ;
+      lock_guard<mutex> _(s_freelist_mutex) ;
       SlabGroup* sg = s_freelist ;
       Slab* slb = sg->m_freeslabs ;
       sg->m_freeslabs = slb->nextSlab() ;
@@ -127,7 +130,7 @@ Slab* SlabGroup::allocateSlab()
    sg->m_freeslabs = slb->nextSlab() ;
    sg->m_numfree-- ;
    // and link the group into the list of groups with free slabs
-   lock_guard<mutex> _(s_mutex) ;
+   lock_guard<mutex> _(s_freelist_mutex) ;
    sg->m_prevfree = &s_freelist ;
    sg->m_nextfree = s_freelist ;
    if (s_freelist)
@@ -141,7 +144,7 @@ Slab* SlabGroup::allocateSlab()
 void SlabGroup::releaseSlab(Slab* slb)
 {
    SlabGroup* sg = slb->containingGroup() ;
-   lock_guard<mutex> _(s_mutex) ;
+   lock_guard<mutex> _(s_freelist_mutex) ;
    // add slab to list of free slabs in its group
    slb->setNextSlab(sg->m_freeslabs) ;
    sg->m_freeslabs = slb ;
@@ -161,7 +164,8 @@ void SlabGroup::releaseSlab(Slab* slb)
       // this group is now completely unused, so return it to the operating system
       SlabGroup* next = sg->m_nextfree ;
       (*sg->m_prevfree) = next ;
-      next->m_prevfree = sg->m_prevfree ;
+      if (next)
+	 next->m_prevfree = sg->m_prevfree ;
       delete sg ;
       }
    return ;
