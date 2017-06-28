@@ -87,9 +87,34 @@ void benchmark_suballocator(size_t size, size_t iterations)
            "We allocate and then release " << size << " 16-byte objects a total\n"
            "of " << iterations << " times.\n"
 	<< endl ;
-   LocalAlloc<void*,30000> blocks(size) ;
    SmallAlloc* allocator = SmallAlloc::create(16) ;
+   LocalAlloc<void*,30000> blocks(size+(size/100)) ;
    Timer timer ;
+   for (size_t pass = 0 ; pass < iterations ; ++pass)
+      {
+      for (size_t i = 0 ; i < size ; ++i)
+	 blocks[i] = allocator->allocate() ;
+      for (size_t i = 0 ; i < size ; ++i)
+	 allocator->release(blocks[i]) ;
+      }
+   allocator->reclaim() ;
+   show_test_time(timer,size,iterations,true) ;
+   cout << "\nBenchmark of memory sub-allocator speed\n\n"
+           "We allocate and then release " << size << " 16-byte objects a total\n"
+           "of " << iterations << " times, but first fragment allocations so that\n"
+           "the allocator works entirely from thread-local slabs.\n"
+	<< endl ;
+   // allocate 1.01 times as many blocks as requested
+   for (size_t i = 0 ; i < size + (size/100) ; ++i)
+      blocks[i] = allocator->allocate() ;
+   // free all of the blocks except every hundredth one
+   size_t count = 0 ;
+   for (size_t i = 0 ; i < size + (size/100) ; ++i)
+      {
+      if (++count % 100 != 0)
+	 allocator->release(blocks[i]) ;
+      }
+   timer.restart() ;
    for (size_t pass = 0 ; pass < iterations ; ++pass)
       {
       for (size_t i = 0 ; i < size ; ++i)

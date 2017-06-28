@@ -112,6 +112,8 @@ class Slab
       size_t objectsInUse() const
 	 { size_t used = m_header.m_usedcount, freed = m_footer.freeCount() ;
 	   return used >= freed ? used - freed : 0 ; }
+      bool objectsAvailable() const
+	 { return m_header.m_usedcount < m_info.m_objcount ; }
       size_t slabOffset() const { return m_info.m_slab_id ; }
 
       [[gnu::hot]]

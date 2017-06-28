@@ -232,8 +232,13 @@ void* Allocator::allocate_more()
       new_slab = FramepaC::SlabGroup::allocateSlab() ;
       }
    item = new_slab->initFreelist(s_shared[m_type].m_objsize,s_shared[m_type].m_alignment) ;
-   // and insert it on our list of owned slabs
+   // and insert it on both our list of owned slabs and list of slabs with available objects
    new_slab->linkSlab(s_tls[m_type].m_allocslabs) ;
+   if (new_slab->objectsAvailable())
+      {
+      new_slab->setNextFreeSlab(s_tls[m_type].m_freelist) ;
+      s_tls[m_type].m_freelist = new_slab ;
+      }
    return item ;
 }
 
