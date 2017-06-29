@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include <iostream>
 #include <cstdlib>
 #include "framepac/memory.h"
 #include "framepac/semaphore.h"
@@ -165,7 +166,11 @@ std::pair<SlabGroup*,size_t> SlabGroupColl::accessAny()
    if (!grp)
       {
       if (m_first < m_last)
+	 {
+	 // adding the following line eliminated a race that caused a hang when compiling with optimization enabled....
+	 cerr<<"recursing"<<endl;
 	 return accessAny() ;
+	 }
       bestidx = ~0 ;
       }
    return std::pair<SlabGroup*,size_t>(grp,bestidx) ;
