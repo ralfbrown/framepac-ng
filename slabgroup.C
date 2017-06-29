@@ -40,10 +40,10 @@ typedef void SlabGroupReleaseFn(SlabGroup*) ;
 class SlabGroupColl
    {
    public:
-      SlabGroupColl() ;
-      ~SlabGroupColl() {}
+      SlabGroupColl() = default ;
+      ~SlabGroupColl() = default ;
 
-      std::pair<SlabGroup*,size_t> accessFirst() ;
+      std::pair<SlabGroup*,size_t> accessAny() ;
       SlabGroup* access(size_t) ;
       void release(size_t) ;
 
@@ -91,12 +91,12 @@ class SlabGroupColl
 	    return (m_groups[idx].fetch_or(RELEASE_MASK) & RELEASE_MASK) != 0 ;
 	 }
    protected: // data members
-      unsigned              m_first ;		// first array element in use
+      Fr::Atomic<unsigned>  m_first ;		// first array element in use
       Fr::Semaphore         m_sem ;
-      Fr::Atomic<uintptr_t> m_groups[COLL_SIZE] ;
+      Fr::Atomic<uintptr_t> m_groups[COLL_SIZE+1] ;
       Fr::Atomic<unsigned>  m_lockcount ;
       SlabGroupReleaseFn*   m_releasefunc ;
-      unsigned              m_last ;		// last+1 array element in use
+      Fr::Atomic<unsigned>  m_last ;		// last+1 array element in use
    } ;
 
 /************************************************************************/
@@ -114,19 +114,44 @@ mutex SlabGroup::s_freelist_mutex ;
 /*	methods for class SlabGroupColl					*/
 /************************************************************************/
 
-SlabGroupColl::SlabGroupColl()
+// find an available SlabGroup from the collection
+std::pair<SlabGroup*,size_t> SlabGroupColl::accessAny()
 {
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-std::pair<SlabGroup*,size_t> SlabGroupColl::accessFirst()
-{
-   SlabGroup* grp = nullptr ; //FIXME
-   size_t idx = ~0UL ;
-   
-   return std::pair<SlabGroup*,size_t>(grp,idx) ;
+   // advance the 'first' pointer past any entries which have been or are being removed
+   unsigned first = m_first ;
+   while (flagged(m_groups[first]) && m_first.compare_exchange_strong(first,first+1))
+      {
+      ++first ;
+      }
+   // scan a small number of active entries, looking for one which is not in use and remembering
+   //   which one has the lowest reference count
+   size_t minrefs = ~0 ;
+   size_t bestidx = COLL_SIZE ;
+   for (size_t i = 0 ; i < 8 && first+i < m_last ; ++i)
+      {
+      uintptr_t val = m_groups[first+i] ;
+      if (flagged(val)) continue ;
+      size_t refs = refcount(val) ;
+      if (refs == 0)
+	 {
+	 bestidx = first+i ;
+	 break ;
+	 }
+      if (refs < minrefs)
+	 {
+	 minrefs = refs ;
+	 bestidx = first+i ;
+	 }
+      }
+   // grab the selected entry and verify that it's still valid
+   SlabGroup* grp = access(bestidx) ;
+   if (!grp)
+      {
+      if (m_first < m_last)
+	 return accessAny() ;
+      bestidx = ~0 ;
+      }
+   return std::pair<SlabGroup*,size_t>(grp,bestidx) ;
 }
 
 //----------------------------------------------------------------------------
@@ -135,10 +160,15 @@ SlabGroup* SlabGroupColl::access(size_t idx)
 {
    if (idx >= COLL_SIZE)
       return nullptr ;
-   SlabGroup* grp = pointer(incrRefCount(idx)) ;
-   if (!grp)
-      decrRefCount(idx) ;
-   return grp ;
+   uintptr_t val = incrRefCount(idx) ;
+   if (!flagged(val))
+      {
+      SlabGroup* grp = pointer(val) ;
+      if (grp)
+	 return grp ;
+      }
+   release(idx) ;
+   return nullptr ;
 }
 
 //----------------------------------------------------------------------------
@@ -152,7 +182,7 @@ void SlabGroupColl::release(size_t idx)
       {
       // we were the last thread accessing the entry, and it's been
       //   flagged for removal, so perform that removal
-      val = m_groups[idx].exchange(0) ;
+      val = m_groups[idx].exchange(RELEASE_MASK) ;
       SlabGroup* grp = pointer(val) ;
       if (grp && m_releasefunc)
 	 {
@@ -183,7 +213,9 @@ void SlabGroupColl::requestRemoval(size_t idx)
 {
    if (idx >= COLL_SIZE)
       return ;
-   setFlag(idx) ;
+   incrRefCount(idx) ;			// mark the entry as in-use
+   setFlag(idx) ;			// set the removal flag
+   release(idx) ;			// we're done; the last thread using the entry will do the removal
    return ;
 }
 //----------------------------------------------------------------------------
