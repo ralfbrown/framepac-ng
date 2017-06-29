@@ -55,7 +55,7 @@ class SlabGroupColl
 
       std::pair<SlabGroup*,size_t> accessAny() ;
       SlabGroup* access(size_t) ;
-      void release(size_t) ;
+      bool release(size_t) ;
 
       void append(SlabGroup*) ;
       void requestRemoval(size_t) ;
@@ -70,10 +70,11 @@ class SlabGroupColl
       // the low K bits are always 0, since SlabGroups are aligned to the size of a Slab (12 bits for the
       //   default 4K, 13 for 8K, etc.), so we can use them for the reference count
       static constexpr uintptr_t COUNT_MASK = (SLAB_SIZE-1) ;
-      // x86_64 currently only has 48-bit virtual addresses, so we can steal bit 63 as a flag
+      // x86_64 currently only has 48-bit virtual addresses, so we can steal bits 62 and 63 as flags
       static constexpr uintptr_t RELEASE_MASK = (1UL << 63) ;
+      static constexpr uintptr_t COMPACT_MASK = (1UL << 62) ;
       // the remaining bits are the original pointer bits
-      static constexpr uintptr_t POINTER_MASK = (~0UL & ~(RELEASE_MASK|COUNT_MASK)) ;
+      static constexpr uintptr_t POINTER_MASK = ~(RELEASE_MASK|COMPACT_MASK|COUNT_MASK) ;
 
    protected: // functions
       static SlabGroup* pointer(SlabGroup* ptr)
@@ -84,10 +85,8 @@ class SlabGroupColl
 	 { return unsigned(((uintptr_t)ptr) & COUNT_MASK) ; }
       static unsigned refcount(uintptr_t ptr)
 	 { return unsigned(ptr & COUNT_MASK) ; }
-      static bool flagged(SlabGroup* ptr)
-	 { return (((uintptr_t)ptr) & RELEASE_MASK) != 0 ; }
-      static bool flagged(uintptr_t ptr)
-	 { return (ptr & RELEASE_MASK) != 0 ; }
+      static bool no_more_updates(uintptr_t ptr)
+	 { return (ptr & (RELEASE_MASK|COMPACT_MASK)) != 0 ; }
 
       uintptr_t incrRefCount(size_t idx)
 	 {
@@ -97,9 +96,13 @@ class SlabGroupColl
 	 {
 	    return m_groups[idx]-- ;
 	 }
-      bool setFlag(size_t idx)
+      bool markReleaseable(size_t idx)
 	 {
 	    return (m_groups[idx].fetch_or(RELEASE_MASK) & RELEASE_MASK) != 0 ;
+	 }
+      bool markCompacting(size_t idx)
+	 {
+	    return (m_groups[idx].fetch_or(COMPACT_MASK) & COMPACT_MASK) != 0 ;
 	 }
    protected: // data members
       Fr::Atomic<unsigned>  m_first ;		// first array element in use
@@ -129,9 +132,9 @@ mutex SlabGroup::s_freelist_mutex ;
 // find an available SlabGroup from the collection
 std::pair<SlabGroup*,size_t> SlabGroupColl::accessAny()
 {
-   // advance the 'first' pointer past any entries which have been or are being removed
+   // advance the 'first' pointer past any entries which have been or are being moved/removed
    unsigned first = m_first ;
-   while (flagged(m_groups[first]) && m_first.compare_exchange_strong(first,first+1))
+   while (no_more_updates(m_groups[first]) && m_first.compare_exchange_strong(first,first+1))
       {
       ++first ;
       }
@@ -142,7 +145,7 @@ std::pair<SlabGroup*,size_t> SlabGroupColl::accessAny()
    for (size_t i = 0 ; i < 8 && first+i < m_last ; ++i)
       {
       uintptr_t val = m_groups[first+i] ;
-      if (flagged(val)) continue ;
+      if (no_more_updates(val)) continue ;
       size_t refs = refcount(val) ;
       if (refs == 0)
 	 {
@@ -173,7 +176,7 @@ SlabGroup* SlabGroupColl::access(size_t idx)
    if (idx >= COLL_SIZE)
       return nullptr ;
    uintptr_t val = incrRefCount(idx) ;
-   if (!flagged(val))
+   if (!no_more_updates(val))
       {
       SlabGroup* grp = pointer(val) ;
       if (grp)
@@ -185,23 +188,22 @@ SlabGroup* SlabGroupColl::access(size_t idx)
 
 //----------------------------------------------------------------------------
 
-void SlabGroupColl::release(size_t idx)
+bool SlabGroupColl::release(size_t idx)
 {
    if (idx >= COLL_SIZE)
-      return ;
+      return false ;
    uintptr_t val = decrRefCount(idx) ;
-   if ((val & (COUNT_MASK | RELEASE_MASK)) == (RELEASE_MASK | 1))
+   if ((val & (COUNT_MASK | RELEASE_MASK)) != (RELEASE_MASK | 1))
+      return false ;
+   // we were the last thread accessing the entry, and it's been
+   //   flagged for removal, so perform that removal
+   val = m_groups[idx].exchange(RELEASE_MASK) ;
+   SlabGroup* grp = pointer(val) ;
+   if (grp && m_releasefunc)
       {
-      // we were the last thread accessing the entry, and it's been
-      //   flagged for removal, so perform that removal
-      val = m_groups[idx].exchange(RELEASE_MASK) ;
-      SlabGroup* grp = pointer(val) ;
-      if (grp && m_releasefunc)
-	 {
-	 m_releasefunc(grp) ;
-	 }
+      m_releasefunc(grp) ;
       }
-   return ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
@@ -229,7 +231,7 @@ void SlabGroupColl::requestRemoval(size_t idx)
    if (idx >= COLL_SIZE)
       return ;
    incrRefCount(idx) ;			// mark the entry as in-use
-   setFlag(idx) ;			// set the removal flag
+   markReleaseable(idx) ;		// set the removal flag
    release(idx) ;			// we're done; the last thread using the entry will do the removal
    return ;
 }
@@ -243,6 +245,7 @@ bool SlabGroupColl::compact()
       // every entry prior to m_first has at least started the removal process; zero out
       //   all that have actually completed
       size_t first = m_first ;
+      size_t last = m_last ;
       for (size_t i = 0 ; i < first ; ++i)
 	 {
 	 if (m_groups[i] == RELEASE_MASK)
@@ -250,7 +253,7 @@ bool SlabGroupColl::compact()
 	 }
       size_t dest = 0 ;
       size_t highest_used = ~0UL ;
-      for (size_t i = m_first ; i < m_last ; ++i)
+      for (size_t i = m_first ; i < last ; ++i)
 	 {
 	 if (i >= m_first) m_first = i+1 ; // advance m_first if nobody else has yet
 	 // check the state of the current entry
@@ -268,11 +271,23 @@ bool SlabGroupColl::compact()
 	 else // if ((val & (RELEASE_MASK | COUNT_MASK)) == 0)
 	    {
 	    // nobody is using the entry, so we can move it
-//FIXME: need to properly lock
-	    m_groups[dest] = val ;
-	    m_setindexfunc(pointer(val),dest) ;
-	    ++dest ;
+	    // first, we need to show that it's in use and set a flag to prevent any further accesses
+	    incrRefCount(i) ;
+	    markCompacting(i) ;
+	    if (refcount(decrRefCount(i)) == 1)
+	       {
+	       // we're the only thread accessing the entry, so it's safe to move now
+	       m_groups[dest] = val ;
+	       m_setindexfunc(pointer(val),dest) ;
+	       m_groups[i] = 0 ;
+	       ++dest ;
+	       }
 	    }
+	 }
+      // second pass to clean up any entries which became busy while we were trying to move them
+      for (size_t i = 0 ; i < last ; ++i)
+	 {
+//FIXME
 	 }
       // update the first/last pointers to encompass the new range of entries which are in use
       m_last = std::max(dest,highest_used+1) ;
