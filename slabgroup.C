@@ -45,6 +45,7 @@ class alloc_capacity_error : public std::bad_alloc
 //----------------------------------------------------------------------------
 
 typedef void SlabGroupReleaseFn(SlabGroup*) ;
+typedef void SlabGroupIndexFn(SlabGroup*, size_t index) ;
 
 class SlabGroupColl
    {
@@ -61,6 +62,7 @@ class SlabGroupColl
       bool compact() ;
 
       void setReleaseFunc(SlabGroupReleaseFn* fn) { m_releasefunc = fn  ; }
+      void setIndexFunc(SlabGroupIndexFn* fn) { m_setindexfunc = fn  ; }
 
    protected: // constants
       // to keep things atomic and save space, we'll pack additional info into otherwise-unused bits of the
@@ -105,6 +107,7 @@ class SlabGroupColl
       Fr::Atomic<uintptr_t> m_groups[COLL_SIZE+1] ;
       Fr::Atomic<unsigned>  m_lockcount ;
       SlabGroupReleaseFn*   m_releasefunc ;
+      SlabGroupIndexFn*     m_setindexfunc ;
       Fr::Atomic<unsigned>  m_last ;		// last+1 array element in use
    } ;
 
@@ -237,8 +240,43 @@ bool SlabGroupColl::compact()
    if (m_lockcount++ == 0)
       {
       // we're the first to grab the lock, so we'll do the actual compaction
-//FIXME
-      
+      // every entry prior to m_first has at least started the removal process; zero out
+      //   all that have actually completed
+      size_t first = m_first ;
+      for (size_t i = 0 ; i < first ; ++i)
+	 {
+	 if (m_groups[i] == RELEASE_MASK)
+	    m_groups[i] = 0 ;
+	 }
+      size_t dest = 0 ;
+      size_t highest_used = ~0UL ;
+      for (size_t i = m_first ; i < m_last ; ++i)
+	 {
+	 if (i >= m_first) m_first = i+1 ; // advance m_first if nobody else has yet
+	 // check the state of the current entry
+	 uintptr_t val = m_groups[i] ;
+	 if (val == RELEASE_MASK)
+	    {
+	    // fully-released entry, so just zero it out
+	    m_groups[i] = 0 ;
+	    }
+	 else if ((val & (RELEASE_MASK | COUNT_MASK)) != 0)
+	    {
+	    // busy (either in use or flagged for release but release still in progress): leave it alone for now
+	    highest_used = i ;
+	    }
+	 else // if ((val & (RELEASE_MASK | COUNT_MASK)) == 0)
+	    {
+	    // nobody is using the entry, so we can move it
+//FIXME: need to properly lock
+	    m_groups[dest] = val ;
+	    m_setindexfunc(pointer(val),dest) ;
+	    ++dest ;
+	    }
+	 }
+      // update the first/last pointers to encompass the new range of entries which are in use
+      m_last = std::max(dest,highest_used+1) ;
+      m_first = 0 ;
       }
    else
       {
