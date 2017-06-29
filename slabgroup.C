@@ -24,7 +24,7 @@
 #include "framepac/semaphore.h"
 using namespace std ;
 
-#define NEW 0
+#define NEW 1
 
 namespace FramepaC
 {
@@ -144,7 +144,7 @@ std::pair<SlabGroup*,size_t> SlabGroupColl::accessAny()
    //   which one has the lowest reference count
    size_t minrefs = ~0 ;
    size_t bestidx = COLL_SIZE ;
-   for (size_t i = 0 ; i < 8 && first+i < m_last ; ++i)
+   for (size_t i = 0 ; i < 12 && first+i < m_last ; ++i)
       {
       uintptr_t val = m_groups[first+i] ;
       if (no_more_updates(val)) continue ;
@@ -438,16 +438,19 @@ Slab* SlabGroup::popFreeSlab()
 #else
    lock_guard<mutex> _(s_freelist_mutex) ;
    SlabGroup* sg = s_freelist ;
-   if (!sg) return nullptr ;
 #endif
+   if (!sg) return nullptr ;
    // allocate an available Slab from the group's freelist
    lock_guard<mutex> lock(sg->m_mutex) ;
    Slab* slb = sg->m_freeslabs ;
-   sg->m_freeslabs = slb->nextSlab() ;
-   if (--sg->m_numfree == 0)		// is group now completely allocated?
+   if (slb)
       {
-      // remove the slabgroup from the list of groups with free slabs
-      sg->unlinkFreeGroup() ;
+      sg->m_freeslabs = slb->nextSlab() ;
+      if (--sg->m_numfree == 0)		// is group now completely allocated?
+	 {
+	 // remove the slabgroup from the list of groups with free slabs
+	 sg->unlinkFreeGroup() ;
+	 }
       }
 #if NEW
    s_freecoll.release(index) ;
