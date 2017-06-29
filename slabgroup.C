@@ -35,6 +35,15 @@ namespace FramepaC
 /*	Types for this module						*/
 /************************************************************************/
 
+class alloc_capacity_error : public std::bad_alloc
+   {
+   public:
+      alloc_capacity_error() = default ;
+      virtual const char* what() const noexcept { return "Allocator memory capacity exceeded" ; }
+   } ;
+
+//----------------------------------------------------------------------------
+
 typedef void SlabGroupReleaseFn(SlabGroup*) ;
 
 class SlabGroupColl
@@ -49,7 +58,7 @@ class SlabGroupColl
 
       void append(SlabGroup*) ;
       void requestRemoval(size_t) ;
-      void compact() ;
+      bool compact() ;
 
       void setReleaseFunc(SlabGroupReleaseFn* fn) { m_releasefunc = fn  ; }
 
@@ -200,8 +209,11 @@ void SlabGroupColl::append(SlabGroup* grp)
    size_t idx = m_last++ ;		// reserve a slot
    if (idx >= COLL_SIZE)
       {
-      compact() ;
-      idx = m_last++ ;			// reserve a slot in the compacted array
+      if (compact())			// defragment the collection
+	 return append(grp) ;		// and retry
+      // if we get here, the compaction failed because every entry was still active, which means we can't
+      //   append, so we'll have to throw an error
+      throw new alloc_capacity_error ;
       }
    m_groups[idx] = uintptr_t(grp) ;
    return ;
@@ -220,10 +232,27 @@ void SlabGroupColl::requestRemoval(size_t idx)
 }
 //----------------------------------------------------------------------------
 
-void SlabGroupColl::compact()
+bool SlabGroupColl::compact()
 {
-
-   return ;
+   if (m_lockcount++ == 0)
+      {
+      // we're the first to grab the lock, so we'll do the actual compaction
+//FIXME
+      
+      }
+   else
+      {
+      // compaction was already in progress, so wait
+      m_sem.wait() ;
+      }
+   bool compacted = m_last < COLL_SIZE ;
+   // done, so release the lock
+   if (m_lockcount-- > 1)
+      {
+      // others were waiting, so wake up the next waiter
+      m_sem.post() ;
+      }
+   return compacted ;
 }
 
 /************************************************************************/
