@@ -24,6 +24,8 @@
 #include "framepac/semaphore.h"
 using namespace std ;
 
+#define NEW 0
+
 namespace FramepaC
 {
 
@@ -57,7 +59,7 @@ class SlabGroupColl
       SlabGroup* access(size_t) ;
       bool release(size_t) ;
 
-      void append(SlabGroup*) ;
+      size_t append(SlabGroup*) ;
       void requestRemoval(size_t) ;
       bool compact() ;
 
@@ -208,9 +210,9 @@ bool SlabGroupColl::release(size_t idx)
 
 //----------------------------------------------------------------------------
 
-void SlabGroupColl::append(SlabGroup* grp)
+size_t SlabGroupColl::append(SlabGroup* grp)
 {
-   if (!grp) return ;
+   if (!grp) return ~0UL ;
    size_t idx = m_last++ ;		// reserve a slot
    if (idx >= COLL_SIZE)
       {
@@ -221,7 +223,7 @@ void SlabGroupColl::append(SlabGroup* grp)
       throw new alloc_capacity_error ;
       }
    m_groups[idx] = uintptr_t(grp) ;
-   return ;
+   return idx ;
 }
 
 //----------------------------------------------------------------------------
@@ -354,12 +356,16 @@ void SlabGroup::operator delete(void* grp)
 
 void SlabGroup::pushGroup()
 {
+#if NEW
+   m_groupindex = s_groupcoll.append(this) ;
+#else
    lock_guard<mutex> _(s_grouplist_mutex) ;
    m_next = s_grouplist ;
    m_prev = &s_grouplist ;
    if (m_next)
       m_next->m_prev = &m_next ;
    s_grouplist = this ;
+#endif
    return;
 }
 
@@ -368,6 +374,9 @@ void SlabGroup::pushGroup()
 void SlabGroup::unlinkGroup()
 {
    unlinkFreeGroup() ;
+#if NEW
+   s_groupcoll.requestRemoval(m_groupindex) ;
+#else
    lock_guard<mutex> _(s_grouplist_mutex) ;
    SlabGroup** prev = m_prev ;
    if (prev)
@@ -376,6 +385,7 @@ void SlabGroup::unlinkGroup()
       *prev = next ;
       if (next) next->m_prev = prev ;
       }
+#endif
    return ;
 }
 
@@ -383,6 +393,9 @@ void SlabGroup::unlinkGroup()
 
 void SlabGroup::unlinkFreeGroup()
 {
+#if NEW
+   s_freecoll.requestRemoval(m_freeindex) ;
+#else
    bool not_locked = s_freelist_mutex.try_lock() ;
    if (m_prevfree)			// is this slab on the freelist?
       {
@@ -393,6 +406,7 @@ void SlabGroup::unlinkFreeGroup()
       }
    if (not_locked)
       s_freelist_mutex.unlock() ;
+#endif
    return ;
 }
 
@@ -400,12 +414,16 @@ void SlabGroup::unlinkFreeGroup()
 
 void SlabGroup::pushFreeGroup()
 {
+#if NEW
+   m_freeindex = s_freecoll.append(this) ;
+#else
    lock_guard<mutex> _(s_freelist_mutex) ;
    m_prevfree = &s_freelist ;
    m_nextfree = s_freelist ;
    if (m_nextfree)
       m_nextfree->m_prevfree = &this->m_nextfree ;
    s_freelist = this ;
+#endif
    return ;
 }
 
@@ -413,9 +431,15 @@ void SlabGroup::pushFreeGroup()
 
 Slab* SlabGroup::popFreeSlab()
 {
+#if NEW
+   auto sg_info = s_freecoll.accessAny() ;
+   auto sg = sg_info.first ;
+   auto index = sg_info.second ;
+#else
    lock_guard<mutex> _(s_freelist_mutex) ;
-   SlabGroup *sg = s_freelist ;
+   SlabGroup* sg = s_freelist ;
    if (!sg) return nullptr ;
+#endif
    // allocate an available Slab from the group's freelist
    lock_guard<mutex> lock(sg->m_mutex) ;
    Slab* slb = sg->m_freeslabs ;
@@ -425,6 +449,9 @@ Slab* SlabGroup::popFreeSlab()
       // remove the slabgroup from the list of groups with free slabs
       sg->unlinkFreeGroup() ;
       }
+#if NEW
+   s_freecoll.release(index) ;
+#endif
    return slb ;
 }
 
