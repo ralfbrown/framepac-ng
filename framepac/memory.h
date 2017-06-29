@@ -231,6 +231,8 @@ class Slab
 
 //----------------------------------------------------------------------------
 
+class SlabGroupColl ;
+
 class SlabGroup
    {
    public:
@@ -247,6 +249,8 @@ class SlabGroup
       static mutex      s_freelist_mutex ;
       static SlabGroup* s_grouplist ;
       static SlabGroup* s_freelist ;
+      static SlabGroupColl s_groupcoll ;
+      static SlabGroupColl s_freecoll ;
    private:
       Slab           m_slabs[SLAB_GROUP_SIZE] ;
       SlabGroup*     m_next ;
@@ -254,6 +258,8 @@ class SlabGroup
       SlabGroup*     m_nextfree { nullptr } ;
       SlabGroup**    m_prevfree { nullptr } ;
       Slab*          m_freeslabs { nullptr } ;
+      Fr::Atomic<size_t> m_groupindex { ~0UL } ;
+      Fr::Atomic<size_t> m_freeindex { ~0UL } ;
       unsigned       m_numfree { lengthof(m_slabs) } ;
       std::mutex     m_mutex ;
    protected:

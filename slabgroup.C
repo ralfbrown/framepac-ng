@@ -21,18 +21,178 @@
 
 #include <cstdlib>
 #include "framepac/memory.h"
+#include "framepac/semaphore.h"
 using namespace std ;
 
 namespace FramepaC
 {
+
+// with the default 4K per slab and 4K slabs per group, this collection size
+//   permits just under 1TB of allocations before we need to do a compaction
+#define COLL_SIZE 65535
+
+/************************************************************************/
+/*	Types for this module						*/
+/************************************************************************/
+
+typedef void SlabGroupReleaseFn(SlabGroup*) ;
+
+class SlabGroupColl
+   {
+   public:
+      SlabGroupColl() ;
+      ~SlabGroupColl() {}
+
+      std::pair<SlabGroup*,size_t> accessFirst() ;
+      SlabGroup* access(size_t) ;
+      void release(size_t) ;
+
+      void append(SlabGroup*) ;
+      void requestRemoval(size_t) ;
+      void compact() ;
+
+      void setReleaseFunc(SlabGroupReleaseFn* fn) { m_releasefunc = fn  ; }
+
+   protected: // constants
+      // to keep things atomic and save space, we'll pack additional info into otherwise-unused bits of the
+      //   SlabGroup pointer
+      // the low K bits are always 0, since SlabGroups are aligned to the size of a Slab (12 bits for the
+      //   default 4K, 13 for 8K, etc.), so we can use them for the reference count
+      static constexpr uintptr_t COUNT_MASK = (SLAB_SIZE-1) ;
+      // x86_64 currently only has 48-bit virtual addresses, so we can steal bit 63 as a flag
+      static constexpr uintptr_t RELEASE_MASK = (1UL << 63) ;
+      // the remaining bits are the original pointer bits
+      static constexpr uintptr_t POINTER_MASK = (~0UL & ~(RELEASE_MASK|COUNT_MASK)) ;
+
+   protected: // functions
+      static SlabGroup* pointer(SlabGroup* ptr)
+	 { return reinterpret_cast<SlabGroup*>(((uintptr_t)ptr) & POINTER_MASK) ; }
+      static SlabGroup* pointer(uintptr_t ptr)
+	 { return reinterpret_cast<SlabGroup*>(ptr & POINTER_MASK) ; }
+      static unsigned refcount(SlabGroup* ptr)
+	 { return unsigned(((uintptr_t)ptr) & COUNT_MASK) ; }
+      static unsigned refcount(uintptr_t ptr)
+	 { return unsigned(ptr & COUNT_MASK) ; }
+      static bool flagged(SlabGroup* ptr)
+	 { return (((uintptr_t)ptr) & RELEASE_MASK) != 0 ; }
+      static bool flagged(uintptr_t ptr)
+	 { return (ptr & RELEASE_MASK) != 0 ; }
+
+      uintptr_t incrRefCount(size_t idx)
+	 {
+	    return m_groups[idx]++ ;
+	 }
+      uintptr_t decrRefCount(size_t idx)
+	 {
+	    return m_groups[idx]-- ;
+	 }
+      bool setFlag(size_t idx)
+	 {
+	    return (m_groups[idx].fetch_or(RELEASE_MASK) & RELEASE_MASK) != 0 ;
+	 }
+   protected: // data members
+      unsigned              m_first ;		// first array element in use
+      Fr::Semaphore         m_sem ;
+      Fr::Atomic<uintptr_t> m_groups[COLL_SIZE] ;
+      Fr::Atomic<unsigned>  m_lockcount ;
+      SlabGroupReleaseFn*   m_releasefunc ;
+      unsigned              m_last ;		// last+1 array element in use
+   } ;
 
 /************************************************************************/
 /************************************************************************/
 
 SlabGroup* SlabGroup::s_grouplist { nullptr } ;
 SlabGroup* SlabGroup::s_freelist { nullptr } ;
+SlabGroupColl SlabGroup::s_groupcoll ;
+SlabGroupColl SlabGroup::s_freecoll ;
+
 mutex SlabGroup::s_grouplist_mutex ;
 mutex SlabGroup::s_freelist_mutex ;
+
+/************************************************************************/
+/*	methods for class SlabGroupColl					*/
+/************************************************************************/
+
+SlabGroupColl::SlabGroupColl()
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+std::pair<SlabGroup*,size_t> SlabGroupColl::accessFirst()
+{
+   SlabGroup* grp = nullptr ; //FIXME
+   size_t idx = ~0UL ;
+   
+   return std::pair<SlabGroup*,size_t>(grp,idx) ;
+}
+
+//----------------------------------------------------------------------------
+
+SlabGroup* SlabGroupColl::access(size_t idx)
+{
+   if (idx >= COLL_SIZE)
+      return nullptr ;
+   SlabGroup* grp = pointer(incrRefCount(idx)) ;
+   if (!grp)
+      decrRefCount(idx) ;
+   return grp ;
+}
+
+//----------------------------------------------------------------------------
+
+void SlabGroupColl::release(size_t idx)
+{
+   if (idx >= COLL_SIZE)
+      return ;
+   uintptr_t val = decrRefCount(idx) ;
+   if ((val & (COUNT_MASK | RELEASE_MASK)) == (RELEASE_MASK | 1))
+      {
+      // we were the last thread accessing the entry, and it's been
+      //   flagged for removal, so perform that removal
+      val = m_groups[idx].exchange(0) ;
+      SlabGroup* grp = pointer(val) ;
+      if (grp && m_releasefunc)
+	 {
+	 m_releasefunc(grp) ;
+	 }
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void SlabGroupColl::append(SlabGroup* grp)
+{
+   if (!grp) return ;
+   size_t idx = m_last++ ;		// reserve a slot
+   if (idx >= COLL_SIZE)
+      {
+      compact() ;
+      idx = m_last++ ;			// reserve a slot in the compacted array
+      }
+   m_groups[idx] = uintptr_t(grp) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void SlabGroupColl::requestRemoval(size_t idx)
+{
+   if (idx >= COLL_SIZE)
+      return ;
+   setFlag(idx) ;
+   return ;
+}
+//----------------------------------------------------------------------------
+
+void SlabGroupColl::compact()
+{
+
+   return ;
+}
 
 /************************************************************************/
 /************************************************************************/
