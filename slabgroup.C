@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-26					*/
+/* Version 0.01, last edit 2017-06-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -24,8 +24,6 @@
 #include "framepac/memory.h"
 #include "framepac/semaphore.h"
 using namespace std ;
-
-#define NEW 1
 
 namespace FramepaC
 {
@@ -319,17 +317,21 @@ bool SlabGroupColl::compact()
 #pragma GCC diagnostic ignored "-Weffc++"
 
 SlabGroup::SlabGroup()
+#if !NEW
    : m_mutex()
+#endif
 {
    // set up the linked list of free slabs
-   m_slabs[0].setNextSlab(nullptr) ;
-   m_slabs[0].setSlabID(0) ;
-   for (size_t i = 1 ; i < lengthof(m_slabs) ; ++i)
+   Slab* next = nullptr ;
+   for (size_t i = 0 ; i < SLAB_GROUP_SIZE-1 ; ++i)
       {
-      m_slabs[i].setNextSlab(&m_slabs[i-1]) ;
+      m_slabs[i].setNextFreeSlab(next) ;
+      m_slabs[i].setPrevFreeSlabPtr(nullptr) ;
       m_slabs[i].setSlabID(i) ;
+      next = &m_slabs[i] ;
       }
-   m_freeslabs = &m_slabs[SLAB_GROUP_SIZE-1] ;
+   m_freeslabs = next ;
+   m_numfree = SLAB_GROUP_SIZE-1 ;
    // add the new group to the collection of all SlabGroups
    pushGroup() ;
    // and to the collection of groups with free Slabs
@@ -445,18 +447,20 @@ Slab* SlabGroup::popFreeSlab()
 #endif
    if (!sg) return nullptr ;
    // allocate an available Slab from the group's freelist
-   sg->m_mutex.lock() ;
-   Slab* slb = sg->m_freeslabs ;
+   Slab* slb = sg->m_freeslabs.load() ;
+   Slab* next ;
+   do {
+      if (!slb) break ;
+      next = slb->nextFreeSlab() ;
+      } while (!sg->m_freeslabs.compare_exchange_weak(slb,next)) ;
    if (slb)
       {
-      sg->m_freeslabs = slb->nextSlab() ;
-      if (--sg->m_numfree == 0)		// is group now completely allocated?
+      if (sg->m_numfree-- == 1)		// did we get the last free Slab?
 	 {
 	 // remove the slabgroup from the list of groups with free slabs
 	 sg->unlinkFreeGroup() ;
 	 }
       }
-   sg->m_mutex.unlock() ;
 #if NEW
    s_freecoll.release(index) ;
 #endif
@@ -488,18 +492,18 @@ void SlabGroup::releaseSlab(Slab* slb)
 #ifndef FrSINGLE_THREADED
    slb->clearOwner() ;
 #endif /* !FrSINGLE_THREADED */
-   sg->m_mutex.lock() ;
    // add slab to list of free slabs in its group
-   slb->setNextSlab(sg->m_freeslabs) ;
-   sg->m_freeslabs = slb ;
+   slb->setPrevFreeSlabPtr(nullptr) ;
+   Slab* freelist = sg->m_freeslabs ;
+   do {
+      slb->setNextFreeSlab(freelist) ;
+      } while (!sg->m_freeslabs.compare_exchange_weak(freelist,slb)) ;
    // update statistics
    unsigned freecount = ++sg->m_numfree ;
-//   sg->m_mutex.unlock() ;
    if (freecount == lengthof(m_slabs))
       {
       // this group is now completely unused, so return it to the operating system
       sg->unlinkGroup() ;
-      sg->m_mutex.unlock() ;
       sg->unlinkFreeGroup() ;
 #if !NEW
       delete sg ;
@@ -511,7 +515,6 @@ void SlabGroup::releaseSlab(Slab* slb)
       // first free slab added to this group, so link it into the list of groups with free slabs
       sg->pushFreeGroup() ;
       }
-   sg->m_mutex.unlock() ;
    return ;
 }
 
@@ -558,8 +561,8 @@ static void freelist_release(SlabGroup* sg)
       }
    else
       {
-      // case 3: back on the free list
-//FIXME
+      // case 3: put back on the free list
+      sg->pushFreeGroup() ;
       }
    return ;
 }

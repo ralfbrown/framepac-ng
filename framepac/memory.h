@@ -32,6 +32,8 @@
 /*	Manifest Constants						*/
 /************************************************************************/
 
+#define NEW 1
+
 #ifndef CHAR_BIT
 # define CHAR_BIT 8
 #endif
@@ -70,7 +72,8 @@ class Slab
 
       SlabGroup* containingGroup() const
          {
-	 return reinterpret_cast<SlabGroup*>(const_cast<Slab*>(this) - m_info.m_slab_id) ;
+//	 return reinterpret_cast<SlabGroup*>(const_cast<Slab*>(this) - m_info.m_slab_id) ;
+	 return reinterpret_cast<SlabGroup*>(&(const_cast<Slab*>(this))[-m_info.m_slab_id]) ;
 	 }
 
       static Slab* slab(const void* block)
@@ -87,9 +90,16 @@ class Slab
 	 return slab(block)->m_info.m_vmt ;
 	 }
 
-      void linkSlab(Slab*& listhead) ;
-      void unlinkSlab(Slab*& listhead) ;
-      void linkToSelf() { m_info.m_nextslab = m_info.m_prevslab = this ; }
+      void pushSlab(Slab*& listhead) ;
+      void unlinkSlab()
+	 {
+         Slab** prev = prevSlabPtr() ;
+	 if (!prev) return  ;		// already unlinked?
+	 Slab* next = nextSlab() ;
+	 (*prev) = next ;
+	 if (next) next->setPrevSlabPtr(prev) ;
+	 setPrevSlabPtr(nullptr) ;
+	 }
       void pushFreeSlab(Slab*& listhead)
 	 {
 	 this->m_info.m_nextfree = listhead ;
@@ -97,27 +107,19 @@ class Slab
 	 if (listhead) listhead->m_info.m_prevfree = &(this->m_info.m_nextfree) ;
 	 listhead = this ;
 	 }
-      static Slab* popFreeSlab(Slab*& listhead)
-	 {
-	 Slab* slb = listhead ;
-	 if (slb)
-	    {
-	    listhead = listhead->m_info.m_nextfree ;
-	    if (listhead) listhead->m_info.m_prevfree = &listhead ;
-	    }
-	 return slb ;
-	 }
       void unlinkFreeSlab()
 	 {
-	 Slab** prev = m_info.m_prevfree ;
+	 Slab** prev = prevFreeSlabPtr() ;
 	 if (!prev) return  ;		// already unlinked?
-	 Slab* next = m_info.m_nextfree ;
+	 Slab* next = nextFreeSlab() ;
 	 (*prev) = next ;
 	 if (next) next->m_info.m_prevfree = prev ;
 	 m_info.m_prevfree = nullptr ;
 	 }
       void setNextSlab(Slab* next) { m_info.m_nextslab = next ; }
-      void setPrevSlab(Slab* prev) { m_info.m_prevslab = prev ; }
+      void setPrevSlabPtr(Slab** prev) { m_info.m_prevslab = prev ; }
+      void setNextFreeSlab(Slab* next) { m_info.m_nextfree = next ; }
+      void setPrevFreeSlabPtr(Slab** prev) { m_info.m_prevfree = prev ; }
       void setNextForeignFree(Slab* next) { m_footer.setFreeSlabList(next) ; }//FIXME?
       void setVMT(const ObjectVMT* vmt) { m_info.m_vmt = vmt ; }
       void setSlabID(unsigned id) { m_info.m_slab_id = id ; }
@@ -128,10 +130,10 @@ class Slab
 
       // information about this slab
       const ObjectVMT* VMT() const { return m_info.m_vmt ; }
-      bool onlySlab() const { return m_info.m_nextslab == this && m_info.m_prevslab == this ; }
       Slab* nextSlab() const { return m_info.m_nextslab ; }
-      Slab* prevSlab() const { return m_info.m_prevslab ; }
+      Slab** prevSlabPtr() const { return m_info.m_prevslab ; }
       Slab* nextFreeSlab() const { return m_info.m_nextfree ; }
+      Slab** prevFreeSlabPtr() const { return m_info.m_prevfree ; }
       Slab* nextForeignFree() const { return m_footer.freeSlabList() ; }
       unsigned owningAllocator() const { return m_info.m_alloc_index ; }
       std::thread::id owningThread() const { return m_info.m_owner ; }
@@ -145,13 +147,14 @@ class Slab
       size_t slabOffset() const { return m_info.m_slab_id ; }
 
       [[gnu::hot]]
-      bool allocObject(void*& item)
+      void* allocObject()
 	 {
 	 //assert(m_header.m_freelist != 0) ;
 	 m_header.m_usedcount++ ;
-	 item = ((char*)this) + m_header.m_freelist ;
+	 void* item = ((char*)this) + m_header.m_freelist ;
 	 m_header.m_freelist = *((alloc_size_t*)item) ;
-	 return m_header.m_freelist != 0 ;
+	 if (m_header.m_freelist == 0) unlinkFreeSlab() ;
+	 return item ;
 	 }
       void* reclaimForeignFrees() ;
       void releaseObject(void* obj, Slab*& freelist) ;
@@ -163,7 +166,7 @@ class Slab
 	 public:
 	    const ObjectVMT*   m_vmt ;		// should be first to avoid having to add an offset
 	    Slab*              m_nextslab { nullptr };
-	    Slab*              m_prevslab { nullptr };
+	    Slab**             m_prevslab { nullptr };
 	    Slab*              m_nextfree { nullptr }; // next slab containing unallocated objects
 	    Slab**             m_prevfree { nullptr }; // ptr to freelist predecessor's 'next' pointer
 	    Fr::Atomic<Slab*>* m_foreignlist { nullptr }; // pointer to thread-local list of foreign frees
@@ -245,6 +248,20 @@ class SlabGroup
       static Slab* allocateSlab() ;
       static void releaseSlab(Slab* slab) ;
 
+      // add this SlabGroup to the collection of groups with available Slabs
+      void pushFreeGroup() ;
+
+#if !NEW
+      SlabGroup* nextGroup() const { return m_nextgroup ; }
+      SlabGroup** prevGroupPtr() const { return m_prevgroup ; }
+
+      SlabGroup* nextFreeGroup() const { return m_nextfree ; }
+      SlabGroup** prevFreeGroupPtr() const { return m_prevfree ; }
+
+      void setNextFreeGroup(SlabGroup* next) { m_nextfree = next ; }
+      void setPrevFreeGroupPtr(SlabGroup** prev) { m_prevfree = prev ; }
+#endif /* !NEW */
+
       void _delete() { delete this ; }
 
       size_t freeSlabs() const { return m_numfree ; }
@@ -262,24 +279,25 @@ class SlabGroup
       static SlabGroupColl s_groupcoll ;
 #endif /* FrMEMALLOC_STATS */
    private:
-      Slab           m_slabs[SLAB_GROUP_SIZE] ;
-      SlabGroup*     m_next ;
-      SlabGroup**    m_prev ;
-      SlabGroup*     m_nextfree { nullptr } ;
-      SlabGroup**    m_prevfree { nullptr } ;
-      Slab*          m_freeslabs { nullptr } ;
+      Slab               m_slabs[SLAB_GROUP_SIZE] ;
+      Fr::Atomic<Slab*>  m_freeslabs { nullptr } ;
+      Fr::Atomic<unsigned> m_numfree { lengthof(m_slabs) } ;
+#if NEW
       Fr::Atomic<size_t> m_groupindex { ~0UL } ;
       Fr::Atomic<size_t> m_freeindex { ~0UL } ;
-      unsigned       m_numfree { lengthof(m_slabs) } ;
-      char pad2[512];
-      std::mutex     m_mutex ;
+#else
+      SlabGroup*         m_nextgroup { nullptr } ;
+      SlabGroup**        m_prevgroup { nullptr } ;
+      SlabGroup*         m_nextfree { nullptr } ;
+      SlabGroup**        m_prevfree { nullptr } ;
+      std::mutex         m_mutex ;
+#endif
    protected:
       void* operator new(size_t sz) ;
       void operator delete(void* grp) ;
    protected:
       void pushGroup() ;
       void unlinkGroup() ;
-      void pushFreeGroup() ;
       void unlinkFreeGroup() ;
       static Slab* popFreeSlab() ;
    } ;
@@ -292,6 +310,7 @@ namespace FramepaC
 {
 constexpr unsigned MAX_ALLOCATOR_TYPES = 500 ;
 } // end namespace FramepaC
+
 
 // public classes, types, and functions
 
@@ -347,16 +366,7 @@ class Allocator
       void* allocate()
 	 {
 	 Slab* slb = s_tls[m_type].m_freelist ;
-	 while (slb)
-	    {
-	    void* item ;
-	    if (!slb->allocObject(item))
-	       {
-	       slb->unlinkFreeSlab() ;
-	       }
-	    if (item) return item ;
-	    }
-	 return allocate_more() ;
+	 return slb ? slb->allocObject() : allocate_more() ;
 	 }
       [[gnu::hot]]
       void release(void* blk)
@@ -390,6 +400,7 @@ class Allocator
    protected: // data members
       unsigned		       m_type { 0 } ;
       static SharedInfo        s_shared[FramepaC::MAX_ALLOCATOR_TYPES] ;
+public:
       static thread_local TLS  s_tls[FramepaC::MAX_ALLOCATOR_TYPES] ;
       
       // each thread maintains a small pool of available Slabs for use by any instantiation of Allocator to reduce

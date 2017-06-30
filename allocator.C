@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-25					*/
+/* Version 0.01, last edit 2017-06-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -19,7 +19,6 @@
 /*									*/
 /************************************************************************/
 
-#include <assert.h>
 #include "framepac/atomic.h"
 #include "framepac/memory.h"
 
@@ -110,17 +109,7 @@ Allocator::Allocator(const FramepaC::ObjectVMT* vmt, unsigned objsize, unsigned 
 void Allocator::releaseSlab(FramepaC::Slab* slb)
 {
    // unlink the slab from the doubly-linked list of allocated slabs
-   Slab* nextslab { slb->nextSlab() } ;
-   Slab* prevslab { slb->prevSlab() } ;
-   prevslab->setNextSlab(nextslab) ;
-   nextslab->setPrevSlab(prevslab) ;
-   if (nextslab == slb)			// only slab remaining?
-      nextslab = nullptr ;
-   unsigned index { slb->owningAllocator() } ;
-   if (s_tls[index].m_allocslabs == slb)
-      {
-      s_tls[index].m_allocslabs = nextslab ;
-      }
+   slb->unlinkSlab() ;
    // cache a small number of freed slabs to avoid global allocations
    if (s_local_free_count < FramepaC::LOCAL_SLABCACHE_HIGHWATER)
       {
@@ -184,11 +173,9 @@ void* Allocator::allocate_more()
 	    }
 	 }
       }
-   void* item ;
    if (s_tls[m_type].m_freelist)
       {
-      (void)s_tls[m_type].m_freelist->allocObject(item) ;
-      return item ;
+      return s_tls[m_type].m_freelist->allocObject() ;
       }
    // no unallocated object found, so allocate a new Slab
    Slab* new_slab ;
@@ -222,10 +209,10 @@ void* Allocator::allocate_more()
       {
       new_slab = FramepaC::SlabGroup::allocateSlab() ;
       }
-   new_slab->setVMT(s_shared[m_type].m_vmt) ;
-   item = new_slab->initFreelist(s_shared[m_type].m_objsize,s_shared[m_type].m_alignment) ;
+   void *item = new_slab->initFreelist(s_shared[m_type].m_objsize,s_shared[m_type].m_alignment) ;
    // and insert it on both our list of owned slabs and list of slabs with available objects
-   new_slab->linkSlab(s_tls[m_type].m_allocslabs) ;
+   new_slab->setVMT(s_shared[m_type].m_vmt) ;
+   new_slab->pushSlab(s_tls[m_type].m_allocslabs) ;
    if (new_slab->objectsAvailable())
       {
       new_slab->pushFreeSlab(s_tls[m_type].m_freelist) ;
@@ -278,5 +265,7 @@ size_t Allocator::reclaim()
 }
 
 } // end namespace Fr
+
+#include "framepac/nonobject.h"
 
 // end of file allocator.C //

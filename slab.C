@@ -93,27 +93,16 @@ void Slab::releaseObject(void* obj, Slab*& freelist)
 
 //----------------------------------------------------------------------------
 
-void Slab::linkSlab(Slab*& listhead)
+void Slab::pushSlab(Slab*& listhead)
 {
 #ifndef FrSINGLE_THREADED
    // claim ownership of the slab by the current thread
    m_info.m_owner = this_thread::get_id() ;
 #endif /* !FrSINGLE_THREADED */
-   if (listhead == nullptr)
-      {
-      listhead = this ;
-      m_info.m_prevslab = this ;
-      m_info.m_nextslab = this ;
-      }
-   else
-      {
-      // link in the current slab following the item at the head of the list
-      Slab* next = listhead->nextSlab() ;
-      m_info.m_prevslab = listhead ;
-      m_info.m_nextslab = next ;
-      next->m_info.m_prevslab = this ;
-      listhead->m_info.m_nextslab = this ;
-      }
+   setNextSlab(listhead) ;
+   setPrevSlabPtr(&listhead) ;
+   if (listhead) listhead->setPrevSlabPtr(&(this->m_info.m_nextslab)) ;
+   listhead = this ;
    return ;
 }
 
@@ -122,30 +111,6 @@ void Slab::linkSlab(Slab*& listhead)
 void Slab::clearOwner()
 {
    m_info.m_owner = (thread::id)0 ;
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-void Slab::unlinkSlab(Slab*& listhead)
-{
-   Slab* prev = prevSlab() ;
-   Slab* next = nextSlab() ;
-   if (prev == next)
-      {
-      // if there's only the current slab, set the list to NULL
-      listhead = nullptr ;
-      }
-   else
-      {
-      // unlink the slab from the list
-      prev->m_info.m_nextslab = next ;
-      next->m_info.m_prevslab = prev ;
-      if (listhead == this)
-	 listhead = next ;
-      }
-   //TODO: return slab to SlabGroup's freelist
-
    return ;
 }
 
@@ -192,12 +157,8 @@ alloc_size_t Slab::makeFreeList(unsigned objsize, unsigned align)
 void* Slab::initFreelist(unsigned objsize, unsigned align)
 {
    alloc_size_t first = makeFreeList(objsize, align) ;
-   if (!first)
-      return nullptr ;
    // pop the first entry off the free list
-   void* item ;
-   (void)allocObject(item) ;
-   return item ;
+   return first ? allocObject() : nullptr ;
 }
 
 //----------------------------------------------------------------------------
