@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-25					*/
+/* Version 0.01, last edit 2017-06-28					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -110,15 +110,16 @@ class Slab
       void unlinkFreeSlab()
 	 {
 	 Slab** prev = m_info.m_prevfree ;
-	 if (!prev) return  ;
+	 if (!prev) return  ;		// already unlinked?
 	 Slab* next = m_info.m_nextfree ;
 	 (*prev) = next ;
 	 if (next) next->m_info.m_prevfree = prev ;
-	 prev = nullptr ;
+	 m_info.m_prevfree = nullptr ;
 	 }
       void setNextSlab(Slab* next) { m_info.m_nextslab = next ; }
       void setPrevSlab(Slab* prev) { m_info.m_prevslab = prev ; }
       void setNextForeignFree(Slab* next) { m_footer.setFreeSlabList(next) ; }//FIXME?
+      void setVMT(const ObjectVMT* vmt) { m_info.m_vmt = vmt ; }
       void setSlabID(unsigned id) { m_info.m_slab_id = id ; }
       void clearOwner() ;
       alloc_size_t makeFreeList(unsigned objsize, unsigned align) ;
@@ -244,13 +245,22 @@ class SlabGroup
       static Slab* allocateSlab() ;
       static void releaseSlab(Slab* slab) ;
 
+      void _delete() { delete this ; }
+
+      size_t freeSlabs() const { return m_numfree ; }
+      
+      void setFreecollIndex(size_t index) { m_freeindex = index ; }
+      void setGroupIndex(size_t index) { m_groupindex = index ; }
+
    private:
       static mutex      s_grouplist_mutex ;
       static mutex      s_freelist_mutex ;
       static SlabGroup* s_grouplist ;
       static SlabGroup* s_freelist ;
-      static SlabGroupColl s_groupcoll ;
       static SlabGroupColl s_freecoll ;
+#ifdef FrMEMALLOC_STATS
+      static SlabGroupColl s_groupcoll ;
+#endif /* FrMEMALLOC_STATS */
    private:
       Slab           m_slabs[SLAB_GROUP_SIZE] ;
       SlabGroup*     m_next ;
@@ -261,6 +271,7 @@ class SlabGroup
       Fr::Atomic<size_t> m_groupindex { ~0UL } ;
       Fr::Atomic<size_t> m_freeindex { ~0UL } ;
       unsigned       m_numfree { lengthof(m_slabs) } ;
+      char pad2[512];
       std::mutex     m_mutex ;
    protected:
       void* operator new(size_t sz) ;

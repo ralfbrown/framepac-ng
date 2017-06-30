@@ -54,6 +54,9 @@ class SlabGroupColl
    {
    public:
       SlabGroupColl() = default ;
+      SlabGroupColl(SlabGroupIndexFn* idx, SlabGroupReleaseFn* rel)
+	 : m_setindexfunc(idx), m_releasefunc(rel)
+	 {}
       ~SlabGroupColl() = default ;
 
       std::pair<SlabGroup*,size_t> accessAny() ;
@@ -66,6 +69,8 @@ class SlabGroupColl
 
       void setReleaseFunc(SlabGroupReleaseFn* fn) { m_releasefunc = fn  ; }
       void setIndexFunc(SlabGroupIndexFn* fn) { m_setindexfunc = fn  ; }
+
+      bool lockedEntry(size_t index) { return index < COLL_SIZE ? no_more_updates(m_groups[index]) : true ; }
 
    protected: // constants
       // to keep things atomic and save space, we'll pack additional info into otherwise-unused bits of the
@@ -112,21 +117,10 @@ class SlabGroupColl
       Fr::Semaphore         m_sem ;
       Fr::Atomic<uintptr_t> m_groups[COLL_SIZE+1] ;
       Fr::Atomic<unsigned>  m_lockcount ;
-      SlabGroupReleaseFn*   m_releasefunc ;
       SlabGroupIndexFn*     m_setindexfunc ;
+      SlabGroupReleaseFn*   m_releasefunc ;
       Fr::Atomic<unsigned>  m_last ;		// last+1 array element in use
    } ;
-
-/************************************************************************/
-/************************************************************************/
-
-SlabGroup* SlabGroup::s_grouplist { nullptr } ;
-SlabGroup* SlabGroup::s_freelist { nullptr } ;
-SlabGroupColl SlabGroup::s_groupcoll ;
-SlabGroupColl SlabGroup::s_freecoll ;
-
-mutex SlabGroup::s_grouplist_mutex ;
-mutex SlabGroup::s_freelist_mutex ;
 
 /************************************************************************/
 /*	methods for class SlabGroupColl					*/
@@ -145,13 +139,13 @@ std::pair<SlabGroup*,size_t> SlabGroupColl::accessAny()
    //   which one has the lowest reference count
    size_t minrefs = ~0 ;
    size_t bestidx = COLL_SIZE ;
-   for (size_t i = 0 ; i < 12 && first+i < m_last ; ++i)
+   for (size_t i = 0 ; (i < 12 || bestidx == COLL_SIZE) && first+i < m_last ; ++i)
       {
       uintptr_t val = m_groups[first+i] ;
       if (no_more_updates(val)) continue ;
       size_t refs = refcount(val) ;
       if (refs == 0)
-	 {
+ 	 {
 	 bestidx = first+i ;
 	 break ;
 	 }
@@ -167,8 +161,10 @@ std::pair<SlabGroup*,size_t> SlabGroupColl::accessAny()
       {
       if (m_first < m_last)
 	 {
-	 // adding the following line eliminated a race that caused a hang when compiling with optimization enabled....
-	 cerr<<"recursing"<<endl;
+	 // adding the following line reduced the occurrence of a race
+	 //   that caused a hang when compiling with optimization
+	 //   enabled....
+	 this_thread::sleep_for(std::chrono::microseconds(100)) ;
 	 return accessAny() ;
 	 }
       bestidx = ~0 ;
@@ -334,9 +330,9 @@ SlabGroup::SlabGroup()
       m_slabs[i].setSlabID(i) ;
       }
    m_freeslabs = &m_slabs[SLAB_GROUP_SIZE-1] ;
-   // link the new group into the doubly-linked list of SlabGroups
+   // add the new group to the collection of all SlabGroups
    pushGroup() ;
-   // and into the doubly-linked list of groups with free Slabs
+   // and to the collection of groups with free Slabs
    pushFreeGroup() ;
    return ;
 }
@@ -362,7 +358,9 @@ void SlabGroup::operator delete(void* grp)
 void SlabGroup::pushGroup()
 {
 #if NEW
+#ifdef FrMEMALLOC_STATS
    m_groupindex = s_groupcoll.append(this) ;
+#endif /* FrMEMALLOC_STATS */
 #else
    lock_guard<mutex> _(s_grouplist_mutex) ;
    m_next = s_grouplist ;
@@ -378,9 +376,10 @@ void SlabGroup::pushGroup()
 
 void SlabGroup::unlinkGroup()
 {
-   unlinkFreeGroup() ;
 #if NEW
+#ifdef FrMEMALLOC_STATS
    s_groupcoll.requestRemoval(m_groupindex) ;
+#endif /* FrMEMALLOC_STATS */
 #else
    lock_guard<mutex> _(s_grouplist_mutex) ;
    SlabGroup** prev = m_prev ;
@@ -446,7 +445,7 @@ Slab* SlabGroup::popFreeSlab()
 #endif
    if (!sg) return nullptr ;
    // allocate an available Slab from the group's freelist
-   lock_guard<mutex> lock(sg->m_mutex) ;
+   sg->m_mutex.lock() ;
    Slab* slb = sg->m_freeslabs ;
    if (slb)
       {
@@ -457,6 +456,7 @@ Slab* SlabGroup::popFreeSlab()
 	 sg->unlinkFreeGroup() ;
 	 }
       }
+   sg->m_mutex.unlock() ;
 #if NEW
    s_freecoll.release(index) ;
 #endif
@@ -494,12 +494,16 @@ void SlabGroup::releaseSlab(Slab* slb)
    sg->m_freeslabs = slb ;
    // update statistics
    unsigned freecount = ++sg->m_numfree ;
+//   sg->m_mutex.unlock() ;
    if (freecount == lengthof(m_slabs))
       {
       // this group is now completely unused, so return it to the operating system
       sg->unlinkGroup() ;
       sg->m_mutex.unlock() ;
+      sg->unlinkFreeGroup() ;
+#if !NEW
       delete sg ;
+#endif
       return ;
       }
    else if (freecount == 1)
@@ -510,6 +514,69 @@ void SlabGroup::releaseSlab(Slab* slb)
    sg->m_mutex.unlock() ;
    return ;
 }
+
+/************************************************************************/
+/*	Utility functions for SlabGroupColl				*/
+/************************************************************************/
+
+#ifdef FrMEMALLOC_STATS
+static void group_setindex(SlabGroup* sg, size_t idx)
+{
+   sg->setGroupIndex(idx) ;
+   return ;
+}
+#endif /* FrMEMALLOC_STATS */
+
+//----------------------------------------------------------------------------
+
+static void freelist_setindex(SlabGroup* sg, size_t idx)
+{
+   sg->setFreecollIndex(idx) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+static void freelist_release(SlabGroup* sg)
+{
+   // we get called when a scheduled removal from s_freecoll becomes final; the removal was
+   //   scheduled because at that time the slab was either entirely used or entirely free
+   // Three cases can happen now:
+   // 1. the group is completely used: remove from free list (already done), but do nothing else
+   // 2. the group is completely free: return to OS
+   // 3. the group is partially used: somebody modified it since the removal was scheduled, so put it back
+   //    on the freelist
+   size_t numfree = sg->freeSlabs() ;
+   if (numfree == 0)
+      {
+      // case 1: do nothing
+      }
+   else if (numfree == SLAB_GROUP_SIZE)
+      {
+      // case 2: return to OS
+      sg->_delete() ;
+      }
+   else
+      {
+      // case 3: back on the free list
+//FIXME
+      }
+   return ;
+}
+
+/************************************************************************/
+/*	Static member variables						*/
+/************************************************************************/
+
+SlabGroup* SlabGroup::s_grouplist { nullptr } ;
+SlabGroup* SlabGroup::s_freelist { nullptr } ;
+SlabGroupColl SlabGroup::s_freecoll(freelist_setindex,freelist_release) ;
+#ifdef FrMEMALLOC_STATS
+SlabGroupColl SlabGroup::s_groupcoll(group_setindex,nullptr) ;
+#endif /* FrMEMALLOC_STATS */
+
+mutex SlabGroup::s_grouplist_mutex ;
+mutex SlabGroup::s_freelist_mutex ;
 
 //----------------------------------------------------------------------------
 

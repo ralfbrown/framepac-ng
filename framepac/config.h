@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-03					*/
+/* Version 0.01, last edit 2017-06-28					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -41,6 +41,8 @@ using namespace std ;
 /*	Compile-Time Configuration					*/
 /************************************************************************/
 
+//*** Hash Tables ***
+
 // specify how much checking and output you want for hash tables:
 //   0 - completely silent except for critical errors
 //   1 - important messsages only
@@ -58,10 +60,10 @@ using namespace std ;
 //   value are 64 bits)
 #define FrHASHTABLE_INTERLEAVED_ENTRIES
 
-// uncomment the following line to enable 16-bit link pointers instead
-//   of 8-bit.  This will increase memory use unless you use
-//   interleaved entries on a 64-bit machine for pointer keys/values.
-//#define FrHASHTABLE_BIGLINK
+//*** Memory Allocator ***
+
+// uncomment the following line to be able to generate memory-allocation statistics (slightly slower)
+//#define FrHASHTABLE_STATS
 
 /************************************************************************/
 /************************************************************************/
