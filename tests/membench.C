@@ -30,6 +30,8 @@ using namespace Fr ;
 /************************************************************************/
 /************************************************************************/
 
+#define ALLOC_SIZE 16
+
 /************************************************************************/
 /*	Global variables						*/
 /************************************************************************/
@@ -43,10 +45,22 @@ using namespace Fr ;
 /************************************************************************/
 /************************************************************************/
 
+struct BatchInfo
+   {
+      SmallAlloc* allocator ;
+      void**      blocks ;
+      size_t      batch_size ;
+      size_t      iterations ;
+      bool	  done ;
+   } ;
+
+/************************************************************************/
+/************************************************************************/
+
 static void show_test_time(Timer& timer, size_t size, size_t repetitions, bool complete)
 {
    double seconds = timer.elapsedSeconds() ;
-   cout << " time was " ;
+   cout << " ...time was " ;
    timer.showTimes(cout) ;
    if (repetitions > 1)
       {
@@ -58,7 +72,7 @@ static void show_test_time(Timer& timer, size_t size, size_t repetitions, bool c
 	 cout << setprecision(6) << microsec_per_iter << "us" ;
       else
 	 cout << setprecision(6) << 1000*microsec_per_iter << "ns" ;
-      cout << " per iter" ;
+      cout << "/iter" ;
       if (size > 0)
 	 {
 	 cout << " (" ;
@@ -66,7 +80,7 @@ static void show_test_time(Timer& timer, size_t size, size_t repetitions, bool c
 	    cout << setprecision(4) << (1000.0*microsec_per_iter/size) << "ns" ;
 	 else
 	    cout << setprecision(4) << (microsec_per_iter/size) << "us" ;
-	 cout << " per alloc)" ;
+	 cout << "/alloc)" ;
 	 }
       else
 	 cout << "ation" ;
@@ -74,23 +88,21 @@ static void show_test_time(Timer& timer, size_t size, size_t repetitions, bool c
    cout << "." << endl ;
    if (complete)
       {
-      cout << "This benchmark is now complete.\n" << endl ;
+      cout << "\nThis benchmark is now complete.\n" << endl ;
       }
    return ;
 }
 
 //----------------------------------------------------------------------------
 
-void benchmark_suballocator(size_t size, size_t iterations)
+void run_suballocator(const void* input, void* /*output*/)
 {
-   cout << "Benchmark of memory sub-allocator speed\n\n"
-           "We allocate and then release " << size << " 16-byte objects a total\n"
-           "of " << iterations << " times.\n"
-	<< endl ;
-   SmallAlloc* allocator = SmallAlloc::create(16) ;
+   const BatchInfo* info = reinterpret_cast<const BatchInfo*>(input) ;
+   size_t size = info->batch_size ;
+   SmallAlloc* allocator = info->allocator ;
    LocalAlloc<void*,30000> blocks(size) ;
    Timer timer ;
-   for (size_t pass = 0 ; pass < iterations ; ++pass)
+   for (size_t pass = 0 ; pass < info->iterations ; ++pass)
       {
       for (size_t i = 0 ; i < size ; ++i)
 	 blocks[i] = allocator->allocate() ;
@@ -98,54 +110,97 @@ void benchmark_suballocator(size_t size, size_t iterations)
 	 allocator->release(blocks[i]) ;
       }
    allocator->reclaim() ;
-   show_test_time(timer,size,iterations,true) ;
-   cout << "\nBenchmark of memory sub-allocator speed\n\n"
+   show_test_time(timer,size,info->iterations,info->done) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void run_malloc(const void* input, void* /*output*/)
+{
+   const BatchInfo* info = reinterpret_cast<const BatchInfo*>(input) ;
+   size_t size = info->batch_size ;
+   LocalAlloc<void*,30000> blocks(size) ;
+   Timer timer ;
+   for (size_t pass = 0 ; pass < info->iterations ; ++pass)
+      {
+      for (size_t i = 0 ; i < size ; ++i)
+	 blocks[i] = ::malloc(ALLOC_SIZE) ;
+      for (size_t i = 0 ; i < size ; ++i)
+	 ::free(blocks[i]) ;
+      }
+   show_test_time(timer,size,info->iterations,true) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void run_new(const void* input, void* /*output*/)
+{
+   const BatchInfo* info = reinterpret_cast<const BatchInfo*>(input) ;
+   size_t size = info->batch_size ;
+   LocalAlloc<char*,30000> blocks(size) ;
+   Timer timer ;
+   for (size_t pass = 0 ; pass < info->iterations ; ++pass)
+      {
+      for (size_t i = 0 ; i < size ; ++i)
+	 blocks[i] = ::new char[ALLOC_SIZE] ;
+      for (size_t i = 0 ; i < size ; ++i)
+	 ::delete blocks[i] ;
+      }
+   show_test_time(timer,size,info->iterations,true) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void benchmark(size_t size, size_t iterations, ThreadPoolWorkFunc *fn, const char* what)
+{
+   BatchInfo info ;
+   cout << "Benchmark of memory allocation speed (using " << what << ")\n\n"
            "We allocate and then release " << size << " 16-byte objects a total\n"
+           "of " << iterations << " times.\n"
+	<< endl ;
+   info.allocator = SmallAlloc::create(ALLOC_SIZE) ;
+   info.batch_size = size ;
+   info.iterations = iterations ;
+   info.done = false ;
+   fn(&info,nullptr) ;
+   if (fn != run_suballocator)
+      return ;
+   cout << "\nWe allocate and then release " << size << " 16-byte objects a total\n"
            "of " << iterations << " times, but first fragment allocations so that\n"
            "the allocator works entirely from thread-local slabs.\n"
 	<< endl ;
-   // allocate 1.01 times as many blocks as requested
    LocalAlloc<void*> dummy(1+size/100) ;
+   {
+   // allocate 1.01 times as many blocks as requested
+   LocalAlloc<void*,30000> blocks(size) ;
    dummy[(1+size/100)-1] = nullptr ;
    for (size_t i = 0 ; i < size ; ++i)
       {
-      blocks[i] = allocator->allocate() ;
+      blocks[i] = info.allocator->allocate() ;
       if (i % 100 == 0)
-	 dummy[i/100] = allocator->allocate() ;
+	 dummy[i/100] = info.allocator->allocate() ;
       }
    // free all of the blocks except every hundredth one, which will
    //   prevent the allocator from returning the memory to the
    //   operating system
    for (size_t i = 0 ; i < size ; ++i)
       {
-      allocator->release(blocks[i]) ;
+      info.allocator->release(blocks[i]) ;
       }
-   timer.restart() ;
-   for (size_t pass = 0 ; pass < iterations ; ++pass)
-      {
-      for (size_t i = 0 ; i < size ; ++i)
-	 blocks[i] = allocator->allocate() ;
-      for (size_t i = 0 ; i < size ; ++i)
-	 allocator->release(blocks[i]) ;
-      }
-   allocator->reclaim() ;
-   show_test_time(timer,size,iterations,true) ;
+   }
+   info.done = true ;
+   fn(&info,nullptr) ;
    for (size_t i = 0 ; i < 1+size/100 ; ++i)
       {
-      allocator->release(dummy[i]) ;
+      info.allocator->release(dummy[i]) ;
       }
    return ;
 }
 
 //----------------------------------------------------------------------------
-
-struct BatchInfo
-   {
-      SmallAlloc* allocator ;
-      void**      blocks ;
-      size_t      batch_size ;
-      size_t      iterations ;
-   } ;
 
 void run_suballocator_batch(const void* input, void* /*output*/)
 {
@@ -165,7 +220,42 @@ void run_suballocator_batch(const void* input, void* /*output*/)
 
 //----------------------------------------------------------------------------
 
-void benchmark_suballocator_parallel(size_t threads, size_t size, size_t iterations)
+void run_malloc_batch(const void* input, void* /*output*/)
+{
+   const BatchInfo* info = reinterpret_cast<const BatchInfo*>(input) ;
+   void** blocks = info->blocks ;
+   size_t batch_size = info->batch_size ;
+   for (size_t pass = 0 ; pass < info->iterations ; ++pass)
+      {
+      for (size_t i = 0 ; i < batch_size ; ++i)
+	 blocks[i] = ::malloc(ALLOC_SIZE) ;
+      for (size_t i = 0 ; i < batch_size ; ++i)
+	 ::free(blocks[i]) ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void run_new_batch(const void* input, void* /*output*/)
+{
+   const BatchInfo* info = reinterpret_cast<const BatchInfo*>(input) ;
+   char** blocks = (char**)info->blocks ;
+   size_t batch_size = info->batch_size ;
+   for (size_t pass = 0 ; pass < info->iterations ; ++pass)
+      {
+      for (size_t i = 0 ; i < batch_size ; ++i)
+	 blocks[i] = ::new char[16] ;
+      for (size_t i = 0 ; i < batch_size ; ++i)
+	 ::delete blocks[i] ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void benchmark_parallel(size_t threads, size_t size, size_t iterations,
+   ThreadPoolWorkFunc* fn, const char* what)
 {
    ThreadPool tpool(threads) ;
    if (threads == 0) threads = 1 ;
@@ -173,13 +263,13 @@ void benchmark_suballocator_parallel(size_t threads, size_t size, size_t iterati
    size_t batch_count = threads >= 1 ? threads : 1 ;
    size_t batch_size = (size + batch_count - 1) / batch_count ;
    size = batch_count * batch_size ;
-   cout << "Benchmark of memory sub-allocator speed (multiple threads)\n\n"
+   cout << "Benchmark of allocation speed (multiple threads using " << what << ")\n\n"
            "We allocate and then release " << batch_size << " 16-byte objects in each\n"
            "of " << batch_count << " batches running in " << threads << " concurrent threads\n"
            "a total of " << iterations  << " times.\n"
 	<< endl ;
    LocalAlloc<void*,30000> blocks(size) ;
-   SmallAlloc* allocator = SmallAlloc::create(16) ;
+   SmallAlloc* allocator = SmallAlloc::create(ALLOC_SIZE) ;
    Timer timer ;
    LocalAlloc<BatchInfo> batch_info(batch_count) ;
    for (size_t batch = 0 ; batch < batch_count ; ++batch)
@@ -189,7 +279,7 @@ void benchmark_suballocator_parallel(size_t threads, size_t size, size_t iterati
       info.blocks = &blocks[batch*batch_size] ;
       info.batch_size = batch_size ;
       info.iterations = iterations ;
-      tpool.dispatch(run_suballocator_batch,&info) ;
+      tpool.dispatch(fn,&info) ;
       }
    tpool.waitUntilIdle() ;
    allocator->reclaim() ;
@@ -205,11 +295,15 @@ int main(int argc, char** argv)
    size_t size { 100000 } ;
    size_t repetitions { 1 } ;
    size_t threads { 0 } ;  // run single-threaded by default
+   bool use_malloc { false } ;
+   bool use_new { false } ;
 
    Fr::Initialize() ;
    ArgParser cmdline_flags ;
    cmdline_flags
       .add(threads,"j","threads","")
+      .add(use_malloc,"m","use-malloc","use malloc() instead of custom allocator")
+      .add(use_new,"n","use-new","use 'new char[]' instead of custom allocator")
       .add(repetitions,"r","reps","number of repetitions to run")
       .add(size,"s","size","number of allocations per iteration")
       .addHelp("h","help","show usage summary") ;
@@ -224,10 +318,31 @@ int main(int argc, char** argv)
    if (repetitions < 1)
       repetitions = 1 ;
    if (threads == 0)
-      benchmark_suballocator(size,repetitions) ;
+      {
+      if (use_malloc)
+	 {
+	 benchmark(size,repetitions,run_malloc,"malloc") ;
+	 }
+      else if (use_new)
+	 {
+	 benchmark(size,repetitions,run_new,"new") ;
+	 }
+      else
+	 {
+	 benchmark(size,repetitions,run_suballocator,"suballocator") ;
+	 }
+      }
+   else if (use_malloc)
+      {
+      benchmark_parallel(threads,size,repetitions,run_malloc_batch,"malloc") ;
+      }
+   else if (use_new)
+      {
+      benchmark_parallel(threads,size,repetitions,run_new_batch,"new") ;
+      }
    else
       {
-      benchmark_suballocator_parallel(threads,size,repetitions) ;
+      benchmark_parallel(threads,size,repetitions,run_suballocator_batch,"suballocator") ;
       }
    return 0 ;
 }
