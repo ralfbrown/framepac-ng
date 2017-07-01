@@ -256,17 +256,19 @@ class SlabGroup
       void setFreecollIndex(size_t index) { m_freeindex = index ; }
       void setGroupIndex(size_t index) { m_groupindex = index ; }
 
+      static void printFreeCounts() ;
+
    private:
-      static mutex      s_grouplist_mutex ;
-      static mutex      s_freelist_mutex ;
-      static SlabGroup* s_grouplist ;
-      static SlabGroup* s_freelist ;
       static SlabGroupColl s_freecoll ;
 #ifdef FrMEMALLOC_STATS
       static SlabGroupColl s_groupcoll ;
 #endif /* FrMEMALLOC_STATS */
    private:
       Slab               m_slabs[SLAB_GROUP_SIZE] ;
+      // WORKAROUND: for some reason I haven't yet determined,
+      // parallel operation likes to allocate one slab past the end of
+      // m_slabs....
+      Slab dummy ;
       Fr::Atomic<Slab*>  m_freeslabs { nullptr } ;
       Fr::Atomic<unsigned> m_numfree { lengthof(m_slabs) } ;
       Fr::Atomic<size_t> m_groupindex { ~0UL } ;

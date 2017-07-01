@@ -74,6 +74,8 @@ class SlabGroupColl
 
       bool lockedEntry(size_t index) { return index < COLL_SIZE ? no_more_updates(m_groups[index]) : true ; }
 
+      void showFreeCounts() const ;
+      
    protected: // constants
       // to keep things atomic and save space, we'll pack additional info into otherwise-unused bits of the
       //   SlabGroup pointer
@@ -205,11 +207,14 @@ bool SlabGroupColl::release(size_t idx)
    // we were the last thread accessing the entry, and it's been
    //   flagged for removal, so perform that removal
    val = m_groups[idx].exchange(RELEASE_MASK) ;
-   if ((val & POINTER_MASK) == POINTER_MASK){cerr<<"release fail\n"<<flush; return false ;}//!!!
    SlabGroup* grp = pointer(val) ;
-   if (grp && m_releasefunc)
+   if (grp)
       {
-      m_releasefunc(grp) ;
+      m_setindexfunc(grp,~0) ;
+      if (m_releasefunc)
+	 {
+	 m_releasefunc(grp) ;
+	 }
       }
    return true ;
 }
@@ -229,6 +234,7 @@ size_t SlabGroupColl::append(SlabGroup* grp)
       throw new alloc_capacity_error ;
       }
    m_groups[idx] = uintptr_t(grp) ;
+   m_setindexfunc(grp,idx) ;
    return idx ;
 }
 
@@ -317,6 +323,32 @@ bool SlabGroupColl::compact()
    return compacted ;
 }
 
+//----------------------------------------------------------------------------
+
+void SlabGroupColl::showFreeCounts() const
+{
+   size_t first = m_first ;
+   if (first > 0) --first ;
+   for (size_t i = first ; i < m_last ; ++i)
+      {
+      cout << i << ": " ;
+      uintptr_t val = m_groups[i] ;
+      SlabGroup* sg = pointer(val) ;
+      if (val == RELEASE_MASK)
+	 cout << "RECLAIMED" ;
+      else if (!sg)
+	 cout << "NULL" ;
+      else
+	 {
+	 if (val & RELEASE_MASK)
+	    cout << "REL:" ;
+	 cout << sg->freeSlabs() ;
+	 }
+      cout << endl ;
+      }
+   return;
+}
+
 /************************************************************************/
 /************************************************************************/
 
@@ -328,7 +360,7 @@ SlabGroup::SlabGroup()
 {
    // set up the linked list of free slabs
    Slab* next = nullptr ;
-   for (size_t i = 0 ; i < SLAB_GROUP_SIZE-1 ; ++i)
+   for (size_t i = 0 ; i < SLAB_GROUP_SIZE ; ++i)
       {
       m_slabs[i].setNextFreeSlab(next) ;
       m_slabs[i].setPrevFreeSlabPtr(nullptr) ;
@@ -336,7 +368,7 @@ SlabGroup::SlabGroup()
       next = &m_slabs[i] ;
       }
    m_freeslabs = next ;
-   m_numfree = SLAB_GROUP_SIZE-1 ;
+   m_numfree = SLAB_GROUP_SIZE ;
    return ;
 }
 
@@ -466,7 +498,7 @@ void SlabGroup::releaseSlab(Slab* slb)
       } while (!sg->m_freeslabs.compare_exchange_weak(freelist,slb)) ;
    // update statistics
    unsigned freecount = ++sg->m_numfree ;
-   if (freecount == lengthof(m_slabs))
+   if (freecount == SLAB_GROUP_SIZE)
       {
       // this group is now completely unused, so return it to the operating system
       sg->unlinkGroup() ;
@@ -478,6 +510,14 @@ void SlabGroup::releaseSlab(Slab* slb)
       // first free slab added to this group, so link it into the list of groups with free slabs
       sg->pushFreeGroup() ;
       }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void SlabGroup::printFreeCounts()
+{
+   s_freecoll.showFreeCounts() ;
    return ;
 }
 
@@ -534,15 +574,10 @@ static void freelist_release(SlabGroup* sg)
 /*	Static member variables						*/
 /************************************************************************/
 
-SlabGroup* SlabGroup::s_grouplist { nullptr } ;
-SlabGroup* SlabGroup::s_freelist { nullptr } ;
 SlabGroupColl SlabGroup::s_freecoll(freelist_setindex,freelist_release) ;
 #ifdef FrMEMALLOC_STATS
 SlabGroupColl SlabGroup::s_groupcoll(group_setindex,nullptr) ;
 #endif /* FrMEMALLOC_STATS */
-
-mutex SlabGroup::s_grouplist_mutex ;
-mutex SlabGroup::s_freelist_mutex ;
 
 //----------------------------------------------------------------------------
 
