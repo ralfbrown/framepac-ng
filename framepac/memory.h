@@ -32,8 +32,6 @@
 /*	Manifest Constants						*/
 /************************************************************************/
 
-#define NEW 1
-
 #ifndef CHAR_BIT
 # define CHAR_BIT 8
 #endif
@@ -251,17 +249,6 @@ class SlabGroup
       // add this SlabGroup to the collection of groups with available Slabs
       void pushFreeGroup() ;
 
-#if !NEW
-      SlabGroup* nextGroup() const { return m_nextgroup ; }
-      SlabGroup** prevGroupPtr() const { return m_prevgroup ; }
-
-      SlabGroup* nextFreeGroup() const { return m_nextfree ; }
-      SlabGroup** prevFreeGroupPtr() const { return m_prevfree ; }
-
-      void setNextFreeGroup(SlabGroup* next) { m_nextfree = next ; }
-      void setPrevFreeGroupPtr(SlabGroup** prev) { m_prevfree = prev ; }
-#endif /* !NEW */
-
       void _delete() { delete this ; }
 
       size_t freeSlabs() const { return m_numfree ; }
@@ -282,16 +269,8 @@ class SlabGroup
       Slab               m_slabs[SLAB_GROUP_SIZE] ;
       Fr::Atomic<Slab*>  m_freeslabs { nullptr } ;
       Fr::Atomic<unsigned> m_numfree { lengthof(m_slabs) } ;
-#if NEW
       Fr::Atomic<size_t> m_groupindex { ~0UL } ;
       Fr::Atomic<size_t> m_freeindex { ~0UL } ;
-#else
-      SlabGroup*         m_nextgroup { nullptr } ;
-      SlabGroup**        m_prevgroup { nullptr } ;
-      SlabGroup*         m_nextfree { nullptr } ;
-      SlabGroup**        m_prevfree { nullptr } ;
-      std::mutex         m_mutex ;
-#endif
    protected:
       void* operator new(size_t sz) ;
       void operator delete(void* grp) ;
