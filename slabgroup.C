@@ -57,11 +57,15 @@ class SlabGroupColl
 	 {}
       ~SlabGroupColl() = default ;
 
-      std::pair<SlabGroup*,size_t> accessAny() ;
+      std::pair<SlabGroup*,size_t> accessAny(unsigned hint = 0) ;
       SlabGroup* access(size_t) ;
       bool release(size_t) ;
 
       size_t append(SlabGroup*) ;
+      bool markReleaseable(size_t idx)
+	 {
+	    return (m_groups[idx].fetch_or(RELEASE_MASK) & RELEASE_MASK) != 0 ;
+	 }
       void requestRemoval(size_t) ;
       bool compact() ;
 
@@ -102,14 +106,12 @@ class SlabGroupColl
 	 {
 	    return m_groups[idx]-- ;
 	 }
-      bool markReleaseable(size_t idx)
-	 {
-	    return (m_groups[idx].fetch_or(RELEASE_MASK) & RELEASE_MASK) != 0 ;
-	 }
       bool markCompacting(size_t idx)
 	 {
 	    return (m_groups[idx].fetch_or(COMPACT_MASK) & COMPACT_MASK) != 0 ;
 	 }
+      unsigned leastBusy(unsigned first) const ;
+      
    protected: // data members
       Fr::Atomic<unsigned>  m_first ;		// first array element in use
       Fr::Semaphore         m_sem ;
@@ -124,28 +126,20 @@ class SlabGroupColl
 /*	methods for class SlabGroupColl					*/
 /************************************************************************/
 
-// find an available SlabGroup from the collection
-std::pair<SlabGroup*,size_t> SlabGroupColl::accessAny()
+unsigned SlabGroupColl::leastBusy(unsigned first) const
 {
-   // advance the 'first' pointer past any entries which have been or are being moved/removed
-   unsigned first = m_first ;
-   while (no_more_updates(m_groups[first]) && m_first.compare_exchange_strong(first,first+1))
-      {
-      ++first ;
-      }
    // scan a small number of active entries, looking for one which is not in use and remembering
    //   which one has the lowest reference count
    size_t minrefs = ~0 ;
    size_t bestidx = COLL_SIZE ;
-   for (size_t i = 0 ; (i < 12 || bestidx == COLL_SIZE) && first+i < m_last ; ++i)
+   for (size_t i = 0 ; (i < 160000 || bestidx == COLL_SIZE) && first+i < m_last ; ++i)
       {
       uintptr_t val = m_groups[first+i] ;
       if (no_more_updates(val)) continue ;
       size_t refs = refcount(val) ;
       if (refs == 0)
  	 {
-	 bestidx = first+i ;
-	 break ;
+	 return first+i ;
 	 }
       if (refs < minrefs)
 	 {
@@ -153,21 +147,33 @@ std::pair<SlabGroup*,size_t> SlabGroupColl::accessAny()
 	 bestidx = first+i ;
 	 }
       }
-   // grab the selected entry and verify that it's still valid
-   SlabGroup* grp = access(bestidx) ;
-   if (!grp)
+   return bestidx ;
+}
+
+//----------------------------------------------------------------------------
+
+// find an available SlabGroup from the collection
+std::pair<SlabGroup*,size_t> SlabGroupColl::accessAny(unsigned hint)
+{
+   for (unsigned tries = 0 ; tries < 3 && m_first < m_last ; ++tries)
       {
-      if (m_first < m_last)
+      // advance the 'first' pointer past any entries which have been or are being moved/removed
+      unsigned first = m_first ;
+      while (no_more_updates(m_groups[first]) && m_first.compare_exchange_strong(first,first+1))
 	 {
-	 // adding the following line reduced the occurrence of a race
-	 //   that caused a hang when compiling with optimization
-	 //   enabled....
-	 this_thread::sleep_for(std::chrono::microseconds(100)) ;
-	 return accessAny() ;
+	 ++first ;
 	 }
-      bestidx = ~0 ;
+      if (hint > first) first = hint ;
+      unsigned bestidx = leastBusy(first) ;
+      while (bestidx < COLL_SIZE)
+	 {
+	 // grab the selected entry and verify that it's still valid
+	 SlabGroup* grp = access(bestidx) ;
+	 if (grp) return std::pair<SlabGroup*,size_t>(grp,bestidx) ;
+	 bestidx = leastBusy(first + (bestidx-first)/2) ;
+	 }
       }
-   return std::pair<SlabGroup*,size_t>(grp,bestidx) ;
+   return std::pair<SlabGroup*,size_t>(nullptr,~0U) ;
 }
 
 //----------------------------------------------------------------------------
@@ -199,6 +205,7 @@ bool SlabGroupColl::release(size_t idx)
    // we were the last thread accessing the entry, and it's been
    //   flagged for removal, so perform that removal
    val = m_groups[idx].exchange(RELEASE_MASK) ;
+   if ((val & POINTER_MASK) == POINTER_MASK){cerr<<"release fail\n"<<flush; return false ;}//!!!
    SlabGroup* grp = pointer(val) ;
    if (grp && m_releasefunc)
       {
@@ -240,6 +247,7 @@ void SlabGroupColl::requestRemoval(size_t idx)
 
 bool SlabGroupColl::compact()
 {
+   abort() ; //!!!
    if (m_lockcount++ == 0)
       {
       // we're the first to grab the lock, so we'll do the actual compaction
@@ -332,10 +340,6 @@ SlabGroup::SlabGroup()
       }
    m_freeslabs = next ;
    m_numfree = SLAB_GROUP_SIZE-1 ;
-   // add the new group to the collection of all SlabGroups
-   pushGroup() ;
-   // and to the collection of groups with free Slabs
-   pushFreeGroup() ;
    return ;
 }
 
@@ -435,10 +439,10 @@ void SlabGroup::pushFreeGroup()
 
 //----------------------------------------------------------------------------
 
-Slab* SlabGroup::popFreeSlab()
+Slab* SlabGroup::popFreeSlab(unsigned& hint)
 {
 #if NEW
-   auto sg_info = s_freecoll.accessAny() ;
+   auto sg_info = s_freecoll.accessAny(hint) ;
    auto sg = sg_info.first ;
    auto index = sg_info.second ;
 #else
@@ -446,6 +450,7 @@ Slab* SlabGroup::popFreeSlab()
    SlabGroup* sg = s_freelist ;
 #endif
    if (!sg) return nullptr ;
+   hint = index ;
    // allocate an available Slab from the group's freelist
    Slab* slb = sg->m_freeslabs.load() ;
    Slab* next ;
@@ -455,11 +460,12 @@ Slab* SlabGroup::popFreeSlab()
       } while (!sg->m_freeslabs.compare_exchange_weak(slb,next)) ;
    if (slb)
       {
-      if (sg->m_numfree-- == 1)		// did we get the last free Slab?
-	 {
-	 // remove the slabgroup from the list of groups with free slabs
-	 sg->unlinkFreeGroup() ;
-	 }
+      sg->m_numfree-- ;		     // update free count
+      }
+   if (!sg->m_freeslabs)
+      {
+      // request removal of the slabgroup from the list of groups with free slabs
+      s_freecoll.markReleaseable(index) ;
       }
 #if NEW
    s_freecoll.release(index) ;
@@ -471,16 +477,28 @@ Slab* SlabGroup::popFreeSlab()
 
 Slab* SlabGroup::allocateSlab()
 {
-   Slab* slb = popFreeSlab() ;
-   while (!slb)
+   unsigned hint = 0 ;
+   Slab* slb = popFreeSlab(hint) ;
+   if (!slb)
+      slb = popFreeSlab(hint) ; // retry once just in case another thread has already allocated a SlabGroup
+   if (!slb)
       {
-      // no slabs available, so allocate a new SlabGroup
+      // we were unable to get any existing free slab, so allocate a
+      //   new group, and reserve one of its slabs for ourself before
+      //   adding it to the pool
       SlabGroup* sg = new SlabGroup ;
-      if (!sg)
-	 return nullptr ;
-      // and retry the allocation
-      slb = popFreeSlab() ;
-      }
+      if (sg)
+	 {
+	 // pop the first element of the freelist
+	 slb = sg->m_freeslabs.load() ;
+	 sg->m_freeslabs = slb->nextFreeSlab() ;
+	 sg->m_numfree-- ;
+	 // add the new group to the collection of all SlabGroups
+	 sg->pushGroup() ;
+	 // add the group to the collection of groups with free Slabs
+	 sg->pushFreeGroup() ;
+	 }
+      }      
    return slb ;
 }
 

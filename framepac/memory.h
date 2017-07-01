@@ -299,7 +299,7 @@ class SlabGroup
       void pushGroup() ;
       void unlinkGroup() ;
       void unlinkFreeGroup() ;
-      static Slab* popFreeSlab() ;
+      static Slab* popFreeSlab(unsigned& hint) ;
    } ;
 
 } // end namespace FramepaC

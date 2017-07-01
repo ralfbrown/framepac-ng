@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-06-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -121,18 +121,21 @@ alloc_size_t Slab::makeFreeList(unsigned objsize, unsigned align)
    // round up the object size to the next higher multiple of 'align'
    unsigned multiple { (objsize + align - 1) / align } ;
    objsize = align * multiple ;
+   // store the adjusted object size
+   m_info.m_objsize = objsize ;
+   m_header.m_usedcount = 0 ;
    // align the start of the buffer
    void* buf = m_buffer ;
    size_t space = sizeof(m_buffer) ;
    if (!std::align(align,objsize,buf,space))
       {
       // error: unable to fit an object of 'objsize' bytes with alignment 'align' into m_buffer
+      m_info.m_objcount = 0 ;
 //FIXME
       return 0 ;
       }
    // compute the number of objects the slab can hold
    size_t objcount { space / objsize } ;
-   m_info.m_objsize = objsize ;
    m_info.m_objcount = objcount ;
    alloc_size_t prev = 0 ;
    if (objcount >= 2)			// require at least two objects so we don't have to special-case
@@ -148,7 +151,6 @@ alloc_size_t Slab::makeFreeList(unsigned objsize, unsigned align)
       }
    // set the start of the freelist to the last object added to the linked list
    m_header.m_freelist = prev ;
-   m_header.m_usedcount = 0 ;
    return prev ;
 }
 
