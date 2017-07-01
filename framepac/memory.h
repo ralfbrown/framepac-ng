@@ -70,8 +70,7 @@ class Slab
 
       SlabGroup* containingGroup() const
          {
-//	 return reinterpret_cast<SlabGroup*>(const_cast<Slab*>(this) - m_info.m_slab_id) ;
-	 return reinterpret_cast<SlabGroup*>(&(const_cast<Slab*>(this))[-m_info.m_slab_id]) ;
+	 return reinterpret_cast<SlabGroup*>(const_cast<Slab*>(this) - m_info.m_slab_id) ;
 	 }
 
       static Slab* slab(const void* block)
@@ -265,10 +264,6 @@ class SlabGroup
 #endif /* FrMEMALLOC_STATS */
    private:
       Slab               m_slabs[SLAB_GROUP_SIZE] ;
-      // WORKAROUND: for some reason I haven't yet determined,
-      // parallel operation likes to allocate one slab past the end of
-      // m_slabs....
-      Slab dummy ;
       Fr::Atomic<Slab*>  m_freeslabs { nullptr } ;
       Fr::Atomic<unsigned> m_numfree { lengthof(m_slabs) } ;
       Fr::Atomic<size_t> m_groupindex { ~0UL } ;

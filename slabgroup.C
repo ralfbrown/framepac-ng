@@ -19,6 +19,8 @@
 /*									*/
 /************************************************************************/
 
+#include <cassert>
+
 #include <iostream>
 #include <cstdlib>
 #include "framepac/memory.h"
@@ -102,11 +104,15 @@ class SlabGroupColl
 
       uintptr_t incrRefCount(size_t idx)
 	 {
-	    return m_groups[idx]++ ;
+	 return m_groups[idx]++ ;
 	 }
       uintptr_t decrRefCount(size_t idx)
 	 {
-	    return m_groups[idx]-- ;
+	 uintptr_t val = m_groups[idx] ;
+	 do {
+	    if (refcount(val) == 0) break ;
+	    } while (!m_groups[idx].compare_exchange_weak(val,val-1)) ;
+	 return val ;
 	 }
       bool markCompacting(size_t idx)
 	 {
@@ -184,13 +190,16 @@ SlabGroup* SlabGroupColl::access(size_t idx)
 {
    if (idx >= COLL_SIZE)
       return nullptr ;
-   uintptr_t val = incrRefCount(idx) ;
-   if (!no_more_updates(val))
-      {
-      SlabGroup* grp = pointer(val) ;
-      if (grp)
-	 return grp ;
-      }
+   // atomically increment the reference count and check whether updates are allowed on the specified group
+   uintptr_t val = m_groups[idx] ;
+   do {
+      if (no_more_updates(val))
+	 return nullptr ;
+      val &= (POINTER_MASK | COUNT_MASK) ;
+      } while (!m_groups[idx].compare_exchange_weak(val,val+1)) ;
+   SlabGroup* grp = pointer(val) ;
+   if (grp)
+      return grp ;
    release(idx) ;
    return nullptr ;
 }
@@ -202,12 +211,14 @@ bool SlabGroupColl::release(size_t idx)
    if (idx >= COLL_SIZE)
       return false ;
    uintptr_t val = decrRefCount(idx) ;
-   if ((val & (COUNT_MASK | RELEASE_MASK)) != (RELEASE_MASK | 1))
+   SlabGroup* grp = pointer(val) ;
+   val-- ;
+   if ((val & (COUNT_MASK | RELEASE_MASK)) != RELEASE_MASK)
       return false ;
    // we were the last thread accessing the entry, and it's been
    //   flagged for removal, so perform that removal
-   val = m_groups[idx].exchange(RELEASE_MASK) ;
-   SlabGroup* grp = pointer(val) ;
+   if (!m_groups[idx].compare_exchange_strong(val,RELEASE_MASK))
+      return false ; // someone else is manipulating this entry....
    if (grp)
       {
       m_setindexfunc(grp,~0) ;
@@ -362,6 +373,7 @@ SlabGroup::SlabGroup()
    Slab* next = nullptr ;
    for (size_t i = 0 ; i < SLAB_GROUP_SIZE ; ++i)
       {
+      m_slabs[i].setVMT(nullptr) ;
       m_slabs[i].setNextFreeSlab(next) ;
       m_slabs[i].setPrevFreeSlabPtr(nullptr) ;
       m_slabs[i].setSlabID(i) ;
@@ -369,6 +381,7 @@ SlabGroup::SlabGroup()
       }
    m_freeslabs = next ;
    m_numfree = SLAB_GROUP_SIZE ;
+//   dummy.setVMT((ObjectVMT*)0xDEADBEEF) ;
    return ;
 }
 
@@ -469,7 +482,7 @@ Slab* SlabGroup::allocateSlab()
       SlabGroup* sg = new SlabGroup ;
       if (sg)
 	 {
-	 // pop the first element of the freelist
+	 // pop the first element off the freelist
 	 slb = sg->m_freeslabs.load() ;
 	 sg->m_freeslabs = slb->nextFreeSlab() ;
 	 sg->m_numfree-- ;

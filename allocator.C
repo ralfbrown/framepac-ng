@@ -19,6 +19,8 @@
 /*									*/
 /************************************************************************/
 
+#include <cassert>
+
 #include "framepac/atomic.h"
 #include "framepac/memory.h"
 
@@ -209,6 +211,7 @@ void* Allocator::allocate_more()
       {
       new_slab = FramepaC::SlabGroup::allocateSlab() ;
       }
+assert(new_slab->VMT() != (ObjectVMT*)0xDEADBEEF) ;
    void *item = new_slab->initFreelist(s_shared[m_type].m_objsize,s_shared[m_type].m_alignment) ;
    // and insert it on both our list of owned slabs and list of slabs with available objects
    new_slab->setVMT(s_shared[m_type].m_vmt) ;
