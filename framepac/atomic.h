@@ -441,13 +441,13 @@ class Atomic
 	    return atom.load(order) ; }
       T load(std::memory_order order) const volatile noexcept
 	 { std::atomic<T>& atom = ref() ;
-	    return atom.load(atom,order) ; }
+	    return atom.load(order) ; }
       T load_relax() const noexcept
 	 { std::atomic<T>& atom = ref() ;
-	    return atom.load(atom,std::memory_order_relaxed) ; }
+	    return atom.load(std::memory_order_relaxed) ; }
       T load_relax() const volatile noexcept
 	 { std::atomic<T>& atom = ref() ;
-	    return atom.load(atom,std::memory_order_relaxed) ; }
+	    return atom.load(std::memory_order_relaxed) ; }
 
       operator T () const noexcept { return ref().load(std::memory_order_acquire) ; }
       operator T () const volatile noexcept { return ref().load(std::memory_order_acquire) ; }

@@ -245,37 +245,21 @@ class SlabGroup
       static Slab* allocateSlab() ;
       static void releaseSlab(Slab* slab) ;
 
-      // add this SlabGroup to the collection of groups with available Slabs
-      void pushFreeGroup() ;
-
       void _delete() { delete this ; }
 
       size_t freeSlabs() const { return m_numfree ; }
       
-      void setFreecollIndex(size_t index) { m_freeindex = index ; }
-      void setGroupIndex(size_t index) { m_groupindex = index ; }
-
-      static void printFreeCounts() ;
-
    private:
       static SlabGroupColl s_freecoll ;
-#ifdef FrMEMALLOC_STATS
-      static SlabGroupColl s_groupcoll ;
-#endif /* FrMEMALLOC_STATS */
    private:
-      Slab               m_slabs[SLAB_GROUP_SIZE] ;
-      Fr::Atomic<Slab*>  m_freeslabs { nullptr } ;
+      Slab                 m_slabs[SLAB_GROUP_SIZE] ;
+      Fr::Atomic<Slab*>    m_freeslabs { nullptr } ;
       Fr::Atomic<unsigned> m_numfree { lengthof(m_slabs) } ;
-      Fr::Atomic<size_t> m_groupindex { ~0UL } ;
-      Fr::Atomic<size_t> m_freeindex { ~0UL } ;
    protected:
       void* operator new(size_t sz) ;
       void operator delete(void* grp) ;
    protected:
-      void pushGroup() ;
-      void unlinkGroup() ;
-      void unlinkFreeGroup() ;
-      static Slab* popFreeSlab(unsigned& hint) ;
+      static Slab* popFreeSlab() ;
    } ;
 
 } // end namespace FramepaC
