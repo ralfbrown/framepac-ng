@@ -158,12 +158,13 @@ void* Allocator::allocate_more()
    if (count > 1 && min_used == 0)
       {
       Slab* slb { s_tls[m_type].m_freelist } ;
+      Slab* prev { nullptr } ;
       if (max_used == 0)
 	 {
 	 // leave one slab on the freelist if all are completely unused
+	 prev = slb ;
 	 slb = slb->nextFreeSlab() ;
 	 }
-      Slab* prev { nullptr } ;
       while (slb)
 	 {
 	 Slab* currslab { slb } ;
