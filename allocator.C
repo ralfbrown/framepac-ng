@@ -134,7 +134,7 @@ void Allocator::releaseSlab(FramepaC::Slab* slb)
 
 //----------------------------------------------------------------------------
 
-void* Allocator::allocate_more()
+void Allocator::reclaim(bool keep_one)
 {
    // reclaim all foreign frees
    // first, atomically grab the list of slabs with foreign-freed objects
@@ -159,7 +159,7 @@ void* Allocator::allocate_more()
       {
       Slab* slb { s_tls[m_type].m_freelist } ;
       Slab* prev { nullptr } ;
-      if (max_used == 0)
+      if (max_used == 0 && keep_one)
 	 {
 	 // leave one slab on the freelist if all are completely unused
 	 prev = slb ;
@@ -181,6 +181,14 @@ void* Allocator::allocate_more()
 	 prev = currslab ;
 	 }
       }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void* Allocator::allocate_more()
+{
+   reclaim(true) ;
    if (s_tls[m_type].m_freelist)
       {
       return s_tls[m_type].m_freelist->allocObject() ;
@@ -266,12 +274,6 @@ void Allocator::threadCleanup()
 }
 
 //----------------------------------------------------------------------------
-
-size_t Allocator::reclaim()
-{
-   //FIXME
-   return 0 ;
-}
 
 } // end namespace Fr
 

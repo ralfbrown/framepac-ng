@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-28					*/
+/* Version 0.01, last edit 2017-07-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -329,7 +329,7 @@ class Allocator
 	 }
 
       static void releaseSlab(FramepaC::Slab* slb) ;
-      size_t reclaim() ;
+      void reclaim(bool keep_one = false) ;
 
       static void threadCleanup() ;
 
@@ -376,7 +376,7 @@ class SmallAlloc
       void* allocate() { return m_allocator->allocate() ; }
       void release(void* blk) { m_allocator->release(blk) ; }
 
-      size_t reclaim() { return m_allocator->reclaim() ; }
+      void reclaim() { m_allocator->reclaim() ; }
 
    private:
       SmallAlloc(Allocator* alloc) { m_allocator = alloc ; }
