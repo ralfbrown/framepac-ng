@@ -52,6 +52,7 @@ struct BatchInfo
       size_t      batch_size ;
       size_t      iterations ;
       bool	  done ;
+      bool        do_reclaim  ;
    } ;
 
 /************************************************************************/
@@ -100,6 +101,7 @@ void run_suballocator(const void* input, void* /*output*/)
    const BatchInfo* info = reinterpret_cast<const BatchInfo*>(input) ;
    size_t size = info->batch_size ;
    SmallAlloc* allocator = info->allocator ;
+   bool do_reclaim = info->do_reclaim ;
    LocalAlloc<void*,30000> blocks(size) ;
    Timer timer ;
    for (size_t pass = 0 ; pass < info->iterations ; ++pass)
@@ -108,8 +110,9 @@ void run_suballocator(const void* input, void* /*output*/)
 	 blocks[i] = allocator->allocate() ;
       for (size_t i = 0 ; i < size ; ++i)
 	 allocator->release(blocks[i]) ;
+      if (do_reclaim) allocator->reclaim() ;
       }
-   allocator->reclaim() ;
+   if (!do_reclaim) allocator->reclaim() ;
    show_test_time(timer,size,info->iterations,info->done) ;
    return ;
 }
@@ -154,7 +157,7 @@ void run_new(const void* input, void* /*output*/)
 
 //----------------------------------------------------------------------------
 
-void benchmark(size_t size, size_t iterations, ThreadPoolWorkFunc *fn, const char* what)
+void benchmark(size_t size, size_t iterations, bool do_reclaim, ThreadPoolWorkFunc *fn, const char* what)
 {
    BatchInfo info ;
    cout << "Benchmark of memory allocation speed (using " << what << ")\n\n"
@@ -165,6 +168,7 @@ void benchmark(size_t size, size_t iterations, ThreadPoolWorkFunc *fn, const cha
    info.batch_size = size ;
    info.iterations = iterations ;
    info.done = false ;
+   info.do_reclaim = do_reclaim ;
    fn(&info,nullptr) ;
    if (fn != run_suballocator)
       return ;
@@ -214,6 +218,7 @@ void run_suballocator_batch(const void* input, void* /*output*/)
 	 blocks[i] = allocator->allocate() ;
       for (size_t i = 0 ; i < batch_size ; ++i)
 	 allocator->release(blocks[i]) ;
+      if (info->do_reclaim) allocator->reclaim() ;
       }
    return ;
 }
@@ -254,7 +259,7 @@ void run_new_batch(const void* input, void* /*output*/)
 
 //----------------------------------------------------------------------------
 
-void benchmark_parallel(size_t threads, size_t size, size_t iterations,
+void benchmark_parallel(size_t threads, size_t size, size_t iterations, bool do_reclaim,
    ThreadPoolWorkFunc* fn, const char* what)
 {
    ThreadPool tpool(threads) ;
@@ -279,6 +284,7 @@ void benchmark_parallel(size_t threads, size_t size, size_t iterations,
       info.blocks = &blocks[batch*batch_size] ;
       info.batch_size = batch_size ;
       info.iterations = iterations ;
+      info.do_reclaim = do_reclaim ;
       tpool.dispatch(fn,&info) ;
       }
    tpool.waitUntilIdle() ;
@@ -297,7 +303,8 @@ int main(int argc, char** argv)
    size_t threads { 0 } ;  // run single-threaded by default
    bool use_malloc { false } ;
    bool use_new { false } ;
-
+   bool do_reclaim { false } ;
+   
    Fr::Initialize() ;
    ArgParser cmdline_flags ;
    cmdline_flags
@@ -305,6 +312,7 @@ int main(int argc, char** argv)
       .add(use_malloc,"m","use-malloc","use malloc() instead of custom allocator")
       .add(use_new,"n","use-new","use 'new char[]' instead of custom allocator")
       .add(repetitions,"r","reps","number of repetitions to run")
+      .add(do_reclaim,"R","reclaim","run memory reclamation after every iteration")
       .add(size,"s","size","number of allocations per iteration")
       .addHelp("h","help","show usage summary") ;
    if (!cmdline_flags.parseArgs(argc,argv))
@@ -321,28 +329,28 @@ int main(int argc, char** argv)
       {
       if (use_malloc)
 	 {
-	 benchmark(size,repetitions,run_malloc,"malloc") ;
+	 benchmark(size,repetitions,false,run_malloc,"malloc") ;
 	 }
       else if (use_new)
 	 {
-	 benchmark(size,repetitions,run_new,"new") ;
+	 benchmark(size,repetitions,false,run_new,"new") ;
 	 }
       else
 	 {
-	 benchmark(size,repetitions,run_suballocator,"suballocator") ;
+	 benchmark(size,repetitions,do_reclaim,run_suballocator,"suballocator") ;
 	 }
       }
    else if (use_malloc)
       {
-      benchmark_parallel(threads,size,repetitions,run_malloc_batch,"malloc") ;
+      benchmark_parallel(threads,size,repetitions,false,run_malloc_batch,"malloc") ;
       }
    else if (use_new)
       {
-      benchmark_parallel(threads,size,repetitions,run_new_batch,"new") ;
+      benchmark_parallel(threads,size,repetitions,false,run_new_batch,"new") ;
       }
    else
       {
-      benchmark_parallel(threads,size,repetitions,run_suballocator_batch,"suballocator") ;
+      benchmark_parallel(threads,size,repetitions,do_reclaim,run_suballocator_batch,"suballocator") ;
       }
    return 0 ;
 }
