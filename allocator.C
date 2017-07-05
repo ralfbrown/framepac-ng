@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-30					*/
+/* Version 0.01, last edit 2017-07-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -163,6 +163,7 @@ void* Allocator::allocate_more()
 	 // leave one slab on the freelist if all are completely unused
 	 slb = slb->nextFreeSlab() ;
 	 }
+      Slab* prev { nullptr } ;
       while (slb)
 	 {
 	 Slab* currslab { slb } ;
@@ -170,9 +171,13 @@ void* Allocator::allocate_more()
 	 if (currslab->objectsInUse() == 0)
 	    {
 	    // release back to general pool
-	    currslab->unlinkFreeSlab() ;
+	    if (prev)
+	       prev->setNextFreeSlab(slb) ;
+	    else
+	       s_tls[m_type].m_freelist = slb ;
 	    SlabGroup::releaseSlab(currslab) ;
 	    }
+	 prev = currslab ;
 	 }
       }
    if (s_tls[m_type].m_freelist)

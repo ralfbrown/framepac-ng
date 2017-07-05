@@ -158,7 +158,6 @@ SlabGroup::SlabGroup()
       {
       m_slabs[i].setVMT(nullptr) ;
       m_slabs[i].setNextFreeSlab(next) ;
-      m_slabs[i].setPrevFreeSlabPtr(nullptr) ;
       m_slabs[i].setSlabID(i) ;
       next = &m_slabs[i] ;
       }
@@ -201,14 +200,6 @@ Slab* SlabGroup::popFreeSlab()
 	 sg->_delete() ;
 	 sg = sg2 ;
 	 }
-      }
-   // FIXME: there's a race somewhere that causes a group to have a
-   //   null freelist, so verify that the group does in fact have an
-   //   available slab
-   while (!sg->m_freeslabs)
-      {
-      // drop the group from the queue, and grab another one off the queue
-      if (!s_freecoll.pop(sg)) return nullptr ;
       }
    // allocate an available Slab from the group's freelist
    // although we have exclusive 'pop' access, another thread could sneak in and free a slab, so we have to
@@ -262,7 +253,6 @@ void SlabGroup::releaseSlab(Slab* slb)
    slb->clearOwner() ;
 #endif /* !FrSINGLE_THREADED */
    // add slab to list of free slabs in its group
-   slb->setPrevFreeSlabPtr(nullptr) ;
    Slab* freelist = sg->m_freeslabs ;
    do {
       slb->setNextFreeSlab(freelist) ;
