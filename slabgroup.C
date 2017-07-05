@@ -202,6 +202,14 @@ Slab* SlabGroup::popFreeSlab()
 	 sg = sg2 ;
 	 }
       }
+   // FIXME: there's a race somewhere that causes a group to have a
+   //   null freelist, so verify that the group does in fact have an
+   //   available slab
+   while (!sg->m_freeslabs)
+      {
+      // drop the group from the queue, and grab another one off the queue
+      if (!s_freecoll.pop(sg)) return nullptr ;
+      }
    // allocate an available Slab from the group's freelist
    // although we have exclusive 'pop' access, another thread could sneak in and free a slab, so we have to
    //   properly synchronize anyway
