@@ -190,6 +190,18 @@ Slab* SlabGroup::popFreeSlab()
 {
    SlabGroup* sg ;
    if (!s_freecoll.pop(sg)) return nullptr ;
+   // is the group we got completely unused?
+   if (sg->m_numfree == SLAB_GROUP_SIZE)
+      {
+      // check whether there are additional groups with free slabs; if so, return the completely free group
+      //   to the operating system
+      SlabGroup* sg2 ;
+      if (s_freecoll.pop(sg2))
+	 {
+	 sg->_delete() ;
+	 sg = sg2 ;
+	 }
+      }
    // allocate an available Slab from the group's freelist
    // although we have exclusive 'pop' access, another thread could sneak in and free a slab, so we have to
    //   properly synchronize anyway
