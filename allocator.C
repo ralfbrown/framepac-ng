@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-05					*/
+/* Version 0.01, last edit 2017-07-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -132,11 +132,11 @@ void Allocator::releaseSlab(FramepaC::Slab* slb)
 
 //----------------------------------------------------------------------------
 
-void Allocator::reclaim(bool keep_one)
+void Allocator::reclaim(uint16_t alloc_id, bool keep_one)
 {
    // reclaim all foreign frees
    // first, atomically grab the list of slabs with foreign-freed objects
-   Slab* freelist { Atomic<Slab*>::ref(s_tls[m_type].m_foreignfree).exchange(nullptr) } ;
+   Slab* freelist { Atomic<Slab*>::ref(s_tls[alloc_id].m_foreignfree).exchange(nullptr) } ;
    // then iterate through the list, accumulating the number of slabs and min/max available objects per slab
    size_t count { 0 } ;
    unsigned min_used { ~0U } ;
@@ -151,12 +151,12 @@ void Allocator::reclaim(bool keep_one)
       size_t in_use { slb->objectsInUse() } ;
       if (in_use < min_used) min_used = in_use ;
       if (in_use > max_used) max_used = in_use ;
-      slb->pushFreeSlab(s_tls[m_type].m_freelist) ;
+      slb->pushFreeSlab(s_tls[alloc_id].m_freelist) ;
       }
    // if we have multiple Slabs on the freelist, release any which are completely unused back to the general pool
    if (count > 1 && min_used == 0)
       {
-      Slab* slb { s_tls[m_type].m_freelist } ;
+      Slab* slb { s_tls[alloc_id].m_freelist } ;
       Slab* prev { nullptr } ;
       if (max_used == 0 && keep_one)
 	 {
@@ -174,7 +174,7 @@ void Allocator::reclaim(bool keep_one)
 	    if (prev)
 	       prev->setNextFreeSlab(slb) ;
 	    else
-	       s_tls[m_type].m_freelist = slb ;
+	       s_tls[alloc_id].m_freelist = slb ;
 	    SlabGroup::releaseSlab(currslab) ;
 	    }
 	 else
@@ -186,9 +186,16 @@ void Allocator::reclaim(bool keep_one)
 
 //----------------------------------------------------------------------------
 
+void Allocator::reclaim(bool keep_one)
+{
+   reclaim(m_type,keep_one) ;
+}
+
+//----------------------------------------------------------------------------
+
 void* Allocator::allocate_more()
 {
-   reclaim(true) ;
+   reclaim(m_type,true) ;
    if (s_tls[m_type].m_freelist)
       {
       return s_tls[m_type].m_freelist->allocObject() ;
@@ -234,6 +241,17 @@ void* Allocator::allocate_more()
       new_slab->pushFreeSlab(s_tls[m_type].m_freelist) ;
       }
    return item ;
+}
+
+//----------------------------------------------------------------------------
+
+void Allocator::gc()
+{
+   for (size_t i = 0 ; i < num_allocators ; ++i)
+      {
+      reclaim(i,false) ;
+      }
+   return ;
 }
 
 //----------------------------------------------------------------------------

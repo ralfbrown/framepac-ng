@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-05					*/
+/* Version 0.01, last edit 2017-07-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -327,9 +327,19 @@ class Allocator
 	    slb->releaseObject(blk,s_tls[m_type].m_freelist) ;
 	    }
 	 }
+      [[gnu::hot]]
+      static void free(void* blk)
+	 {
+	 if (blk)
+	    {
+	    Slab* slb = Slab::slab(blk) ;
+	    slb->releaseObject(blk,s_tls[slb->owningAllocator()].m_freelist) ;
+	    }
+	 }
 
       static void releaseSlab(FramepaC::Slab* slb) ;
       void reclaim(bool keep_one = false) ;
+      static void gc() ;
 
       static void threadCleanup() ;
 
@@ -346,6 +356,7 @@ class Allocator
 	 }
 
       void* allocate_more() ;
+      static void reclaim(uint16_t alloc_id, bool keep_one) ;
 
    protected: // data members
       unsigned		       m_type { 0 } ;
