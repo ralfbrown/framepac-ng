@@ -153,25 +153,33 @@ bool SlabGroupColl::pop(SlabGroup*& grp)
 SlabGroup::SlabGroup()
 {
    // set up the linked list of free slabs
+#ifdef LOCKFREE
+   uint16_t next = NULLPTR ;
+#else
    Slab* next = nullptr ;
+#endif
    for (size_t i = 0 ; i < SLAB_GROUP_SIZE ; ++i)
       {
       m_slabs[i].setVMT(nullptr) ;
+      m_slabs[i].setSlabID(i) ;
 #ifdef LOCKFREE
       m_slabs[i].setNextFreeSlab(nullptr) ;
-      m_slabs[i].m_info.m_nextfree_id = i-1 ;
+      m_slabs[i].m_info.m_nextfree_id = next ;
+      next = i ;
 #else
       m_slabs[i].setNextFreeSlab(next) ;
-#endif
-      m_slabs[i].setSlabID(i) ;
       next = &m_slabs[i] ;
+#endif
       }
-   m_freeslabs = next ;
-   m_numfree = SLAB_GROUP_SIZE ;
+#ifdef LOCKFREE
    FreeInfo freeinfo ;
-   freeinfo.m_index = SLAB_GROUP_SIZE - 1 ;
+   freeinfo.m_index = next ;
    freeinfo.m_numfree = SLAB_GROUP_SIZE ;
    m_freeinfo.store(freeinfo) ;
+#else
+   m_freeslabs = next ;
+   m_numfree = SLAB_GROUP_SIZE ;
+#endif
    return ;
 }
 
@@ -215,12 +223,13 @@ Slab* SlabGroup::popFreeSlab()
 #ifdef LOCKFREE
    FreeInfo freeinfo { sg->m_freeinfo.load() } ;
    FreeInfo nextinfo ;
+   Slab* slb ;
    do {
+      slb = &sg->m_slabs[freeinfo.m_index] ;
       nextinfo.m_numfree = freeinfo.m_numfree - 1 ;
-      nextinfo.m_index = sg->m_slabs[freeinfo.m_index].m_info.m_nextfree_id ;
+      nextinfo.m_index = slb->m_info.m_nextfree_id ;
       } while (!sg->m_freeinfo.compare_exchange_weak(freeinfo,nextinfo)) ;
-   Slab* slb = &sg->m_slabs[freeinfo.m_index] ;
-   if (nextinfo.m_index != NULLPTR)
+   if (nextinfo.m_numfree)
       {
       // there are still free slabs in the group, so put it back on the queue of groups with free slabs
       s_freecoll.append(sg) ;
@@ -261,10 +270,10 @@ Slab* SlabGroup::allocateSlab()
 #ifdef LOCKFREE
 	 FreeInfo freeinfo { sg->m_freeinfo.load() } ;
 	 FreeInfo nextinfo ;
-	 nextinfo.m_numfree = freeinfo.m_numfree - 1 ;
-	 nextinfo.m_index = sg->m_slabs[freeinfo.m_index].m_info.m_nextfree_id ;
-	 sg->m_freeinfo.store(nextinfo) ;
 	 slb = &sg->m_slabs[freeinfo.m_index] ;
+	 nextinfo.m_numfree = freeinfo.m_numfree - 1 ;
+	 nextinfo.m_index = slb->m_info.m_nextfree_id ;
+	 sg->m_freeinfo.store(nextinfo) ;
 #else
 	 // pop the first element off the freelist
 	 slb = sg->m_freeslabs ;
@@ -290,12 +299,12 @@ void SlabGroup::releaseSlab(Slab* slb)
 #ifdef LOCKFREE
    FreeInfo freeinfo { sg->m_freeinfo.load() } ;
    FreeInfo nextinfo ;
-   nextinfo.m_index = slb - sg->m_slabs ;
+   nextinfo.m_index = slb->m_info.m_slab_id ;
    do {
       slb->m_info.m_nextfree_id = freeinfo.m_index ;
       nextinfo.m_numfree = freeinfo.m_numfree + 1 ;
       } while (!sg->m_freeinfo.compare_exchange_weak(freeinfo,nextinfo)) ;
-   if (freeinfo.m_index == NULLPTR)
+   if (freeinfo.m_numfree == 0)
       {
       // first free slab added to this group, so link it into the list of groups with free slabs
       s_freecoll.append(sg) ;

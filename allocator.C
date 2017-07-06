@@ -19,8 +19,6 @@
 /*									*/
 /************************************************************************/
 
-#include <iostream>
-
 #include "framepac/atomic.h"
 #include "framepac/memory.h"
 
@@ -142,11 +140,23 @@ void Allocator::popFreelist()
    s_tls[m_type].m_freelist = next ;
    if (!next) return ;
    next->reclaimForeignFrees() ;
+#ifdef EAGER_RECLAIM
+   while (next->objectsInUse() == 0 && next->nextFreeSlab())
+      {
+      Slab* nextnext = next->nextFreeSlab() ;
+      s_tls[m_type].m_freelist = nextnext ;
+      releaseSlab(next) ;
+      next = nextnext ;
+      if (!next) break ;
+      next->reclaimForeignFrees() ;
+      }
+#else
    if (next->objectsInUse() == 0 && next->nextFreeSlab())
       {
       s_tls[m_type].m_freelist = next->nextFreeSlab() ;
       releaseSlab(next) ;
       }
+#endif
    return ;
 }
 
@@ -291,6 +301,7 @@ void Allocator::threadCleanup()
       do {
          tail->setNextSlab(orphans) ;
          } while (!s_shared[i].m_orphans.compare_exchange_weak(orphans,slabs)) ;
+      s_tls[i].m_allocslabs = nullptr ;
       }
    // return the cache of unused slabs to the global pool
    while (s_local_free_slabs)
