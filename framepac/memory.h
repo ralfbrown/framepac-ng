@@ -230,7 +230,8 @@ class SlabGroup
 
       static Slab* allocateSlab() ;
       static void releaseSlab(Slab* slab) ;
-
+      static void reclaim() ; // release any unused groups back to the OS
+      
       void _delete() { delete this ; }
 
       size_t freeSlabs() const { return m_numfree ; }
@@ -314,8 +315,7 @@ class Allocator
 	 Slab* slb = s_tls[m_type].m_freelist ;
 	 if (!slb) return allocate_more() ;
 	 void* item = slb->allocObject() ;
-	 if (!slb->freeList())
-	    s_tls[m_type].m_freelist = slb->nextFreeSlab() ;
+	 if (!slb->freeList()) popFreelist() ;
 	 return item ;
 	 }
       [[gnu::hot]]
@@ -356,6 +356,7 @@ class Allocator
 	 }
 
       void* allocate_more() ;
+      void popFreelist() ;
       static void reclaim(uint16_t alloc_id, bool keep_one) ;
 
    protected: // data members

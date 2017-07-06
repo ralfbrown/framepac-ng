@@ -19,6 +19,8 @@
 /*									*/
 /************************************************************************/
 
+#include <iostream>
+
 #include "framepac/atomic.h"
 #include "framepac/memory.h"
 
@@ -26,6 +28,8 @@ using namespace FramepaC ;
 
 /************************************************************************/
 /************************************************************************/
+
+#define EAGER_RECLAIM
 
 /************************************************************************/
 /************************************************************************/
@@ -110,22 +114,38 @@ void Allocator::releaseSlab(FramepaC::Slab* slb)
 {
    // unlink the slab from the doubly-linked list of allocated slabs
    slb->unlinkSlab() ;
-   // cache a small number of freed slabs to avoid global allocations
-   if (s_local_free_count < FramepaC::LOCAL_SLABCACHE_HIGHWATER)
+   // put the slab into the thread-local cache to avoid global allocations
+   slb->setNextSlab(s_local_free_slabs) ;
+   s_local_free_slabs = slb ;
+   ++s_local_free_count ;
+   // trim the thread-local cache if necessary
+   if (s_local_free_count > FramepaC::LOCAL_SLABCACHE_HIGHWATER)
       {
-      slb->setNextSlab(s_local_free_slabs) ;
-      s_local_free_slabs = slb ;
-      ++s_local_free_count ;
-      }
-   else
-      {
-      // return the slab to the containing group
-      SlabGroup::releaseSlab(slb) ;
-      //TODO: return a batch of slabs so that we get down to the low-water mark on locally-cached slabs
-//!!!      while (s_local_free_count > FramepaC::LOCAL_SLABCACHE_LOWWATER)
+      static_assert(FramepaC::LOCAL_SLABCACHE_HIGHWATER > FramepaC::LOCAL_SLABCACHE_LOWWATER,
+	            "high-water must be greater than low-water for slab cache") ;
+      while (s_local_free_slabs && s_local_free_count > FramepaC::LOCAL_SLABCACHE_LOWWATER)
 	 {
-
+	 slb = s_local_free_slabs ;
+	 s_local_free_slabs = slb->nextSlab() ;
+	 --s_local_free_count ;
+	 SlabGroup::releaseSlab(slb) ;
 	 }
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void Allocator::popFreelist() 
+{
+   Slab* next = s_tls[m_type].m_freelist->nextFreeSlab() ;
+   s_tls[m_type].m_freelist = next ;
+   if (!next) return ;
+   next->reclaimForeignFrees() ;
+   if (next->objectsInUse() == 0 && next->nextFreeSlab())
+      {
+      s_tls[m_type].m_freelist = next->nextFreeSlab() ;
+      releaseSlab(next) ;
       }
    return ;
 }
@@ -138,13 +158,14 @@ void Allocator::reclaim(uint16_t alloc_id, bool keep_one)
    // first, atomically grab the list of slabs with foreign-freed objects
    Slab* freelist { Atomic<Slab*>::ref(s_tls[alloc_id].m_foreignfree).exchange(nullptr) } ;
    // then iterate through the list, accumulating the number of slabs and min/max available objects per slab
-   size_t count { 0 } ;
    unsigned min_used { ~0U } ;
    unsigned max_used { 0 } ;
-   if (!freelist) min_used = 0 ; //FIXME
+#ifdef EAGER_RECLAIM
+   // when eagerly reclaiming, reclaim even if there weren't any foreign frees
+   if (!freelist) min_used = 0 ;
+#endif /* EAGER_RECLAIM */
    while (freelist)
       {
-      count++ ;
       Slab* slb { freelist } ;
       freelist = freelist->nextFreeSlab() ;
       slb->reclaimForeignFrees() ;
@@ -154,9 +175,9 @@ void Allocator::reclaim(uint16_t alloc_id, bool keep_one)
       slb->pushFreeSlab(s_tls[alloc_id].m_freelist) ;
       }
    // if we have multiple Slabs on the freelist, release any which are completely unused back to the general pool
-   if (count > 1 && min_used == 0)
+   Slab* slb { s_tls[alloc_id].m_freelist } ;
+   if (slb && min_used == 0)
       {
-      Slab* slb { s_tls[alloc_id].m_freelist } ;
       Slab* prev { nullptr } ;
       if (max_used == 0 && keep_one)
 	 {
@@ -175,7 +196,7 @@ void Allocator::reclaim(uint16_t alloc_id, bool keep_one)
 	       prev->setNextFreeSlab(slb) ;
 	    else
 	       s_tls[alloc_id].m_freelist = slb ;
-	    SlabGroup::releaseSlab(currslab) ;
+	    releaseSlab(currslab) ;
 	    }
 	 else
 	    prev = currslab ;
@@ -208,7 +229,7 @@ void* Allocator::allocate_more()
       s_local_free_slabs = new_slab->nextSlab() ;
       --s_local_free_count ;
       }
-   else if (s_shared[m_type].m_orphans)
+   else
       {
       // adopt an orphaned slab
       new_slab = s_shared[m_type].m_orphans ;
@@ -218,18 +239,10 @@ void* Allocator::allocate_more()
 	    break ;
          next = new_slab->nextSlab() ;
 	 } while (!s_shared[m_type].m_orphans.compare_exchange_weak(new_slab,next)) ;
-      if (new_slab)
-	 {
-	 // adopt the slab
-	 }
-      else
-	 {
-	 // we were unable to grab an orphaned slab, so allocate a new one
-	 new_slab = FramepaC::SlabGroup::allocateSlab() ;
-	 }
       }
-   else
+   if (!new_slab)
       {
+      // we were unable to grab a reclaimed or an orphaned slab, so allocate a new one
       new_slab = FramepaC::SlabGroup::allocateSlab() ;
       }
    void *item = new_slab->initFreelist(s_shared[m_type].m_objsize,s_shared[m_type].m_alignment) ;
@@ -284,6 +297,7 @@ void Allocator::threadCleanup()
       {
       Slab* slb = s_local_free_slabs ;
       s_local_free_slabs = slb->nextSlab() ;
+      slb->unlinkSlab() ;
       SlabGroup::releaseSlab(slb) ;
       --s_local_free_count ;
       }

@@ -77,6 +77,7 @@ void Slab::releaseObject(void* obj, Slab*& freelist)
       alloc_size_t old_freelist = m_header.m_freelist ;
       *((alloc_size_t*)obj) = old_freelist ;
       m_header.m_freelist = slabOffset(obj) ;
+      m_header.m_usedcount-- ;
       if (old_freelist == 0)
 	 {
 	 // this was the first object freed, so add the slab to the list of slabs with available objects

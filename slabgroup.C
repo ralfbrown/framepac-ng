@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-05					*/
+/* Version 0.01, last edit 2017-07-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -19,7 +19,6 @@
 /*									*/
 /************************************************************************/
 
-#include <iostream>
 #include <cstdlib>
 #include "framepac/memory.h"
 #include "framepac/semaphore.h"
@@ -91,6 +90,8 @@ class SlabGroupColl
 /************************************************************************/
 
 SlabGroupColl SlabGroup::s_freecoll ;
+
+std::mutex slab_mutex ;
 
 /************************************************************************/
 /*	methods for class SlabGroupColl					*/
@@ -186,7 +187,7 @@ Slab* SlabGroup::popFreeSlab()
    SlabGroup* sg ;
    if (!s_freecoll.pop(sg)) return nullptr ;
    // is the group we got completely unused?
-   if (sg->m_numfree == SLAB_GROUP_SIZE)
+   if (sg->freeSlabs() == SLAB_GROUP_SIZE)
       {
       // check whether there are additional groups with free slabs; if so, return the completely free group
       //   to the operating system
@@ -200,17 +201,19 @@ Slab* SlabGroup::popFreeSlab()
    // allocate an available Slab from the group's freelist
    // although we have exclusive 'pop' access, another thread could sneak in and free a slab, so we have to
    //   properly synchronize anyway
+   slab_mutex.lock() ;
+   sg->m_numfree-- ;		     // update free count
    Slab* slb = sg->m_freeslabs ;
    Slab* next ;
    do {
       next = slb->nextFreeSlab() ;
       } while (!sg->m_freeslabs.compare_exchange_weak(slb,next)) ;
-   sg->m_numfree-- ;		     // update free count
    if (next)
       {
       // there are still free slabs in the group, so put it back on the queue of groups with free slabs
       s_freecoll.append(sg) ;
       }
+   slab_mutex.unlock() ;
    return slb ;
 }
 
@@ -249,6 +252,7 @@ void SlabGroup::releaseSlab(Slab* slb)
    slb->clearOwner() ;
 #endif /* !FrSINGLE_THREADED */
    // add slab to list of free slabs in its group
+   slab_mutex.lock() ;
    Slab* freelist = sg->m_freeslabs ;
    do {
       slb->setNextFreeSlab(freelist) ;
@@ -259,6 +263,27 @@ void SlabGroup::releaseSlab(Slab* slb)
       {
       // first free slab added to this group, so link it into the list of groups with free slabs
       s_freecoll.append(sg) ;
+      }
+   slab_mutex.unlock() ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void SlabGroup::reclaim()
+{
+   SlabGroup* sg ;
+   if (!s_freecoll.pop(sg)) return ;
+   s_freecoll.append(sg) ;
+   SlabGroup* sg2 ;
+   s_freecoll.pop(sg2) ;
+   while (sg2 != sg)
+      {
+      if (sg2->freeSlabs() == SLAB_GROUP_SIZE)
+	 {
+	 sg2->_delete() ;
+	 }
+      s_freecoll.pop(sg2) ;
       }
    return ;
 }
