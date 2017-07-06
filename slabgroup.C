@@ -206,12 +206,12 @@ Slab* SlabGroup::popFreeSlab()
    do {
       next = slb->nextFreeSlab() ;
       } while (!sg->m_freeslabs.compare_exchange_weak(slb,next)) ;
+   sg->m_numfree-- ;		     // update free count
    if (next)
       {
       // there are still free slabs in the group, so put it back on the queue of groups with free slabs
       s_freecoll.append(sg) ;
       }
-   sg->m_numfree-- ;		     // update free count
    return slb ;
 }
 

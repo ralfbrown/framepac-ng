@@ -42,6 +42,8 @@ using namespace Fr ;
 //   programs like Valgrind.
 //static size_t leakage_per_iteration = 0 ;
 
+static size_t alloc_size = ALLOC_SIZE ;
+
 /************************************************************************/
 /************************************************************************/
 
@@ -128,7 +130,7 @@ void run_malloc(const void* input, void* /*output*/)
    for (size_t pass = 0 ; pass < info->iterations ; ++pass)
       {
       for (size_t i = 0 ; i < size ; ++i)
-	 blocks[i] = ::malloc(ALLOC_SIZE) ;
+	 blocks[i] = ::malloc(alloc_size) ;
       for (size_t i = 0 ; i < size ; ++i)
 	 ::free(blocks[i]) ;
       }
@@ -147,7 +149,7 @@ void run_new(const void* input, void* /*output*/)
    for (size_t pass = 0 ; pass < info->iterations ; ++pass)
       {
       for (size_t i = 0 ; i < size ; ++i)
-	 blocks[i] = ::new char[ALLOC_SIZE] ;
+	 blocks[i] = ::new char[alloc_size] ;
       for (size_t i = 0 ; i < size ; ++i)
 	 ::delete blocks[i] ;
       }
@@ -161,10 +163,10 @@ void benchmark(size_t size, size_t iterations, bool do_reclaim, ThreadPoolWorkFu
 {
    BatchInfo info ;
    cout << "Benchmark of memory allocation speed (using " << what << ")\n\n"
-           "We allocate and then release " << size << " 16-byte objects a total\n"
+           "We allocate and then release " << size << " " << alloc_size << "-byte objects a total\n"
            "of " << iterations << " times.\n"
 	<< endl ;
-   info.allocator = SmallAlloc::create(ALLOC_SIZE) ;
+   info.allocator = SmallAlloc::create(alloc_size) ;
    info.batch_size = size ;
    info.iterations = iterations ;
    info.done = false ;
@@ -172,7 +174,7 @@ void benchmark(size_t size, size_t iterations, bool do_reclaim, ThreadPoolWorkFu
    fn(&info,nullptr) ;
    if (fn != run_suballocator)
       return ;
-   cout << "\nWe allocate and then release " << size << " 16-byte objects a total\n"
+   cout << "\nWe allocate and then release " << size << " " << alloc_size << "-byte objects a total\n"
            "of " << iterations << " times, but first fragment allocations so that\n"
            "the allocator works entirely from thread-local slabs.\n"
 	<< endl ;
@@ -233,7 +235,7 @@ void run_malloc_batch(const void* input, void* /*output*/)
    for (size_t pass = 0 ; pass < info->iterations ; ++pass)
       {
       for (size_t i = 0 ; i < batch_size ; ++i)
-	 blocks[i] = ::malloc(ALLOC_SIZE) ;
+	 blocks[i] = ::malloc(alloc_size) ;
       for (size_t i = 0 ; i < batch_size ; ++i)
 	 ::free(blocks[i]) ;
       }
@@ -250,7 +252,7 @@ void run_new_batch(const void* input, void* /*output*/)
    for (size_t pass = 0 ; pass < info->iterations ; ++pass)
       {
       for (size_t i = 0 ; i < batch_size ; ++i)
-	 blocks[i] = ::new char[16] ;
+	 blocks[i] = ::new char[alloc_size] ;
       for (size_t i = 0 ; i < batch_size ; ++i)
 	 ::delete blocks[i] ;
       }
@@ -269,12 +271,12 @@ void benchmark_parallel(size_t threads, size_t size, size_t iterations, bool do_
    size_t batch_size = (size + batch_count - 1) / batch_count ;
    size = batch_count * batch_size ;
    cout << "Benchmark of allocation speed (multiple threads using " << what << ")\n\n"
-           "We allocate and then release " << batch_size << " 16-byte objects in each\n"
+           "We allocate and then release " << batch_size << " " << alloc_size << "-byte objects in each\n"
            "of " << batch_count << " batches running in " << threads << " concurrent threads\n"
            "a total of " << iterations  << " times.\n"
 	<< endl ;
    LocalAlloc<void*,30000> blocks(size) ;
-   SmallAlloc* allocator = SmallAlloc::create(ALLOC_SIZE) ;
+   SmallAlloc* allocator = SmallAlloc::create(alloc_size) ;
    Timer timer ;
    LocalAlloc<BatchInfo> batch_info(batch_count) ;
    for (size_t batch = 0 ; batch < batch_count ; ++batch)
@@ -308,6 +310,7 @@ int main(int argc, char** argv)
    Fr::Initialize() ;
    ArgParser cmdline_flags ;
    cmdline_flags
+      .add(alloc_size,"a","alloc","number of bytes per allocation")
       .add(threads,"j","threads","")
       .add(use_malloc,"m","use-malloc","use malloc() instead of custom allocator")
       .add(use_new,"n","use-new","use 'new char[]' instead of custom allocator")
