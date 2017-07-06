@@ -158,6 +158,7 @@ class Slab
 	    uint16_t           m_objcount ;	// number of objects in this slab
 	    uint16_t           m_slab_id ; 	// index within SlabGroup
 	    uint16_t	       m_alloc_index ;	// the Allocator to which this slab "belongs"
+	    uint16_t           m_nextfree_id ;	// index of next free slab within the group
          } ;
       // Next, the fields that only the owning thread modifies.  These do not require any synchronization.
       class SlabHeader
@@ -235,13 +236,23 @@ class SlabGroup
       void _delete() { delete this ; }
 
       size_t freeSlabs() const { return m_numfree ; }
-      
+
+   protected:
+      class FreeInfo
+	 {
+	 public:
+	    uint16_t m_index ;
+	    uint16_t m_numfree ;
+	 } ;
+      static constexpr uint16_t NULLPTR = (uint16_t)~0 ;
+
    private:
       static SlabGroupColl s_freecoll ;
    private:
       Slab                 m_slabs[SLAB_GROUP_SIZE] ;
       Fr::Atomic<Slab*>    m_freeslabs { nullptr } ;
       Fr::Atomic<unsigned> m_numfree { lengthof(m_slabs) } ;
+      Fr::Atomic<FreeInfo> m_freeinfo ;
    protected:
       void* operator new(size_t sz) ;
       void operator delete(void* grp) ;
@@ -344,17 +355,6 @@ class Allocator
       static void threadCleanup() ;
 
    protected:
-      // get the per-thread list of allocated slabs
-      Slab* getSlabList() const { return s_tls[m_type].m_allocslabs ; }
-
-      // update the per-thread list of allocated slabs
-      Slab* updateSlabList(Slab* slb)
-	 {
-	 Slab* prev = s_tls[m_type].m_allocslabs ;
-	 s_tls[m_type].m_allocslabs = slb ;
-	 return prev ;
-	 }
-
       void* allocate_more() ;
       void popFreelist() ;
       static void reclaim(uint16_t alloc_id, bool keep_one) ;
