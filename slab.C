@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-30					*/
+/* Version 0.01, last edit 2017-07-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -19,7 +19,7 @@
 /*									*/
 /************************************************************************/
 
-#include <cstddef> //TMP
+#include <cstddef> // for offsetof()
 #include "framepac/memory.h"
 
 namespace FramepaC

@@ -19,8 +19,6 @@
 /*									*/
 /************************************************************************/
 
-#include <cassert>
-
 #include <iostream>
 #include <cstdlib>
 #include "framepac/memory.h"
@@ -31,9 +29,9 @@ namespace FramepaC
 {
 
 // with the default 4K per slab and 4K slabs per group, this collection size
-//   permits just under 1TB of allocations before we need to do a compaction
-//#define COLL_SIZE 65535
-#define COLL_SIZE 65536
+//   permits just under 1TB of total memory allocations
+//#define COLL_SIZE 65536
+#define COLL_SIZE 512  //FIXME
 
 /************************************************************************/
 /*	Types for this module						*/
@@ -163,7 +161,6 @@ SlabGroup::SlabGroup()
       }
    m_freeslabs = next ;
    m_numfree = SLAB_GROUP_SIZE ;
-//   dummy.setVMT((ObjectVMT*)0xDEADBEEF) ;
    return ;
 }
 
@@ -258,7 +255,8 @@ void SlabGroup::releaseSlab(Slab* slb)
       slb->setNextFreeSlab(freelist) ;
       } while (!sg->m_freeslabs.compare_exchange_weak(freelist,slb)) ;
    // update statistics
-   if (sg->m_numfree++ == 0)
+   sg->m_numfree++ ;
+   if (!freelist)
       {
       // first free slab added to this group, so link it into the list of groups with free slabs
       s_freecoll.append(sg) ;
