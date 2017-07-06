@@ -30,8 +30,7 @@ namespace FramepaC
 
 // with the default 4K per slab and 4K slabs per group, this collection size
 //   permits just under 1TB of total memory allocations
-//#define COLL_SIZE 65536
-#define COLL_SIZE 512  //FIXME
+#define COLL_SIZE 65536
 
 /************************************************************************/
 /*	Types for this module						*/
