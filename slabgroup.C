@@ -93,7 +93,7 @@ SlabGroupColl SlabGroup::s_freecoll ;
 /*	methods for class SlabGroupColl					*/
 /************************************************************************/
 
-Fr::CriticalSection app_cs ;
+static Fr::CriticalSection app_cs ;
 
 bool SlabGroupColl::append(SlabGroup* grp)
 {
@@ -101,9 +101,13 @@ bool SlabGroupColl::append(SlabGroup* grp)
    for ( ; ; )
       {
       Entry* entry = &m_entries[pos & m_mask] ;
-      volatile uint64_t prevseq = entry->m_seqnum.load() ;
+      uint64_t prevseq = entry->m_seqnum.load() ;
       if (prevseq == pos)
 	 {
+	 // although it seems like a redundant NOP, the below lock
+	 //   around the compare_exchange is required to prevent the
+	 //   queue from losing entries under high contention, which
+	 //   results in a memory leak
 	 app_cs.lock() ;
 	 bool updated = m_headseq.compare_exchange_weak(pos, pos+1) ;
 	 app_cs.unlock() ;
