@@ -47,13 +47,17 @@ class alloc_capacity_error : public std::bad_alloc
 
 //----------------------------------------------------------------------------
 
-// implement a Vyukov-style bounded MPMC queue
+// this implements a Vyukov-style bounded MPMC queue
 //  see http://www.1024cores.net/home/lock-free-algorithms/queues/bounded-mpmc-queue
 
-class SlabGroupColl
+// TODO: replace with linked-list queue as described by Chris M. Thomason at
+//    https://software.intel.com/en-us/forums/intel-moderncode-for-parallel-architectures/topic/295836
+// advantage: can grow queue as needed, so no arbitrary limit on total allocations
+
+class SlabGroupQueue
    {
    public:
-      SlabGroupColl()
+      SlabGroupQueue()
 	 {
 	 static_assert((COLL_SIZE & (COLL_SIZE-1)) == 0,"COLL_SIZE must be a power of two") ;
 	 for (size_t i = 0 ; i < COLL_SIZE ; ++i)
@@ -61,7 +65,7 @@ class SlabGroupColl
 	 m_headseq.store(0) ;
 	 m_tailseq.store(0) ;
 	 }
-      ~SlabGroupColl() {}
+      ~SlabGroupQueue() {}
 
       bool append(SlabGroup* grp) ;
       bool pop(SlabGroup*& grp) ;
@@ -87,15 +91,15 @@ class SlabGroupColl
 /*	Static member variables						*/
 /************************************************************************/
 
-SlabGroupColl SlabGroup::s_freecoll ;
+SlabGroupQueue SlabGroup::s_freequeue ;
 
 /************************************************************************/
-/*	methods for class SlabGroupColl					*/
+/*	methods for class SlabGroupQueue					*/
 /************************************************************************/
 
 static Fr::CriticalSection app_cs ;
 
-bool SlabGroupColl::append(SlabGroup* grp)
+bool SlabGroupQueue::append(SlabGroup* grp)
 {
    uint64_t pos = m_headseq.load_relax() ; 
    for ( ; ; )
@@ -131,7 +135,7 @@ bool SlabGroupColl::append(SlabGroup* grp)
 
 //----------------------------------------------------------------------------
 
-bool SlabGroupColl::pop(SlabGroup*& grp)
+bool SlabGroupQueue::pop(SlabGroup*& grp)
 {
    for ( ; ; )
       {
@@ -198,14 +202,14 @@ void SlabGroup::operator delete(void* grp)
 Slab* SlabGroup::popFreeSlab()
 {
    SlabGroup* sg ;
-   if (!s_freecoll.pop(sg)) return nullptr ;
+   if (!s_freequeue.pop(sg)) return nullptr ;
    // is the group we got completely unused?
    if (sg->freeSlabs() == SLAB_GROUP_SIZE)
       {
       // check whether there are additional groups with free slabs; if so, return the completely free group
       //   to the operating system
       SlabGroup* sg2 ;
-      if (s_freecoll.pop(sg2))
+      if (s_freequeue.pop(sg2))
 	 {
 	 sg->_delete() ;
 	 sg = sg2 ;
@@ -223,7 +227,7 @@ Slab* SlabGroup::popFreeSlab()
    if (next)
       {
       // there are still free slabs in the group, so put it back on the queue of groups with free slabs
-      s_freecoll.append(sg) ;
+      s_freequeue.append(sg) ;
       }
    return slb ;
 }
@@ -248,7 +252,7 @@ Slab* SlabGroup::allocateSlab()
 	 sg->m_freeslabs = slb->nextFreeSlab() ;
 	 sg->m_numfree-- ;
 	 // add the group to the collection of groups with free Slabs
-	 s_freecoll.append(sg) ;
+	 s_freequeue.append(sg) ;
 	 }
       }      
    return slb ;
@@ -272,7 +276,7 @@ void SlabGroup::releaseSlab(Slab* slb)
    if (!freelist)
       {
       // first free slab added to this group, so link it into the list of groups with free slabs
-      s_freecoll.append(sg) ;
+      s_freequeue.append(sg) ;
       }
    return ;
 }
@@ -282,17 +286,17 @@ void SlabGroup::releaseSlab(Slab* slb)
 void SlabGroup::reclaim()
 {
    SlabGroup* sg ;
-   if (!s_freecoll.pop(sg)) return ;
-   s_freecoll.append(sg) ;
+   if (!s_freequeue.pop(sg)) return ;
+   s_freequeue.append(sg) ;
    SlabGroup* sg2 ;
-   s_freecoll.pop(sg2) ;
+   s_freequeue.pop(sg2) ;
    while (sg2 != sg)
       {
       if (sg2->freeSlabs() == SLAB_GROUP_SIZE)
 	 {
 	 sg2->_delete() ;
 	 }
-      s_freecoll.pop(sg2) ;
+      s_freequeue.pop(sg2) ;
       }
    return ;
 }

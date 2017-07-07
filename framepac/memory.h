@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-06					*/
+/* Version 0.01, last edit 2017-07-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -219,7 +219,7 @@ class Slab
 
 //----------------------------------------------------------------------------
 
-class SlabGroupColl ;
+class SlabGroupQueue ;
 
 class SlabGroup
    {
@@ -238,7 +238,7 @@ class SlabGroup
       size_t freeSlabs() const { return m_numfree ; }
 
    private:
-      static SlabGroupColl s_freecoll ;
+      static SlabGroupQueue s_freequeue ;
    private:
       Slab                 m_slabs[SLAB_GROUP_SIZE] ;
       Fr::Atomic<Slab*>    m_freeslabs { nullptr } ;
