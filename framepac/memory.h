@@ -237,22 +237,12 @@ class SlabGroup
 
       size_t freeSlabs() const { return m_numfree ; }
 
-   protected:
-      class FreeInfo
-	 {
-	 public:
-	    uint16_t m_index ;
-	    uint16_t m_numfree ;
-	 } ;
-      static constexpr uint16_t NULLPTR = (uint16_t)~0 ;
-
    private:
       static SlabGroupColl s_freecoll ;
    private:
       Slab                 m_slabs[SLAB_GROUP_SIZE] ;
       Fr::Atomic<Slab*>    m_freeslabs { nullptr } ;
       Fr::Atomic<unsigned> m_numfree { lengthof(m_slabs) } ;
-      Fr::Atomic<FreeInfo> m_freeinfo ;
    protected:
       void* operator new(size_t sz) ;
       void operator delete(void* grp) ;
