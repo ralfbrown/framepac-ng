@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include "framepac/memory.h"
 #include "framepac/semaphore.h"
+#include "framepac/critsect.h"
 using namespace std ;
 
 //#define LOCKFREE
@@ -94,19 +95,21 @@ SlabGroupColl SlabGroup::s_freecoll ;
 /*	methods for class SlabGroupColl					*/
 /************************************************************************/
 
-std::mutex app_mutex ;
+Fr::CriticalSection app_cs ;
 
 bool SlabGroupColl::append(SlabGroup* grp)
 {
-   lock_guard<std::mutex> _(app_mutex) ;
-   uint64_t pos = m_headseq.load() ; 
+   uint64_t pos = m_headseq.load_relax() ; 
    for ( ; ; )
       {
       Entry* entry = &m_entries[pos & m_mask] ;
-      uint64_t prevseq = entry->m_seqnum.load() ;
+      volatile uint64_t prevseq = entry->m_seqnum.load() ;
       if (prevseq == pos)
 	 {
-	 if (m_headseq.compare_exchange_weak(pos, pos+1))
+	 app_cs.lock() ;
+	 bool updated = m_headseq.compare_exchange_weak(pos, pos+1) ;
+	 app_cs.unlock() ;
+	 if (updated)
 	    {
 	    entry->m_group = grp ;
 	    entry->m_seqnum.store(pos+1) ;
@@ -119,7 +122,7 @@ bool SlabGroupColl::append(SlabGroup* grp)
 	 }
       else
 	 {
-	 pos = m_headseq.load() ;
+	 pos = m_headseq.load_relax() ;
 	 }
       }
 }
