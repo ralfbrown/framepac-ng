@@ -19,12 +19,14 @@
 /*									*/
 /************************************************************************/
 
+#include <iostream>
+
 #include <cstdlib>
 #include "framepac/memory.h"
 #include "framepac/semaphore.h"
 using namespace std ;
 
-#define LOCKFREE
+//#define LOCKFREE
 
 namespace FramepaC
 {
@@ -46,8 +48,6 @@ class alloc_capacity_error : public std::bad_alloc
 
 //----------------------------------------------------------------------------
 
-typedef void SlabGroupReleaseFn(SlabGroup*) ;
-
 // implement a Vyukov-style bounded MPMC queue
 //  see http://www.1024cores.net/home/lock-free-algorithms/queues/bounded-mpmc-queue
 
@@ -61,7 +61,6 @@ class SlabGroupColl
 	    m_entries[i].m_seqnum.store(i) ;
 	 m_headseq.store(0) ;
 	 m_tailseq.store(0) ;
-	 m_mask = COLL_SIZE - 1 ;
 	 }
       ~SlabGroupColl() {}
 
@@ -82,9 +81,7 @@ class SlabGroupColl
       Fr::Atomic<uint64_t> m_headseq ;
       alignas(64)
       Fr::Atomic<uint64_t> m_tailseq ;
-      alignas(64)
-      uint64_t             m_mask ;
-      SlabGroupReleaseFn*   m_releasefunc ;
+      static constexpr uint64_t m_mask = COLL_SIZE - 1 ;
    } ;
 
 /************************************************************************/
@@ -93,54 +90,63 @@ class SlabGroupColl
 
 SlabGroupColl SlabGroup::s_freecoll ;
 
-std::mutex slab_mutex ;
-
 /************************************************************************/
 /*	methods for class SlabGroupColl					*/
 /************************************************************************/
 
+std::mutex app_mutex ;
+
 bool SlabGroupColl::append(SlabGroup* grp)
 {
-   uint64_t pos ;
-   size_t maskedpos ;
-   for (pos = m_headseq.load_relax() ; ; pos = m_headseq.load_relax())
+   lock_guard<std::mutex> _(app_mutex) ;
+   uint64_t pos = m_headseq.load() ; 
+   for ( ; ; )
       {
-      maskedpos = pos & m_mask ;
-      uint64_t prevseq = m_entries[maskedpos].m_seqnum.load() ;
-      if (pos == prevseq)
+      Entry* entry = &m_entries[pos & m_mask] ;
+      uint64_t prevseq = entry->m_seqnum.load() ;
+      if (prevseq == pos)
 	 {
 	 if (m_headseq.compare_exchange_weak(pos, pos+1))
-	    break ;
+	    {
+	    entry->m_group = grp ;
+	    entry->m_seqnum.store(pos+1) ;
+	    return true ;
+	    }
 	 }
-      else if (pos > prevseq)
+      else if (prevseq < pos)
+	 {
 	 return false ;
+	 }
+      else
+	 {
+	 pos = m_headseq.load() ;
+	 }
       }
-   m_entries[maskedpos].m_group = grp ;
-   m_entries[maskedpos].m_seqnum.store(pos+1) ;
-   return true ;
 }
 
 //----------------------------------------------------------------------------
 
 bool SlabGroupColl::pop(SlabGroup*& grp)
 {
-   uint64_t pos ;
-   size_t maskedpos ;
-   for (pos = m_tailseq.load_relax() ; ; pos = m_tailseq.load_relax())
+   for ( ; ; )
       {
-      maskedpos = pos & m_mask ;
-      uint64_t prevseq = m_entries[maskedpos].m_seqnum.load() ;
+      uint64_t pos = m_tailseq.load_relax() ;
+      Entry* entry = &m_entries[pos & m_mask] ;
+      uint64_t prevseq = entry->m_seqnum.load() ;
       if (prevseq == pos + 1)
 	 {
 	 if (m_tailseq.compare_exchange_weak(pos, pos+1))
-	    break ;
+	    {
+	    grp = entry->m_group ;
+	    entry->m_seqnum.store(pos + COLL_SIZE) ;
+	    return true ;
+	    }
 	 }
       else if (prevseq < pos + 1)
+	 {
 	 return false ;
+	 }
       }
-   grp = m_entries[maskedpos].m_group ;
-   m_entries[maskedpos].m_seqnum.store(pos + m_mask + 1) ;
-   return true ;
 }
 
 /************************************************************************/
@@ -229,7 +235,6 @@ Slab* SlabGroup::popFreeSlab()
    FreeInfo freeinfo { sg->m_freeinfo.load() } ;
    FreeInfo nextinfo ;
    Slab* slb ;
-   slab_mutex.lock() ;
    do {
       slb = &sg->m_slabs[freeinfo.m_index] ;
       nextinfo.m_numfree = freeinfo.m_numfree - 1 ;
@@ -240,9 +245,7 @@ Slab* SlabGroup::popFreeSlab()
       // there are still free slabs in the group, so put it back on the queue of groups with free slabs
       s_freecoll.append(sg) ;
       }
-   slab_mutex.unlock() ;
 #else
-   slab_mutex.lock() ;
    sg->m_numfree-- ;		     // update free count
    Slab* slb = sg->m_freeslabs ;
    Slab* next ;
@@ -254,7 +257,6 @@ Slab* SlabGroup::popFreeSlab()
       // there are still free slabs in the group, so put it back on the queue of groups with free slabs
       s_freecoll.append(sg) ;
       }
-   slab_mutex.unlock() ;
 #endif
    return slb ;
 }
@@ -307,7 +309,6 @@ void SlabGroup::releaseSlab(Slab* slb)
    FreeInfo freeinfo { sg->m_freeinfo.load() } ;
    FreeInfo nextinfo ;
    nextinfo.m_index = slb->m_info.m_slab_id ;
-   slab_mutex.lock() ;
    do {
       slb->m_info.m_nextfree_id = freeinfo.m_index ;
       nextinfo.m_numfree = freeinfo.m_numfree + 1 ;
@@ -317,9 +318,7 @@ void SlabGroup::releaseSlab(Slab* slb)
       // first free slab added to this group, so link it into the list of groups with free slabs
       s_freecoll.append(sg) ;
       }
-   slab_mutex.unlock() ;
 #else
-   slab_mutex.lock() ;
    Slab* freelist = sg->m_freeslabs ;
    do {
       slb->setNextFreeSlab(freelist) ;
@@ -331,7 +330,6 @@ void SlabGroup::releaseSlab(Slab* slb)
       // first free slab added to this group, so link it into the list of groups with free slabs
       s_freecoll.append(sg) ;
       }
-   slab_mutex.unlock() ;
 #endif
    return ;
 }
