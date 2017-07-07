@@ -24,7 +24,7 @@
 #include "framepac/semaphore.h"
 using namespace std ;
 
-//#define LOCKFREE
+#define LOCKFREE
 
 namespace FramepaC
 {
@@ -176,6 +176,7 @@ SlabGroup::SlabGroup()
    freeinfo.m_index = next ;
    freeinfo.m_numfree = SLAB_GROUP_SIZE ;
    m_freeinfo.store(freeinfo) ;
+   m_numfree = 0 ;
 #else
    m_freeslabs = next ;
    m_numfree = SLAB_GROUP_SIZE ;
@@ -206,7 +207,11 @@ Slab* SlabGroup::popFreeSlab()
    SlabGroup* sg ;
    if (!s_freecoll.pop(sg)) return nullptr ;
    // is the group we got completely unused?
+#ifdef LOCKFREE
+   if (sg->m_freeinfo.load().m_numfree == SLAB_GROUP_SIZE)
+#else
    if (sg->freeSlabs() == SLAB_GROUP_SIZE)
+#endif
       {
       // check whether there are additional groups with free slabs; if so, return the completely free group
       //   to the operating system
@@ -224,16 +229,18 @@ Slab* SlabGroup::popFreeSlab()
    FreeInfo freeinfo { sg->m_freeinfo.load() } ;
    FreeInfo nextinfo ;
    Slab* slb ;
+   slab_mutex.lock() ;
    do {
       slb = &sg->m_slabs[freeinfo.m_index] ;
       nextinfo.m_numfree = freeinfo.m_numfree - 1 ;
       nextinfo.m_index = slb->m_info.m_nextfree_id ;
       } while (!sg->m_freeinfo.compare_exchange_weak(freeinfo,nextinfo)) ;
-   if (nextinfo.m_numfree)
+   if (freeinfo.m_numfree > 1)
       {
       // there are still free slabs in the group, so put it back on the queue of groups with free slabs
       s_freecoll.append(sg) ;
       }
+   slab_mutex.unlock() ;
 #else
    slab_mutex.lock() ;
    sg->m_numfree-- ;		     // update free count
@@ -300,6 +307,7 @@ void SlabGroup::releaseSlab(Slab* slb)
    FreeInfo freeinfo { sg->m_freeinfo.load() } ;
    FreeInfo nextinfo ;
    nextinfo.m_index = slb->m_info.m_slab_id ;
+   slab_mutex.lock() ;
    do {
       slb->m_info.m_nextfree_id = freeinfo.m_index ;
       nextinfo.m_numfree = freeinfo.m_numfree + 1 ;
@@ -309,6 +317,7 @@ void SlabGroup::releaseSlab(Slab* slb)
       // first free slab added to this group, so link it into the list of groups with free slabs
       s_freecoll.append(sg) ;
       }
+   slab_mutex.unlock() ;
 #else
    slab_mutex.lock() ;
    Slab* freelist = sg->m_freeslabs ;
@@ -338,7 +347,11 @@ void SlabGroup::reclaim()
    s_freecoll.pop(sg2) ;
    while (sg2 != sg)
       {
+#ifdef LOCKFREE
+      if (sg2->m_freeinfo.load().m_numfree == SLAB_GROUP_SIZE)
+#else
       if (sg2->freeSlabs() == SLAB_GROUP_SIZE)
+#endif
 	 {
 	 sg2->_delete() ;
 	 }
