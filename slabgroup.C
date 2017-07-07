@@ -87,8 +87,11 @@ class SlabGroupQueue
 	 }
 
    protected: // data members
+      alignas(64)
       CasAnchor m_dequeue_point ;
+      alignas(64)
       SlabGroup** m_enqueue_point ;
+      alignas(64)
       SlabGroup* m_dummy ;
       unsigned m_dummy_generation ;
 
