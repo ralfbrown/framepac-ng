@@ -57,18 +57,40 @@ class alloc_capacity_error : public std::bad_alloc
 class SlabGroupQueue
    {
    public:
-      SlabGroupQueue()
-	 {
-	 static_assert((COLL_SIZE & (COLL_SIZE-1)) == 0,"COLL_SIZE must be a power of two") ;
-	 for (size_t i = 0 ; i < COLL_SIZE ; ++i)
-	    m_entries[i].m_seqnum.store(i) ;
-	 m_headseq.store(0) ;
-	 m_tailseq.store(0) ;
-	 }
+      SlabGroupQueue() ;
       ~SlabGroupQueue() {}
 
       bool append(SlabGroup* grp) ;
       bool pop(SlabGroup*& grp) ;
+
+   protected: // subtypes
+      // store group pointer and ABA counter in a structure that can be swapped atomically.
+      // because the generation only gets incremented for a group when it gets popped from the
+      //    queue, the 12 bits we get by using the slab alignment is enough to permit a group
+      //    to cycle through the queue 4000 times between the time the anchor is read and the
+      //    CAS is attempted, which is way more than sufficient
+      class CasAnchor
+	 {
+	 public:
+	    CasAnchor(SlabGroup** grp) { m_anchor = (uintptr_t)grp ; }
+	    CasAnchor(SlabGroup** grp, unsigned gen) { m_anchor = (uintptr_t)grp | (gen & ABAmask) ; }
+	    CasAnchor(const CasAnchor& orig) { m_anchor = orig.m_anchor ; }
+	    ~CasAnchor() {}
+
+	    SlabGroup** group() const { return (SlabGroup*)(m_anchor & ~ABAmask) ; }
+	    unsigned generation() const { return (unsigned)(m_anchor & ABAmask) ; }
+	    void setGroup(SlabGroup** grp) { m_anchor = ((uintptr_t)grp) | generation() ; }
+	    void setGeneration(unsigned gen) { m_anchor = (m_anchor & ~ABAmask) | (gen & ABAmask) ; }
+	 protected:
+	    static constexpr size_t ABAmask = (SLAB_SIZE - 1) ;
+	    uintptr_t m_anchor ;
+	 }
+
+   protected: // data members
+      CasAnchor m_dequeue_point ;
+      SlabGroup** m_enqueue_point ;
+      SlabGroup* m_dummy ;
+      unsigned m_dummy_generation ;
 
    protected: // subtypes
       class Entry
@@ -96,6 +118,17 @@ SlabGroupQueue SlabGroup::s_freequeue ;
 /************************************************************************/
 /*	methods for class SlabGroupQueue					*/
 /************************************************************************/
+
+SlabGroupQueue::SlabGroupQueue()
+{
+   static_assert((COLL_SIZE & (COLL_SIZE-1)) == 0,"COLL_SIZE must be a power of two") ;
+   for (size_t i = 0 ; i < COLL_SIZE ; ++i)
+      m_entries[i].m_seqnum.store(i) ;
+   m_headseq.store(0) ;
+   m_tailseq.store(0) ;
+}
+
+//----------------------------------------------------------------------------
 
 static Fr::CriticalSection app_cs ;
 
@@ -156,6 +189,46 @@ bool SlabGroupQueue::pop(SlabGroup*& grp)
 	 return false ;
 	 }
       }
+}
+
+
+SlabGroupQueue::SlabGroupQueue()
+   : m_dequeue_point(&m_dummy)
+{
+   static_assert((COLL_SIZE & (COLL_SIZE-1)) == 0,"COLL_SIZE must be a power of two") ;
+   m_dummy = nullptr ;
+   m_enqueue_point = &m_dummy ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+bool SlabGroupQueue::append(SlabGroup* grp)
+{
+   SlabGroup** node_ptr ;
+   if (grp == &m_dummy)
+      {
+      m_dummy = nullptr ;
+      node_ptr = &m_dummy ;
+      }
+   else
+      {
+      grp->setNextFree(nullptr) ;
+      node_ptr = grp->nextFreePtr() ;
+      }
+   SlabGroup** prev = Fr::Atomic<SlabGroup**>::ref(m_enqueue_point).exchange(node_ptr) ;
+   // if the thread gets pre-empted here, a pop() will see a null next pointer and act as if there are no more
+   //   nodes
+   Fr::Atomic<SlabGroup**>(prev).store(node_ptr) ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+bool SlabGroupQueue::pop(SlabGroup*& grp)
+{
+
+   return false ;
 }
 
 /************************************************************************/
