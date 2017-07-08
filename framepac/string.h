@@ -163,6 +163,7 @@ class String : public Object
 
    private: // static members
       static Allocator s_allocator ;
+      static Initializer<String> s_initializer ;
    protected: // data members
       // pack pointer to the actual string plus 16 bits of length into a single 64-bit value.  If the stored
       //   length is 0xFFFF, then the initial size_t of the buffer is the actual length of the string.
@@ -177,8 +178,11 @@ class String : public Object
       String(const String *s) : String(s->c_str(),s->c_len()) {}
       String(const String &s) : String(s.c_str(), s.c_len()) {}
       String(const Object *) ;
-      ~String() { delete m_buffer.pointer() ; }
+      ~String() ;
       String &operator= (const String&) ;
+
+   protected: // member functions
+      static void StaticInitialization() ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<String> ;

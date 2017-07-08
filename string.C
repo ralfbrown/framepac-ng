@@ -30,6 +30,13 @@ namespace Fr
 
 Allocator String::s_allocator(FramepaC::Object_VMT<String>::instance(),sizeof(String)) ;
 
+static constexpr unsigned allocator_sizes[] =
+   { 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 80, 88, 96, 112, 128, 144, 160 } ;
+static constexpr unsigned num_allocators = lengthof(allocator_sizes) ;
+static constexpr unsigned max_small_alloc = allocator_sizes[num_allocators-1] ;
+
+static SmallAlloc* allocators[max_small_alloc] ;
+
 /************************************************************************/
 /************************************************************************/
 
@@ -39,7 +46,11 @@ String::String(const char *s, size_t len)
 {
    uint16_t coded_length = len >= 0xFFFF ? 0xFFFF : len ;
    size_t offset = (coded_length == 0xFFFF) ? sizeof(size_t) : 0 ;
-   char* strbuf = new char[len+1+offset] ;
+   char* strbuf ;
+   if (len < max_small_alloc)
+      strbuf = (char*)allocators[len]->allocate() ;
+   else
+      strbuf = new char[len+1+offset] ;
    m_buffer.pointer(strbuf) ;
    m_buffer.extra(coded_length) ;
    if (offset)
@@ -61,6 +72,35 @@ String::String(const Object *o)
    if (o)
       {
    //FIXME
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+String::~String()
+{
+   if (c_len() < max_small_alloc)
+      Allocator::free(m_buffer.pointer()) ;
+   else
+      delete m_buffer.pointer() ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void String::StaticInitialization()
+{
+   unsigned prev_size = 0 ;
+   for (size_t i = 0 ; i < num_allocators ; ++i)
+      {
+      size_t size = allocator_sizes[i] ;
+      SmallAlloc *alloc = SmallAlloc::create(size,1) ;
+      for (size_t j = prev_size ; j < size ; ++j)
+	 {
+	 allocators[j] = alloc ;
+	 }
+      prev_size = size ;
       }
    return ;
 }
