@@ -87,10 +87,10 @@ bool Symbol::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap
 
 bool Symbol::equal_(const Object *obj, const Object *other)
 {
-   if (obj == other)
-      return true ;
-
-   return false ; //FIXME
+   // symbol equality comparisons are done strictly as pointer
+   //   comparisons, because only a single instance of a string can be
+   //   in a given symbol table
+   return (obj == other) ;
 }
 
 //----------------------------------------------------------------------------

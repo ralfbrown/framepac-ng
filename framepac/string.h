@@ -153,6 +153,8 @@ class String : public Object
       char front() const { return *m_buffer.pointer() ; }
       String *subseq(StringIter start, StringIter stop, bool shallow = false) const ;
 
+      // *** comparison functions ***
+      
       // *** iterator support ***
       StringIter begin() { return StringIter(c_str()) ; }
       ConstStringIter cbegin() const { return ConstStringIter(c_str()) ; }
@@ -187,26 +189,26 @@ class String : public Object
       friend class FramepaC::Object_VMT<String> ;
 
       // type determination predicates
-      static bool isString_(const Object *) { return true ; }
+      static bool isString_(const Object*) { return true ; }
 
       // *** copying ***
-      static ObjectPtr clone_(const Object *) ;
-      static Object *shallowCopy_(const Object *obj) { return clone_(obj) ; }
-      static ObjectPtr subseq_int(const Object *,size_t start, size_t stop) ;
-      static ObjectPtr subseq_iter(const Object *,ObjectIter start, ObjectIter stop) ;
+      static ObjectPtr clone_(const Object*) ;
+      static Object *shallowCopy_(const Object* obj) { return clone_(obj) ; }
+      static ObjectPtr subseq_int(const Object*,size_t start, size_t stop) ;
+      static ObjectPtr subseq_iter(const Object*,ObjectIter start, ObjectIter stop) ;
 
       // *** destroying ***
-      static void free_(Object *obj) { delete static_cast<String*>(obj) ; }
+      static void free_(Object* obj) { delete static_cast<String*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object *obj) { delete static_cast<String*>(obj) ; }
+      static void shallowFree_(Object* obj) { delete static_cast<String*>(obj) ; }
 
       // *** I/O ***
       // generate printed representation into a buffer
-      static size_t cStringLength_(const Object *,size_t wrap_at, size_t indent) ;
-      static bool toCstring_(const Object *,char *buffer, size_t buflen,
+      static size_t cStringLength_(const Object*,size_t wrap_at, size_t indent) ;
+      static bool toCstring_(const Object*,char *buffer, size_t buflen,
 			     size_t wrap_at, size_t indent) ;
-      static size_t jsonStringLength_(const Object *, bool wrap, size_t indent) ;
-      static bool toJSONString_(const Object *, char *buffer, size_t buflen, bool wrap,
+      static size_t jsonStringLength_(const Object*, bool wrap, size_t indent) ;
+      static bool toJSONString_(const Object*, char* buffer, size_t buflen, bool wrap,
 				size_t indent) ;
 
       // *** standard info functions ***
@@ -220,9 +222,10 @@ class String : public Object
 	 { return (static_cast<const String*>(obj))->c_str() ; }
 
       // *** comparison functions ***
-      static bool equal_(const Object *obj, const Object *other) ;
-      static int compare_(const Object *obj, const Object *other) ;
-      static int lessThan_(const Object *obj, const Object *other) ;
+      static size_t hashValue_(const Object* obj) ;
+      static bool equal_(const Object* obj, const Object* other) ;
+      static int compare_(const Object* obj, const Object* other) ;
+      static int lessThan_(const Object* obj, const Object* other) ;
 
       // *** iterator support ***
       static Object* next_(const Object *) { return nullptr ; }

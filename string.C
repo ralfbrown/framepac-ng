@@ -25,6 +25,64 @@
 /************************************************************************/
 /************************************************************************/
 
+// implementation of fasthash64 hash function patterned after that by Zilong Tam (2012, MIT License), available at
+//    https://github.com/rurban/smhasher/blob/master/fasthash.cpp
+// limitations: requires unaligned memory access, gives different results depending on endianness
+
+#define FH64_MULTIPLIER 0x880355f21e6d1965ULL
+
+static uint64_t fasthash64_mix(uint64_t state)
+{
+   state ^= (state >> 23) ;
+   state *= 0x2127599bf4325c37ULL ;
+   state ^= (state >> 47) ;
+   return state ;
+}
+
+uint64_t fasthash64(const void* data, size_t len, uint64_t seed = 0)
+{
+   const uint64_t *ptr = reinterpret_cast<const uint64_t*>(data) ;
+   const uint64_t *last = ptr + (len / 8) ;
+   uint64_t state = seed ^ (len * FH64_MULTIPLIER) ;
+   while (ptr < last)
+      {
+      state ^= fasthash64_mix(*ptr++) ;
+      state *= FH64_MULTIPLIER ;
+      }
+   const unsigned char* ptr2 = reinterpret_cast<const unsigned char*>(ptr) ;
+   // grab the remaining zero to seven bytes of data
+   uint64_t value = 0 ;
+   switch (len & 7)
+      {
+      case 7:
+	 value = ((uint64_t)ptr2[6]) << 48 ;
+      case 6:
+	 value |= ((uint64_t)*((uint16_t*)(ptr2+4))) << 40 ;
+	 value |= *((uint32_t*)ptr2) ;
+	 state ^= fasthash64_mix(value) ;
+	 state *= FH64_MULTIPLIER ;
+	 break ;
+      case 5:
+	 value |= ((uint64_t)ptr2[4]) << 32 ;
+      case 4:
+	 value |= *((uint32_t*)ptr2) ;
+	 state ^= fasthash64_mix(value) ;
+	 state *= FH64_MULTIPLIER ;
+	 break ;
+      case 3:
+	 value = ((uint64_t)ptr2[2]) << 16 ;
+      case 2:
+	 value |= ((uint64_t)ptr2[1]) << 8 ;
+      case 1:
+	 value |= ((uint64_t)ptr2[0]) ;
+	 state ^= fasthash64_mix(value) ;
+	 state *= FH64_MULTIPLIER ;
+      case 0:
+	 break ;
+      }
+   return fasthash64_mix(state) ;
+}
+
 namespace Fr
 {
 
@@ -116,6 +174,7 @@ void String::StaticInitialization()
 
 ObjectPtr String::clone_(const Object *obj)
 {
+   if (!obj) return ObjectPtr(nullptr) ;
    return ObjectPtr(new String((String*)obj)) ;
 }
 
@@ -176,6 +235,15 @@ bool String::toJSONString_(const Object *obj, char *buffer, size_t buflen, bool 
       return false ;
 
    return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+size_t String::hashValue_(const Object* obj)
+{
+   const char* str = reinterpret_cast<const String*>(obj)->c_str() ;
+   size_t len = reinterpret_cast<const String*>(obj)->c_len() ;
+   return fasthash64(str,len) ;
 }
 
 //----------------------------------------------------------------------------
