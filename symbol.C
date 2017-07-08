@@ -33,41 +33,18 @@ Allocator Symbol::s_allocator(FramepaC::Object_VMT<Symbol>::instance(),sizeof(Sy
 /************************************************************************/
 /************************************************************************/
 
-Symbol::Symbol(const char *name) : String(name), m_binding(nullptr)
-{
-//FIXME
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-Symbol::Symbol(const Symbol *name) : String(name->name()), m_binding(nullptr)
-{
-//FIXME
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-Symbol::Symbol(const Symbol &name) : String(name.name()), m_binding(nullptr)
-{
-//FIXME
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
 Symbol::~Symbol()
+{
+   unintern() ;				// remove from symbol table before deleting
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void Symbol::unintern()
 {
    //FIXME
    return ;
-}
-
-//----------------------------------------------------------------------------
-
-size_t Symbol::size() const
-{
-   return strlen(name()) ;
 }
 
 //----------------------------------------------------------------------------

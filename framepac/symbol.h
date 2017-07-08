@@ -60,13 +60,13 @@ class Symbol : public String
    {
    public:
       static Symbol *create(const char *name) ;
+      static Symbol *create(const String *sym) ;
       static Symbol *create(const Object *obj) ;
-      static Symbol *create(const Symbol *sym) ;
 
       const char *name() const { return c_str() ; } // inherited from String
 
       // *** standard info functions ***
-      size_t size() const ;
+      size_t size() const { return c_len() ; }
       size_t empty() const { return false ; }
 
       // *** standard access functions ***
@@ -90,9 +90,9 @@ class Symbol : public String
    protected: // construction/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
-      Symbol(const char *) ;
-      Symbol(const Symbol *) ;
-      Symbol(const Symbol &) ;
+      Symbol(const char *name) : String(name), m_binding() {}
+      Symbol(const String *name) : String(name), m_binding() {}
+      Symbol(const Symbol &name) : String(name), m_binding() {}
       ~Symbol() ;
       Symbol& operator= (const Symbol&) = delete ;
 
@@ -164,6 +164,7 @@ class SymbolTable : public Object
       static SymbolTable* current() ;
 
       Symbol* add(const char* name) ;
+      Symbol* add(const String* name) ;
       
    private: // static members
       static Allocator s_allocator ;

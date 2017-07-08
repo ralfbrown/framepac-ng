@@ -22,6 +22,7 @@
 #ifndef __Fr_STRING_H_INCLUDED
 #define __Fr_STRING_H_INCLUDED
 
+#include <cstring>
 #include "framepac/object.h"
 
 /************************************************************************/
@@ -172,7 +173,7 @@ class String : public Object
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
       String() : Object(), m_buffer(nullptr) {}
       String(const char *valuebuffer, size_t len) ;
-      String(const char* value) : String(value, value?strlen(value):0) {}
+      String(const char* value) : String(value, value?std::strlen(value):0) {}
       String(const String *s) : String(s->c_str(),s->c_len()) {}
       String(const String &s) : String(s.c_str(), s.c_len()) {}
       String(const Object *) ;
