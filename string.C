@@ -51,15 +51,17 @@ String::String(const char *s, size_t len)
       strbuf = (char*)allocators[len]->allocate() ;
    else
       strbuf = new char[len+1+offset] ;
-   m_buffer.pointer(strbuf) ;
-   m_buffer.extra(coded_length) ;
-   if (offset)
+   if (strbuf)
       {
-      *((size_t*)strbuf) = len ;
-      strbuf += offset ;
+      if (offset)
+	 {
+	 *((size_t*)strbuf) = len ;
+	 strbuf += offset ;
+	 }
+      memcpy(strbuf,s,len) ;
+      strbuf[len] = '\0' ;
       }
-   memcpy(strbuf,s,len) ;
-   strbuf[len] = '\0' ;
+   new (&m_buffer) FramepaC::PointerPlus16<char>(strbuf,coded_length) ;
    return ;
 }
 
@@ -83,7 +85,12 @@ String::~String()
    if (c_len() < max_small_alloc)
       Allocator::free(m_buffer.pointer()) ;
    else
-      delete m_buffer.pointer() ;
+      {
+      char* buf = m_buffer.pointer() ;
+      if (buf && m_buffer.extra() == 0xFFFF)
+	 buf -= sizeof(size_t) ;
+      delete buf ;
+      }
    return ;
 }
 

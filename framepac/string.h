@@ -140,11 +140,9 @@ class String : public Object
       static String *create(const Object *obj) { return new String(obj) ; }
 
       size_t c_len() const
-	 { size_t len = m_buffer.extra() ; return (len == 0xFFFF) ? *((size_t*)m_buffer.pointer()) : len ; }
-      char *c_str()
-	 { return m_buffer.pointer() + (m_buffer.extra() == 0xFFFF ? sizeof(size_t) : 0) ; }
-      const char *c_str() const
-	 { return m_buffer.pointer() + (m_buffer.extra() == 0xFFFF ? sizeof(size_t) : 0) ; }
+	 { size_t len = m_buffer.extra() ; return (len == 0xFFFF) ? ((size_t*)m_buffer.pointer())[-1] : len ; }
+      char *c_str() { return m_buffer.pointer() ; }
+      const char *c_str() const { return m_buffer.pointer() ; }
 
       // *** standard info functions ***
       size_t size() const { return c_len() ; }
