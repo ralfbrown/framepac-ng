@@ -33,10 +33,6 @@ Allocator String::s_allocator(FramepaC::Object_VMT<String>::instance(),sizeof(St
 /************************************************************************/
 /************************************************************************/
 
-String::String(const char *s) : String(s,s?strlen(s):0) {}
-
-//----------------------------------------------------------------------------
-
 String::String(const char *s, size_t len)
    : Object(),
      m_buffer()
@@ -53,22 +49,6 @@ String::String(const char *s, size_t len)
       }
    memcpy(strbuf,s,len) ;
    strbuf[len] = '\0' ;
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-String::String(const String &s)
-   : String(s.c_str(),s.c_len())
-{
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-String::String(const String *s)
-   : String(s->c_str(),s->c_len())
-{
    return ;
 }
 

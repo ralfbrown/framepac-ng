@@ -171,11 +171,11 @@ class String : public Object
    protected: // creation/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
-      String() : m_buffer(nullptr) {}
-      String(const char* value) ;
-      String(const char *valuebuffer, size_t len) ; //FIXME
-      String(const String *) ;
-      String(const String &) ;
+      String() : Object(), m_buffer(nullptr) {}
+      String(const char *valuebuffer, size_t len) ;
+      String(const char* value) : String(value, value?strlen(value):0) {}
+      String(const String *s) : String(s->c_str(),s->c_len()) {}
+      String(const String &s) : String(s.c_str(), s.c_len()) {}
       String(const Object *) ;
       ~String() { delete m_buffer.pointer() ; }
       String &operator= (const String&) ;
