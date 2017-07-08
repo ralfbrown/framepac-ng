@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-07-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -33,7 +33,7 @@ Allocator Symbol::s_allocator(FramepaC::Object_VMT<Symbol>::instance(),sizeof(Sy
 /************************************************************************/
 /************************************************************************/
 
-Symbol::Symbol(const char *) : m_binding(nullptr), m_symtab_id(0), m_flags(0)
+Symbol::Symbol(const char *) : m_binding(nullptr)
 {
 //FIXME
    return ;
@@ -41,7 +41,7 @@ Symbol::Symbol(const char *) : m_binding(nullptr), m_symtab_id(0), m_flags(0)
 
 //----------------------------------------------------------------------------
 
- Symbol::Symbol(const Symbol *) : Object(), m_binding(nullptr), m_symtab_id(0), m_flags(0)
+Symbol::Symbol(const Symbol *) : String(), m_binding(nullptr)
 {
 //FIXME
    return ;
@@ -49,7 +49,7 @@ Symbol::Symbol(const char *) : m_binding(nullptr), m_symtab_id(0), m_flags(0)
 
 //----------------------------------------------------------------------------
 
-Symbol::Symbol(const Symbol &) : Object(), m_binding(nullptr), m_symtab_id(0), m_flags(0)
+Symbol::Symbol(const Symbol &) : String(), m_binding(nullptr)
 {
 //FIXME
    return ;

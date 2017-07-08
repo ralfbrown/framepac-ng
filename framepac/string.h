@@ -117,7 +117,7 @@ class String : public Object
 
    private: // static members
       static Allocator s_allocator ;
-   private: // data members
+   protected: // data members
       char  *m_string ;
       size_t m_size ;
 

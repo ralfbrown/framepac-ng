@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-07-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -23,8 +23,49 @@
 #define _Fr_SYMBOL_H_INCLUDED
 
 #include <cstring>
-#include "framepac/object.h"
+#include "framepac/string.h"
 #include "framepac/map.h" //TEMP
+
+/************************************************************************/
+/************************************************************************/
+
+namespace FramepaC
+{
+
+// x86_64 currently only uses 48-bit virtual addresses, so we can
+//   stuff an additional 16-bit value into a 64-bit pointer field.
+//   TODO: For 32-bit architectures and some 64-bit architectures,
+//   we'll need to create a struct with both a pointer and integer
+//   fields instead of packing the two into a single value.
+template <typename T>
+class PointerPlus16
+   {
+   public:
+      PointerPlus16(T* ptr) { m_pointer = (uintptr_t)ptr ; }
+      PointerPlus16(T* ptr, uint16_t val)
+	 {
+	    m_pointer = (((uintptr_t)ptr) & POINTER_MASK) | (((uintptr_t)val) << VALUE_SHIFT) ;
+	 }
+      ~PointerPlus16() {}
+
+      T* pointer() const { return reinterpret_cast<T*>(m_pointer & POINTER_MASK) ; }
+      uint16_t extra() const { return (uint16_t)(m_pointer >> VALUE_SHIFT) ; }
+
+      void pointer(T* ptr) { m_pointer = (((uintptr_t)ptr) & POINTER_MASK) | (m_pointer & VALUE_MASK) ; }
+      void extra(uint16_t val) { m_pointer = (m_pointer & POINTER_MASK) | (((uintptr_t)val) << VALUE_SHIFT) ; }
+
+   protected:
+      static constexpr uintptr_t POINTER_MASK = 0x0000FFFFFFFFFFFFUL ;
+      static constexpr uintptr_t VALUE_MASK = 0xFFFF000000000000UL ;
+      static constexpr unsigned VALUE_SHIFT = 48 ;
+      uintptr_t m_pointer ;
+   } ;
+
+
+} // end namespace FramepaC
+
+/************************************************************************/
+/************************************************************************/
 
 namespace Fr
 {
@@ -53,21 +94,21 @@ class SymbolIter
 
 //----------------------------------------------------------------------------
 
-class Symbol : public Object
+class Symbol : public String
    {
    public:
       static Symbol *create(const char *name) ;
       static Symbol *create(const Object *obj) ;
       static Symbol *create(const Symbol *sym) ;
 
-      const char *name() const { return m_name ; }
+      const char *name() const { return m_string ; } // field inherited from String
 
       // *** standard info functions ***
       size_t size() const ;
       size_t empty() const { return false ; }
 
       // *** standard access functions ***
-      char front() const { return m_name[0] ; }
+      //char front() const : inherited from String
       Symbol *subseq(SymbolIter start, SymbolIter stop, bool shallow = false) const ;
 
       // *** iterator support ***
@@ -80,10 +121,12 @@ class Symbol : public Object
    private: // static members
       static Allocator s_allocator ;
    protected:
-      Object *m_binding ;
-      uint8_t m_symtab_id ;
-      uint8_t m_flags ;
-      char    m_name[1] ;
+      // we pack a pointer to the symbol's properties, its symboltable
+      //   ID, and some bitflags, into a single 64-bit field to save
+      //   memory
+      FramepaC::PointerPlus16<Object*> m_binding ;
+//      uint8_t m_symtab_id ;
+//      uint8_t m_flags ;
    protected: // construction/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
@@ -95,6 +138,8 @@ class Symbol : public Object
 
       void unintern() ; // remove from the symbol table containing it
 
+      uint8_t symtabID() { return m_binding.extra() >> 8 ; }
+      
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<Symbol> ;
 
@@ -102,7 +147,7 @@ class Symbol : public Object
       static void free_(Object *obj)
 	 {
 	 Symbol *s = static_cast<Symbol*>(obj) ;
-	 if (s->m_symtab_id == 0) delete s ; 
+	 if (s->symtabID() == 0) delete s ; 
 	 }
 
       // type determination predicates
@@ -131,7 +176,7 @@ class Symbol : public Object
       // *** standard access functions ***
       static Object *front_(Object *obj) { return obj ; }
       static const Object *front_const(const Object *obj) { return obj ; }
-      static const char *stringValue_(const Object *obj) { return ((Symbol*)obj)->m_name ; }
+      //static const char *stringValue_(const Object *obj) : inherited from String
 
       // *** comparison functions ***
       static bool equal_(const Object *obj, const Object *other) ;
@@ -141,18 +186,6 @@ class Symbol : public Object
       // *** iterator support ***
       static Object* next_(const Object *) { return nullptr ; }
       static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
-   } ;
-
-//----------------------------------------------------------------------------
-
-template <int N>
-class Symbol_T : public Symbol
-   {
-   private:
-      char    m_name2[N] ;
-   public:
-      Symbol_T(const char *name) ;
-      ~Symbol_T() ;
    } ;
 
 //----------------------------------------------------------------------------
