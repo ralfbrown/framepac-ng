@@ -39,35 +39,36 @@ String::String(const char *s) : String(s,s?strlen(s):0) {}
 
 String::String(const char *s, size_t len)
    : Object(),
-     m_string(new char[len+1]),
-     m_size(len)
+     m_buffer()
 {
-   memcpy(m_string,s,len) ;
-   m_string[len] = '\0' ;
+   uint16_t coded_length = len >= 0xFFFF ? 0xFFFF : len ;
+   size_t offset = (coded_length == 0xFFFF) ? sizeof(size_t) : 0 ;
+   char* strbuf = new char[len+1+offset] ;
+   m_buffer.pointer(strbuf) ;
+   m_buffer.extra(coded_length) ;
+   if (offset)
+      {
+      *((size_t*)strbuf) = len ;
+      strbuf += offset ;
+      }
+   memcpy(strbuf,s,len) ;
+   strbuf[len] = '\0' ;
    return ;
 }
 
 //----------------------------------------------------------------------------
 
 String::String(const String &s)
-      : Object(),
-	m_string(new char[s.m_size+1]),
-	m_size(s.m_size)
+   : String(s.c_str(),s.c_len())
 {
-   memcpy(m_string,s.m_string,m_size) ;
-   m_string[m_size] = '\0' ;
    return ;
 }
 
 //----------------------------------------------------------------------------
 
 String::String(const String *s)
-   : Object(),
-     m_string(new char[s->m_size+1]),
-     m_size(s->m_size)
+   : String(s->c_str(),s->c_len())
 {
-   memcpy(m_string,s->m_string,m_size) ;
-   m_string[m_size] = '\0' ;
    return ;
 }
 
@@ -75,8 +76,7 @@ String::String(const String *s)
 
 String::String(const Object *o)
    : Object(),
-     m_string(nullptr),
-     m_size(0)
+     m_buffer()
 {
    if (o)
       {
@@ -86,7 +86,6 @@ String::String(const Object *o)
 }
 
 //----------------------------------------------------------------------------
-
 
 ObjectPtr String::clone_(const Object *obj)
 {

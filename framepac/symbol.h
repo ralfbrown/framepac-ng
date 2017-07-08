@@ -29,44 +29,6 @@
 /************************************************************************/
 /************************************************************************/
 
-namespace FramepaC
-{
-
-// x86_64 currently only uses 48-bit virtual addresses, so we can
-//   stuff an additional 16-bit value into a 64-bit pointer field.
-//   TODO: For 32-bit architectures and some 64-bit architectures,
-//   we'll need to create a struct with both a pointer and integer
-//   fields instead of packing the two into a single value.
-template <typename T>
-class PointerPlus16
-   {
-   public:
-      PointerPlus16(T* ptr) { m_pointer = (uintptr_t)ptr ; }
-      PointerPlus16(T* ptr, uint16_t val)
-	 {
-	    m_pointer = (((uintptr_t)ptr) & POINTER_MASK) | (((uintptr_t)val) << VALUE_SHIFT) ;
-	 }
-      ~PointerPlus16() {}
-
-      T* pointer() const { return reinterpret_cast<T*>(m_pointer & POINTER_MASK) ; }
-      uint16_t extra() const { return (uint16_t)(m_pointer >> VALUE_SHIFT) ; }
-
-      void pointer(T* ptr) { m_pointer = (((uintptr_t)ptr) & POINTER_MASK) | (m_pointer & VALUE_MASK) ; }
-      void extra(uint16_t val) { m_pointer = (m_pointer & POINTER_MASK) | (((uintptr_t)val) << VALUE_SHIFT) ; }
-
-   protected:
-      static constexpr uintptr_t POINTER_MASK = 0x0000FFFFFFFFFFFFUL ;
-      static constexpr uintptr_t VALUE_MASK = 0xFFFF000000000000UL ;
-      static constexpr unsigned VALUE_SHIFT = 48 ;
-      uintptr_t m_pointer ;
-   } ;
-
-
-} // end namespace FramepaC
-
-/************************************************************************/
-/************************************************************************/
-
 namespace Fr
 {
 
@@ -101,7 +63,7 @@ class Symbol : public String
       static Symbol *create(const Object *obj) ;
       static Symbol *create(const Symbol *sym) ;
 
-      const char *name() const { return m_string ; } // field inherited from String
+      const char *name() const { return c_str() ; } // inherited from String
 
       // *** standard info functions ***
       size_t size() const ;
@@ -124,9 +86,7 @@ class Symbol : public String
       // we pack a pointer to the symbol's properties, its symboltable
       //   ID, and some bitflags, into a single 64-bit field to save
       //   memory
-      FramepaC::PointerPlus16<Object*> m_binding ;
-//      uint8_t m_symtab_id ;
-//      uint8_t m_flags ;
+      FramepaC::PointerPlus16<Object> m_binding ;
    protected: // construction/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
@@ -139,7 +99,9 @@ class Symbol : public String
       void unintern() ; // remove from the symbol table containing it
 
       uint8_t symtabID() { return m_binding.extra() >> 8 ; }
-      
+      uint8_t flags() { return m_binding.extra() & 0xFF ; }
+      Object* binding() { return m_binding.pointer() ; }
+
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<Symbol> ;
 

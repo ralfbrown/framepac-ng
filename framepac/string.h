@@ -24,6 +24,47 @@
 
 #include "framepac/object.h"
 
+/************************************************************************/
+/************************************************************************/
+
+namespace FramepaC
+{
+
+// x86_64 currently only uses 48-bit virtual addresses, so we can
+//   stuff an additional 16-bit value into a 64-bit pointer field.
+//   TODO: For 32-bit architectures and some 64-bit architectures,
+//   we'll need to create a struct with both a pointer and integer
+//   fields instead of packing the two into a single value.
+template <typename T>
+class PointerPlus16
+   {
+   public:
+      PointerPlus16(T* ptr = nullptr) { m_pointer = (uintptr_t)ptr ; }
+      PointerPlus16(T* ptr, uint16_t val)
+	 {
+	    m_pointer = (((uintptr_t)ptr) & POINTER_MASK) | (((uintptr_t)val) << VALUE_SHIFT) ;
+	 }
+      ~PointerPlus16() {}
+
+      T* pointer() const { return reinterpret_cast<T*>(m_pointer & POINTER_MASK) ; }
+      uint16_t extra() const { return (uint16_t)(m_pointer >> VALUE_SHIFT) ; }
+
+      void pointer(T* ptr) { m_pointer = (((uintptr_t)ptr) & POINTER_MASK) | (m_pointer & VALUE_MASK) ; }
+      void extra(uint16_t val) { m_pointer = (m_pointer & POINTER_MASK) | (((uintptr_t)val) << VALUE_SHIFT) ; }
+
+   protected:
+      static constexpr uintptr_t POINTER_MASK = 0x0000FFFFFFFFFFFFUL ;
+      static constexpr uintptr_t VALUE_MASK = 0xFFFF000000000000UL ;
+      static constexpr unsigned VALUE_SHIFT = 48 ;
+      uintptr_t m_pointer ;
+   } ;
+
+
+} // end namespace FramepaC
+
+/************************************************************************/
+/************************************************************************/
+
 namespace Fr {
 
 // forward declaration
@@ -98,39 +139,45 @@ class String : public Object
       static String *create(const char *s, size_t len) { return new String(s,len) ; }
       static String *create(const Object *obj) { return new String(obj) ; }
 
-      const char *c_str() const { return m_string ; }
+      size_t c_len() const
+	 { size_t len = m_buffer.extra() ; return (len == 0xFFFF) ? *((size_t*)m_buffer.pointer()) : len ; }
+      char *c_str()
+	 { return m_buffer.pointer() + (m_buffer.extra() == 0xFFFF ? sizeof(size_t) : 0) ; }
+      const char *c_str() const
+	 { return m_buffer.pointer() + (m_buffer.extra() == 0xFFFF ? sizeof(size_t) : 0) ; }
 
       // *** standard info functions ***
-      size_t size() const { return m_size ; }
-      size_t empty() const { return m_size == 0 ; }
+      size_t size() const { return c_len() ; }
+      size_t empty() const { return m_buffer.extra() == 0 ; }
 
       // *** standard access functions ***
-      char front() const { return *m_string ; }
+      char front() const { return *m_buffer.pointer() ; }
       String *subseq(StringIter start, StringIter stop, bool shallow = false) const ;
 
       // *** iterator support ***
-      StringIter begin() { return StringIter(m_string) ; }
-      ConstStringIter cbegin() const { return ConstStringIter(m_string) ; }
-      StringIter end() { return StringIter(m_string+size()) ; }
-      ConstStringIter cend() const { return ConstStringIter(m_string+size()) ; }
+      StringIter begin() { return StringIter(c_str()) ; }
+      ConstStringIter cbegin() const { return ConstStringIter(c_str()) ; }
+      StringIter end() { return StringIter(c_str()+c_len()) ; }
+      ConstStringIter cend() const { return ConstStringIter(c_str()+c_len()) ; }
       String *next() const { return nullptr ; }
 
    private: // static members
       static Allocator s_allocator ;
    protected: // data members
-      char  *m_string ;
-      size_t m_size ;
+      // pack pointer to the actual string plus 16 bits of length into a single 64-bit value.  If the stored
+      //   length is 0xFFFF, then the initial size_t of the buffer is the actual length of the string.
+      FramepaC::PointerPlus16<char> m_buffer ;
 
    protected: // creation/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
-      String() : m_string(nullptr), m_size(0) {}
+      String() : m_buffer(nullptr) {}
       String(const char* value) ;
       String(const char *valuebuffer, size_t len) ; //FIXME
       String(const String *) ;
       String(const String &) ;
       String(const Object *) ;
-      ~String() { delete m_string ; }
+      ~String() { delete m_buffer.pointer() ; }
       String &operator= (const String&) ;
 
    protected: // implementation functions for virtual methods
@@ -166,7 +213,8 @@ class String : public Object
       // *** standard access functions ***
       static Object *front_(Object *obj) { return obj ; }
       static const Object *front_const(const Object *obj) { return obj ; }
-      static const char *stringValue_(const Object *obj) { return (static_cast<const String*>(obj))->m_string ; }
+      static const char *stringValue_(const Object *obj)
+	 { return (static_cast<const String*>(obj))->c_str() ; }
 
       // *** comparison functions ***
       static bool equal_(const Object *obj, const Object *other) ;

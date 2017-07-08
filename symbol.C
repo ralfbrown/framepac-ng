@@ -33,7 +33,7 @@ Allocator Symbol::s_allocator(FramepaC::Object_VMT<Symbol>::instance(),sizeof(Sy
 /************************************************************************/
 /************************************************************************/
 
-Symbol::Symbol(const char *) : m_binding(nullptr)
+Symbol::Symbol(const char *name) : String(name), m_binding(nullptr)
 {
 //FIXME
    return ;
@@ -41,7 +41,7 @@ Symbol::Symbol(const char *) : m_binding(nullptr)
 
 //----------------------------------------------------------------------------
 
-Symbol::Symbol(const Symbol *) : String(), m_binding(nullptr)
+Symbol::Symbol(const Symbol *name) : String(name->name()), m_binding(nullptr)
 {
 //FIXME
    return ;
@@ -49,7 +49,7 @@ Symbol::Symbol(const Symbol *) : String(), m_binding(nullptr)
 
 //----------------------------------------------------------------------------
 
-Symbol::Symbol(const Symbol &) : String(), m_binding(nullptr)
+Symbol::Symbol(const Symbol &name) : String(name.name()), m_binding(nullptr)
 {
 //FIXME
    return ;
