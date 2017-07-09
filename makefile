@@ -392,7 +392,7 @@ cluster_incr$(OBJ):	cluster_incr$(C) framepac/cluster.h
 cluster_kmeans$(OBJ):	cluster_kmeans$(C) framepac/cluster.h
 complex$(OBJ):		complex$(C) framepac/complex.h framepac/fasthash64.h
 critsect$(OBJ):		critsect$(C) framepac/critsect.h
-cstring$(OBJ):		cstring$(C) framepac/cstring.h
+cstring$(OBJ):		cstring$(C) framepac/cstring.h framepac/fasthash64.h
 fasthash64$(OBJ):		fasthash64$(C) framepac/fasthash64.h
 filename$(OBJ):		filename$(C) framepac/file.h
 float$(OBJ):		float$(C) framepac/number.h framepac/fasthash64.h
