@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-07-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -21,7 +21,9 @@
 
 #include <stdlib.h>
 #include "framepac/number.h"
+#include "framepac/fasthash64.h"
 
+using namespace FramepaC ;
 using namespace Fr ;
 
 namespace Fr
@@ -55,6 +57,14 @@ bool Float::toCstring_(const Object *obj, char *buffer, size_t buflen,
 {
    size_t needed = snprintf(buffer,buflen,"%*s%g",(int)indent,"",obj->floatValue()) ;
    return needed <= buflen ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t Float::hashValue_(const Object* obj)
+{
+   const Float* f = static_cast<const Float*>(obj) ;
+   return fasthash64_float(f->m_value) ;
 }
 
 //----------------------------------------------------------------------------

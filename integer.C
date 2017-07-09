@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-07-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -21,7 +21,9 @@
 
 #include <stdlib.h>
 #include "framepac/number.h"
+#include "framepac/fasthash64.h"
 
+using namespace FramepaC ;
 using namespace Fr ;
 
 namespace Fr
@@ -94,9 +96,8 @@ const Object* Integer::front_const(const Object* obj)
 
 size_t Integer::hashValue_(const Object* obj)
 {
-   const Integer* integer = reinterpret_cast<const Integer*>(obj) ;
-//FIXME
-   return integer->m_value ;
+   const Integer* integer = static_cast<const Integer*>(obj) ;
+   return fasthash64_int(integer->m_value) ;
 }
 
 //----------------------------------------------------------------------------
