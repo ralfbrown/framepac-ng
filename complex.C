@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-07-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -20,7 +20,120 @@
 /************************************************************************/
 
 #include "framepac/complex.h"
-using namespace Fr ;
+#include "framepac/fasthash64.h"
 
+using namespace FramepaC ;
+
+namespace Fr
+{
+
+/************************************************************************/
+/*	Methods for class Complex					*/
+/************************************************************************/
+
+Complex::Complex()
+{
+   //FIXME
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+Complex* Complex::create()
+{
+
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+#if 0
+Complex* Complex::subseq(...)
+{
+
+}
+#endif
+
+//----------------------------------------------------------------------------
+
+size_t Complex::cStringLength_(const Object*, size_t wrap_at, size_t indent)
+{
+   (void)wrap_at; (void)indent; //FIXME
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool Complex::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at, size_t indent)
+{
+   (void)buffer; (void)buflen; (void)wrap_at; (void)indent; //FIXME
+   //FIXME
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t Complex::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
+{
+   (void)obj ; (void)wrap; (void)indent ;
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool Complex::toJSONString_(const Object* obj, char* buffer, size_t buflen,
+			 bool /*wrap*/, size_t indent)
+{
+   (void)obj; (void)buffer; (void)buflen; (void)indent;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+size_t Complex::hashValue_(const Object* obj)
+{
+   // the hash value of a complex number is the hash of the hashes of its two components
+   const Complex* c = reinterpret_cast<const Complex*>(obj) ;
+   uint64_t hashstate = fasthash64_init(2) ;
+   hashstate = fasthash64_add(hashstate,fasthash64_float(c->m_real)) ;
+   hashstate = fasthash64_add(hashstate,fasthash64_float(c->m_imag)) ;
+   return fasthash64_finalize(hashstate) ;
+}
+
+//----------------------------------------------------------------------------
+
+bool Complex::equal_(const Object *obj, const Object *other)
+{
+   if (obj == other)
+      return true ;
+
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+int Complex::compare_(const Object *obj, const Object *other)
+{
+   if (obj == other)
+      return 0 ;
+
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+int Complex::lessThan_(const Object *obj, const Object *other)
+{
+   if (obj == other)
+      return 0 ;
+
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+
+
+} // end namespace Fr
 
 // end of file complex.C //

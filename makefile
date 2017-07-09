@@ -390,7 +390,7 @@ cluster_agglom$(OBJ):	cluster_agglom$(C) framepac/cluster.h
 cluster_growseed$(OBJ):	cluster_growseed$(C) framepac/cluster.h
 cluster_incr$(OBJ):	cluster_incr$(C) framepac/cluster.h
 cluster_kmeans$(OBJ):	cluster_kmeans$(C) framepac/cluster.h
-complex$(OBJ):		complex$(C) framepac/complex.h
+complex$(OBJ):		complex$(C) framepac/complex.h framepac/fasthash64.h
 critsect$(OBJ):		critsect$(C) framepac/critsect.h
 cstring$(OBJ):		cstring$(C) framepac/cstring.h
 fasthash64$(OBJ):		fasthash64$(C) framepac/fasthash64.h
