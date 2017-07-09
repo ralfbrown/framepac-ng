@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-07-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -21,6 +21,9 @@
 
 #include <map>
 #include "framepac/map.h"
+#include "framepac/fasthash64.h"
+
+using namespace FramepaC ;
 
 /************************************************************************/
 /************************************************************************/
@@ -106,6 +109,17 @@ bool Map::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at
    (void)buffer; (void)buflen; (void)wrap_at; (void)indent; //FIXME
    //FIXME
    return true ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t Map::hashValue_(const Object* obj)
+{
+   const Map* map = static_cast<const Map*>(obj) ;
+   uint64_t hashstate = fasthash64_init(map->size()) ;
+//FIXME: add in the hash values of each of the elements in the map
+
+   return fasthash64_finalize(hashstate) ;
 }
 
 //----------------------------------------------------------------------------

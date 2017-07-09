@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-07-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -20,6 +20,9 @@
 /************************************************************************/
 
 #include "framepac/symbol.h"
+#include "framepac/fasthash64.h"
+
+using namespace FramepaC ;
 
 /************************************************************************/
 /************************************************************************/
@@ -114,6 +117,17 @@ const Object *SymbolTable::front_const(const Object *)
 {
 
    return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+size_t SymbolTable::hashValue_(const Object* obj)
+{
+   const SymbolTable* st = static_cast<const SymbolTable*>(obj) ;
+   uint64_t hashstate = fasthash64_init(st->size()) ;
+   //FIXME: add in hash values of every symbol in the table
+
+   return fasthash64_finalize(hashstate) ;
 }
 
 //----------------------------------------------------------------------------

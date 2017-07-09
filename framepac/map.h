@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-07-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -84,13 +84,13 @@ class Map : public Object
       static Allocator s_allocator ;
    private:
       size_t m_size ;
-      std::map<Object,Object> m_map ;
+      std::map<Object*,Object*> m_map ;
    protected: // construction/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
       Map(size_t initial_size = 0) ;
-      Map(const Map *orig) ;
-      Map(const Map &orig) ;
+      Map(const Map* orig) ;
+      Map(const Map& orig) ;
       ~Map() ;
 
    protected: // implementation functions for virtual methods
@@ -99,36 +99,37 @@ class Map : public Object
       friend class SymbolTable ; //TEMP
 
       // type determination predicates
-      static bool isMap_(const Object *) { return true ; }
-      static const char *typeName_(const Object *) { return "Map" ; }
+      static bool isMap_(const Object*) { return true ; }
+      static const char *typeName_(const Object*) { return "Map" ; }
 
       // *** copying ***
-      static ObjectPtr clone_(const Object *) ;
-      static Object *shallowCopy_(const Object *obj) { return clone_(obj) ; }
-      static ObjectPtr subseq_int(const Object *, size_t start, size_t stop) ;
-      static ObjectPtr subseq_iter(const Object *, ObjectIter start, ObjectIter stop) ;
+      static ObjectPtr clone_(const Object*) ;
+      static Object* shallowCopy_(const Object* obj) { return clone_(obj) ; }
+      static ObjectPtr subseq_int(const Object*, size_t start, size_t stop) ;
+      static ObjectPtr subseq_iter(const Object*, ObjectIter start, ObjectIter stop) ;
 
       // *** I/O ***
       // generate printed representation into a buffer
-      static size_t cStringLength_(const Object *, size_t wrap_at, size_t indent) ;
-      static bool toCstring_(const Object *, char *buffer, size_t buflen,
+      static size_t cStringLength_(const Object*, size_t wrap_at, size_t indent) ;
+      static bool toCstring_(const Object*, char* buffer, size_t buflen,
 			     size_t wrap_at, size_t indent) ;
-      static size_t jsonStringLength_(const Object *, bool wrap, size_t indent) ;
-      static bool toJSONString(const Object *, char *buffer, size_t buflen, bool wrap,
+      static size_t jsonStringLength_(const Object*, bool wrap, size_t indent) ;
+      static bool toJSONString(const Object*, char* buffer, size_t buflen, bool wrap,
 			       size_t indent) ;
 
       // *** standard info functions ***
-      static size_t size_(const Object *obj) { return static_cast<const Map*>(obj)->size() ; }
-      static bool empty_(const Object *obj) { return static_cast<const Map*>(obj)->empty() ; }
+      static size_t size_(const Object* obj) { return static_cast<const Map*>(obj)->size() ; }
+      static bool empty_(const Object* obj) { return static_cast<const Map*>(obj)->empty() ; }
 
       // *** standard access functions ***
-      static Object *front_(Object *obj) { return static_cast<const Map*>(obj)->front() ; }
-      static const Object *front_(const Object *obj) { return static_cast<const Map*>(obj)->front() ; }
+      static Object* front_(Object* obj) { return static_cast<const Map*>(obj)->front() ; }
+      static const Object* front_(const Object *obj) { return static_cast<const Map*>(obj)->front() ; }
 
       // *** comparison functions ***
-      static bool equal_(const Object *obj, const Object *other) ;
-      static int compare_(const Object *obj, const Object *other) ;
-      static int lessThan_(const Object *obj, const Object *other) ;
+      static size_t hashValue_(const Object*) ;
+      static bool equal_(const Object* obj, const Object* other) ;
+      static int compare_(const Object* obj, const Object* other) ;
+      static int lessThan_(const Object* obj, const Object* other) ;
 
       // *** iterator support ***
    } ;

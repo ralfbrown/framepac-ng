@@ -39,10 +39,10 @@ class SymbolTable_ ;
 class SymbolIter
    {
    private:
-      const char *m_symbol ;
+      const char* m_symbol ;
    public:
-      SymbolIter(const char *s) : m_symbol(s) {}
-      SymbolIter(const SymbolIter &s) = default ;
+      SymbolIter(const char* s) : m_symbol(s) {}
+      SymbolIter(const SymbolIter& s) = default ;
       ~SymbolIter() = default ;
 
       const char& operator* () const { return *m_symbol ; }
@@ -59,11 +59,11 @@ class SymbolIter
 class Symbol : public String
    {
    public:
-      static Symbol *create(const char *name) ;
-      static Symbol *create(const String *sym) ;
-      static Symbol *create(const Object *obj) ;
+      static Symbol* create(const char* name) ;
+      static Symbol* create(const String* sym) ;
+      static Symbol* create(const Object* obj) ;
 
-      const char *name() const { return c_str() ; } // inherited from String
+      const char* name() const { return c_str() ; }
 
       // *** standard info functions ***
       size_t size() const { return c_len() ; }
@@ -71,7 +71,7 @@ class Symbol : public String
 
       // *** standard access functions ***
       //char front() const : inherited from String
-      Symbol *subseq(SymbolIter start, SymbolIter stop, bool shallow = false) const ;
+      Symbol* subseq(SymbolIter start, SymbolIter stop, bool shallow = false) const ;
 
       // *** iterator support ***
       SymbolIter begin() const { return SymbolIter(name()) ; }
@@ -87,12 +87,13 @@ class Symbol : public String
       //   ID, and some bitflags, into a single 64-bit field to save
       //   memory
       FramepaC::PointerPlus16<Object> m_binding ;
+
    protected: // construction/destruction
-      void *operator new(size_t) { return s_allocator.allocate() ; }
-      void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
-      Symbol(const char *name) : String(name), m_binding() {}
-      Symbol(const String *name) : String(name), m_binding() {}
-      Symbol(const Symbol &name) : String(name), m_binding() {}
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
+      Symbol(const char* name) : String(name), m_binding() {}
+      Symbol(const String* name) : String(name), m_binding() {}
+      Symbol(const Symbol& name) : String(name), m_binding() {}
       ~Symbol() ;
       Symbol& operator= (const Symbol&) = delete ;
 
@@ -108,47 +109,47 @@ class Symbol : public String
       // *** destroying ***
       static void free_(Object *obj)
 	 {
-	 Symbol *s = static_cast<Symbol*>(obj) ;
+	 Symbol* s = static_cast<Symbol*>(obj) ;
 	 if (s->symtabID() == 0) delete s ; 
 	 }
 
       // type determination predicates
-      static bool isSymbol_(const Object *) { return true ; }
-      static const char *typeName_(const Object *) { return "Symbol" ; }
+      static bool isSymbol_(const Object*) { return true ; }
+      static const char* typeName_(const Object*) { return "Symbol" ; }
 
       // *** copying ***
-      static ObjectPtr clone_(const Object *obj) { return ObjectPtr(const_cast<Object*>(obj)) ; }
-      static Object *shallowCopy_(const Object *obj) { return const_cast<Object*>(obj) ; }
-      static ObjectPtr subseq_int(const Object *,size_t start, size_t stop) ;
-      static ObjectPtr subseq_iter(const Object *,ObjectIter start, ObjectIter stop) ;
+      static ObjectPtr clone_(const Object* obj) { return ObjectPtr(const_cast<Object*>(obj)) ; }
+      static Object* shallowCopy_(const Object* obj) { return const_cast<Object*>(obj) ; }
+      static ObjectPtr subseq_int(const Object*,size_t start, size_t stop) ;
+      static ObjectPtr subseq_iter(const Object*,ObjectIter start, ObjectIter stop) ;
 
       // *** I/O ***
       // generate printed representation into a buffer
-      static size_t cStringLength_(const Object *, size_t wrap_at, size_t indent) ;
-      static bool toCstring_(const Object *,char *buffer, size_t buflen,
+      static size_t cStringLength_(const Object*, size_t wrap_at, size_t indent) ;
+      static bool toCstring_(const Object*,char* buffer, size_t buflen,
 			     size_t wrap_at, size_t indent) ;
-      static size_t jsonStringLength_(const Object *, bool wrap, size_t indent) ;
-      static bool toJSONString_(const Object *, char *buffer, size_t buflen, bool wrap,
+      static size_t jsonStringLength_(const Object*, bool wrap, size_t indent) ;
+      static bool toJSONString_(const Object*, char* buffer, size_t buflen, bool wrap,
 				size_t indent) ;
 
       // *** standard info functions ***
-      static size_t size_(const Object *) { return 1 ; }
-      static bool empty_(const Object *) { return false ; }
+      static size_t size_(const Object*) { return 1 ; }
+      static bool empty_(const Object*) { return false ; }
 
       // *** standard access functions ***
-      static Object *front_(Object *obj) { return obj ; }
-      static const Object *front_const(const Object *obj) { return obj ; }
+      static Object* front_(Object* obj) { return obj ; }
+      static const Object* front_const(const Object* obj) { return obj ; }
       //static const char *stringValue_(const Object *obj) : inherited from String
 
       // *** comparison functions ***
       static size_t hashValue_(const Object* obj) { return (size_t)obj ; }
-      static bool equal_(const Object *obj, const Object *other) ;
-      static int compare_(const Object *obj, const Object *other) ;
-      static int lessThan_(const Object *obj, const Object *other) ;
+      static bool equal_(const Object* obj, const Object* other) ;
+      static int compare_(const Object* obj, const Object* other) ;
+      static int lessThan_(const Object* obj, const Object* other) ;
 
       // *** iterator support ***
-      static Object* next_(const Object *) { return nullptr ; }
-      static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
+      static Object* next_(const Object*) { return nullptr ; }
+      static ObjectIter& next_iter(const Object*, ObjectIter& it) { it.incrIndex() ; return it ; }
    } ;
 
 //----------------------------------------------------------------------------
@@ -156,8 +157,8 @@ class Symbol : public String
 class SymbolTable : public Object
    {
    public:
-      void *operator new(size_t) { return s_allocator.allocate() ; }
-      void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       SymbolTable(size_t initial_size) ;
       SymbolTable(const SymbolTable&) ;
       ~SymbolTable() ;
@@ -170,54 +171,51 @@ class SymbolTable : public Object
    private: // static members
       static Allocator s_allocator ;
    private:
-      static const unsigned num_allocators =
-	 (Fr::SYMBOL_MAX_NAME+FramepaC::SYMBOL_NAME_GRAN-1)/FramepaC::SYMBOL_NAME_GRAN ;
-      static Allocator *m_allocators[num_allocators] ;//FIXME
-   private:
       Map m_symbols ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<SymbolTable> ;
 
       // *** destroying ***
-      static void free_(Object *obj) { delete static_cast<SymbolTable*>(obj) ; }
-      static void shallowFree_(Object *obj) { free_(obj) ; }
+      static void free_(Object* obj) { delete static_cast<SymbolTable*>(obj) ; }
+      static void shallowFree_(Object* obj) { free_(obj) ; }
 
       // type determination predicates
-      static bool isSymbolTable_(const Object *) { return true ; }
-      static const char *typeName_(const Object *) { return "SymbolTable" ; }
+      static bool isSymbolTable_(const Object*) { return true ; }
+      static const char* typeName_(const Object*) { return "SymbolTable" ; }
 
       // *** copying ***
-      static ObjectPtr clone_(const Object *) ;
-      static Object *shallowCopy_(const Object *obj) { return clone_(obj) ; }
-      static ObjectPtr subseq_int(const Object *,size_t start, size_t stop) ;
-      static ObjectPtr subseq_iter(const Object *,ObjectIter start, ObjectIter stop) ;
+      static ObjectPtr clone_(const Object*) ;
+      static Object* shallowCopy_(const Object* obj) { return clone_(obj) ; }
+      static ObjectPtr subseq_int(const Object*,size_t start, size_t stop) ;
+      static ObjectPtr subseq_iter(const Object*,ObjectIter start, ObjectIter stop) ;
 
       // *** I/O ***
       // generate printed representation into a buffer
-      static size_t cStringLength_(const Object *, size_t wrap_at, size_t indent) ;
-      static bool toCstring_(const Object *,char *buffer, size_t buflen,
+      static size_t cStringLength_(const Object*, size_t wrap_at, size_t indent) ;
+      static bool toCstring_(const Object*,char* buffer, size_t buflen,
 			     size_t wrap_at, size_t indent) ;
-      static size_t jsonStringLength_(const Object *, bool wrap, size_t indent) ;
-      static bool toJSONString_(const Object *, char *buffer, size_t buflen, bool wrap,
+      static size_t jsonStringLength_(const Object*, bool wrap, size_t indent) ;
+      static bool toJSONString_(const Object*, char* buffer, size_t buflen, bool wrap,
 				size_t indent) ;
 
       // *** standard info functions ***
-      static size_t size_(const Object *obj) { return static_cast<const SymbolTable*>(obj)->m_symbols.size() ; }
-      static bool empty_(const Object *obj) { return size_(obj) != 0 ; }
+      static size_t size_(const Object* obj) { return static_cast<const SymbolTable*>(obj)->m_symbols.size() ; }
+      static bool empty_(const Object* obj) { return size_(obj) != 0 ; }
 
       // *** standard access functions ***
-      static Object *front_(Object *obj) ;
-      static const Object *front_const(const Object *obj) ;
+      static Object* front_(Object* obj) ;
+      static const Object* front_const(const Object* obj) ;
 
       // *** comparison functions ***
-      static bool equal_(const Object *obj, const Object *other) ;
-      static int compare_(const Object *obj, const Object *other) ;
-      static int lessThan_(const Object *obj, const Object *other) ;
+      static size_t hashValue_(const Object*) ;
+      static bool equal_(const Object* obj, const Object* other) ;
+      static int compare_(const Object* obj, const Object* other) ;
+      static int lessThan_(const Object* obj, const Object* other) ;
 
       // *** iterator support ***
-      static Object* next_(const Object *) { return nullptr ; }
-      static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
+      static Object* next_(const Object*) { return nullptr ; }
+      static ObjectIter& next_iter(const Object*, ObjectIter& it) { it.incrIndex() ; return it ; }
    } ;
 
 

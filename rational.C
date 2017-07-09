@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-07-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -129,6 +129,39 @@ bool Rational::toJSONString_(const Object* obj, char* buffer, size_t buflen,
 {
    (void)obj; (void)buffer; (void)buflen; (void)indent;
    return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+size_t Rational::hashValue_(const Object* obj)
+{
+   const Rational* rat = static_cast<const Rational*>(obj) ;
+   (void)rat; //FIXME
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool Rational::equal_(const Object* obj1, const Object* obj2)
+{
+   (void)obj1; (void)obj2;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+int Rational::compare_(const Object* obj1, const Object* obj2)
+{
+   (void)obj1; (void)obj2;
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+int Rational::lessThan_(const Object* obj1, const Object* obj2)
+{
+   (void)obj1; (void)obj2;
+   return 0 ; //FIXME
 }
 
 //----------------------------------------------------------------------------

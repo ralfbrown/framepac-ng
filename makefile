@@ -395,7 +395,7 @@ critsect$(OBJ):		critsect$(C) framepac/critsect.h
 cstring$(OBJ):		cstring$(C) framepac/cstring.h
 fasthash64$(OBJ):		fasthash64$(C) framepac/fasthash64.h
 filename$(OBJ):		filename$(C) framepac/file.h
-float$(OBJ):		float$(C) framepac/number.h
+float$(OBJ):		float$(C) framepac/number.h framepac/fasthash64.h
 frame$(OBJ):		frame$(C) framepac/frame.h
 globaldata$(OBJ):	globaldata$(C)
 hashset_obj$(OBJ):	hashset_obj$(C) template/hashtable.cc
@@ -411,13 +411,13 @@ hashtable_symsz$(OBJ):	hashtable_symsz$(C) template/hashtable.cc
 hashtable_u32u32$(OBJ):	hashtable_u32u32$(C) template/hashtable.cc
 hazardptr$(OBJ):	hazardptr$(C) framepac/atomic.h
 init$(OBJ):		init$(C) framepac/init.h
-integer$(OBJ):		integer$(C) framepac/number.h
+integer$(OBJ):		integer$(C) framepac/number.h framepac/fasthash64.h
 jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/builder.h framepac/bignum.h framepac/list.h \
 			framepac/rational.h framepac/string.h framepac/symbol.h
 jsonwriter$(OBJ):	jsonwriter$(C) framepac/file.h framepac/list.h
 linebatch$(OBJ):	linebatch$(C) framepac/file.h
 list$(OBJ):		list$(C) framepac/list.h framepac/fasthash64.h framepac/init.h
-map$(OBJ):		map$(C) framepac/map.h
+map$(OBJ):		map$(C) framepac/map.h framepac/fasthash64.h
 matrix$(OBJ):		matrix$(C) framepac/matrix.h
 message$(OBJ):		message$(C) framepac/message.h framepac/texttransforms.h
 mmapfile$(OBJ):		mmapfile$(C) framepac/mmapfile.h framepac/file.h
@@ -439,7 +439,7 @@ string$(OBJ):		string$(C) framepac/string.h framepac/fasthash64.h
 stringbuilder$(OBJ):	stringbuilder$(C) framepac/stringbuilder.h framepac/file.h
 suffixarray$(OBJ):	suffixarray$(C) framepac/config.h
 symbol$(OBJ):		symbol$(C) framepac/symbol.h
-symboltable$(OBJ):	symboltable$(C) framepac/symbol.h
+symboltable$(OBJ):	symboltable$(C) framepac/symbol.h framepac/fasthash64.h
 synchevent$(OBJ):	synchevent$(C) framepac/synchevent.h
 texttransforms$(OBJ):	texttransforms$(C) framepac/texttransforms.h
 threadpool$(OBJ):	threadpool$(C) framepac/threadpool.h framepac/thread.h
