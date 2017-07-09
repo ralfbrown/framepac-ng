@@ -60,43 +60,43 @@ class List : public Object
    {
    public:
       // *** object factories ***
-      static List *create() ;
-      static List *create(Object *) ;
-      static List *create(Object *, Object *) ;
-      static List *create(Object *, Object *, Object *) ;
-      static List *create(const char *) ;
+      static List* create() ;
+      static List* create(Object*) ;
+      static List* create(Object*, Object*) ;
+      static List* create(Object*, Object*, Object*) ;
+      static List* create(const char*) ;
 
       // *** standard info functions ***
       size_t size() const ;
       size_t empty() const { return this == empty_list ; }
 
       // *** standard access functions ***
-      Object *front() const { return m_item ; }
+      Object* front() const { return m_item ; }
 
-      List *subseq(ListIter start, ListIter stop, bool shallow = false) const ;
+      List* subseq(ListIter start, ListIter stop, bool shallow = false) const ;
 
       // *** iterator support ***
       ListIter begin() const { return ListIter(this) ; }
       ListIter cbegin() const { return ListIter(this) ; }
       ListIter end() const { return ListIter(empty_list) ; }
       ListIter cend() const { return ListIter(empty_list) ; }
-      List *next() const { return m_next ; }
+      List* next() const { return m_next ; }
 
       void setNext(List* nxt) { m_next = nxt ; }
 
    private: // static members
       static Allocator s_allocator ;
-      static List *empty_list ;
+      static List* empty_list ;
    private:
-      List   *m_next ;
-      Object *m_item ;
+      List*   m_next ;
+      Object* m_item ;
 
    protected: // construction/destruction
-      void *operator new(size_t) { return s_allocator.allocate() ; }
-      void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       List() ;
-      List(const List *) ;
-      List(const List &) ;
+      List(const List*) ;
+      List(const List&) ;
       ~List() {}
       List& operator= (const List&) = delete ;
 
@@ -106,46 +106,47 @@ class List : public Object
       friend class ListBuilder ;
 
       // type determination predicates
-      static bool isList_(const Object *) { return true ; }
-      static const char *typeName_(const Object *) { return "List" ; }
+      static bool isList_(const Object*) { return true ; }
+      static const char* typeName_(const Object*) { return "List" ; }
 
       // *** copying ***
-      static ObjectPtr clone_(const Object *) ;
-      static Object *shallowCopy_(const Object *) ;
-      static ObjectPtr subseq_int(const Object *, size_t start, size_t stop) ;
-      static ObjectPtr subseq_iter(const Object *, ObjectIter start, ObjectIter stop) ;
+      static ObjectPtr clone_(const Object*) ;
+      static Object* shallowCopy_(const Object*) ;
+      static ObjectPtr subseq_int(const Object*, size_t start, size_t stop) ;
+      static ObjectPtr subseq_iter(const Object*, ObjectIter start, ObjectIter stop) ;
 
       // *** destroying ***
-      static void free_(Object *obj) ;
+      static void free_(Object* obj) ;
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object *) ;
+      static void shallowFree_(Object*) ;
 
       // *** I/O ***
       // generate printed representation into a buffer
-      static size_t cStringLength_(const Object *,size_t wrap_at, size_t indent) ;
-      static bool toCstring_(const Object *,char *buffer, size_t buflen,
+      static size_t cStringLength_(const Object*,size_t wrap_at, size_t indent) ;
+      static bool toCstring_(const Object*,char* buffer, size_t buflen,
 			     size_t wrap_at, size_t indent) ;
-      static size_t jsonStringLength_(const Object *, bool wrap, size_t indent) ;
-      static bool toJSONString_(const Object *, char *buffer, size_t buflen, bool wrap,
+      static size_t jsonStringLength_(const Object*, bool wrap, size_t indent) ;
+      static bool toJSONString_(const Object*, char* buffer, size_t buflen, bool wrap,
 				size_t indent) ;
 
       // *** standard info functions ***
-      static size_t size_(const Object *) ;
-      static bool empty_(const Object *obj) { return obj == empty_list ; }
+      static size_t size_(const Object*) ;
+      static bool empty_(const Object* obj) { return obj == empty_list ; }
 
       // *** standard access functions ***
-      static Object *front_(Object *) ;
-      static const Object *front_(const Object *) ;
-      static const char *stringValue_(const Object *) { return nullptr ; }
-      static double floatValue_(const Object *) { return 0.0 ; }
-      static long int intValue(const Object *) { return 0 ; }
-      static mpz_t bignumValue(const Object *) { return mpz_zero() ; }
-      static mpq_t rationalValue(const Object *) { return mpq_zero() ; }
+      static Object* front_(Object*) ;
+      static const Object* front_(const Object*) ;
+      static const char* stringValue_(const Object*) { return nullptr ; }
+      static double floatValue_(const Object*) { return 0.0 ; }
+      static long int intValue(const Object*) { return 0 ; }
+      static mpz_t bignumValue(const Object*) { return mpz_zero() ; }
+      static mpq_t rationalValue(const Object*) { return mpq_zero() ; }
 
       // *** comparison functions ***
-      static bool equal_(const Object *obj, const Object *other) ;
-      static int compare_(const Object *obj, const Object *other) ;
-      static int lessThan_(const Object *obj, const Object *other) ;
+      static size_t hashValue_(const Object*) ;
+      static bool equal_(const Object* obj, const Object* other) ;
+      static int compare_(const Object* obj, const Object* other) ;
+      static int lessThan_(const Object* obj, const Object* other) ;
 
    public:
       // *** startup/shutdown functions ***

@@ -377,7 +377,7 @@ allocator$(OBJ):	allocator$(C) framepac/atomic.h framepac/memory.h
 argopt$(OBJ):		argopt$(C) template/argopt.cc
 argopt_real$(OBJ):	argopt_real$(C) template/argopt.cc
 argparser$(OBJ):	argparser$(C) framepac/argparser.h
-array$(OBJ):		array$(C) framepac/array.h
+array$(OBJ):		array$(C) framepac/array.h framepac/fasthash64.h
 basisvector_u32$(OBJ):	basisvector_u32$(C) template/basisvector.cc
 bignum$(OBJ):		bignum$(C) framepac/bignum.h
 bitvector$(OBJ):	bitvector$(C) framepac/bitvector.h
@@ -416,7 +416,7 @@ jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/builder.h framepa
 			framepac/rational.h framepac/string.h framepac/symbol.h
 jsonwriter$(OBJ):	jsonwriter$(C) framepac/file.h framepac/list.h
 linebatch$(OBJ):	linebatch$(C) framepac/file.h
-list$(OBJ):		list$(C) framepac/list.h framepac/init.h
+list$(OBJ):		list$(C) framepac/list.h framepac/fasthash64.h framepac/init.h
 map$(OBJ):		map$(C) framepac/map.h
 matrix$(OBJ):		matrix$(C) framepac/matrix.h
 message$(OBJ):		message$(C) framepac/message.h framepac/texttransforms.h

@@ -20,7 +20,10 @@
 /************************************************************************/
 
 #include "framepac/list.h"
+#include "framepac/fasthash64.h"
 #include "framepac/init.h"
+
+using namespace FramepaC ;
 
 /************************************************************************/
 /************************************************************************/
@@ -317,6 +320,22 @@ const Object *List::front_(const Object *obj)
 {
    const List *l { reinterpret_cast<const List*>(obj) };
    return l->m_item ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t List::hashValue_(const Object* obj)
+{
+   // the hash value of a list is the hash of the hash values of its elements
+   size_t len = size_(obj) ;
+   uint64_t hashstate = fasthash64_init(len) ;
+   const List* lst = reinterpret_cast<const List*>(obj) ;
+   for ( ; lst ; lst = lst->next())
+      {
+      Object* elt = lst->front() ;
+      if (elt) hashstate = fasthash64_add(hashstate,elt->hashValue()) ;
+      }
+   return (size_t)fasthash64_finalize(hashstate) ;
 }
 
 //----------------------------------------------------------------------------

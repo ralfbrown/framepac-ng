@@ -20,7 +20,9 @@
 /************************************************************************/
 
 #include "framepac/array.h"
+#include "framepac/fasthash64.h"
 
+using namespace FramepaC ;
 using namespace Fr ;
 
 namespace Fr
@@ -141,6 +143,22 @@ bool Array::toCstring_(const Object *,char *buffer, size_t buflen, size_t wrap_a
    (void)buffer; (void)buflen; (void)wrap_at; (void)indent; //FIXME
    //FIXME
    return true ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t Array::hashValue_(const Object* obj)
+{
+   // the hash value of an array is the hash of the hash values of its elements
+   size_t len = size_(obj) ;
+   uint64_t hashstate = fasthash64_init(len) ;
+   const Array* arr = reinterpret_cast<const Array*>(obj) ;
+   for (size_t i = 0 ; i <  len ; ++i)
+      {
+      Object* elt = arr->m_array[i] ;
+      if (elt) hashstate = fasthash64_add(hashstate,elt->hashValue()) ;
+      }
+   return (size_t)fasthash64_finalize(hashstate) ;
 }
 
 //----------------------------------------------------------------------------
