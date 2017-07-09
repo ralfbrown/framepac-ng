@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 12may2017
+# Last change: 08jul2017
 
 #########################################################################
 # define the locations of all the files
@@ -244,6 +244,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) charget$(OBJ) cfile$(OBJ) \
 	cluster$(OBJ) cluster_growseed$(OBJ) cluster_kmeans$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
+	fasthash64$(OBJ) \
 	float$(OBJ) frame$(OBJ) hazardptr$(OBJ) \
 	hashset_obj$(OBJ) hashset_sym$(OBJ) hashset_u32$(OBJ) \
 	hashtable_objobj$(OBJ) hashtable_objsz$(OBJ) \
@@ -282,10 +283,8 @@ DISTFILES= LICENSE COPYING makefile .gitignore *.C *.h framepac/*.h template/*.c
 LIBRARY = $(PACKAGE)$(LIB)
 
 # the executable(s) to be built for testing the package
-TESTPROGS = $(BINDIR)/argparser$(EXE) $(BINDIR)/parhash$(EXE) $(BINDIR)/tpool$(EXE) $(BINDIR)/membench$(EXE)
-
-# the object modules needed to build the test program
-TESTOBJS = $(TESTPROG)$(OBJ)
+TESTPROGS = $(BINDIR)/argparser$(EXE) $(BINDIR)/membench$(EXE) $(BINDIR)/parhash$(EXE) \
+	 $(BINDIR)/stringtest$(EXE) $(BINDIR)/tpool$(EXE)
 
 #########################################################################
 ## the generawl build rules
@@ -368,6 +367,9 @@ $(BINDIR)/membench$(EXE):	tests/membench$(OBJ) $(LIBRARY)
 $(BINDIR)/parhash$(EXE):	tests/parhash$(OBJ) $(LIBRARY)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
+$(BINDIR)/stringtest$(EXE):	tests/stringtest$(OBJ) $(LIBRARY)
+		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
+
 $(BINDIR)/tpool$(EXE):		tests/tpool$(OBJ) $(LIBRARY)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
@@ -391,6 +393,7 @@ cluster_kmeans$(OBJ):	cluster_kmeans$(C) framepac/cluster.h
 complex$(OBJ):		complex$(C) framepac/complex.h
 critsect$(OBJ):		critsect$(C) framepac/critsect.h
 cstring$(OBJ):		cstring$(C) framepac/cstring.h
+fasthash64$(OBJ):		fasthash64$(C) framepac/fasthash64.h
 filename$(OBJ):		filename$(C) framepac/file.h
 float$(OBJ):		float$(C) framepac/number.h
 frame$(OBJ):		frame$(C) framepac/frame.h
@@ -432,7 +435,7 @@ slab$(OBJ):		slab$(C) framepac/memory.h
 slabgroup$(OBJ):	slabgroup$(C) framepac/memory.h
 smallalloc$(OBJ):	smallalloc$(C) framepac/memory.h
 sparsematrix$(OBJ):	sparsematrix$(C) framepac/matrix.h
-string$(OBJ):		string$(C) framepac/string.h
+string$(OBJ):		string$(C) framepac/string.h framepac/fasthash64.h
 stringbuilder$(OBJ):	stringbuilder$(C) framepac/stringbuilder.h framepac/file.h
 suffixarray$(OBJ):	suffixarray$(C) framepac/config.h
 symbol$(OBJ):		symbol$(C) framepac/symbol.h
@@ -453,12 +456,6 @@ vector_u32_flt$(OBJ):	vector_u32_flt$(C) framepac/vector.h
 wordcorpus_u32u32$(OBJ): wordcorpus_u32u32$(C) template/wordcorpus.cc
 wordcorpus_u32u40$(OBJ): wordcorpus_u32u40$(C) template/wordcorpus.cc
 wordsplit$(OBJ):	wordsplit$(C) framepac/words.h
-
-tests/membench$(OBJ):	tests/membench$(C) framepac/argparser.h framepac/memory.h framepac/threadpool.h \
-			framepac/timer.h
-tests/parhash$(OBJ):	tests/parhash$(C) framepac/argparser.h framepac/hashtable.h framepac/message.h \
-			framepac/random.h framepac/symbol.h framepac/texttransforms.h framepac/threadpool.h \
-			framepac/timer.h
 
 template/argopt.cc:	framepac/argparser.h
 	$(TOUCH) $@ $(BITBUCKET)
@@ -569,13 +566,13 @@ framepac/rational.h:	framepac/number.h
 framepac/semaphore.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/string.h:	framepac/object.h
+framepac/string.h:	framepac/object.h framepac/map.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/stringbuilder.h:	framepac/builder.h framepac/string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/symbol.h:	framepac/object.h
+framepac/symbol.h:	framepac/string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/synchevent.h:	framepac/atomic.h
@@ -607,8 +604,12 @@ FramepaC.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 tests/argparser$(OBJ):	tests/argparser$(C) framepac/argparser.h
-tests/parhash$(OBJ):	tests/parhash$(C) framepac/argparser.h framepac/hashtable.h framepac/texttransforms.h \
-			framepac/threadpool.h framepac/timer.h
+tests/membench$(OBJ):	tests/membench$(C) framepac/argparser.h framepac/memory.h framepac/threadpool.h \
+			framepac/timer.h
+tests/parhash$(OBJ):	tests/parhash$(C) framepac/argparser.h framepac/hashtable.h framepac/message.h \
+			framepac/random.h framepac/symbol.h framepac/texttransforms.h framepac/threadpool.h \
+			framepac/timer.h
+tests/stringtest$(OBJ):	tests/stringtest$(OBJ) framepac/argparser.h framepac/string.h
 tests/tpool$(OBJ):	tests/tpool$(C) framepac/argparser.h framepac/random.h framepac/threadpool.h framepac/timer.h
 
 # End of Makefile #

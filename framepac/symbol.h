@@ -141,6 +141,7 @@ class Symbol : public String
       //static const char *stringValue_(const Object *obj) : inherited from String
 
       // *** comparison functions ***
+      static size_t hashValue_(const Object* obj) { return (size_t)obj ; }
       static bool equal_(const Object *obj, const Object *other) ;
       static int compare_(const Object *obj, const Object *other) ;
       static int lessThan_(const Object *obj, const Object *other) ;
