@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-07-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -93,8 +93,8 @@ class BitVector : public Object
       static Allocator s_allocator ;
 
    protected: // construction/destruction
-      void *operator new(size_t) { return s_allocator.allocate() ; }
-      void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       BitVector(size_t capacity) ;
       ~BitVector() ;
       BitVector& operator= (const BitVector&) ;
@@ -104,42 +104,43 @@ class BitVector : public Object
       friend class BitVectorIter ; 
 
       // type determination predicates
-      static bool isBitVector_(const Object *) { return true ; }
-      static const char *typeName_(const Object *) { return "BitVector" ; }
+      static bool isBitVector_(const Object*) { return true ; }
+      static const char* typeName_(const Object*) { return "BitVector" ; }
 
       // *** copying ***
-      static ObjectPtr clone_(const Object *) ;
-      static Object *shallowCopy_(const Object *) ;
-      static ObjectPtr subseq_int(const Object *, size_t start, size_t stop) ;
-      static ObjectPtr subseq_iter(const Object *, ObjectIter start, ObjectIter stop) ;
+      static ObjectPtr clone_(const Object*) ;
+      static Object* shallowCopy_(const Object*) ;
+      static ObjectPtr subseq_int(const Object*, size_t start, size_t stop) ;
+      static ObjectPtr subseq_iter(const Object*, ObjectIter start, ObjectIter stop) ;
 
       // *** destroying ***
-      static void free_(Object *obj) ;
+      static void free_(Object* obj) ;
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object *) ;
+      static void shallowFree_(Object*) ;
 
       // *** I/O ***
       // generate printed representation into a buffer
-      static size_t cStringLength_(const Object *,size_t wrap_at, size_t indent) ;
-      static bool toCstring_(const Object *,char *buffer, size_t buflen,
+      static size_t cStringLength_(const Object*,size_t wrap_at, size_t indent) ;
+      static bool toCstring_(const Object*,char* buffer, size_t buflen,
 			     size_t wrap_at, size_t indent) ;
-      static size_t jsonStringLength_(const Object *, bool wrap, size_t indent) ;
-      static bool toJSONString_(const Object *, char *buffer, size_t buflen, bool wrap,
+      static size_t jsonStringLength_(const Object*, bool wrap, size_t indent) ;
+      static bool toJSONString_(const Object*, char* buffer, size_t buflen, bool wrap,
 				size_t indent) ;
 
       // *** standard info functions ***
-      static size_t size_(const Object *) ;
-      static bool empty_(const Object *obj) { return obj->size() == 0 ; }
+      static size_t size_(const Object*) ;
+      static bool empty_(const Object* obj) { return obj->size() == 0 ; }
 
       // *** standard access functions ***
-      static Object *front_(Object *) ;
-      static const Object *front_(const Object *) ;
-      static const char *stringValue_(const Object *) { return nullptr ; }
+      static Object* front_(Object*) ;
+      static const Object* front_(const Object*) ;
+      static const char* stringValue_(const Object*) { return nullptr ; }
 
       // *** comparison functions ***
-      static bool equal_(const Object *obj, const Object *other) ;
-      static int compare_(const Object *obj, const Object *other) ;
-      static int lessThan_(const Object *obj, const Object *other) ;
+      static size_t hashValue_(const Object*) ;
+      static bool equal_(const Object* obj, const Object* other) ;
+      static int compare_(const Object* obj, const Object* other) ;
+      static int lessThan_(const Object* obj, const Object* other) ;
 
    } ;
 

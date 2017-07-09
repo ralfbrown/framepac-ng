@@ -380,7 +380,7 @@ argparser$(OBJ):	argparser$(C) framepac/argparser.h
 array$(OBJ):		array$(C) framepac/array.h framepac/fasthash64.h
 basisvector_u32$(OBJ):	basisvector_u32$(C) template/basisvector.cc
 bignum$(OBJ):		bignum$(C) framepac/bignum.h
-bitvector$(OBJ):	bitvector$(C) framepac/bitvector.h
+bitvector$(OBJ):	bitvector$(C) framepac/bitvector.h framepac/fasthash64.h
 bufbuilder_char$(OBJ):	bufbuilder_char$(C) template/bufbuilder.cc
 bwt$(OBJ):		bwt$(C) framepac/config.h
 charget$(OBJ):		charget$(C) framepac/charget.h
