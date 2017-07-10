@@ -240,7 +240,7 @@ RELEASE=0.01
 # the object modules to be included in the library file
 OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	argopt$(OBJ) argopt_real$(OBJ) argparser$(OBJ) \
-	bitvector$(OBJ) \
+	bidindex_cstr$(OBJ) bitvector$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) charget$(OBJ) cfile$(OBJ) \
 	cluster$(OBJ) cluster_growseed$(OBJ) cluster_kmeans$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
@@ -379,6 +379,7 @@ argopt_real$(OBJ):	argopt_real$(C) template/argopt.cc
 argparser$(OBJ):	argparser$(C) framepac/argparser.h
 array$(OBJ):		array$(C) framepac/array.h framepac/fasthash64.h
 basisvector_u32$(OBJ):	basisvector_u32$(C) template/basisvector.cc
+bidindex_cstr$(OBJ):	bidindex_cstr$(C) framepac/bidindex.h
 bignum$(OBJ):		bignum$(C) framepac/bignum.h
 bitvector$(OBJ):	bitvector$(C) framepac/bitvector.h framepac/fasthash64.h
 bufbuilder_char$(OBJ):	bufbuilder_char$(C) template/bufbuilder.cc
@@ -494,6 +495,9 @@ framepac/array.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/atomic.h:	framepac/config.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/bidindex.h:	framepac/cstring.h framepac/hashtable.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/bignum.h:	framepac/number.h

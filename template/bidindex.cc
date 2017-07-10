@@ -35,7 +35,7 @@ idxT BidirIndex<keyT,idxT>::addKey(keyT key)
    if (lookup(key,&old_index))
       return old_index ;
    idxT index = m_next_index++ ;
-   if (add(key,index))
+   if (this->add(key,index))
       {
       // somebody added the key between the time we looked it up and the time
       //   we actually tried to add it, so get its value from the other addition
@@ -54,7 +54,7 @@ void BidirIndex<keyT,idxT>::addKeySilent(keyT key)
    if (contains(key))
       return ;
    idxT index = m_next_index++ ;
-   if (add(key,index))
+   if (this->add(key,index))
       {
       // somebody added the key between the time we looked it up and the time
       //   we actually tried to add it
@@ -81,17 +81,17 @@ bool BidirIndex<keyT,idxT>::finalize()
 {
    m_max_index = m_next_index.load() ;
    delete [] m_reverse_index ;
-   m_reverse_index = new keyT*[m_max_index] ;
+   m_reverse_index = new keyT[m_max_index] ;
    if (m_reverse_index)
       {
       // in case there are any gaps in the index values, zero out the array first
       for (size_t i = 0 ; i < m_max_index ; i++)
 	 {
-	 m_reverse_index = 0 ;
+	 m_reverse_index = nullptr ;
 	 }
       // iterate through the hash table, storing each key at the appropriate location
       //   in the m_reverse_index array
-      return iterate(make_reverse_entry,m_reverse_index) ;
+      return this->iterate(make_reverse_entry,m_reverse_index) ;
       }
    return false ;
 }

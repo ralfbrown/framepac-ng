@@ -38,17 +38,20 @@
 namespace Fr
 {
 
+// The naive approach to having a bidirectional mapping between keys
+// and integral indices is to have an array for the index->key
+// direction and a hashmap from key->index.  But by passing a pointer
+// to the array into the hashmap code, we can instead use a hashset of
+// the indices and indirect through the array to get the key whenever
+// the hash lookup needs the key's value, saving us a copy of (the
+// pointer to) the key.  We wrap the key value in
+//
+
 template <class keyT, typename idxT>
-class BidirIndex //FIXME : public HashTable<keyT,idxT>
+class BidirIndex : public HashTable<keyT,idxT>
    {
-   private:
-      atomic<idxT> m_next_index { 0 } ;
-      idxT         m_max_index { 0 } ;
-      idxT         m_errorID { (idxT)-1 } ;
-      keyT*        m_reverse_index { nullptr } ;
    public:
-      //FIXME BidirIndex(size_t initial_size = 1000) : HashTable(initial_size) {}
-      BidirIndex(size_t /*initial_size FIXME*/ = 1000) : m_next_index(0) {}
+      BidirIndex(size_t initial_size = 1000) : HashTable<keyT,idxT>(initial_size) {}
       BidirIndex(const BidirIndex&) = delete ;
       ~BidirIndex() { delete [] m_reverse_index ; }
       BidirIndex& operator= (const BidirIndex&) = delete ;
@@ -59,6 +62,16 @@ class BidirIndex //FIXME : public HashTable<keyT,idxT>
 
       idxT getIndex(keyT key) { idxT index ; return lookup(key,&index) ? index : m_errorID ; }
       keyT getKey(idxT index) { return index < m_max_index ? m_reverse_index[index] : (keyT)0 ; }
+
+   protected:
+      atomic<idxT> m_next_index { 0 } ;
+      idxT         m_max_index { 0 } ;
+      idxT         m_errorID { (idxT)-1 } ;
+      keyT*        m_reverse_index { nullptr } ;
+
+   protected:
+      using HashTable<keyT,idxT>::lookup ;
+      using HashTable<keyT,idxT>::contains ;
    } ;
 
 } // end namespace Fr

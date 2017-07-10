@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-07-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -20,7 +20,21 @@
 /************************************************************************/
 
 #include "template/bidindex.cc"
+#include "framepac/cstring.h"
 
-//FIXME
+namespace Fr
+{
 
-// end of file bidindex.C //
+// specializations
+template <>
+CString BidirIndex<CString,uint32_t>::getKey(uint32_t index)
+{
+   return index < m_max_index ? m_reverse_index[index] : CString(nullptr) ;
+}
+
+// request explicit instantiation
+template class BidirIndex<CString,uint32_t> ;
+
+} // end namespace Fr
+
+// end of file bidindex_cstr.C //
