@@ -401,10 +401,10 @@ frame$(OBJ):		frame$(C) framepac/frame.h
 globaldata$(OBJ):	globaldata$(C)
 hashset_obj$(OBJ):	hashset_obj$(C) template/hashtable.cc
 hashset_sym$(OBJ):	hashset_sym$(C) template/hashtable.cc
-hashset_u32$(OBJ):	hashset_u32$(C) template/hashtable.cc
+hashset_u32$(OBJ):	hashset_u32$(C) template/hashtable.cc framepac/fasthash64.h
 hashtable_data$(OBJ):	hashtable_data$(C) framepac/hashtable.h
 hashtable_helper$(OBJ):	hashtable_helper$(C) framepac/hashtable.h framepac/atomic.h
-hashtable_objobj$(OBJ):	hashtable_objobj$(C) template/hashtable.cc
+hashtable_objobj$(OBJ):	hashtable_objobj$(C) template/hashtable.cc framepac/fasthash64.h
 hashtable_objsz$(OBJ):	hashtable_objsz$(C) template/hashtable.cc
 hashtable_symnul$(OBJ):	hashtable_symnul$(C) template/hashtable.cc
 hashtable_symobj$(OBJ):	hashtable_symobj$(C) template/hashtable.cc

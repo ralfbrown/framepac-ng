@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-29					*/
+/* Version 0.01, last edit 2017-07-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -271,7 +271,7 @@ bool HashTable<KeyT,ValT>::Table::copyChain(size_t bucketnum)
 	 {
 	 continue ;
 	 }
-      size_t hashval = hashValFull(key) ;
+      size_t hashval = m_container->hashValFull(key) ;
       Entry* element = &m_entries[pos] ;
       if (next()->reAdd(hashval,key,element->getValue()))
 	 {
@@ -352,7 +352,7 @@ bool HashTable<KeyT,ValT>::Table::reAdd(size_t hashval, KeyT key, ValT value)
 	 {
 	 size_t pos = bucketnum + offset ;
 	 KeyT key_at_pos = getKey(pos) ;
-	 if (isEqualFull(key,key_at_pos))
+	 if (m_container->isEqualFull(key,key_at_pos))
 	    {
 	    INCR_COUNT(insert_dup) ;
 	    return true ;		// item already exists
@@ -506,7 +506,7 @@ void HashTable<KeyT,ValT>::Table::clearDuplicates(size_t bucketnum)
 	 size_t nextpos = bucketnum + nxt ;
 	 nxt = chainNext(nextpos) ;
 	 KeyT nextkey = getKey(nextpos) ;
-	 if (nextkey != Entry::DELETED() && isEqualFull(currkey,nextkey))
+	 if (nextkey != Entry::DELETED() && m_container->isEqualFull(currkey,nextkey))
 	    {
 	    // duplicate, apply removal function to the value
 	    removeValue(m_entries[nextpos]) ;
@@ -671,7 +671,7 @@ bool HashTable<KeyT,ValT>::Table::add(size_t hashval, KeyT key, ValT value)
 	 {
 	 size_t pos = bucketnum + offset ;
 	 KeyT key_at_pos = getKey(pos) ;
-	 if (isEqual(key,key_at_pos))
+	 if (m_container->isEqual(key,key_at_pos))
 	    {
 	    // found existing entry!
 	    INCR_COUNT(insert_dup) ;
@@ -730,7 +730,7 @@ ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr
 	 {
 	 size_t pos = bucketnum + offset ;
 	 KeyT key_at_pos = getKey(pos) ;
-	 if (isEqual(key,key_at_pos))
+	 if (m_container->isEqual(key,key_at_pos))
 	    {
 	    // found existing entry!  Verify that we
 	    //   haven't been superseded during the
@@ -794,7 +794,7 @@ bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, KeyT key) const
       {
       size_t pos = bucketnum + offset ;
       KeyT key_at_pos = getKey(pos) ;
-      if (isEqual(key,key_at_pos))
+      if (m_container->isEqual(key,key_at_pos))
 	 {
 	 INCR_COUNT(contains_found) ;
 	 return true ;
@@ -820,7 +820,7 @@ ValT HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key) const
       {
       size_t pos = bucketnum + offset ;
       KeyT hkey = getKey(pos) ;
-      if (isEqual(key,hkey))
+      if (m_container->isEqual(key,hkey))
 	 {
 	 ValT value = getValue(pos) ;
 	 // double-check that a parallel remove() hasn't
@@ -854,7 +854,7 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value) 
       {
       size_t pos = bucketnum + offset ;
       KeyT hkey = getKey(pos) ;
-      if (isEqual(key,hkey))
+      if (m_container->isEqual(key,hkey))
 	 {
 	 (*value) = getValue(pos) ;
 	 INCR_COUNT(lookup_found) ;
@@ -887,7 +887,7 @@ bool HashTable<KeyT,ValT>::Table::lookup(size_t hashval, KeyT key, ValT* value, 
       {
       size_t pos = bucketnum + offset ;
       KeyT hkey = getKey(pos) ;
-      if (isEqual(key,hkey))
+      if (m_container->isEqual(key,hkey))
 	 {
 	 (*value) = clear_entry ? m_entries[pos].swapValue(nullVal()) : getValue(pos) ;
 	 INCR_COUNT(lookup_found) ;
@@ -922,7 +922,7 @@ ValT* HashTable<KeyT,ValT>::Table::lookupValuePtr(size_t hashval, KeyT key) cons
       {
       size_t pos = bucketnum + offset ;
       KeyT key_at_pos = getKey(pos) ;
-      if (isEqual(key,key_at_pos))
+      if (m_container->isEqual(key,key_at_pos))
 	 {
 	 val = getValuePtr(pos) ;
 	 INCR_COUNT(lookup_found) ;
@@ -986,7 +986,7 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
       {
       size_t pos = bucketnum + offset ;
       KeyT keyval = getKey(pos) ;
-      if (isEqual(key,keyval))
+      if (m_container->isEqual(key,keyval))
 	 {
 	 ValT value = getValue(pos) ;
 	 if (updateKey(pos,keyval,Entry::DELETED()))
@@ -1367,7 +1367,7 @@ bool HashTable<KeyT,ValT>::Table::verify() const
    for (size_t i = 0 ; i < m_fullsize ; ++i)
       {
       KeyT key = getKey(i) ;
-      if (key != Entry::DELETED() && !contains(hashVal(key),key))
+      if (key != Entry::DELETED() && !contains(m_container->hashVal(key),key))
 	 {
 	 debug_msg("verify: missing @ %ld\n",i) ;
 	 success = false ;

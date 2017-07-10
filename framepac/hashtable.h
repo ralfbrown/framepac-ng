@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-06					*/
+/* Version 0.01, last edit 2017-07-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -448,14 +448,6 @@ class HashTable : public HashTableBase
 	 typename std::enable_if<!std::is_empty<ValT>::value,RetT>::type*
 	 getValuePtr() { return &m_value[0] ; }
 
-#if defined(FrSINGLE_THREADED)
-	 ValT swapValue(ValT new_value)
-	    {
-	       ValT old_value = getValue() ;
-	       setValue(new_value) ;
-	       return old_value ;
-	    }
-#else
 	 template <typename RetT = ValT>
 	 typename std::enable_if<!std::is_empty<ValT>::value,RetT>::type
 	 swapValue(ValT new_value)
@@ -463,7 +455,6 @@ class HashTable : public HashTableBase
 	 template <typename RetT = ValT>
 	 typename std::enable_if<std::is_empty<ValT>::value,RetT>::type
 	 swapValue(ValT) { return nullVal() ; }
-#endif /* FrSINGLE_THREADED */
 	 ALWAYS_INLINE static constexpr KeyT DELETED() {return (KeyT)~0UL ; } 
 
 	 // I/O
@@ -642,7 +633,7 @@ class HashTable : public HashTableBase
 	 size_t bucket_count() const { return m_size ; }
 	 size_t max_bucket_count() const { return m_fullsize ; }
 	 [[gnu::cold]] size_t bucket_size(size_t bucketnum) const ;
-	 size_t bucket(KeyT key) const { return hashVal(key) % m_size ; }
+	 size_t bucket(KeyT key) const { return m_container->hashVal(key) % m_size ; }
 
 	 float load_factor() const { return countItems() / m_size ; }
 
@@ -683,8 +674,8 @@ class HashTable : public HashTableBase
 	 Fr::Atomic<Table*> m_next_table { nullptr } ;	// the table which supersedes us
 	 Fr::Atomic<Table*> m_next_free { nullptr } ;
 	 HashKVFunc*       remove_fn { nullptr } ; 	// invoke on removal of entry/value
-	 static const Link searchrange = FrHASHTABLE_SEARCHRANGE ; // full search window, starting at bucket head
-	 static const size_t NULLPOS = ~0UL ;
+	 static constexpr Link searchrange = FrHASHTABLE_SEARCHRANGE ; // full search window, starting at bucket head
+	 static constexpr size_t NULLPOS = ~0UL ;
 	 size_t	           m_size ;		// capacity of hash array [constant for life of table]
 	 size_t	           m_fullsize ;		// capacity including padding [constant for life of table]
       protected:
@@ -746,12 +737,13 @@ class HashTable : public HashTableBase
          } ;
       //------------------------
    protected: // members
-      Atomic<Table*>   	    m_table ;	// pointer to currently-active m_tables[] entry
-      Atomic<Table*>	    m_oldtables { nullptr } ;  // start of list of currently-live hash arrays
+      Atomic<Table*>   	    m_table ;			// pointer to currently-active m_tables[] entry
+      Atomic<Table*>	    m_oldtables { nullptr } ;	// start of list of currently-live hash arrays
       Atomic<Table*>	    m_freetables { nullptr } ;
-      Table		    m_tables[FrHT_NUM_TABLES] ;// hash array, chains, and associated data
-      HashTableCleanupFunc* cleanup_fn ;	// invoke on destruction of obj
-      HashKVFunc*           remove_fn ; 	// invoke on removal of entry/value
+      Table		    m_tables[FrHT_NUM_TABLES] ;	// hash array, chains, and associated data
+      HashTableCleanupFunc* cleanup_fn ;		// invoke on destruction of obj
+      HashKVFunc*           remove_fn ; 		// invoke on removal of entry/value
+      void*                 m_userdata ;		// available for use by isEqual, hashValue, hashValueFull
 #ifndef FrSINGLE_THREADED
       static Fr::ThreadInitializer<HashTable> initializer ;
       static TablePtr*    s_thread_entries ;
@@ -797,11 +789,11 @@ class HashTable : public HashTableBase
       static bool stillLive(const Table *version) ;
 
       size_t maxSize() const { return m_table.load()->m_size ; }
-      static inline size_t hashVal(KeyT key)
+      inline size_t hashVal(KeyT key) const
 	 {
 	    return key ? key->hashValue() : 0 ;
 	 }
-      static inline size_t hashValFull(KeyT key)
+      inline size_t hashValFull(KeyT key) const
 	 {
 	    // separate version for use by resizeTo(), which needs to use the full
 	    //   hash value and not just the key on Fr::SymbolTableX
@@ -809,12 +801,12 @@ class HashTable : public HashTableBase
 	    return hashVal(key) ;
 	 }
       // special support for Fr::SymbolTableX
-      static size_t hashVal(const char *keyname, size_t *namelen) ;
-      static inline bool isEqual(KeyT key1, KeyT key2)
+      size_t hashVal(const char *keyname, size_t *namelen) const ;
+      inline bool isEqual(KeyT key1, KeyT key2) const
 	 {
 	    return key2 != Entry::DELETED() && Fr::equal(key1,key2) ;
 	 }
-      static inline bool isEqualFull(KeyT key1, KeyT key2)
+      inline bool isEqualFull(KeyT key1, KeyT key2) const
 	 {
 	    // separate version for use by resizeTo(), which needs to use the full
 	    //   key name and not just the key's pointer on Fr::SymbolTableX
@@ -919,6 +911,9 @@ class HashTable : public HashTableBase
          { DELEGATE(chainLengths(max_length)) }
       [[gnu::cold]] size_t* neighborhoodDensities(size_t &num_densities) const
 	 { DELEGATE(neighborhoodDensities(num_densities)) }
+
+      void* userData() const { return m_userdata ; }
+      void userData(void* ud) { m_userdata = ud ; }
 
       // ========== STL compatibility ==========
       void clear()
@@ -1119,10 +1114,10 @@ Fr::ThreadInitializer<HashTable<KeyT,ValT> > HashTable<KeyT,ValT>::initializer ;
 #define FrMAKE_INTEGER_HASHTABLE_CLASS(NAME,K,V) \
 \
 template <> \
-inline size_t HashTable<K,V>::hashVal(const K key) { return (size_t)key ; } \
+inline size_t HashTable<K,V>::hashVal(const K key) const { return (size_t)key ; } \
 \
 template <> \
-inline bool HashTable<K,V>::isEqual(const K key1, const K key2) \
+inline bool HashTable<K,V>::isEqual(const K key1, const K key2) const \
 { return key1 == key2 ; } \
 \
 template <> \
@@ -1146,10 +1141,10 @@ typedef HashTable<K,V> NAME ;
 #define FrMAKE_SYMBOL_HASHTABLE_CLASS(NAME,V) \
 \
 template <> \
-inline size_t HashTable<const Symbol*,V>::hashVal(const Symbol* key) { return (size_t)key ; } \
+inline size_t HashTable<const Symbol*,V>::hashVal(const Symbol* key) const { return (size_t)key ; } \
 \
 template <> \
-inline bool HashTable<const Symbol*,V>::isEqual(const Symbol* key1, const Symbol* key2) \
+inline bool HashTable<const Symbol*,V>::isEqual(const Symbol* key1, const Symbol* key2) const \
 { return (size_t)key1 == (size_t)key2 ; }			  \
 \
 template <> template <>	\
@@ -1163,13 +1158,13 @@ typedef HashTable<const Symbol*,V> NAME ;
 
 size_t Fr_symboltable_hashvalue(const char* symname) ;
 template <>
-inline size_t HashTable<const Symbol*,NullObject>::hashValFull(const Symbol* key)
+inline size_t HashTable<const Symbol*,NullObject>::hashValFull(const Symbol* key) const
 { 
    return key ? Fr_symboltable_hashvalue(key->name()) : 0 ;
 }
 
 template <>
-inline bool HashTable<const Symbol*,NullObject>::isEqualFull(const Symbol* key1, const Symbol* key2)
+inline bool HashTable<const Symbol*,NullObject>::isEqualFull(const Symbol* key1, const Symbol* key2) const
 { 
    if (key2 != Entry::DELETED())
       return false ;

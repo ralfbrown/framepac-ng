@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.01, last edit 2017-07-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -20,6 +20,9 @@
 /************************************************************************/
 
 #include "template/hashtable.cc"
+#include "framepac/fasthash64.h"
+
+using namespace FramepaC ;
 
 namespace Fr
 {
@@ -37,11 +40,11 @@ bool HashTable<uint32_t,NullObject>::isEqual(const char* name, size_t namelen, u
 //----------------------------------------------------------------------------
 
 template <>
-size_t HashTable<uint32_t,NullObject>::hashVal(const char* name, size_t* namelen)
+size_t HashTable<uint32_t,NullObject>::hashVal(const char* name, size_t* namelen) const
 {
-   (void)name ;
+   size_t len = name ? strlen(name) : 0 ;
    if (namelen) *namelen = 0 ;
-   return 0 ;  //FIXME
+   return fasthash64(name,len) ;
 }
 
 
