@@ -269,14 +269,6 @@ const class Fr::Symbol *Fr_allocate_symbol(class Fr::SymbolTable *symtab, const 
 #endif /* FrHASHTABLE_VERBOSITY > 0 */
 
 /************************************************************************/
-/*  Helper specializations of global functions for use by HashTable	*/
-/************************************************************************/
-
-inline void free_object(const Object*) { return ; }
-inline void free_object(const class Fr::Symbol*) { return ; }
-inline void free_object(size_t) { return ; }
-
-/************************************************************************/
 /*	Declarations for class HashTableBase				*/
 /************************************************************************/
 
@@ -1166,7 +1158,7 @@ inline size_t HashTable<const Symbol*,NullObject>::hashValFull(const Symbol* key
 template <>
 inline bool HashTable<const Symbol*,NullObject>::isEqualFull(const Symbol* key1, const Symbol* key2) const
 { 
-   if (key2 != Entry::DELETED())
+   if (key2 == Entry::DELETED())
       return false ;
    if (key1 == key2)
       return true ;

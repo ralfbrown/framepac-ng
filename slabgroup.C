@@ -153,6 +153,7 @@ bool SlabGroupQueue::pop(SlabGroup*& grp)
 	 }
       else if (prevseq < pos + 1)
 	 {
+	 grp = nullptr ;
 	 return false ;
 	 }
       }

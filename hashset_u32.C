@@ -34,7 +34,7 @@ template <>
 bool HashTable<uint32_t,NullObject>::isEqual(const char* name, size_t namelen, uint32_t key)
 {
    (void)name; (void)namelen; (void)key;
-   return false ; //FIXME
+   return false ;
 }
 
 //----------------------------------------------------------------------------

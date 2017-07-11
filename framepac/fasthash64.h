@@ -93,7 +93,8 @@ inline std::uint64_t fasthash64_int(std::uint64_t value, std::uint64_t seed = 0)
 inline std::uint64_t fasthash64_float(double value, std::uint64_t seed = 0)
 {
    static_assert(sizeof(double) == sizeof(std::uint64_t),"double must take the same space as std::uint64_t") ;
-   return fasthash64_mix(fasthash64_add(fasthash64_init(sizeof(double),seed),*reinterpret_cast<std::uint64_t*>(&value))) ;
+   std::uint64_t* val64 = reinterpret_cast<std::uint64_t*>(&value) ;
+   return fasthash64_mix(fasthash64_add(fasthash64_init(sizeof(double),seed),*val64)) ;
 }
 
 //----------------------------------------------------------------------------

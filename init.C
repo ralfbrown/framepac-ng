@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-10					*/
+/* Version 0.01, last edit 2017-07-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -185,7 +185,11 @@ void UnregisterThreadInit(ThreadInitializerBase *ti)
    while ((next = prev->nextInit()) != nullptr)
       {
       if (next == ti)
+	 {
 	 prev->setNextInit(ti->nextInit()) ;
+	 break ;
+	 }
+      prev = next ;
       }
    return ;
 }
@@ -207,7 +211,11 @@ void UnregisterThreadCleanup(ThreadInitializerBase *ti)
    while ((next = prev->nextCleanup()) != nullptr)
       {
       if (next == ti)
+	 {
 	 prev->setNextCleanup(ti->nextCleanup()) ;
+	 break ;
+	 }
+      prev = next ;
       }
    return ;
 }
