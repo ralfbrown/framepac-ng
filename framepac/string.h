@@ -162,6 +162,8 @@ class String : public Object
       ConstStringIter cend() const { return ConstStringIter(c_str()+c_len()) ; }
       String *next() const { return nullptr ; }
 
+      static void StaticInitialization() ;
+
    private: // static members
       static Allocator s_allocator ;
       static Initializer<String> s_initializer ;
@@ -181,9 +183,6 @@ class String : public Object
       String(const Object *) ;
       ~String() ;
       String &operator= (const String&) ;
-
-   protected: // member functions
-      static void StaticInitialization() ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<String> ;

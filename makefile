@@ -613,7 +613,8 @@ tests/membench$(OBJ):	tests/membench$(C) framepac/argparser.h framepac/memory.h 
 tests/parhash$(OBJ):	tests/parhash$(C) framepac/argparser.h framepac/hashtable.h framepac/message.h \
 			framepac/random.h framepac/symbol.h framepac/texttransforms.h framepac/threadpool.h \
 			framepac/timer.h
-tests/stringtest$(OBJ):	tests/stringtest$(OBJ) framepac/argparser.h framepac/string.h
+tests/stringtest$(OBJ):	tests/stringtest$(C) framepac/argparser.h framepac/string.h framepac/memory.h \
+			framepac/timer.h
 tests/tpool$(OBJ):	tests/tpool$(C) framepac/argparser.h framepac/random.h framepac/threadpool.h framepac/timer.h
 
 # End of Makefile #
