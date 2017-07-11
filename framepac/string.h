@@ -235,49 +235,6 @@ class String : public Object
 
 inline void StringPtr::free() { if (m_string) { m_string->free() ; release() ; } }
 
-//----------------------------------------------------------------------------
-
-class ShortConstString : public Object
-   {
-   public:
-      static ShortConstString *create(const char *s) ;
-
-      // *** iterator support ***
-      ConstStringIter begin() const { return ConstStringIter(m_str) ; }
-      ConstStringIter cbegin() const { return ConstStringIter(m_str) ; }
-      ConstStringIter end() const { return ConstStringIter(m_str + m_len) ; }
-      ConstStringIter cend() const { return ConstStringIter(m_str + m_len) ; }
-
-   private:
-
-   protected:
-      friend class FramepaC::Object_VMT<ShortConstString> ;
-
-      // type determination predicates
-      static bool isString_(const Object *) { return true ; }
-
-   protected:
-      uint8_t	m_len ;
-      char      m_str[1] ;
-   } ;
-
-//----------------------------------------------------------------------------
-
-class ConstString : public ShortConstString
-   {
-   public:
-      static ConstString *create(const char *s) ;
-      static ConstString *create(const char *s, size_t len) ;
-   private:
-
-   protected:
-      friend class FramepaC::Object_VMT<ConstString> ;
-
-   protected:
-      uint32_t	m_fulllen ;
-      char     *m_fullstr ;
-   } ;
-
 } ; // end namespace Fr
 
 /************************************************************************/

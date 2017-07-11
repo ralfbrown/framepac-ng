@@ -100,12 +100,6 @@ constexpr int SLAB_SIZE = 4096 ;
 // 4096 slabs of 4096 bytes = 16MB
 constexpr int SLAB_GROUP_SIZE = 4095 ;
 
-// granularity of allocation sizes for Symbol
-constexpr int SYMBOL_NAME_GRAN = 8 ;
-
-// granularity of allocation sizes for ShortConstString
-constexpr int STRING_LEN_GRAN = 8 ;
-
 } ;
 
 /************************************************************************/
