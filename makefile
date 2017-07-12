@@ -614,7 +614,7 @@ tests/parhash$(OBJ):	tests/parhash$(C) framepac/argparser.h framepac/hashtable.h
 			framepac/random.h framepac/symbol.h framepac/texttransforms.h framepac/threadpool.h \
 			framepac/timer.h
 tests/stringtest$(OBJ):	tests/stringtest$(C) framepac/argparser.h framepac/string.h framepac/memory.h \
-			framepac/timer.h
+			framepac/threadpool.h framepac/timer.h
 tests/tpool$(OBJ):	tests/tpool$(C) framepac/argparser.h framepac/random.h framepac/threadpool.h framepac/timer.h
 
 # End of Makefile #

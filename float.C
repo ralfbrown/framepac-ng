@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-08					*/
+/* Version 0.01, last edit 2017-07-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -45,6 +45,13 @@ Float::Float(const char *value)
 
 //----------------------------------------------------------------------------
 
+Float* Float::create(const char* value)
+{
+   return new Float(value) ;
+}
+
+//----------------------------------------------------------------------------
+
 size_t Float::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent)
 {
    return snprintf(nullptr,0,"%g",obj->floatValue() + indent) ;
@@ -61,10 +68,63 @@ bool Float::toCstring_(const Object *obj, char *buffer, size_t buflen,
 
 //----------------------------------------------------------------------------
 
+size_t Float::jsonStringLength_(const Object *obj, bool wrap, size_t indent)
+{
+   (void)obj; (void)wrap; (void)indent; //FIXME
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool Float::toJSONString_(const Object *obj, char *buffer, size_t buflen, bool wrap, size_t indent)
+{
+   (void)obj; (void)buflen; (void)wrap; (void)indent; //FIXME
+   if (!buffer)
+      return false ;
+
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
 size_t Float::hashValue_(const Object* obj)
 {
    const Float* f = static_cast<const Float*>(obj) ;
    return fasthash64_float(f->m_value) ;
+}
+
+//----------------------------------------------------------------------------
+
+bool Float::equal_(const Object *obj, const Object *other)
+{
+   if (obj == other)
+      return true ;
+   if (!other || !other->isNumber()) return false ;
+   return obj->floatValue() == other->floatValue() ;
+}
+
+//----------------------------------------------------------------------------
+
+int Float::compare_(const Object *obj, const Object *other)
+{
+   if (obj == other)
+      return 0 ;
+   if (!other || !other->isNumber()) return -1 ;
+   if (obj->floatValue() < other->floatValue())
+      return -1 ;
+   else if (obj->floatValue() > other->floatValue())
+      return +1 ;
+   return 0 ;
+}
+
+//----------------------------------------------------------------------------
+
+int Float::lessThan_(const Object *obj, const Object *other)
+{
+   if (obj == other)
+      return 0 ;
+   if (!other || !other->isNumber() || obj->floatValue() < other->floatValue()) return 1 ;
+   return 0 ;
 }
 
 //----------------------------------------------------------------------------

@@ -143,8 +143,8 @@ class Integer : public Number
       static size_t size_(const Object *) { return 1 ; }
 
       // *** standard access functions ***
-      static Object *front_(Object *) ;
-      static const Object *front_const(const Object *) ;
+      static Object *front_(Object *obj) ;
+      static const Object *front_const(const Object *obj) ;
       static long int intValue_(const Object *obj) { return ((Integer*)obj)->m_value ; }
       static double floatValue_(const Object *obj) { return ((Integer*)obj)->m_value ; }
 
@@ -216,8 +216,8 @@ class Float : public Number
       static size_t size_(const Object *) { return 1 ; }
 
       // *** standard access functions ***
-      static Object *front_(Object *) ;
-      static const Object *front_const(const Object *) ;
+      static Object *front_(Object *obj) { return obj ; }
+      static const Object *front_const(const Object *obj) { return obj ; }
       static long int intValue_(const Object *obj) { return (long)((Float*)obj)->m_value ; }
       static double floatValue_(const Object *obj) { return ((Float*)obj)->m_value ; }
 

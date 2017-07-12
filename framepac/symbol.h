@@ -59,8 +59,8 @@ class SymbolIter
 class Symbol : public String
    {
    public:
-      static Symbol* create(const char* name) ;
-      static Symbol* create(const String* sym) ;
+      static Symbol* create(const char* name) { return new Symbol(name) ; }
+      static Symbol* create(const String* str) { return new Symbol(str) ; }
       static Symbol* create(const Object* obj) ;
 
       const char* name() const { return c_str() ; }
@@ -128,9 +128,11 @@ class Symbol : public String
       static size_t cStringLength_(const Object*, size_t wrap_at, size_t indent) ;
       static bool toCstring_(const Object*,char* buffer, size_t buflen,
 			     size_t wrap_at, size_t indent) ;
-      static size_t jsonStringLength_(const Object*, bool wrap, size_t indent) ;
-      static bool toJSONString_(const Object*, char* buffer, size_t buflen, bool wrap,
-				size_t indent) ;
+      //static size_t jsonStringLength_(const Object*, bool wrap, size_t indent) ;
+      //static bool toJSONString_(const Object*, char* buffer, size_t buflen, bool wrap,
+      //     size_t indent) ;
+      using String::jsonStringLength_ ;
+      using String::toJSONString_ ;
 
       // *** standard info functions ***
       static size_t size_(const Object*) { return 1 ; }
