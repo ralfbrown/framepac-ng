@@ -189,6 +189,7 @@ class String : public Object
 
       // type determination predicates
       static bool isString_(const Object*) { return true ; }
+      static const char* typeName_(const Object*) { return "String" ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object*) ;
