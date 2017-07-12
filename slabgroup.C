@@ -173,6 +173,7 @@ SlabGroup::SlabGroup()
    for (size_t i = 0 ; i < SLAB_GROUP_SIZE ; ++i)
       {
       m_slabs[i].setVMT(nullptr) ;
+      m_slabs[i].setOwningAllocator(~0) ;
       m_slabs[i].setSlabID(i) ;
       m_slabs[i].setNextFreeSlab(next) ;
       next = &m_slabs[i] ;

@@ -258,6 +258,7 @@ void* Allocator::allocate_more()
    void *item = new_slab->initFreelist(s_shared[m_type].m_objsize,s_shared[m_type].m_alignment) ;
    // and insert it on both our list of owned slabs and list of slabs with available objects
    new_slab->setVMT(s_shared[m_type].m_vmt) ;
+   new_slab->setOwningAllocator(m_type) ;
    new_slab->pushSlab(s_tls[m_type].m_allocslabs) ;
    if (new_slab->objectsAvailable())
       {

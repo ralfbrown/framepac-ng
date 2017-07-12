@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-07					*/
+/* Version 0.01, last edit 2017-07-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -108,6 +108,7 @@ class Slab
       void setNextForeignFree(Slab* next) { m_footer.setFreeSlabList(next) ; }//FIXME?
       void setVMT(const ObjectVMT* vmt) { m_info.m_vmt = vmt ; }
       void setSlabID(unsigned id) { m_info.m_slab_id = id ; }
+      void setOwningAllocator(uint16_t alloc_idx) { m_info.m_alloc_index = alloc_idx ; }
       void clearOwner() ;
       alloc_size_t makeFreeList(unsigned objsize, unsigned align) ;
       void* initFreelist(unsigned objsize, unsigned align) ;
