@@ -135,15 +135,16 @@ typedef StringIter_<const char> ConstStringIter ;
 class String : public Object
    {
    public:
-      static String *create() { return new String ; }
-      static String *create(const char *s) { return new String(s) ; }
-      static String *create(const char *s, size_t len) { return new String(s,len) ; }
-      static String *create(const Object *obj) { return new String(obj) ; }
+      static String* create() { return new String ; }
+      static String* create(const char* s) { return new String(s) ; }
+      static String* create(const char* s, size_t len) { return new String(s,len) ; }
+      static String* create(const Object* obj) { return new String(obj) ; }
+      static String* create(istream&) ;
 
       size_t c_len() const
 	 { size_t len = m_buffer.extra() ; return (len == 0xFFFF) ? ((size_t*)m_buffer.pointer())[-1] : len ; }
-      char *c_str() { return m_buffer.pointer() ; }
-      const char *c_str() const { return m_buffer.pointer() ; }
+      char* c_str() { return m_buffer.pointer() ; }
+      const char* c_str() const { return m_buffer.pointer() ; }
 
       // *** standard info functions ***
       size_t size() const { return c_len() ; }
@@ -151,7 +152,7 @@ class String : public Object
 
       // *** standard access functions ***
       char front() const { return *m_buffer.pointer() ; }
-      String *subseq(StringIter start, StringIter stop, bool shallow = false) const ;
+      String* subseq(StringIter start, StringIter stop, bool shallow = false) const ;
 
       // *** comparison functions ***
       
@@ -173,14 +174,14 @@ class String : public Object
       FramepaC::PointerPlus16<char> m_buffer ;
 
    protected: // creation/destruction
-      void *operator new(size_t) { return s_allocator.allocate() ; }
-      void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       String() : Object(), m_buffer(nullptr) {}
-      String(const char *valuebuffer, size_t len) ;
+      String(const char* valuebuffer, size_t len) ;
       String(const char* value) : String(value, value?std::strlen(value):0) {}
-      String(const String *s) : String(s->c_str(),s->c_len()) {}
-      String(const String &s) : String(s.c_str(), s.c_len()) {}
-      String(const Object *) ;
+      String(const String* s) : String(s->c_str(),s->c_len()) {}
+      String(const String& s) : String(s.c_str(), s.c_len()) {}
+      String(const Object*) ;
       ~String() ;
       String &operator= (const String&) ;
 
@@ -193,7 +194,7 @@ class String : public Object
 
       // *** copying ***
       static ObjectPtr clone_(const Object*) ;
-      static Object *shallowCopy_(const Object* obj) { return clone_(obj) ; }
+      static Object* shallowCopy_(const Object* obj) { return clone_(obj) ; }
       static ObjectPtr subseq_int(const Object*,size_t start, size_t stop) ;
       static ObjectPtr subseq_iter(const Object*,ObjectIter start, ObjectIter stop) ;
 
@@ -205,20 +206,20 @@ class String : public Object
       // *** I/O ***
       // generate printed representation into a buffer
       static size_t cStringLength_(const Object*,size_t wrap_at, size_t indent) ;
-      static bool toCstring_(const Object*,char *buffer, size_t buflen,
+      static bool toCstring_(const Object*,char* buffer, size_t buflen,
 			     size_t wrap_at, size_t indent) ;
       static size_t jsonStringLength_(const Object*, bool wrap, size_t indent) ;
       static bool toJSONString_(const Object*, char* buffer, size_t buflen, bool wrap,
 				size_t indent) ;
 
       // *** standard info functions ***
-      static size_t size_(const Object *obj) { return static_cast<const String*>(obj)->size() ; }
-      static bool empty_(const Object *obj) { return static_cast<const String*>(obj)->empty() ; }
+      static size_t size_(const Object* obj) { return static_cast<const String*>(obj)->size() ; }
+      static bool empty_(const Object* obj) { return static_cast<const String*>(obj)->empty() ; }
 
       // *** standard access functions ***
-      static Object *front_(Object *obj) { return obj ; }
-      static const Object *front_const(const Object *obj) { return obj ; }
-      static const char *stringValue_(const Object *obj)
+      static Object *front_(Object* obj) { return obj ; }
+      static const Object* front_const(const Object* obj) { return obj ; }
+      static const char* stringValue_(const Object* obj)
 	 { return (static_cast<const String*>(obj))->c_str() ; }
 
       // *** comparison functions ***
@@ -235,6 +236,15 @@ class String : public Object
 //----------------------------------------------------------------------------
 
 inline void StringPtr::free() { if (m_string) { m_string->free() ; release() ; } }
+
+/************************************************************************/
+/************************************************************************/
+
+inline istream& operator >> (istream& in, String*& obj)
+{
+   obj = String::create(in) ;
+   return in ;
+}
 
 } ; // end namespace Fr
 

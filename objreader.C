@@ -559,15 +559,6 @@ istream &operator >> (istream &in, Object &obj)
 
 //----------------------------------------------------------------------------
 
-istream &operator >> (istream &in, Object *&obj)
-{
-   (void)obj; //FIXME
-
-   return in ;
-}
-
-//----------------------------------------------------------------------------
-
 
 } ; // end namespace Fr
 

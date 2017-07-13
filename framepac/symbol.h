@@ -59,12 +59,19 @@ class Symbol : public String
       static Symbol* create(const char* name) { return new Symbol(name) ; }
       static Symbol* create(const String* str) { return new Symbol(str) ; }
       static Symbol* create(const Object* obj) ;
+      static Symbol* create(istream&) ;
 
       const char* name() const { return c_str() ; }
 
       size_t hashValue() const { return hashValue_(this) ; }
       static size_t hashValue(const Symbol*) ;
       static size_t hashValue(const char* name, size_t* len) ;
+
+      Object* binding() { return m_binding.pointer() ; }
+      void binding(Object*) ;
+
+      static bool nameNeedsQuoting(const char* name) ;
+      bool nameNeedsQuoting() const { return nameNeedsQuoting(c_str()) ; }
 
       // *** standard info functions ***
       size_t size() const { return c_len() ; }
@@ -102,7 +109,6 @@ class Symbol : public String
 
       uint8_t symtabID() { return m_binding.extra() >> 8 ; }
       uint8_t flags() { return m_binding.extra() & 0xFF ; }
-      Object* binding() { return m_binding.pointer() ; }
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<Symbol> ;
@@ -154,6 +160,15 @@ class Symbol : public String
       static Object* next_(const Object*) { return nullptr ; }
       static ObjectIter& next_iter(const Object*, ObjectIter& it) { it.incrIndex() ; return it ; }
    } ;
+
+/************************************************************************/
+/************************************************************************/
+
+inline istream& operator >> (istream& in, Symbol*& obj)
+{
+   obj = Symbol::create(in) ;
+   return in ;
+}
 
 } ; // end namespace Fr
 

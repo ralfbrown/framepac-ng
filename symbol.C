@@ -42,6 +42,14 @@ Symbol::~Symbol()
 
 //----------------------------------------------------------------------------
 
+Symbol* Symbol::create(istream&)
+{
+   //FIXME
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
 void Symbol::unintern()
 {
    //FIXME
@@ -64,6 +72,34 @@ size_t Symbol::hashValue(const char* name, size_t* len)
    size_t length = name ? strlen(name) : 0 ;
    if (len) *len = length ;
    return FramepaC::fasthash64(name,length) ;
+}
+
+//----------------------------------------------------------------------------
+
+void Symbol::binding(Object*)
+{
+//FIXME
+   return  ;
+}
+
+//----------------------------------------------------------------------------
+
+bool Symbol::nameNeedsQuoting(const char* name)
+{
+   if (name)
+      {
+      if (*name == '-' || isdigit(*name))
+	 return true ; // looks like a number....
+      while (*name)
+	 {
+	 char c = *name ;
+	 if (islower(c)) return true ;
+	 if (!isalnum(c) && c != '-' && c != '_')
+	    return true ;
+	 ++name ;
+	 }
+      }
+   return false ;
 }
 
 //----------------------------------------------------------------------------

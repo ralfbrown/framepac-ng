@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-07-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -22,6 +22,7 @@
 #ifndef __Fr_OBJECT_H_INCLUDED
 #define __Fr_OBJECT_H_INCLUDED
 
+#include <iostream>
 #include "framepac/memory.h"
 
 /************************************************************************/
@@ -80,8 +81,9 @@ class Object
       Object() {}
    public:
       ~Object() {}
-      static ObjectPtr create(const char *printed_representation) ;
-      static ObjectPtr create(const Object *) ;
+      static ObjectPtr create(const char* printed_representation) ;
+      static ObjectPtr create(const Object*) ;
+      static ObjectPtr create(istream&) ;
 
       // *** copying ***
       FrVIRTFUNC0(ObjectPtr,clone,clone_,const) ;
@@ -97,7 +99,7 @@ class Object
 
       // *** dynamic type determination ***
       // name of the actual type of the current object
-      FrVIRTFUNC0(const char *,typeName,typeName_,const) ;
+      FrVIRTFUNC0(const char*,typeName,typeName_,const) ;
       // type determination predicates
       FrVIRTFUNC0(bool,isArray,isArray_,const) ;
       FrVIRTFUNC0(bool,isBigNum,isBigNum_,const) ;
@@ -118,13 +120,13 @@ class Object
 
       // *** I/O ***
       // generate printed representation; returned value must be freed
-      char *cString(size_t wrap_at = 0, size_t indent = 0) const ;
-      char *jsonString(bool wrap = false, size_t indent = 0) const ;
+      char* cString(size_t wrap_at = 0, size_t indent = 0) const ;
+      char* jsonString(bool wrap = false, size_t indent = 0) const ;
       // generate printed representation into a buffer
       FrVIRTFUNC4(bool,toCstring,toCstring_,const,char*,buffer,size_t,buflen,size_t,wrap_at,size_t,indent) ;
-      bool toCstring(char *buffer, size_t buflen) const { return toCstring(buffer,buflen,0,0) ; }
+      bool toCstring(char* buffer, size_t buflen) const { return toCstring(buffer,buflen,0,0) ; }
       FrVIRTFUNC4(bool,toJSONString,toJSONString_,const,char*,buffer,size_t,buflen,bool,wrap,size_t,indent) ;
-      bool toJSONString(char *buffer, size_t buflen) const { return toJSONString(buffer,buflen,false,0) ; }
+      bool toJSONString(char* buffer, size_t buflen) const { return toJSONString(buffer,buflen,false,0) ; }
       // determine length of buffer required for string representation of object
       FrVIRTFUNC2(size_t,cStringLength,cStringLength_,const,size_t,wrap_at,size_t,indent) ;
       size_t cStringLength(size_t wrap_at) const { return cStringLength(wrap_at,0) ; }
@@ -134,9 +136,9 @@ class Object
       size_t jsonStringLength() const { return jsonStringLength(false,0) ; }
 
       // convert text into an Object
-      static Object *read(const char *s, const char **s_next = nullptr) ;
-      static Object *read(FILE *fp) ;
-      static Object *read(istream &) ;
+      static Object* read(const char* s, const char** s_next = nullptr) ;
+      static Object* read(FILE* fp) ;
+      static Object* read(istream&) ;
       // helper function to make it easier to display objects in the debugger
       void _() const ;
 
@@ -174,9 +176,9 @@ class Object
 
    } ;
 
-inline Object* Object::shallowCopy_(const Object *obj) { return clone_(obj) ; }
+inline Object* Object::shallowCopy_(const Object* obj) { return clone_(obj) ; }
 inline void Object::free_(Object*) {}
-inline void Object::shallowFree_(Object *obj) { free_(obj) ; }
+inline void Object::shallowFree_(Object* obj) { free_(obj) ; }
 inline const char* Object::typeName_(const Object*) { return "Object" ; }
 inline bool Object::isArray_(const Object*) { return false ; }
 inline bool Object::isBigNum_(const Object*) { return false ; }
@@ -197,9 +199,9 @@ inline bool Object::isVector_(const Object*) { return false ; }
 
 inline size_t Object::size_(const Object*) { return 0 ; }
 inline bool Object::empty_(const Object* obj) { return size_(obj) == 0 ; }
-inline Object *Object::front_(Object* obj) { return obj ; }
-inline const Object *Object::front_const(const Object *obj) { return obj ; }
-inline const char *Object::stringValue_(const Object*) { return nullptr ; }
+inline Object* Object::front_(Object* obj) { return obj ; }
+inline const Object* Object::front_const(const Object* obj) { return obj ; }
+inline const char* Object::stringValue_(const Object*) { return nullptr ; }
 inline double Object::floatValue_(const Object*) { return 0.0 ; }
 inline double Object::imagValue_(const Object*) { return 0.0 ; }
 inline long Object::intValue_(const Object*) { return 0 ; }
@@ -212,6 +214,15 @@ inline ObjectIter& Object::next_iter(const Object*,ObjectIter& it) { it.m_object
 //----------------------------------------------------------------------------
 
 inline void ObjectPtr::free() { if (m_object) { m_object->free() ; release() ; } }
+
+/************************************************************************/
+/************************************************************************/
+
+inline istream& operator >> (istream& in, Object*& obj)
+{
+   obj = Object::create(in) ;
+   return in ;
+}
 
 /************************************************************************/
 /************************************************************************/
