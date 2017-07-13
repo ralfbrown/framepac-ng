@@ -103,17 +103,25 @@ class Symbol : public String
       static size_t hashValue(const Symbol*) ;
       static size_t hashValue(const char* name, size_t* len) ;
 
+      // accessing the Symbol's properties
       Object* binding() { SymbolProperties* prop = properties() ; return prop ? prop->binding() : nullptr ; }
       Frame* frame() { SymbolProperties* prop = properties() ; return prop ? prop->frame() : nullptr ; }
       Object* getProperty(Symbol* key) const
 	 { SymbolProperties* prop = properties() ; return prop ? prop->getProperty(key) : nullptr ; }
-      void binding(Object*) ;
 
+      // updating the Symbol's properties
+      void binding(Object*) ;
+      bool frame(Frame*) ;
+      bool setProperty(Symbol* key, Object* value) ;
+
+      // support for inheritance and the like in Frames
+      bool isRelation() const { return (flags() & RELATION_FLAG) != 0 ; }
+      Symbol* inverseRelation() const ;
+      bool makeRelation(Symbol* inverse) ;
+
+      // utility functions for I/O
       static bool nameNeedsQuoting(const char* name) ;
       bool nameNeedsQuoting() const { return nameNeedsQuoting(c_str()) ; }
-
-      bool isRelation() const { return (flags() & RELATION_FLAG) != 0 ; }
-      bool makeRelation(Symbol* inverse) ;
 
       // *** standard info functions ***
       size_t size() const { return c_len() ; }
