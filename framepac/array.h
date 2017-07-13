@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-08					*/
+/* Version 0.01, last edit 2017-07-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -26,22 +26,24 @@ namespace Fr {
 
 //----------------------------------------------------------------------------
 
-class ArrayIter
+typedef Object** ArrayIter ;
+
+class RevArrayIter
    {
    private:
       Object** m_array ;
    public:
-      ArrayIter(Object** o) : m_array(o) {}
-      ArrayIter(const ArrayIter&) = default ;
-      ~ArrayIter() = default ;
+      RevArrayIter(Object** o) : m_array(o) {}
+      RevArrayIter(const RevArrayIter&) = default ;
+      ~RevArrayIter() = default ;
 
       Object* operator* () const { return *m_array ; }
       Object* operator-> () const { return *m_array ; }
-      ArrayIter& operator++ () { ++m_array ; return *this ; }
-      Object*& operator [] (size_t n) const { return m_array[n] ; }
+      RevArrayIter& operator++ () { --m_array ; return *this ; }
+      Object*& operator [] (size_t n) const { return m_array[-n] ; }
 
-      bool operator== (const ArrayIter& other) { return m_array == other.m_array ; }
-      bool operator!= (const ArrayIter& other) { return m_array != other.m_array ; }
+      bool operator== (const RevArrayIter& other) { return m_array == other.m_array ; }
+      bool operator!= (const RevArrayIter& other) { return m_array != other.m_array ; }
    } ;
 
 //----------------------------------------------------------------------------
@@ -53,7 +55,7 @@ class Array : public Object
       static Array* create(const Object*) ;
       static Array* create(const Array*) ;
 
-      bool reserve(size_t n) ;
+      bool append(Object*) ;
 
       // *** standard info functions ***
       size_t size() const { return m_size ; }
@@ -68,6 +70,31 @@ class Array : public Object
       ArrayIter cbegin() const { return ArrayIter(m_array) ; }
       ArrayIter end() { return ArrayIter(m_array + size()) ; }
       ArrayIter cend() const { return ArrayIter(m_array + size()) ; }
+
+      RevArrayIter rbegin() { return RevArrayIter(m_array + size() - 1) ; }
+      RevArrayIter crbegin() const { return RevArrayIter(m_array + size() - 1) ; }
+      RevArrayIter rend() { return RevArrayIter(m_array - 1) ; }
+      RevArrayIter crend() const { return RevArrayIter(m_array - 1) ; }
+
+      // STL compatibility
+      bool reserve(size_t n) ;
+      void resize(size_t N) ;
+      void resize(size_t N, Object*) ;
+      void shrink_to_fit() ;
+      void push_back(Object*) ; // append item to array
+      void pop_back() ;  	// remove last element of array
+      void insert(size_t pos, Object*) ;
+      void erase(size_t pos) ;
+      void erase(size_t pos1, size_t pos2) ;
+
+      Object* at(size_t pos) const ;
+      Object*& operator[] (size_t pos) ;
+      const Object*& operator[] (size_t pos) const ;
+
+      Object* back() const ;	// get last element in array
+      Object** data() const { return m_array ; }
+
+      size_t capacity() const { return m_alloc ; }
 
    private: // static members
       static Allocator s_allocator ;
