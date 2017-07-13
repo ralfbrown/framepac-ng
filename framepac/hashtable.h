@@ -36,7 +36,6 @@
 #include "framepac/semaphore.h"
 #include "framepac/symbol.h"
 #include "framepac/synchevent.h"
-#include <cassert>
 
 //#undef FrHASHTABLE_VERBOSITY
 //#define FrHASHTABLE_VERBOSITY 2
@@ -252,13 +251,6 @@ namespace Fr
 // forward declarations
 template <typename KeyT, typename ValT, typename RetT> class HashTableIter ;
 template <typename KeyT, typename ValT, typename RetT> class HashTableLocalIter ;
-
-/************************************************************************/
-/*	Forward declaration for Fr::SymbolTable				*/
-/************************************************************************/
-
-const class Fr::Symbol *Fr_allocate_symbol(class Fr::SymbolTable *symtab, const char *name,
-					   size_t namelen) ;
 
 /************************************************************************/
 /*	Helper functions						*/
@@ -793,7 +785,8 @@ class HashTable : public HashTableBase
 	    return hashVal(key) ;
 	 }
       // special support for Fr::SymbolTableX
-      size_t hashVal(const char *keyname, size_t *namelen) const ;
+      size_t hashVal(const char *keyname, size_t *namelen) const
+	 { return Symbol::hashValue(keyname,namelen) ; }
       inline bool isEqual(KeyT key1, KeyT key2) const
 	 {
 	    return key2 != Entry::DELETED() && Fr::equal(key1,key2) ;
@@ -1163,6 +1156,14 @@ inline bool HashTable<const Symbol*,NullObject>::isEqualFull(const Symbol* key1,
    if (key1 == key2)
       return true ;
    return (key1 && key2 && strcmp(key1->name(),key2->name()) == 0) ;
+}
+
+template <>
+inline bool HashTable<const Symbol*,NullObject>::isEqual(const char *keyname, size_t /*namelen*/, const Symbol* key)
+{
+   if (!key) return keyname == nullptr ;
+   if (!keyname) return false ;
+   return strcmp(key->name(),keyname) == 0 ;
 }
 
 /************************************************************************/

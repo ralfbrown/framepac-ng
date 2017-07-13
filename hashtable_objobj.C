@@ -19,8 +19,8 @@
 /*									*/
 /************************************************************************/
 
+#include "framepac/symboltable.h"
 #include "template/hashtable.cc"
-#include "framepac/fasthash64.h"
 
 using namespace FramepaC ;
 
@@ -35,16 +35,6 @@ bool HashTable<Object*,Object*>::isEqual(const char* name, size_t namelen, Objec
 {
    (void)name; (void)namelen; (void)key;
    return false ; //FIXME
-}
-
-//----------------------------------------------------------------------------
-
-template <>
-size_t HashTable<Object*,Object*>::hashVal(const char* name, size_t* namelen) const
-{
-   size_t len = name ? strlen(name) : 0 ;
-   if (namelen) *namelen = 0 ;
-   return fasthash64(name,len) ;
 }
 
 } // end namespace Fr

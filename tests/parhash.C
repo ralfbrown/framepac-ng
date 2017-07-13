@@ -27,7 +27,7 @@
 #include "framepac/hashtable.h"
 #include "framepac/message.h"
 #include "framepac/random.h"
-#include "framepac/symbol.h"
+#include "framepac/symboltable.h"
 #include "framepac/texttransforms.h"
 #include "framepac/threadpool.h"
 #include "framepac/timer.h"

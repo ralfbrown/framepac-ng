@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-07					*/
+/* Version 0.01, last edit 2017-07-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -21,6 +21,7 @@
 
 #include <cstring>
 #include "framepac/symbol.h"
+#include "framepac/fasthash64.h"
 
 /************************************************************************/
 /************************************************************************/
@@ -45,6 +46,15 @@ void Symbol::unintern()
 {
    //FIXME
    return ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t Symbol::hashValue(const char* name, size_t* len)
+{
+   size_t length = name ? strlen(name) : 0 ;
+   if (len) *len = length ;
+   return FramepaC::fasthash64(name,length) ;
 }
 
 //----------------------------------------------------------------------------

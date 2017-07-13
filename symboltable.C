@@ -20,7 +20,7 @@
 /************************************************************************/
 
 #include "framepac/atomic.h"
-#include "framepac/symbol.h"
+#include "framepac/symboltable.h"
 #include "framepac/fasthash64.h"
 
 using namespace FramepaC ;
@@ -31,12 +31,26 @@ using namespace FramepaC ;
 namespace Fr
 {
 
+/************************************************************************/
+/************************************************************************/
+
 Allocator SymbolTable::s_allocator(FramepaC::Object_VMT<SymbolTable>::instance(),sizeof(SymbolTable)) ;
 
 static Atomic<SymbolTable*> symbol_tables[256] ;
 Atomic<unsigned> current_symbol_table ;
 
 /************************************************************************/
+/************************************************************************/
+
+size_t Fr_symboltable_hashvalue(const char* symname)
+{
+   if (!symname) return 0 ;
+   size_t len = strlen(symname) ;
+   return FramepaC::fasthash64(symname,len) ;
+}
+
+/************************************************************************/
+/*	Methods for class SymbolTable					*/
 /************************************************************************/
 
 SymbolTable* SymbolTable::current()
@@ -78,19 +92,15 @@ SymbolTable* SymbolTable::create(size_t capacity)
 
 //----------------------------------------------------------------------------
 
-SymbolTable::SymbolTable(size_t initial_size) : m_symbols(nullptr)
+SymbolTable::SymbolTable(size_t initial_size) : m_symbols(initial_size)
 {
-   (void)initial_size;//FIXME
-
    return ;
 }
 
 //----------------------------------------------------------------------------
 
-SymbolTable::SymbolTable(const SymbolTable &orig) : Object(), m_symbols(nullptr)
+SymbolTable::SymbolTable(const SymbolTable &orig) : Object(), m_symbols(orig.m_symbols.bucket_count())
 {
-   (void)orig;//FIXME
-
    return ;
 }
 

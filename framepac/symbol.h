@@ -24,15 +24,12 @@
 
 #include <cstring>
 #include "framepac/string.h"
-#include "framepac/map.h" //TEMP
 
 /************************************************************************/
 /************************************************************************/
 
 namespace Fr
 {
-
-class SymbolTable_ ;
 
 //----------------------------------------------------------------------------
 
@@ -64,6 +61,8 @@ class Symbol : public String
       static Symbol* create(const Object* obj) ;
 
       const char* name() const { return c_str() ; }
+
+      static size_t hashValue(const char* name, size_t* len) ;
 
       // *** standard info functions ***
       size_t size() const { return c_len() ; }
@@ -154,81 +153,6 @@ class Symbol : public String
       static ObjectIter& next_iter(const Object*, ObjectIter& it) { it.incrIndex() ; return it ; }
    } ;
 
-//----------------------------------------------------------------------------
-
-class SymbolTable : public Object
-   {
-   public:
-      static SymbolTable* create(size_t capacity = 0) ;
-      static SymbolTable* current() ;
-
-      void select() const ; // make this symbol table the current one
-
-      Symbol* add(const char* name) ;
-      Symbol* add(const String* name) { return name ? add(name->c_str()) : nullptr ; }
-
-      Symbol* find(const char* name) const ;
-      Symbol* find(const String* name) const { return name ? find(name->c_str()) : nullptr ; }
-
-   private: // static members
-      static Allocator s_allocator ;
-   protected:
-      Map m_symbols ;
-      unsigned m_table_id ;
-
-   protected: // construction/destruction
-      void* operator new(size_t) { return s_allocator.allocate() ; }
-      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      SymbolTable(size_t initial_size) ;
-      SymbolTable(const SymbolTable&) ;
-      ~SymbolTable() ;
-
-   protected: // implementation functions for virtual methods
-      friend class FramepaC::Object_VMT<SymbolTable> ;
-
-      // *** destroying ***
-      static void free_(Object* obj) { delete static_cast<SymbolTable*>(obj) ; }
-      static void shallowFree_(Object* obj) { free_(obj) ; }
-
-      // type determination predicates
-      static bool isSymbolTable_(const Object*) { return true ; }
-      static const char* typeName_(const Object*) { return "SymbolTable" ; }
-
-      // *** copying ***
-      static ObjectPtr clone_(const Object*) ;
-      static Object* shallowCopy_(const Object* obj) { return clone_(obj) ; }
-      static ObjectPtr subseq_int(const Object*,size_t start, size_t stop) ;
-      static ObjectPtr subseq_iter(const Object*,ObjectIter start, ObjectIter stop) ;
-
-      // *** I/O ***
-      // generate printed representation into a buffer
-      static size_t cStringLength_(const Object*, size_t wrap_at, size_t indent) ;
-      static bool toCstring_(const Object*,char* buffer, size_t buflen,
-			     size_t wrap_at, size_t indent) ;
-      static size_t jsonStringLength_(const Object*, bool wrap, size_t indent) ;
-      static bool toJSONString_(const Object*, char* buffer, size_t buflen, bool wrap,
-				size_t indent) ;
-
-      // *** standard info functions ***
-      static size_t size_(const Object* obj) { return static_cast<const SymbolTable*>(obj)->m_symbols.size() ; }
-      static bool empty_(const Object* obj) { return size_(obj) != 0 ; }
-
-      // *** standard access functions ***
-      static Object* front_(Object* obj) ;
-      static const Object* front_const(const Object* obj) ;
-
-      // *** comparison functions ***
-      static size_t hashValue_(const Object*) ;
-      static bool equal_(const Object* obj, const Object* other) ;
-      static int compare_(const Object* obj, const Object* other) ;
-      static int lessThan_(const Object* obj, const Object* other) ;
-
-      // *** iterator support ***
-      static Object* next_(const Object*) { return nullptr ; }
-      static ObjectIter& next_iter(const Object*, ObjectIter& it) { it.incrIndex() ; return it ; }
-   } ;
-
-
 } ; // end namespace Fr
 
 /************************************************************************/
@@ -238,7 +162,6 @@ namespace FramepaC
 {
 
 extern template class FramepaC::Object_VMT<Fr::Symbol> ;
-extern template class FramepaC::Object_VMT<Fr::SymbolTable> ;
 
 } ; // end namespace FramepaC
 

@@ -20,7 +20,6 @@
 /************************************************************************/
 
 #include "template/hashtable.cc"
-#include "framepac/fasthash64.h"
 
 using namespace FramepaC ;
 
@@ -36,17 +35,6 @@ bool HashTable<uint32_t,NullObject>::isEqual(const char* name, size_t namelen, u
    (void)name; (void)namelen; (void)key;
    return false ;
 }
-
-//----------------------------------------------------------------------------
-
-template <>
-size_t HashTable<uint32_t,NullObject>::hashVal(const char* name, size_t* namelen) const
-{
-   size_t len = name ? strlen(name) : 0 ;
-   if (namelen) *namelen = 0 ;
-   return fasthash64(name,len) ;
-}
-
 
 } // end namespace Fr
 

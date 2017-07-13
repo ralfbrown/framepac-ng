@@ -27,7 +27,7 @@
 #include <thread>
 #include <type_traits>
 #include <x86intrin.h>
-#include "framepac/hashtable.h"
+#include "framepac/symboltable.h"
 #include "framepac/message.h"
 
 #if DYNAMIC_ANNOTATIONS_ENABLED != 0
@@ -110,6 +110,13 @@ namespace Fr {
 	 return nexttab->delegate ;					\
 	 }
 #endif /* FrSINGLE_THREADED */
+
+/************************************************************************/
+/*	Forward declaration for Fr::SymbolTable				*/
+/************************************************************************/
+
+const class Fr::Symbol *Fr_allocate_symbol(Fr::SymbolTable *symtab, const char *name,
+					   size_t namelen) ;
 
 /************************************************************************/
 /*	Methods for class Table						*/
