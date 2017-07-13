@@ -45,6 +45,20 @@ void ListBuilder::push(Object* o)
 
 //----------------------------------------------------------------------------
 
+void ListBuilder::appendClone(Object* o)
+{
+   if (o)
+      {
+      ObjectPtr cp(o->clone()) ;
+      o = cp ;
+      cp.release() ;
+      }
+   append(o) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 void ListBuilder::appendList(List* l)
 {
    List* tail = l ;
@@ -67,8 +81,10 @@ Object* ListBuilder::pop()
    List* elt = m_list ;
    m_list = m_list->next() ;
    if (m_list == List::emptyList()) m_list_end = &m_list ;
+   // chop the element out of the list, extract the item it contains, and then free the node
    Object* o = elt->front() ;
-   elt->free() ;
+   elt->setNext(nullptr) ;
+   elt->shallowFree() ;
    return o ;
 }
 

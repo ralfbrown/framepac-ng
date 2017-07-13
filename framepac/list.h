@@ -87,7 +87,8 @@ class List : public Object
       bool contains(const Object*) const ;
       List* reverse() ;
       Object* nth(size_t N) const ;
-      List* nthcdr(size_t N) const ;
+      List* nthcdr(size_t N) ;
+      const List* nthcdr(size_t N) const ;
 
       void setNext(List* nxt) { m_next = nxt ; }
       List** nextPtr() { return &m_next ; }
@@ -184,6 +185,7 @@ class ListBuilder
       void push(Object* o) ;
       // add an element to the end of the list
       void append(Object* o) { *m_list_end = List::create(o) ; }
+      void appendClone(Object* o) ;
       // concatenate an entire list to the end of the existing list
       void appendList(List* l) ;
       // remove the first element of the list

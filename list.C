@@ -126,14 +126,7 @@ ObjectPtr List::clone_(const Object *obj)
    ListBuilder newlist ;
    for (auto item : *old_l)
       {
-      Object *copy = item ;
-      if (item)
-	 {
-	 ObjectPtr cp(item->clone()) ;
-	 copy = cp ;
-	 cp.release() ;
-	 }
-      newlist += copy ;
+      newlist.appendClone(item) ;
       }
    return ObjectPtr(*newlist) ;
 }
@@ -144,14 +137,10 @@ Object *List::shallowCopy_(const Object *obj)
 {
    const List *old_l { static_cast<const List*>(obj) };
    ListBuilder newlist ;
-#if 0
-   for ( ; old_l ; old_l = old_l->next())
+   for (auto item : *old_l)
       {
-      newlist += old_l->front() ;
+      newlist += item ;
       }
-#else
-   for (auto item : *old_l) newlist += item ;
-#endif
    return *newlist ;
 }
 
@@ -186,19 +175,51 @@ void List::shallowFree_(Object *obj)
 
 //----------------------------------------------------------------------------
 
+Object* List::nth(size_t N) const
+{
+   const List* l { this } ;
+   for ( ; N > 0 && l && l != empty_list ; --N)
+      {
+      l = l->next() ;
+      }
+   return l->front() ;
+}
+
+//----------------------------------------------------------------------------
+
+List* List::nthcdr(size_t N)
+{
+   List* l { this } ;
+   for ( ; N > 0 && l && l != empty_list ; --N)
+      {
+      l = l->next() ;
+      }
+   return l ;
+}
+
+//----------------------------------------------------------------------------
+
+const List* List::nthcdr(size_t N) const
+{
+   const List* l { this } ;
+   for ( ; N > 0 && l && l != empty_list ; --N)
+      {
+      l = l->next() ;
+      }
+   return l ;
+}
+
+//----------------------------------------------------------------------------
+
 List *List::subseq(ListIter start, ListIter stop, bool shallow) const
 {
    ListBuilder copy ;
    for ( ; start != stop ; ++start)
       {
-      Object *item { *start };
-      if (item && !shallow)
-	 {
-	 ObjectPtr cp(item->clone()) ;
-	 item = cp ;
-	 cp.release() ;
-	 }
-      copy += item ;
+      if (shallow)
+	 copy.append(*start) ;
+      else
+	 copy.appendClone(*start) ;
       }
    return *copy ;
 }
@@ -212,22 +233,13 @@ ObjectPtr List::subseq_int(const Object *obj, size_t start, size_t stop)
    if (l)
       {
       if (start > stop) std::swap(start,stop) ;
-      size_t pos { 0 };
-      for ( ; l != empty_list && pos < start ; pos++, l = l->next())
-	 {
-	 }
-      if (!l)
+      l = l->nthcdr(start) ;
+      if (!l || l == empty_list)
 	 return ObjectPtr(empty_list) ;
-      for ( ; l != empty_list && pos < stop ; pos++, l = l->next())
+      stop -= start ;
+      for ( ; l != empty_list && stop > 0 ; --stop, l = l->next())
 	 {
-	 Object *item { l->front() };
-	 if (item)
-	    {
-	    ObjectPtr cp(item->clone()) ;
-	    item = cp ;
-	    cp.release() ;
-	    }
-	 copy += item ;
+	 copy.appendClone(l->front()) ;
 	 }
       }
    return ObjectPtr(*copy) ;
@@ -240,14 +252,7 @@ ObjectPtr List::subseq_iter(const Object *, ObjectIter start, ObjectIter stop)
    ListBuilder copy ;
    for ( ; start != stop ; ++start)
       {
-      Object *item { *start };
-      if (item)
-	 {
-	 ObjectPtr cp(item->clone()) ;
-	 item = cp ;
-	 cp.release() ;
-	 }
-      copy += item ;
+      copy.appendClone(*start) ;
       }
    return ObjectPtr(*copy) ;
 }
@@ -291,11 +296,9 @@ bool List::toJSONString_(const Object* obj, char* buffer, size_t buflen,
 size_t List::size() const
 {
    size_t sz(0) ;
-   const List *l { this };
-   while (l != empty_list)
+   for (const List *l = this ; l != empty_list ; l = l->next())
       {
       sz++ ;
-      l = l->next() ;
       }
    return sz ;
 }
@@ -305,11 +308,9 @@ size_t List::size() const
 size_t List::size_(const Object *obj)
 {
    size_t sz(0) ;
-   const List *l { static_cast<const List*>(obj) };
-   while (l != empty_list)
+   for (const List *l = static_cast<const List*>(obj) ; l != empty_list ; l = l->next())
       {
       sz++ ;
-      l = l->next() ;
       }
    return sz ;
 }
@@ -337,10 +338,8 @@ size_t List::hashValue_(const Object* obj)
    // the hash value of a list is the hash of the hash values of its elements
    size_t len = size_(obj) ;
    uint64_t hashstate = fasthash64_init(len) ;
-   const List* lst = reinterpret_cast<const List*>(obj) ;
-   for ( ; lst ; lst = lst->next())
+   for (auto elt : *reinterpret_cast<const List*>(obj))
       {
-      Object* elt = lst->front() ;
       if (elt) hashstate = fasthash64_add(hashstate,elt->hashValue()) ;
       }
    return (size_t)fasthash64_finalize(hashstate) ;
@@ -381,14 +380,12 @@ int List::lessThan_(const Object *obj, const Object *other)
 
 void List::StaticInitialization()
 {
-#if FIXME // needs memory manager working first
    empty_list = new List ;
    // point both head and tail of the empty list at itself; if we somehow wind
    //   up trying to deref the empty list, we'll get back another empty list
    //   instead of a null pointer
    empty_list->m_item = empty_list ;
    empty_list->m_next = empty_list ;
-#endif
    return ;
 }
 
@@ -396,10 +393,8 @@ void List::StaticInitialization()
 
 void List::StaticCleanup()
 {
-#if FIXME // needs memory manager working first
    delete empty_list ;
    empty_list = nullptr ;
-#endif
    return ;
 }
 
