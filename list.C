@@ -278,8 +278,14 @@ bool List::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_a
 
 size_t List::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
 {
-   (void)obj ; (void)wrap; (void)indent ;
-   return 0 ; //FIXME
+   (void)wrap; //FIXME
+   size_t len = indent + 2 ; // initial and trailing brackets
+   size_t items = 0 ;
+   for (const Object* o : *static_cast<const List*>(obj))
+      {
+      len += o->jsonStringLength(wrap,0) ;
+      }
+   return len + (items ? items-1 : 0) ;
 }
 
 //----------------------------------------------------------------------------
