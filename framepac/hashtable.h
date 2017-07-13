@@ -586,14 +586,7 @@ class HashTable : public HashTableBase
 	 bool reclaimDeletions(size_t totalfrags, size_t fragnum) ;
 
 	 // special support for Fr::SymHashSet
-	 template <typename RetT = KeyT>
-	 typename std::enable_if<std::is_base_of<Fr::Symbol,KeyT>::value,RetT>::type
-	 addKey(size_t hashval, const char* name, size_t namelen, bool* already_existed = nullptr) ;
-	 // (default no-op version for non-Symbol hash tables, selected by SFINAE)
-	 template <typename RetT = KeyT>
-	 typename std::enable_if<!std::is_base_of<Fr::Symbol,KeyT>::value,RetT>::type
-	 addKey(size_t /*hashval*/, const char* /*name*/, size_t /*namelen*/, bool* /*already_existed*/ = nullptr) ;
-
+	 KeyT addKey(size_t hashval, const char* name, size_t namelen, bool* already_existed = nullptr) ;
 	 // special support for Fr::SymbolTable
 	 [[gnu::hot]] bool contains(size_t hashval, const char *name, size_t namelen) const ;
 	 // special support for Fr::SymHashSet
@@ -887,6 +880,10 @@ class HashTable : public HashTableBase
 	    size_t hashval = hashVal(name,&namelen) ;
 	    DELEGATE(lookupKey(hashval,name,namelen))
 	 }
+      // special support for Fr::SymHashSet; this is the generic version for everyone except SymHashSet
+      KeyT createSymbol(const char* /*name*/) const { abort() ; return nullKey() ; }
+      // special support for Fr::SymHashSet; this is the generic version for everyone except SymHashSet
+      void deleteSymbol(KeyT /*sym*/) const { abort() ; }
 
       [[gnu::cold]] size_t countItems(bool remove_dups = false) const
 	 { DELEGATE(countItems(remove_dups)) }
@@ -1163,6 +1160,22 @@ inline bool HashTable<const Symbol*,NullObject>::isEqual(const char *keyname, si
    if (!key) return keyname == nullptr ;
    if (!keyname) return false ;
    return strcmp(key->name(),keyname) == 0 ;
+}
+
+template <>
+inline const Symbol* HashTable<const Symbol*,NullObject>::createSymbol(const char* name) const
+{
+   if (!name) return nullKey() ;
+   Symbol* sym = Symbol::create(name) ;
+   //sym->setTableID(...) ;
+   return sym ;
+}
+
+template <>
+inline void HashTable<const Symbol*,NullObject>::deleteSymbol(const Symbol* sym) const
+{
+   const_cast<Symbol*>(sym)->free() ;
+   return ;
 }
 
 /************************************************************************/

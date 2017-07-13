@@ -39,7 +39,9 @@ namespace Fr
 /*	Global variables						*/
 /************************************************************************/
 
-static atom_uint num_allocators = 0 ;
+// DO NOT provide explicit initialization to zero, as that init will occur after some
+//   allocators have already been assigned IDs, which will then be re-used and cause a crash
+static Atomic<unsigned> num_allocators ;
 
 /************************************************************************/
 /*	static variables for class Allocator				*/

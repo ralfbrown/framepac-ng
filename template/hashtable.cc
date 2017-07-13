@@ -1050,21 +1050,9 @@ bool HashTable<KeyT,ValT>::Table::reclaimDeletions(size_t totalfrags, size_t fra
 
 //----------------------------------------------------------------------------
 
-// generic version for non-Object keys
-template <typename KeyT, typename ValT> //, typename = void>
-template <typename RetT>
-typename std::enable_if<!std::is_base_of<Fr::Symbol,KeyT>::value, RetT>::type
-HashTable<KeyT,ValT>::Table::addKey(size_t /*hashval*/, const char* /*name*/, size_t /*namelen*/,
-					 bool* /*already_existed*/)
-{
-   return nullKey() ;
-}
-
 // special support for Fr::SymHashSet
 template <typename KeyT, typename ValT>
-template <typename RetT>
-typename std::enable_if<std::is_base_of<Fr::Symbol,KeyT>::value, RetT>::type
-HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char* name, size_t namelen,
+KeyT HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char* name, size_t namelen,
 				    bool* already_existed)
 {
    if (!already_existed)
@@ -1100,20 +1088,20 @@ HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char* name, size_t nam
 	 }
       // when we get here, we know that the item is not yet in the
       //   hash table, so try to add it
-      KeyT key = (KeyT)Symbol::create(name) ;
-      //!!! key->setTableID(reinterpret_cast<Fr::SymbolTable*>(m_container)->tableID()) ;
+      KeyT key = m_container->createSymbol(name) ;
+      if (key == nullKey()) return key ;
       // if the insertKey fails, someone else beat us to creating the
-      //    symbol, so abandon this copy (temporarily leaks at bit of
-      //    memory until the hash table is destroyed) and return the
-      //    other one when we loop back to the top
+      //    symbol, so we delete the symbol we just created and then
+      //    return the other one when we loop back to the top
       if (insertKey(bucketnum,firstoffset,key,nullVal()))
 	 return key ;
+      m_container->deleteSymbol(key) ;
       }
 }
 
 //----------------------------------------------------------------------------
 
-// special support for Fr::SymbolTable
+// special support for Fr::SymHashSet
 template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, const char* name, size_t namelen) const
 {
