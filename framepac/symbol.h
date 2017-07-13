@@ -31,6 +31,11 @@
 namespace Fr
 {
 
+// forward declarations
+class Frame ;
+class List ;
+class Symbol ;
+
 //----------------------------------------------------------------------------
 
 class SymbolIter
@@ -53,6 +58,37 @@ class SymbolIter
 
 //----------------------------------------------------------------------------
 
+class SymbolProperties
+   {
+   public:
+      static SymbolProperties* create() ;
+      void free() { delete this ; }
+
+      Object* binding() const { return m_binding ; }
+      Frame* frame() const { return m_frame ; }
+      Object* getProperty(Symbol* key) const ;
+      List* plist() const { return m_plist ; }
+
+      void binding(Object* b) ;
+      void frame(Frame* f) ;
+      void setProperty(Symbol* key, Object* value) ;
+
+   private:
+      static Allocator s_allocator ;
+   protected:
+      Object* m_binding ;		// the symbol's value
+      Frame*  m_frame ;			// the frame associated with the symbol
+      List*   m_plist ;			// assoc-list of other properties
+
+   protected: // methods
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
+      SymbolProperties() ;
+      ~SymbolProperties() ;
+} ;
+
+//----------------------------------------------------------------------------
+
 class Symbol : public String
    {
    public:
@@ -67,11 +103,17 @@ class Symbol : public String
       static size_t hashValue(const Symbol*) ;
       static size_t hashValue(const char* name, size_t* len) ;
 
-      Object* binding() { return m_binding.pointer() ; }
+      Object* binding() { SymbolProperties* prop = properties() ; return prop ? prop->binding() : nullptr ; }
+      Frame* frame() { SymbolProperties* prop = properties() ; return prop ? prop->frame() : nullptr ; }
+      Object* getProperty(Symbol* key) const
+	 { SymbolProperties* prop = properties() ; return prop ? prop->getProperty(key) : nullptr ; }
       void binding(Object*) ;
 
       static bool nameNeedsQuoting(const char* name) ;
       bool nameNeedsQuoting() const { return nameNeedsQuoting(c_str()) ; }
+
+      bool isRelation() const { return (flags() & RELATION_FLAG) != 0 ; }
+      bool makeRelation(Symbol* inverse) ;
 
       // *** standard info functions ***
       size_t size() const { return c_len() ; }
@@ -94,21 +136,28 @@ class Symbol : public String
       // we pack a pointer to the symbol's properties, its symboltable
       //   ID, and some bitflags, into a single 64-bit field to save
       //   memory
-      FramepaC::PointerPlus16<Object> m_binding ;
+      FramepaC::PointerPlus16<SymbolProperties> m_properties ;
+
+      static constexpr uint8_t RELATION_FLAG = 1 ;
 
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      Symbol(const char* name) : String(name), m_binding() {}
-      Symbol(const String* name) : String(name), m_binding() {}
-      Symbol(const Symbol& name) : String(name), m_binding() {}
+      Symbol(const char* name) : String(name), m_properties() {}
+      Symbol(const String* name) : String(name), m_properties() {}
+      Symbol(const Symbol& name) : String(name), m_properties() {}
       ~Symbol() ;
       Symbol& operator= (const Symbol&) = delete ;
 
       void unintern() ; // remove from the symbol table containing it
 
-      uint8_t symtabID() { return m_binding.extra() >> 8 ; }
-      uint8_t flags() { return m_binding.extra() & 0xFF ; }
+      SymbolProperties* properties() const { return m_properties.pointer() ; }
+      uint8_t symtabID() const { return m_properties.extra() >> 8 ; }
+      uint8_t flags() const { return m_properties.extra() & 0xFF ; }
+
+      void symtabID(uint8_t id) ;
+      void setFlag(uint8_t flag) ;
+      void clearFlag(uint8_t flag) ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<Symbol> ;

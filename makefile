@@ -441,7 +441,7 @@ sparsematrix$(OBJ):	sparsematrix$(C) framepac/matrix.h
 string$(OBJ):		string$(C) framepac/string.h framepac/fasthash64.h
 stringbuilder$(OBJ):	stringbuilder$(C) framepac/stringbuilder.h framepac/file.h
 suffixarray$(OBJ):	suffixarray$(C) framepac/config.h
-symbol$(OBJ):		symbol$(C) framepac/symbol.h framepac/fasthash64.h
+symbol$(OBJ):		symbol$(C) framepac/symbol.h framepac/nonobject.h framepac/fasthash64.h
 symboltable$(OBJ):	symboltable$(C) framepac/symboltable.h framepac/fasthash64.h framepac/texttransforms.h
 synchevent$(OBJ):	synchevent$(C) framepac/synchevent.h
 texttransforms$(OBJ):	texttransforms$(C) framepac/texttransforms.h

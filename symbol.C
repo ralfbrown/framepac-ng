@@ -21,6 +21,7 @@
 
 #include <cstring>
 #include "framepac/symbol.h"
+#include "framepac/nonobject.h"
 #include "framepac/fasthash64.h"
 
 /************************************************************************/
@@ -29,6 +30,8 @@
 namespace Fr
 {
 
+Allocator SymbolProperties::s_allocator(FramepaC::Object_VMT<NonObject>::instance(),sizeof(SymbolProperties),
+   alignof(SymbolProperties)) ;
 Allocator Symbol::s_allocator(FramepaC::Object_VMT<Symbol>::instance(),sizeof(Symbol)) ;
 
 /************************************************************************/
