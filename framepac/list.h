@@ -79,8 +79,8 @@ class List : public Object
       // *** iterator support ***
       ListIter begin() const { return ListIter(this) ; }
       ListIter cbegin() const { return ListIter(this) ; }
-      ListIter end() const { return ListIter(empty_list) ; }
-      ListIter cend() const { return ListIter(empty_list) ; }
+      static ListIter end() { return ListIter(empty_list) ; }
+      static ListIter cend() { return ListIter(empty_list) ; }
       List* next() const { return m_next ; }
 
       // *** utility functions ***
@@ -89,6 +89,7 @@ class List : public Object
       Object* nth(size_t N) const ;
       List* nthcdr(size_t N) ;
       const List* nthcdr(size_t N) const ;
+      List* assoc(const Object* key) const ;
 
       void setNext(List* nxt) { m_next = nxt ; }
       List** nextPtr() { return &m_next ; }
