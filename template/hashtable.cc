@@ -27,7 +27,7 @@
 #include <thread>
 #include <type_traits>
 #include <x86intrin.h>
-#include "framepac/symboltable.h"
+#include "framepac/hashtable.h"
 #include "framepac/message.h"
 
 #if DYNAMIC_ANNOTATIONS_ENABLED != 0
@@ -110,13 +110,6 @@ namespace Fr {
 	 return nexttab->delegate ;					\
 	 }
 #endif /* FrSINGLE_THREADED */
-
-/************************************************************************/
-/*	Forward declaration for Fr::SymbolTable				*/
-/************************************************************************/
-
-const class Fr::Symbol *Fr_allocate_symbol(Fr::SymbolTable *symtab, const char *name,
-					   size_t namelen) ;
 
 /************************************************************************/
 /*	Methods for class Table						*/
@@ -1067,7 +1060,7 @@ HashTable<KeyT,ValT>::Table::addKey(size_t /*hashval*/, const char* /*name*/, si
    return nullKey() ;
 }
 
-// special support for Fr::SymbolTableX
+// special support for Fr::SymHashSet
 template <typename KeyT, typename ValT>
 template <typename RetT>
 typename std::enable_if<std::is_base_of<Fr::Symbol,KeyT>::value, RetT>::type
@@ -1107,12 +1100,12 @@ HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char* name, size_t nam
 	 }
       // when we get here, we know that the item is not yet in the
       //   hash table, so try to add it
-      KeyT key = (KeyT)Fr_allocate_symbol(reinterpret_cast<Fr::SymbolTable*>(m_container),name,namelen) ;
-      // if the insertKey fails, someone else beat us to
-      //    creating the symbol, so abandon this copy
-      //    (temporarily leaks at bit of memory until the
-      //    hash table is destroyed) and return the other one
-      //    when we loop back to the top
+      KeyT key = (KeyT)Symbol::create(name) ;
+      //!!! key->setTableID(reinterpret_cast<Fr::SymbolTable*>(m_container)->tableID()) ;
+      // if the insertKey fails, someone else beat us to creating the
+      //    symbol, so abandon this copy (temporarily leaks at bit of
+      //    memory until the hash table is destroyed) and return the
+      //    other one when we loop back to the top
       if (insertKey(bucketnum,firstoffset,key,nullVal()))
 	 return key ;
       }
@@ -1149,7 +1142,7 @@ bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, const char* name, siz
 
 //----------------------------------------------------------------------------
 
-// special support for Fr::SymbolTableX
+// special support for Fr::SymHashSet
 template <typename KeyT, typename ValT>
 KeyT HashTable<KeyT,ValT>::Table::lookupKey(size_t hashval, const char* name, size_t namelen) const
 {

@@ -464,7 +464,7 @@ template/argopt.cc:	framepac/argparser.h
 template/bufbuilder.cc:	framepac/builder.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/hashtable.cc:	framepac/symboltable.h framepac/message.h
+template/hashtable.cc:	framepac/hashtable.h framepac/message.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/mtrie.cc:	framepac/trie.h
