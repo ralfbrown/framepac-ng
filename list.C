@@ -175,6 +175,36 @@ void List::shallowFree_(Object *obj)
 
 //----------------------------------------------------------------------------
 
+List* List::last() const
+{
+   if (this == emptyList())
+      return const_cast<List*>(this) ;
+   const List* l = this ;
+   while (l->next() != emptyList())
+      l = l->next() ;
+   return const_cast<List*>(l) ;
+}
+
+//----------------------------------------------------------------------------
+
+List* List::reverse()
+{
+   List* l = this ;
+   List* prev = emptyList() ;
+   if (l == prev)
+      return l ;
+   List* next ;
+   while ((next = l->next()) != emptyList())
+      {
+      l->setNext(prev) ;
+      prev = l ;
+      l = next ;
+      }
+   return l ;
+}
+
+//----------------------------------------------------------------------------
+
 Object* List::nth(size_t N) const
 {
    const List* l { this } ;

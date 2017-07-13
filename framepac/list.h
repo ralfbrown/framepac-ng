@@ -85,6 +85,7 @@ class List : public Object
 
       // *** utility functions ***
       bool contains(const Object*) const ;
+      List* last() const ;
       List* reverse() ;
       Object* nth(size_t N) const ;
       List* nthcdr(size_t N) ;

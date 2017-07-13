@@ -83,13 +83,8 @@ void ListBuilder::appendClone(Object* o)
 
 void ListBuilder::appendList(List* l)
 {
-   List* tail = l ;
-   if (tail != List::emptyList())
-      {
-      while (tail->next() != List::emptyList())
-	 tail = tail->next() ;
-      }
-   *m_list_end = tail ;
+   List* tail = l->last() ;
+   *m_list_end = l ;
    m_list_end = tail->nextPtr() ;
    return ;
 }
