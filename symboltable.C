@@ -40,16 +40,6 @@ static Atomic<SymbolTable*> symbol_tables[256] ;
 Atomic<unsigned> current_symbol_table ;
 
 /************************************************************************/
-/************************************************************************/
-
-size_t Fr_symboltable_hashvalue(const char* symname)
-{
-   if (!symname) return 0 ;
-   size_t len = strlen(symname) ;
-   return FramepaC::fasthash64(symname,len) ;
-}
-
-/************************************************************************/
 /*	Methods for class SymbolTable					*/
 /************************************************************************/
 
@@ -114,24 +104,6 @@ SymbolTable::~SymbolTable()
    m_table_id = ~0 ;
 
    return ;
-}
-
-//----------------------------------------------------------------------------
-
-Symbol* SymbolTable::add(const char* name)
-{
-   if (!name) return nullptr ;
-
-   return nullptr ; //FIXME
-}
-
-//----------------------------------------------------------------------------
-
-Symbol* SymbolTable::find(const char* name) const
-{
-   if (!name) return nullptr ;
-
-   return nullptr ; //FIXME
 }
 
 //----------------------------------------------------------------------------

@@ -50,6 +50,15 @@ void Symbol::unintern()
 
 //----------------------------------------------------------------------------
 
+size_t Symbol::hashValue(const Symbol* sym)
+{
+   if (!sym) return 0 ;
+   size_t length = strlen(sym->name()) ;
+   return FramepaC::fasthash64(sym->name(),length) ;
+}
+
+//----------------------------------------------------------------------------
+
 size_t Symbol::hashValue(const char* name, size_t* len)
 {
    size_t length = name ? strlen(name) : 0 ;

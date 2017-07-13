@@ -585,7 +585,7 @@ class HashTable : public HashTableBase
 	 bool remove(size_t hashval, KeyT key) ;
 	 bool reclaimDeletions(size_t totalfrags, size_t fragnum) ;
 
-	 // special support for Fr::SymbolTableX
+	 // special support for Fr::SymHashSet
 	 template <typename RetT = KeyT>
 	 typename std::enable_if<std::is_base_of<Fr::Symbol,KeyT>::value,RetT>::type
 	 addKey(size_t hashval, const char* name, size_t namelen, bool* already_existed = nullptr) ;
@@ -596,7 +596,7 @@ class HashTable : public HashTableBase
 
 	 // special support for Fr::SymbolTable
 	 [[gnu::hot]] bool contains(size_t hashval, const char *name, size_t namelen) const ;
-	 // special support for Fr::SymbolTableX
+	 // special support for Fr::SymHashSet
 	 [[gnu::hot]] KeyT lookupKey(size_t hashval, const char *name, size_t namelen) const ;
 
 	 void replaceValue(size_t pos, ValT new_value) ;
@@ -780,11 +780,11 @@ class HashTable : public HashTableBase
       inline size_t hashValFull(KeyT key) const
 	 {
 	    // separate version for use by resizeTo(), which needs to use the full
-	    //   hash value and not just the key on Fr::SymbolTableX
-	    // this is the version for everyone *but* Fr::SymbolTableX
+	    //   hash value and not just the key on Fr::SymHashSet
+	    // this is the version for everyone *but* Fr::SymHashSet
 	    return hashVal(key) ;
 	 }
-      // special support for Fr::SymbolTableX
+      // special support for Fr::SymHashSet
       size_t hashVal(const char *keyname, size_t *namelen) const
 	 { return Symbol::hashValue(keyname,namelen) ; }
       inline bool isEqual(KeyT key1, KeyT key2) const
@@ -794,11 +794,11 @@ class HashTable : public HashTableBase
       inline bool isEqualFull(KeyT key1, KeyT key2) const
 	 {
 	    // separate version for use by resizeTo(), which needs to use the full
-	    //   key name and not just the key's pointer on Fr::SymbolTableX
-	    // this is the version for everyone *but* Fr::SymbolTableX
+	    //   key name and not just the key's pointer on Fr::SymHashSet
+	    // this is the version for everyone *but* Fr::SymHashSet
 	    return isEqual(key1,key2) ;
 	 }
-      // special support for Fr::SymbolTableX; must be overridden
+      // special support for Fr::SymHashSet; must be overridden
       static bool isEqual(const char *keyname, size_t namelen, KeyT key) ;
 
       // ============== Definitions to reduce duplication ================
@@ -860,7 +860,7 @@ class HashTable : public HashTableBase
 	       tab->remove(hashval,key) ;
 	    return tab->add(hashval,key,value) ;
 	 }
-      // special support for Fr::SymbolTableX
+      // special support for Fr::SymHashSet
       [[gnu::hot]] KeyT addKey(const char *name, bool *already_existed = nullptr)
 	 {
 	    INCR_COUNT(insert) ;
@@ -875,10 +875,10 @@ class HashTable : public HashTableBase
 	    size_t hashval = hashVal(name,&namelen) ;
 	    DELEGATE(contains(hashval,name,namelen))
 	 }
-      // special support for Fr::SymbolTableX
+      // special support for Fr::SymHashSet
       [[gnu::hot]] KeyT lookupKey(const char *name, size_t namelen, size_t hashval) const
          { DELEGATE(lookupKey(hashval,name,namelen)) }
-      // special support for Fr::SymbolTableX
+      // special support for Fr::SymHashSet
       [[gnu::hot]] KeyT lookupKey(const char *name) const
          {
 	    if (!name)
@@ -1139,13 +1139,12 @@ extern template class HashTable<const Symbol*,V> ; \
 typedef HashTable<const Symbol*,V> NAME ;
 
 //----------------------------------------------------------------------
-// specializations for Fr::SymbolTableX not included in the FrMAKE_SYMBOL_HASHTABLE_CLASS macro
+// specializations for Fr::SymHashSet not included in the FrMAKE_SYMBOL_HASHTABLE_CLASS macro
 
-size_t Fr_symboltable_hashvalue(const char* symname) ;
 template <>
 inline size_t HashTable<const Symbol*,NullObject>::hashValFull(const Symbol* key) const
 { 
-   return key ? Fr_symboltable_hashvalue(key->name()) : 0 ;
+   return Symbol::hashValue(key) ;
 }
 
 template <>
@@ -1379,7 +1378,7 @@ FrMAKE_SYMBOL_HASHTABLE_CLASS(SymCountHashTable,size_t) ;
 extern template class HashTable<Object*,NullObject> ;
 typedef HashTable<Object*,NullObject> ObjHashSet ;
 
-FrMAKE_SYMBOL_HASHTABLE_CLASS(SymbolTableX,NullObject) ;
+FrMAKE_SYMBOL_HASHTABLE_CLASS(SymHashSet,NullObject) ;
 FrMAKE_INTEGER_HASHTABLE_CLASS(HashSet_U32,uint32_t,NullObject) ;
 
 //----------------------------------------------------------------------------

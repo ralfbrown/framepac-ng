@@ -40,17 +40,20 @@ class SymbolTable : public Object
 
       void select() const ; // make this symbol table the current one
 
-      Symbol* add(const char* name) ;
+      Symbol* add(const char* name) { return name ? const_cast<Symbol*>(m_symbols.addKey(name)) : nullptr ; }
       Symbol* add(const String* name) { return name ? add(name->c_str()) : nullptr ; }
 
-      Symbol* find(const char* name) const ;
+      Symbol* find(const char* name) const { return const_cast<Symbol*>(m_symbols.lookupKey(name)) ; }
       Symbol* find(const String* name) const { return name ? find(name->c_str()) : nullptr ; }
+
+      bool exists(const char* name) const { return m_symbols.contains(name) ; }
+      bool exists(const String* name) const { return name ? m_symbols.contains(name->c_str()) : false ; }
 
    private: // static members
       static Allocator s_allocator ;
    protected:
-      Fr::SymbolTableX m_symbols ;
-      unsigned m_table_id ;
+      SymHashSet m_symbols ;
+      unsigned   m_table_id ;
 
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }

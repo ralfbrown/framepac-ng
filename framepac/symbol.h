@@ -62,6 +62,7 @@ class Symbol : public String
 
       const char* name() const { return c_str() ; }
 
+      static size_t hashValue(const Symbol*) ;
       static size_t hashValue(const char* name, size_t* len) ;
 
       // *** standard info functions ***
