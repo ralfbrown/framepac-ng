@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-09					*/
+/* Version 0.01, last edit 2017-07-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include "framepac/atomic.h"
 #include "framepac/symbol.h"
 #include "framepac/fasthash64.h"
 
@@ -32,8 +33,50 @@ namespace Fr
 
 Allocator SymbolTable::s_allocator(FramepaC::Object_VMT<SymbolTable>::instance(),sizeof(SymbolTable)) ;
 
+static Atomic<SymbolTable*> symbol_tables[256] ;
+Atomic<unsigned> current_symbol_table ;
+
 /************************************************************************/
 /************************************************************************/
+
+SymbolTable* SymbolTable::current()
+{
+   if (current_symbol_table >= lengthof(symbol_tables)) return nullptr ;
+   return symbol_tables[current_symbol_table].load() ;
+}
+
+//----------------------------------------------------------------------------
+
+void SymbolTable::select() const
+{
+   current_symbol_table.store(m_table_id) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+SymbolTable* SymbolTable::create(size_t capacity)
+{
+   SymbolTable* symtab = new SymbolTable(capacity) ;
+   // allocate a table ID by scanning for an unused slot in symbol_tables
+   for (size_t i = 0 ; i < lengthof(symbol_tables) ; ++i)
+      {
+      if (symbol_tables[i].load_relax() != nullptr)
+	 continue ;
+      SymbolTable* expected = nullptr ;
+      if (symbol_tables[i].compare_exchange_strong(expected,symtab))
+	 {
+	 // we've successfully allocated a slot, so remember the ID
+	 symtab->m_table_id = i ;
+	 return symtab ;
+	 }
+      }
+   // if we get here, we were unable to allocate a table ID, so we have to bail out
+   delete symtab ;
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
 
 SymbolTable::SymbolTable(size_t initial_size) : m_symbols(nullptr)
 {
@@ -55,8 +98,30 @@ SymbolTable::SymbolTable(const SymbolTable &orig) : Object(), m_symbols(nullptr)
 
 SymbolTable::~SymbolTable()
 {
+   // de-register the symbol table from the global list of tables
+   if (m_table_id < lengthof(symbol_tables))
+      symbol_tables[m_table_id].store(nullptr) ;
+   m_table_id = ~0 ;
 
    return ;
+}
+
+//----------------------------------------------------------------------------
+
+Symbol* SymbolTable::add(const char* name)
+{
+   if (!name) return nullptr ;
+
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+Symbol* SymbolTable::find(const char* name) const
+{
+   if (!name) return nullptr ;
+
+   return nullptr ; //FIXME
 }
 
 //----------------------------------------------------------------------------
@@ -101,6 +166,25 @@ bool SymbolTable::toCstring_(const Object *, char *buffer, size_t buflen, size_t
    (void)buffer;(void)buflen;(void)wrap_at;(void)indent;//FIXME
    //FIXME
    return true ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t SymbolTable::jsonStringLength_(const Object *obj, bool wrap, size_t indent)
+{
+   (void)obj; (void)wrap; (void)indent; //FIXME
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool SymbolTable::toJSONString_(const Object *obj, char *buffer, size_t buflen, bool wrap, size_t indent)
+{
+   (void)obj; (void)buflen; (void)wrap; (void)indent; //FIXME
+   if (!buffer)
+      return false ;
+
+   return false ; //FIXME
 }
 
 //----------------------------------------------------------------------------

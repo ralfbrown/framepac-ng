@@ -45,8 +45,8 @@ class MapIter
       MapIter(const MapIter &) = default ;
       ~MapIter() = default ;
 
-//!!!      Object* operator* () { return m_map->getIndex(m_index) ; }
-//!!!      const Object* operator* () const { return m_map->getIndex(m_index) ; }
+      Object* operator* () ;
+      const Object* operator* () const ;
       Object* operator-> () ;
       MapIter& operator++ () { ++m_index ; return *this ; }
       const Object* operator[] (size_t index) const ;
@@ -71,7 +71,7 @@ class Map : public Object
       size_t empty() const { return size() == 0 ; }
 
       // *** standard access functions ***
-      Object *front() const ;//FIXME
+      Object *front() const { return *cbegin() ; }
       Map *subseq(MapIter start, MapIter stop, bool shallow = false) const ;
 
       // *** iterator support ***
@@ -114,8 +114,8 @@ class Map : public Object
       static bool toCstring_(const Object*, char* buffer, size_t buflen,
 			     size_t wrap_at, size_t indent) ;
       static size_t jsonStringLength_(const Object*, bool wrap, size_t indent) ;
-      static bool toJSONString(const Object*, char* buffer, size_t buflen, bool wrap,
-			       size_t indent) ;
+      static bool toJSONString_(const Object*, char* buffer, size_t buflen, bool wrap,
+			        size_t indent) ;
 
       // *** standard info functions ***
       static size_t size_(const Object* obj) { return static_cast<const Map*>(obj)->size() ; }
@@ -133,6 +133,13 @@ class Map : public Object
 
       // *** iterator support ***
    } ;
+
+//----------------------------------------------------------------------------
+
+//inline Object* MapIter::operator* () { return m_map->getIndex(m_index) ; }
+//inline const Object* MapIter::operator* () const { return m_map->getIndex(m_index) ; }
+inline Object* MapIter::operator* () { return nullptr ; } //FIXME
+inline const Object* MapIter::operator* () const { return nullptr ; } //FIXME
 
 } ; // end namespace Fr
 

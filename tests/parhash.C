@@ -67,11 +67,6 @@ using namespace Fr ;
 /*	Type declarations						*/
 /************************************************************************/
 
-static SymbolTable* current_symtab() { return nullptr ; /* SymbolTable::current() ;*/ } //FIXME
-extern Symbol* findSymbol(const char* /*name*/) ; //FIXME
-static Symbol* add_symbol(SymbolTable* /*symtab*/, const char* /*name*/)
-{ /* return symtab->add(name) ; */ return nullptr ; } //FIXME
-
 enum Operation
 {
    Op_NONE,
@@ -392,7 +387,7 @@ static void hash_gensym(HashRequestOrder* order)
    // generate the symbols in multiple interleaved passes so that we
    //   don't end up with strictly increasing (and thus well-cached)
    //   hash keys during insertion
-   SymbolTable* symtab = current_symtab() ;
+   SymbolTable* symtab = SymbolTable::current() ;
    size_t passes = 53 ;
    for (size_t pass = 0 ; pass < passes ; ++pass)
       {
@@ -401,7 +396,7 @@ static void hash_gensym(HashRequestOrder* order)
 	 // generate our own unique symbol to avoid contention in gensym()
 	 char name[100] ;
 	 snprintf(name,sizeof(name),"%c%lu%c",(char)('A' + (order->id % 26)),i,'\0') ;
-	 syms[i] = add_symbol(symtab,name) ;
+	 syms[i] = symtab->add(name) ;
 	 }
       }
    return ;
@@ -482,19 +477,20 @@ static void hash_check(HashRequestOrder* order)
 
 //----------------------------------------------------------------------
 
-static bool find_Symbol(const Symbol* sym)
+static bool find_Symbol(const SymbolTable* symtab, const Symbol* sym)
 {
-//FIXME   return sym ? findSymbol(sym->symbolName()) != nullptr : false;
-   (void)sym;
-   return false ;
+   return symtab->find(sym) != nullptr ;
 }
 
-static bool find_Symbol(INTEGER_TYPE) { return false ; }
+static bool find_Symbol(const SymbolTable*, INTEGER_TYPE) { return false ; }
 
-//static const char* sym_name(const Symbol* sym) { return sym->symbolName() ; }
-static const char* sym_name(const Symbol* /*sym*/) { return nullptr ; } //FIXME
+//----------------------------------------------------------------------
+
+static const char* sym_name(const Symbol* sym) { return sym->name() ; }
 
 static const char* sym_name(INTEGER_TYPE) { return "" ; }
+
+//----------------------------------------------------------------------
 
 template <class HashT, typename KeyT>
 static void hash_checksyms(HashRequestOrder* order)
@@ -502,9 +498,10 @@ static void hash_checksyms(HashRequestOrder* order)
    my_job_id = order->id ;
    size_t slice_end = order->slice_start + order->slice_size ;
    KeyT* syms  = (KeyT*)order->syms ;
+   SymbolTable* symtab = SymbolTable::current() ;
    for (size_t i = order->slice_start ; i < slice_end ; ++i)
       {
-      if (!find_Symbol(syms[i]) && order->strict)
+      if (!find_Symbol(symtab,syms[i]) && order->strict)
 	 {
 	 print_msg(cerr,";  Job %lu - missing symbol %s\n",
 		   order->id,sym_name(syms[i])) ;
@@ -1126,15 +1123,16 @@ void hash_command(ostream &out, int threads, bool terse, uint32_t* randnums,
    // speed up symbol creation and avoid memory fragmentation by
    //  expanding the symbol table to hold all the symbols we will
    //  create
-//FIXME   SymbolTable* curr_symtab = SymbolTable::current() ;
    size_t needed = 2*maxsize ;//FIXME
    needed *= 1.33 ; // gensyms tend to cluster in the table, since they are so similar in name
-//FIXME   curr_symtab->expandTo(needed+1000) ;
+   SymbolTable* symtab = SymbolTable::create(needed) ;
+   symtab->select() ;
    out << "Preparing symbols       " << endl ;
    hash_test(nullptr,out,threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_GENSYM,terse) ;
    out << "Checking symbols        " << endl ;
    hash_test(nullptr,out,threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_CHECKSYMS,terse) ;
    run_tests<ObjHashTable>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse) ;
+   symtab->free() ;
    delete[] keys ;
    return ;
 }

@@ -113,6 +113,25 @@ bool Map::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at
 
 //----------------------------------------------------------------------------
 
+size_t Map::jsonStringLength_(const Object *obj, bool wrap, size_t indent)
+{
+   (void)obj; (void)wrap; (void)indent; //FIXME
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool Map::toJSONString_(const Object *obj, char *buffer, size_t buflen, bool wrap, size_t indent)
+{
+   (void)obj; (void)buflen; (void)wrap; (void)indent; //FIXME
+   if (!buffer)
+      return false ;
+
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
 size_t Map::hashValue_(const Object* obj)
 {
    const Map* map = static_cast<const Map*>(obj) ;

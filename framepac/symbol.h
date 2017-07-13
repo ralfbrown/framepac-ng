@@ -159,21 +159,29 @@ class Symbol : public String
 class SymbolTable : public Object
    {
    public:
+      static SymbolTable* create(size_t capacity = 0) ;
+      static SymbolTable* current() ;
+
+      void select() const ; // make this symbol table the current one
+
+      Symbol* add(const char* name) ;
+      Symbol* add(const String* name) { return name ? add(name->c_str()) : nullptr ; }
+
+      Symbol* find(const char* name) const ;
+      Symbol* find(const String* name) const { return name ? find(name->c_str()) : nullptr ; }
+
+   private: // static members
+      static Allocator s_allocator ;
+   protected:
+      Map m_symbols ;
+      unsigned m_table_id ;
+
+   protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       SymbolTable(size_t initial_size) ;
       SymbolTable(const SymbolTable&) ;
       ~SymbolTable() ;
-
-      static SymbolTable* current() ;
-
-      Symbol* add(const char* name) ;
-      Symbol* add(const String* name) ;
-      
-   private: // static members
-      static Allocator s_allocator ;
-   private:
-      Map m_symbols ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<SymbolTable> ;
