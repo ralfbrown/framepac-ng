@@ -93,7 +93,7 @@ class List : public Object
       void setNext(List* nxt) { m_next = nxt ; }
       List** nextPtr() { return &m_next ; }
       List* const * nextPtr() const { return &m_next ; }
-      static const List* emptyList() { return empty_list ; }
+      static List* emptyList() { return empty_list ; }
 
    private: // static members
       static Allocator s_allocator ;
@@ -177,14 +177,21 @@ class ListBuilder
    public:
       ListBuilder() : m_list(List::create()), m_list_end(&m_list) {}
       ListBuilder(const ListBuilder&) = delete ;
-      ListBuilder(List*) ;
+      ListBuilder(List*&&) ;
       ~ListBuilder() {}
       ListBuilder& operator= (const ListBuilder&) = delete ;
 
+      // retrieve contents
+      List* operator * () const { return m_list ; }
+      List* move() { List* l = m_list ; m_list = List::emptyList() ; return l ; }
+
+      // discard contents
+      void clear() { m_list->free() ; m_list = List::emptyList() ; }
+      
       // add an element to the start of the list
       void push(Object* o) ;
       // add an element to the end of the list
-      void append(Object* o) { *m_list_end = List::create(o) ; }
+      void append(Object* o) ;
       void appendClone(Object* o) ;
       // concatenate an entire list to the end of the existing list
       void appendList(List* l) ;
@@ -194,7 +201,7 @@ class ListBuilder
       void reverse() ;
 
       ListBuilder& operator += (Object* o) { append(o) ; return *this ; }
-      List* operator * () const { return m_list ; }
+
    } ;
 
 //----------------------------------------------------------------------------

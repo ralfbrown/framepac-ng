@@ -27,9 +27,17 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-ListBuilder::ListBuilder(List*)
+ListBuilder::ListBuilder(List*&& init_list)
 {
-//FIXME
+   m_list = init_list ;
+   List* tail = m_list ;
+   if (tail != List::emptyList())
+      {
+      while (tail->next() != List::emptyList())
+	 tail = tail->next() ;
+      }
+   m_list_end = tail->nextPtr() ;
+   init_list = List::emptyList() ;
    return ;
 }
 
@@ -40,6 +48,20 @@ void ListBuilder::push(Object* o)
    List* new_l = List::create(o) ;
    new_l->setNext(m_list) ;
    m_list = new_l ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void ListBuilder::append(Object* o)
+{
+   if (m_list == List::emptyList())
+      {
+      m_list = List::create(o) ;
+      m_list_end = m_list->nextPtr() ;
+      return ;
+      }
+   *m_list_end = List::create(o) ;
    return ;
 }
 
