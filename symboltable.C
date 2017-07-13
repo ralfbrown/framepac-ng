@@ -22,6 +22,7 @@
 #include "framepac/atomic.h"
 #include "framepac/symboltable.h"
 #include "framepac/fasthash64.h"
+#include "framepac/texttransforms.h"
 
 using namespace FramepaC ;
 
@@ -39,21 +40,33 @@ Allocator SymbolTable::s_allocator(FramepaC::Object_VMT<SymbolTable>::instance()
 static Atomic<SymbolTable*> symbol_tables[256] ;
 Atomic<unsigned> current_symbol_table ;
 
+Atomic<size_t> gensym_count ;
+
 /************************************************************************/
 /*	Methods for class SymbolTable					*/
 /************************************************************************/
 
-SymbolTable* SymbolTable::current()
+SymbolTable::SymbolTable(size_t initial_size) : m_symbols(initial_size)
 {
-   if (current_symbol_table >= lengthof(symbol_tables)) return nullptr ;
-   return symbol_tables[current_symbol_table].load() ;
+   return ;
 }
 
 //----------------------------------------------------------------------------
 
-void SymbolTable::select() const
+SymbolTable::SymbolTable(const SymbolTable &orig) : Object(), m_symbols(orig.m_symbols.bucket_count())
 {
-   current_symbol_table.store(m_table_id) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+SymbolTable::~SymbolTable()
+{
+   // de-register the symbol table from the global list of tables
+   if (m_table_id < lengthof(symbol_tables))
+      symbol_tables[m_table_id].store(nullptr) ;
+   m_table_id = ~0 ;
+
    return ;
 }
 
@@ -82,28 +95,54 @@ SymbolTable* SymbolTable::create(size_t capacity)
 
 //----------------------------------------------------------------------------
 
-SymbolTable::SymbolTable(size_t initial_size) : m_symbols(initial_size)
+SymbolTable* SymbolTable::current()
 {
+   if (current_symbol_table >= lengthof(symbol_tables)) return nullptr ;
+   return symbol_tables[current_symbol_table].load() ;
+}
+
+//----------------------------------------------------------------------------
+
+void SymbolTable::select() const
+{
+   current_symbol_table.store(m_table_id) ;
    return ;
 }
 
 //----------------------------------------------------------------------------
 
-SymbolTable::SymbolTable(const SymbolTable &orig) : Object(), m_symbols(orig.m_symbols.bucket_count())
+bool SymbolTable::select(const char* name)
 {
-   return ;
+   for (size_t i = 0 ; i < lengthof(symbol_tables) ; ++i)
+      {
+      SymbolTable* symtab = symbol_tables[i].load() ;
+      const char* table_name = symtab->tableName() ;
+      if (name == table_name || (name && table_name && strcmp(name,table_name) == 0))
+	 {
+	 symtab->select() ;
+	 return true ;
+	 }
+      }
+   return false ;
 }
 
 //----------------------------------------------------------------------------
 
-SymbolTable::~SymbolTable()
+Symbol* SymbolTable::gensym(const char* basename, const char* suffix)
 {
-   // de-register the symbol table from the global list of tables
-   if (m_table_id < lengthof(symbol_tables))
-      symbol_tables[m_table_id].store(nullptr) ;
-   m_table_id = ~0 ;
-
-   return ;
+   if (!basename) basename = "GS" ;
+   if (!suffix) suffix = "" ;
+   const Symbol* sym ;
+   bool existed ;
+   do {
+      // get a unique count
+      size_t count = gensym_count++ ;
+      // generate the symbol's name
+      char* name = aprintf("%s%ld%s",basename,count,suffix) ;
+      sym = m_symbols.addKey(name,&existed) ;
+      delete[] name ;
+      } while (!sym || existed) ; // loop until the generated name was not already a symbol in the table
+   return const_cast<Symbol*>(sym) ;
 }
 
 //----------------------------------------------------------------------------

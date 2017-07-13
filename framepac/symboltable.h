@@ -39,9 +39,13 @@ class SymbolTable : public Object
       static SymbolTable* current() ;
 
       void select() const ; // make this symbol table the current one
+      static bool select(const char* name) ; // select the symbol table with the given name
+
+      Symbol* gensym(const char* basename = nullptr, const char* suffix = nullptr) ;
 
       Symbol* add(const char* name) { return name ? const_cast<Symbol*>(m_symbols.addKey(name)) : nullptr ; }
       Symbol* add(const String* name) { return name ? add(name->c_str()) : nullptr ; }
+      Symbol* add(const Object* obj) { return obj ? add(obj->stringValue()) : nullptr ; }
 
       Symbol* find(const char* name) const { return const_cast<Symbol*>(m_symbols.lookupKey(name)) ; }
       Symbol* find(const String* name) const { return name ? find(name->c_str()) : nullptr ; }
@@ -49,12 +53,16 @@ class SymbolTable : public Object
       bool exists(const char* name) const { return m_symbols.contains(name) ; }
       bool exists(const String* name) const { return name ? m_symbols.contains(name->c_str()) : false ; }
 
+      void tableName(const char* name) ;
+      const char* tableName() const { return m_name ; }
+
    private: // static members
       static Allocator s_allocator ;
    protected:
       SymHashSet m_symbols ;
       unsigned   m_table_id ;
-
+      char*      m_name { nullptr } ;
+      
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
