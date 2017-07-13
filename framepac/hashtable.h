@@ -1123,7 +1123,8 @@ typedef HashTable<K,V> NAME ;
 #define FrMAKE_SYMBOL_HASHTABLE_CLASS(NAME,V) \
 \
 template <> \
-inline size_t HashTable<const Symbol*,V>::hashVal(const Symbol* key) const { return (size_t)key ; } \
+inline size_t HashTable<const Symbol*,V>::hashVal(const Symbol* key) const \
+{ return key->hashValue() ; }						\
 \
 template <> \
 inline bool HashTable<const Symbol*,V>::isEqual(const Symbol* key1, const Symbol* key2) const \

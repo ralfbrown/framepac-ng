@@ -62,6 +62,7 @@ class Symbol : public String
 
       const char* name() const { return c_str() ; }
 
+      size_t hashValue() const { return hashValue_(this) ; }
       static size_t hashValue(const Symbol*) ;
       static size_t hashValue(const char* name, size_t* len) ;
 
@@ -144,7 +145,7 @@ class Symbol : public String
       //static const char *stringValue_(const Object *obj) : inherited from String
 
       // *** comparison functions ***
-      static size_t hashValue_(const Object* obj) { return (size_t)obj ; }
+      static size_t hashValue_(const Object* obj) ;
       static bool equal_(const Object* obj, const Object* other) ;
       static int compare_(const Object* obj, const Object* other) ;
       static int lessThan_(const Object* obj, const Object* other) ;

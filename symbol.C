@@ -104,6 +104,13 @@ bool Symbol::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap
 
 //----------------------------------------------------------------------------
 
+size_t Symbol::hashValue_(const Object* obj)
+{
+   return FramepaC::fasthash64_mix((uint64_t)obj) ;
+}
+
+//----------------------------------------------------------------------------
+
 bool Symbol::equal_(const Object *obj, const Object *other)
 {
    // symbol equality comparisons are done strictly as pointer
