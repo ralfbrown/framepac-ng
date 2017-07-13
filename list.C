@@ -49,7 +49,7 @@ List::List() : m_next(nullptr), m_item(nullptr)
 
 //----------------------------------------------------------------------------
 
-List::List(const List *orig) : m_next(orig->m_next), m_item(orig->m_item)
+List::List(const List* orig) : m_next(orig->m_next), m_item(orig->m_item)
 {
 //FIXME
    return ;
@@ -57,7 +57,7 @@ List::List(const List *orig) : m_next(orig->m_next), m_item(orig->m_item)
 
 //----------------------------------------------------------------------------
 
-List::List(const List &orig) : Object(), m_next(orig.m_next), m_item(orig.m_item)
+List::List(const List& orig) : Object(), m_next(orig.m_next), m_item(orig.m_item)
 {
 //FIXME
    return ;
@@ -65,16 +65,16 @@ List::List(const List &orig) : Object(), m_next(orig.m_next), m_item(orig.m_item
 
 //----------------------------------------------------------------------------
 
-List *List::create()
+List* List::create()
 {
    return empty_list ;
 }
 
 //----------------------------------------------------------------------------
 
-List *List::create(Object *obj)
+List* List::create(Object *obj)
 {
-   List *l { new List };
+   List* l { new List };
    l->m_next = empty_list ;
    l->m_item = obj ;
    return l ;
@@ -82,10 +82,10 @@ List *List::create(Object *obj)
 
 //----------------------------------------------------------------------------
 
-List *List::create(Object *obj1, Object *obj2)
+List* List::create(Object* obj1, Object* obj2)
 {
-   List *tail { create(obj2) };
-   List *l = new List ;
+   List* tail { create(obj2) };
+   List* l = new List ;
    l->m_next = tail ;
    l->m_item = obj1 ;
    return l ;
@@ -93,10 +93,10 @@ List *List::create(Object *obj1, Object *obj2)
 
 //----------------------------------------------------------------------------
 
-List *List::create(Object *obj1, Object *obj2, Object *obj3)
+List* List::create(Object* obj1, Object* obj2, Object* obj3)
 {
-   List *tail { create(obj2,obj3) };
-   List *l = new List ;
+   List* tail { create(obj2,obj3) };
+   List* l = new List ;
    l->m_next = tail ;
    l->m_item = obj1 ;
    return l ;
@@ -104,10 +104,18 @@ List *List::create(Object *obj1, Object *obj2, Object *obj3)
 
 //----------------------------------------------------------------------------
 
-List *List::create(const char * /*string_rep*/)
+List* List::create(const char* /*string_rep*/)
 {
 
    return empty_list ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+List* List::create(istream&)
+{
+   //FIXME
+   return empty_list ;
 }
 
 //----------------------------------------------------------------------------

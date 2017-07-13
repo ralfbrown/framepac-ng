@@ -65,6 +65,7 @@ class List : public Object
       static List* create(Object*, Object*) ;
       static List* create(Object*, Object*, Object*) ;
       static List* create(const char*) ;
+      static List* create(istream&) ;
 
       // *** standard info functions ***
       size_t size() const ;
@@ -82,7 +83,16 @@ class List : public Object
       ListIter cend() const { return ListIter(empty_list) ; }
       List* next() const { return m_next ; }
 
+      // *** utility functions ***
+      bool contains(const Object*) const ;
+      List* reverse() ;
+      Object* nth(size_t N) const ;
+      List* nthcdr(size_t N) const ;
+
       void setNext(List* nxt) { m_next = nxt ; }
+      List** nextPtr() { return &m_next ; }
+      List* const * nextPtr() const { return &m_next ; }
+      static const List* emptyList() { return empty_list ; }
 
    private: // static members
       static Allocator s_allocator ;
@@ -166,13 +176,23 @@ class ListBuilder
    public:
       ListBuilder() : m_list(List::create()), m_list_end(&m_list) {}
       ListBuilder(const ListBuilder&) = delete ;
+      ListBuilder(List*) ;
       ~ListBuilder() {}
       ListBuilder& operator= (const ListBuilder&) = delete ;
 
-      void append(Object *o) { *m_list_end = List::create(o) ; }
-      
-      ListBuilder &operator += (Object *o) { append(o) ; return *this ; }
-      List *operator * () const { return m_list ; }
+      // add an element to the start of the list
+      void push(Object* o) ;
+      // add an element to the end of the list
+      void append(Object* o) { *m_list_end = List::create(o) ; }
+      // concatenate an entire list to the end of the existing list
+      void appendList(List* l) ;
+      // remove the first element of the list
+      Object* pop() ;
+      // reverse the order of elements in the list
+      void reverse() ;
+
+      ListBuilder& operator += (Object* o) { append(o) ; return *this ; }
+      List* operator * () const { return m_list ; }
    } ;
 
 //----------------------------------------------------------------------------
