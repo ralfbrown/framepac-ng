@@ -177,13 +177,14 @@ class ListBuilder
       List **m_list_end ;
 
    public:
-      ListBuilder() : m_list(List::create()), m_list_end(&m_list) {}
+      ListBuilder() : m_list(List::emptyList()), m_list_end(&m_list) {}
       ListBuilder(const ListBuilder&) = delete ;
       ListBuilder(List*&&) ;
       ~ListBuilder() {}
       ListBuilder& operator= (const ListBuilder&) = delete ;
 
       // retrieve contents
+      operator bool () const { return m_list != List::emptyList() ; }
       List* operator * () const { return m_list ; }
       List* move() { List* l = m_list ; m_list = List::emptyList() ; return l ; }
 
@@ -192,6 +193,8 @@ class ListBuilder
       
       // add an element to the start of the list
       void push(Object* o) ;
+      // concatenate an entire list at the front of the existing list
+      void prependList(List* l) ;
       // add an element to the end of the list
       void append(Object* o) ;
       void appendClone(Object* o) ;

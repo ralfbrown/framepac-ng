@@ -53,6 +53,18 @@ void ListBuilder::push(Object* o)
 
 //----------------------------------------------------------------------------
 
+void ListBuilder::prependList(List* l)
+{
+   if (l == List::emptyList())
+      return ;
+   List* tail = l->last() ;
+   tail->setNext(m_list) ;
+   m_list = l ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 void ListBuilder::append(Object* o)
 {
    if (m_list == List::emptyList())
