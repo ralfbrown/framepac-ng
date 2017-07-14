@@ -21,12 +21,12 @@
 
 #include <istream>
 #include "framepac/bignum.h"
-#include "framepac/builder.h"
 #include "framepac/objreader.h"
 #include "framepac/list.h"
 #include "framepac/number.h"
 #include "framepac/rational.h"
 #include "framepac/string.h"
+#include "framepac/stringbuilder.h"
 #include "framepac/symbol.h"
 
 namespace Fr {
@@ -111,22 +111,22 @@ static Object* skip_ws(const ObjectReader *reader, CharGetter &getter)
 static Object* readsym(const ObjectReader *, CharGetter &getter,
 		       char prefixchar)
 {
-   BufferBuilder<char> buf ;
+   StringBuilder sb ;
 
    if (prefixchar)
-      buf += prefixchar ;
+      sb += prefixchar ;
    while (getter)
       {
       int nextch = getter.peek() ;
       if (is_symbol_char(nextch))
 	 {
-	 buf += *getter ;
+	 sb += *getter ;
 	 }
       else
 	 break ;
       }
-   buf += '\0' ;
-   return Symbol::create(*buf) ;
+   sb += '\0' ;
+   return Symbol::create(*sb) ;
 }
 
 //----------------------------------------------------------------------------
@@ -141,7 +141,7 @@ static Object* readsym(const ObjectReader *reader, CharGetter &getter)
 static Number* readnum(const ObjectReader *, CharGetter &getter,
 		        bool negate)
 {
-   BufferBuilder<char> buf ;
+   StringBuilder sb ;
    bool havedecimal { false };
    bool inexponent { false };
    bool atstart { true };
@@ -150,7 +150,7 @@ static Number* readnum(const ObjectReader *, CharGetter &getter,
 
    if (negate)
       {
-      buf += '-' ;
+      sb += '-' ;
       atstart = false ;
       }
    while (getter)
@@ -158,7 +158,7 @@ static Number* readnum(const ObjectReader *, CharGetter &getter,
       int nextch { getter.peek() };
       if (isdigit(nextch))
 	 {
-	 buf += *getter ;
+	 sb += *getter ;
 	 atstart = false ;
 	 }
       else if (nextch == '.' || nextch == 'e' || nextch == 'E')
@@ -178,34 +178,34 @@ static Number* readnum(const ObjectReader *, CharGetter &getter,
 	    inexponent = true ;
 	    atstart = true ;
 	    }
-	 buf += *getter ;
+	 sb += *getter ;
 	 }
       else if (nextch == '/')
 	 {
 	 if (!isfloat && !isrational)
 	    {
 	    isrational = true ;
-	    buf += *getter ;
+	    sb += *getter ;
 	    }
 	 else
 	    break ;
 	 }
       else if (atstart && (nextch == '-' || nextch == '+'))
 	 {
-	 buf += *getter ;
+	 sb += *getter ;
 	 atstart = false ;
 	 }
    //FIXME
       }
-   buf += '\0' ;
    Number *obj ;
+   sb += '\0' ;
    if (isfloat)
       {
-      obj = Float::create(*buf) ;
+      obj = Float::create(*sb) ;
       }
    else
       {
-      obj = Number::create(*buf) ;
+      obj = Number::create(*sb) ;
       }
    return obj ;
 }
@@ -237,7 +237,7 @@ static char* read_delimited_string(const ObjectReader *,
 				   CharGetter &getter,
 				   char quotechar, unsigned &len)
 {
-   BufferBuilder<char> buf ;
+   StringBuilder sb ;
    int delim { *getter };	// consume the opening delimiter
 
    while (getter)
@@ -251,7 +251,7 @@ static char* read_delimited_string(const ObjectReader *,
 	    nextch = getter.peek() ;
 	    if (nextch == delim)
 	       {
-	       buf += *getter ;
+	       sb += *getter ;
 	       }
 	    else
 	       break ;		// it was the terminator, so we're done
@@ -260,7 +260,7 @@ static char* read_delimited_string(const ObjectReader *,
 	    {
 	    nextch = *getter ;
 	    //FIXME
-	    buf += nextch ;
+	    sb += nextch ;
 	    }
 	 }
       else if (nextch == delim)
@@ -269,12 +269,12 @@ static char* read_delimited_string(const ObjectReader *,
 	 }
       else
 	 {
-	 buf += *getter ;
+	 sb += *getter ;
 	 }
       }
-   len = buf.currentLength() ;
-   buf += '\0' ;
-   return buf.finalize() ;
+   len = sb.currentLength() ;
+   sb += '\0' ;
+   return sb.finalize() ;
 }
 
 //----------------------------------------------------------------------------
@@ -353,14 +353,31 @@ static Object* read_radix_number(const ObjectReader *,
 
    // accumulate digits until we hit a character that isn't a valid digit in the
    //   given radix
-   BufferBuilder<char> buf ;
+   StringBuilder sb ;
    int nextdigit ;
    while ((nextdigit = getter.peek()) != EOF && valid_digit(nextdigit,radix))
       {
-      buf += *getter ;
+      sb += *getter ;
       }
-   buf += '\0' ;
-   return Integer::create(*buf,radix) ;
+   sb += '\0' ;
+   return Integer::create(*sb,radix) ;
+}
+
+//----------------------------------------------------------------------------
+
+static Object* read_bitvector(const ObjectReader*, CharGetter& getter)
+{
+   (void)getter ;
+   // accumulate digits until we hit something other than '0' or '1'
+   StringBuilder sb ;
+   int nextdigit ;
+   while ((nextdigit = getter.peek()) != EOF && (nextdigit == '0' || nextdigit == '1'))
+      {
+      sb += *getter ;
+      }
+   sb += '\0' ;
+//FIXME: return BitVector::create(*sb) ;
+   return nullptr ;
 }
 
 //----------------------------------------------------------------------------
@@ -415,20 +432,44 @@ static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
 	 buf[1] = '\0' ;
 	 return Symbol::create(buf) ;
 	 }
+      case '(':
+	 // TODO: read vector
+	 break ;
+      case '#':
+	 // TODO: shared object reference
+	 break ;
+      case '=':
+	 // TODO: shared object definition
+	 break ;
+      case '*':
+	 return read_bitvector(reader,getter) ;
+	 break ;
+      case 'A':
+	 // TODO: read array
+	 break ;
       case 'b':
       case 'B':
 	 return read_radix_number(reader,getter,2) ;
+      case 'H':
+	 // TODO: read hashtable
+	 break ;
       case 'o':
       case 'O':
 	 return read_radix_number(reader,getter,8) ;
-      case'x':
-      case 'X':
-	 return read_radix_number(reader,getter,16) ;
+      case 'Q':
+	 // TODO: read queue
+	 break ;
       case 'r':
       case 'R':
 	 return read_radix_number(reader,getter,atoi(digits)) ;
-   //FIXME
+      case 'S':
+	 // TODO: read struct, ???simulated as a hashtable?
+	 break ;
+      case'x':
+      case 'X':
+	 return read_radix_number(reader,getter,16) ;
       default:
+	 // TODO: read symbol starting with #
 	 break ;
       }
    return symbolEOF ;
