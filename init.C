@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-10					*/
+/* Version 0.01, last edit 2017-07-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -22,6 +22,7 @@
 #include <cstdlib>
 #include <mutex>
 #include "framepac/init.h"
+#include "framepac/symboltable.h"
 
 #ifndef FrSINGLE_THREADED
 #include <thread>
@@ -55,7 +56,13 @@ bool Initialize()
    if (!initialized)
       {
       initialized = true ;
-//TODO: perform any requred FramepaC-ng initialization
+      // initialize a default symbol table
+      if (!SymbolTable::current())
+	 {
+	 SymbolTable* symtab = SymbolTable::create(10000) ;
+	 symtab->select() ;
+	 }
+//TODO: perform any other required FramepaC-ng initialization
 
       // install termination handler
       std::atexit(Shutdown) ;

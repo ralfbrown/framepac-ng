@@ -285,7 +285,7 @@ DISTFILES= LICENSE COPYING makefile .gitignore *.C *.h framepac/*.h template/*.c
 LIBRARY = $(PACKAGE)$(LIB)
 
 # the executable(s) to be built for testing the package
-TESTPROGS = $(BINDIR)/argparser$(EXE) $(BINDIR)/membench$(EXE) $(BINDIR)/parhash$(EXE) \
+TESTPROGS = $(BINDIR)/argparser$(EXE) $(BINDIR)/membench$(EXE) $(BINDIR)/objtest$(EXE) $(BINDIR)/parhash$(EXE) \
 	 $(BINDIR)/stringtest$(EXE) $(BINDIR)/tpool$(EXE)
 
 #########################################################################
@@ -366,6 +366,9 @@ $(BINDIR)/argparser$(EXE):	tests/argparser$(OBJ) $(LIBRARY)
 $(BINDIR)/membench$(EXE):	tests/membench$(OBJ) $(LIBRARY)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
+$(BINDIR)/objtest$(EXE):	tests/objtest$(OBJ) $(LIBRARY)
+		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
+
 $(BINDIR)/parhash$(EXE):	tests/parhash$(OBJ) $(LIBRARY)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
@@ -414,7 +417,7 @@ hashtable_symobj$(OBJ):	hashtable_symobj$(C) template/hashtable.cc
 hashtable_symsz$(OBJ):	hashtable_symsz$(C) template/hashtable.cc
 hashtable_u32u32$(OBJ):	hashtable_u32u32$(C) template/hashtable.cc
 hazardptr$(OBJ):	hazardptr$(C) framepac/atomic.h
-init$(OBJ):		init$(C) framepac/init.h
+init$(OBJ):		init$(C) framepac/init.h framepac/symboltable.h
 integer$(OBJ):		integer$(C) framepac/number.h framepac/fasthash64.h
 jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/stringbuilder.h framepac/list.h \
 			framepac/map.h framepac/number.h
@@ -619,6 +622,7 @@ FramepaC.h:	framepac/config.h
 tests/argparser$(OBJ):	tests/argparser$(C) framepac/argparser.h
 tests/membench$(OBJ):	tests/membench$(C) framepac/argparser.h framepac/memory.h framepac/threadpool.h \
 			framepac/timer.h
+tests/objtest$(OBJ):	tests/objtest$(C) framepac/objreader.h framepac/symboltable.h
 tests/parhash$(OBJ):	tests/parhash$(C) framepac/argparser.h framepac/hashtable.h framepac/message.h \
 			framepac/random.h framepac/symboltable.h framepac/texttransforms.h framepac/threadpool.h \
 			framepac/timer.h
