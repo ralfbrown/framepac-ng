@@ -38,7 +38,7 @@ static Object *read_json_map(const ObjectReader *reader, CharGetter &getter)
    while ((nextch = getter.peekNonWhite()) != EOF && nextch != '}')
       {
       // map consists of keyword/value pairs
-      Object *keyword = reader->read(getter) ; //FIXME
+      Object *keyword = reader->read(getter) ;
       // JSON requires a colon after the keyword, but we'll muddle on if it's missing
       if (getter.peekNonWhite() == ':')
 	 getter.get() ;
