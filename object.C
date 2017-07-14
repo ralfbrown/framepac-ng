@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include "framepac/object.h"
+#include "framepac/objreader.h"
 
 using namespace FramepaC ;
 using namespace Fr ;
@@ -34,9 +35,17 @@ namespace Fr
 /*	Methods for class Object					*/
 /************************************************************************/
 
-ObjectPtr Object::clone_(const Object *)
+ObjectPtr Object::create(const Object* obj)
 {
-   return ObjectPtr(new Object) ;
+   return obj ? obj->clone() : nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+ObjectPtr Object::clone_(const Object* obj)
+{
+   // pure virtual, must be overridden by each derived class
+   return const_cast<Object*>(obj) ;
 }
 
 //----------------------------------------------------------------------------
@@ -60,7 +69,7 @@ ObjectPtr Object::subseq_iter(const Object *obj, ObjectIter start, ObjectIter st
 
 //----------------------------------------------------------------------------
 
-char *Object::cString(size_t wrap_at, size_t indent) const
+char* Object::cString(size_t wrap_at, size_t indent) const
 {
    size_t buflen { cStringLength(wrap_at,indent) };
    char *buffer { new char[buflen+1] };
@@ -75,9 +84,10 @@ char *Object::cString(size_t wrap_at, size_t indent) const
 
 //----------------------------------------------------------------------------
 
-size_t Object::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent)
+size_t Object::cStringLength_(const Object* obj, size_t /*wrap_at*/, size_t indent)
 {
-   return snprintf(nullptr,0,"%*s#Object<%lu>",(int)indent,"",(unsigned long)obj) ;
+   const char* type = obj ? obj->typeName() : "" ;
+   return snprintf(nullptr,0,"%*s#Object<%s:%lu>",(int)indent,"",type,(unsigned long)obj) ;
 }
 
 //----------------------------------------------------------------------------
@@ -86,7 +96,8 @@ bool Object::toCstring_(const Object *obj, char *buffer, size_t buflen, size_t /
 {
    if (!buffer)
       return false ;
-   size_t count = snprintf(buffer,buflen,"%*s#Object<%lu>%c",(int)indent,"",(unsigned long)obj,'\0') ;
+   const char* type = obj ? obj->typeName() : "" ;
+   size_t count = snprintf(buffer,buflen,"%*s#Object<%s:%lu>%c",(int)indent,"",type,(unsigned long)obj,'\0') ;
    return count <= buflen ;
 }
 

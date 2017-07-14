@@ -23,6 +23,7 @@
 #define __Fr_OBJECT_H_INCLUDED
 
 #include <iostream>
+#include <string>
 #include "framepac/memory.h"
 
 /************************************************************************/
@@ -83,7 +84,9 @@ class Object
       ~Object() {}
       static ObjectPtr create(const char* printed_representation) ;
       static ObjectPtr create(const Object*) ;
+      static ObjectPtr create(FILE*) ;
       static ObjectPtr create(istream&) ;
+      static ObjectPtr create(const std::string&) ;
 
       // *** copying ***
       FrVIRTFUNC0(ObjectPtr,clone,clone_,const) ;
@@ -214,15 +217,6 @@ inline ObjectIter& Object::next_iter(const Object*,ObjectIter& it) { it.m_object
 //----------------------------------------------------------------------------
 
 inline void ObjectPtr::free() { if (m_object) { m_object->free() ; release() ; } }
-
-/************************************************************************/
-/************************************************************************/
-
-inline istream& operator >> (istream& in, Object*& obj)
-{
-   obj = Object::create(in) ;
-   return in ;
-}
 
 /************************************************************************/
 /************************************************************************/

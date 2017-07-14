@@ -578,12 +578,24 @@ Object* ObjectReader::readObject(FILE* infp) const
 Object* ObjectReader::readObject(char*& instr) const
 {
    CharGetterCString getter(instr) ;
-   return read(getter) ;
+   Object* o = read(getter) ;
+   instr = const_cast<char*>(getter.data()) ;
+   return o ;
 }
 
 //----------------------------------------------------------------------------
 
-Object* ObjectReader::readObject(std::string& instr) const
+Object* ObjectReader::readObject(const char*& instr) const
+{
+   CharGetterCString getter(instr) ;
+   Object* o = read(getter) ;
+   instr = getter.data() ;
+   return o ;
+}
+
+//----------------------------------------------------------------------------
+
+Object* ObjectReader::readObject(const std::string& instr) const
 {
    CharGetterStdString getter(instr) ;
    return read(getter) ;
@@ -601,13 +613,40 @@ Number* ObjectReader::readNumber(CharGetter& getter) const
 }
 
 /************************************************************************/
+/*	Additional methods for class Object				*/
 /************************************************************************/
 
-istream& operator >> (istream& in, Object& obj)
+ObjectPtr Object::create(const char* printed)
 {
-   (void)obj; //FIXME
+   return ObjectPtr(ObjectReader::current()->readObject(printed)) ;
+}
 
-   return in ;
+//----------------------------------------------------------------------------
+
+ObjectPtr Object::create(FILE* fp)
+{
+   return ObjectPtr(ObjectReader::current()->readObject(fp)) ;
+}
+
+//----------------------------------------------------------------------------
+
+ObjectPtr Object::create(istream& in)
+{
+   return ObjectPtr(ObjectReader::current()->readObject(in)) ;
+}
+
+//----------------------------------------------------------------------------
+
+Object* Object::read(FILE* fp)
+{
+   return ObjectReader::current()->readObject(fp) ;
+}
+
+//----------------------------------------------------------------------------
+
+Object* Object::read(istream& in)
+{
+   return ObjectReader::current()->readObject(in) ;
 }
 
 //----------------------------------------------------------------------------

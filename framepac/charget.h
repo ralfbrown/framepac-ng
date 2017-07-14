@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-07-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -96,6 +96,8 @@ class CharGetterCString : public CharGetter
       using CharGetter::peekNonWhite ; //virtual int peekNonWhite() ;
       virtual int get() { return *m_stream ? *m_stream++ : EOF ; }
       virtual bool eof() const { return *m_stream == '\0' ; }
+      // get the current data pointer, to allow resynchronization back to caller
+      const char* data() const { return m_stream ; }
    } ;
 
 //----------------------------------------------------------------------------

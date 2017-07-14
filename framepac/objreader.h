@@ -48,7 +48,10 @@ class ObjectReader
       Object* readObject(istream&) const ;
       Object* readObject(FILE*) const ;
       Object* readObject(char*&) const ;
-      Object* readObject(std::string&) const ;
+      Object* readObject(const char*&) const ;
+      // unlike the above, the following reader does not provide any way to find out the position of left-over
+      //   input, so it is only useable for a single object per string
+      Object* readObject(const std::string&) const ;
 
       Number* readNumber(CharGetter&) const ;
       
@@ -69,8 +72,15 @@ class JSONReader : public ObjectReader
       ~JSONReader() ;
    } ;
 
-istream& operator >> (istream&, Object&) ;
-istream& operator >> (istream&, Object*&) ;
+//----------------------------------------------------------------------------
+
+istream& operator >> (istream&, ObjectPtr&) ;
+
+inline istream& operator >> (istream& in, Object*& obj)
+{
+   obj = ObjectReader::current()->readObject(in) ;
+   return in ;
+}
 
 } ; // end namespace Fr
 
