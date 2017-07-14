@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-07-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -57,19 +57,25 @@ class ByteOrdered
 #endif
    public:
       ByteOrdered() {}
-      ByteOrdered(const void *v) { store(v) ; }
       ByteOrdered(numtype v) { store(v) ; }
       ByteOrdered(const ByteOrdered &old) = default ;
       ~ByteOrdered() {}
 
       numtype load() const ;
       void store(const void *v) ;
+      void store(numtype v) { store(&v) ; }
 
       bool operator == (const ByteOrdered &other) const { return load() == other.load() ; }
+      bool operator == (numtype x) const { return load() == x ; }
       numtype operator * () const { return load() ; }
       operator numtype () const { return load() ; }
-      ByteOrdered &operator = (numtype v) { store(&v) ; return *this ; }
-      void store(numtype v) { store(&v) ; }
+      ByteOrdered& operator = (numtype v) { store(&v) ; return *this ; }
+      ByteOrdered& operator += (numtype v) { store(load()+v) ; return *this ; }
+      ByteOrdered& operator -= (numtype v) { store(load()-v) ; return *this ; }
+      ByteOrdered& operator *= (numtype v) { store(load()*v) ; return *this ; }
+      ByteOrdered& operator /= (numtype v) { store(load()/v) ; return *this ; }
+      ByteOrdered& operator -- () { store(load()-1) ; return *this ; }
+      ByteOrdered& operator ++ () { store(load()+1) ; return *this ; }
    } ;
 
 // the sizes corresponding to a native type can be optimized in the little-endian case

@@ -260,7 +260,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	rational$(OBJ) slab$(OBJ) \
 	slabgroup$(OBJ) smallalloc$(OBJ) \
 	sparsematrix$(OBJ) string$(OBJ) stringbuilder$(OBJ) \
-	sufarray_u32u32$(OBJ) \
+	sufarray_u32u32$(OBJ) sufarray_u32u40$(OBJ) \
 	symbol$(OBJ) symboltable$(OBJ) synchevent$(OBJ) \
 	texttransforms$(OBJ) \
 	threadpool$(OBJ) timer$(OBJ) \
@@ -442,7 +442,8 @@ smallalloc$(OBJ):	smallalloc$(C) framepac/memory.h
 sparsematrix$(OBJ):	sparsematrix$(C) framepac/matrix.h
 string$(OBJ):		string$(C) framepac/string.h framepac/fasthash64.h
 stringbuilder$(OBJ):	stringbuilder$(C) framepac/stringbuilder.h framepac/file.h
-suffixarray$(OBJ):	suffixarray$(C) framepac/config.h
+sufarray_u32u32$(OBJ):	sufarray_u32u32$(C) template/sufarray.cc
+sufarray_u32u40$(OBJ):	sufarray_u32u40$(C) template/sufarray.cc framepac/byteorder.h
 symbol$(OBJ):		symbol$(C) framepac/symbol.h framepac/nonobject.h framepac/fasthash64.h
 symboltable$(OBJ):	symboltable$(C) framepac/symboltable.h framepac/fasthash64.h framepac/texttransforms.h
 synchevent$(OBJ):	synchevent$(C) framepac/synchevent.h

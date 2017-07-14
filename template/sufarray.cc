@@ -55,7 +55,7 @@ IdxT* BucketBoundaries(const IdT* ids, IdxT num_ids, IdT num_types, const IdxT* 
 	 for (IdxT i = 0 ; i < num_ids ; ++i)
 	    {
 	    IdT id = ConvertEOL(ids[i],num_types,newline) ;
-	    buckets[id]++ ;
+	    ++buckets[id] ;
 	    }
 	 freqs = buckets ;
 	 }
@@ -63,7 +63,7 @@ IdxT* BucketBoundaries(const IdT* ids, IdxT num_ids, IdT num_types, const IdxT* 
       //   buckets[i] is the start of the ith bucket, and buckets[i+1]
       //   points just past the bucket's end
       IdxT total = 0 ;
-      for (IdxT i = 0 ; i <= num_types ; i++)
+      for (IdxT i = 0 ; i <= num_types ; ++i)
 	 {
 	 IdxT bcount = freqs[i] ;
 	 buckets[i] = total ;
@@ -99,13 +99,14 @@ void Induce(const IdT* ids, IdxT* SA, IdxT num_ids, IdT num_types, IdxT* buckets
    for (IdxT i = 0 ; i < num_ids ; ++i)
       {
       IdxT j = SA[i] ;
-      if (j == (IdxT)-1 || j == 0)
+      if (j == (IdxT)-1 || j == (IdxT)0)
 	 continue ;
       --j ;
       if (!ls_types.getBit(j))
 	 {
 	 IdxT bck = ConvertEOL(ids[j],num_types,newline) ;
-	 SA[buckets[bck]++] = j ;
+	 SA[buckets[bck]] = j ;
+	 ++buckets[bck] ;
 	 }
       }
    delete [] buckets ;
@@ -113,7 +114,7 @@ void Induce(const IdT* ids, IdxT* SA, IdxT num_ids, IdT num_types, IdxT* buckets
    for (IdxT i = num_ids ; i > 0 ; --i)
       {
       IdxT j = SA[i-1] ;
-      if (j == (IdxT)-1 || j == 0)
+      if (j == (IdxT)-1 || j == (IdxT)0)
 	 continue ;
       --j ;
       if (ls_types.getBit(j))
@@ -156,13 +157,13 @@ template <typename IdT, typename IdxT>
 bool Create(const IdT* ids, IdxT* index, IdxT num_ids, IdT num_types,
 	    IdT mapped_newline, const IdxT* freqs = nullptr)
 {
-   if (num_ids == 0)
+   if (num_ids == IdxT(0))
       return false ;
    Fr::BitVector *ls_types = Fr::BitVector::create(num_ids+2) ;
    if (!ls_types)
       return false ;
    ClassifyLS(*ls_types,ids,num_ids,num_types,mapped_newline) ;
-   for (IdxT i = 0 ; i < num_ids ; ++i)
+   for (IdxT i = 0U ; i < num_ids ; ++i)
       {
       index[i] = (IdxT)-1 ;
       }
@@ -183,13 +184,14 @@ bool Create(const IdT* ids, IdxT* index, IdxT num_ids, IdT num_types,
    delete [] bucket_ends ;
    Induce(ids, index, num_ids, num_types, buckets, *ls_types, mapped_newline) ;
    // compact all of the sorted substrings into the start of 'suffix_index'
-   IdxT subsize = 0 ;
-   for (IdxT i = 0 ; i < num_ids ; i++)
+   IdxT subsize { 0 } ;
+   for (IdxT i = 0 ; i < num_ids ; ++i)
       {
       IdxT idx = index[i] ;
       if (idx > 0 && !ls_types->getBit(idx-1) && ls_types->getBit(idx))
 	 {
-	 index[subsize++] = idx ;
+	 index[subsize] = idx ;
+	 ++subsize ;
 	 }
       }
    //!assert(subsize > 0) ;
@@ -201,8 +203,8 @@ bool Create(const IdT* ids, IdxT* index, IdxT num_ids, IdT num_types,
    IdxT *s1 = index + subsize ;
    // find the lexicographic names of the substrings, storing them in
    //   the now-spare part of the suffix array
-   IdxT name = 0 ;
-   IdxT prev = (IdxT)-1 ;
+   IdxT name { 0 } ;
+   IdxT prev { IdxT(-1) } ;
    for (IdxT i = 0 ; i < subsize ; ++i)
       {
       IdxT pos = index[i] ;
@@ -239,7 +241,7 @@ bool Create(const IdT* ids, IdxT* index, IdxT num_ids, IdT num_types,
 	 }
       if (diff)
 	 {
-	 name++ ;
+	 ++name ;
 	 prev = pos ;
 	 }
       s1[pos/2]=name-1;
@@ -248,13 +250,17 @@ bool Create(const IdT* ids, IdxT* index, IdxT num_ids, IdT num_types,
    for (IdxT i = subsize, j = subsize ; i < num_ids ; ++i)
       {
       IdxT idx = index[i] ;
-      if (idx != (IdxT)-1) index[j++] = idx ;
+      if (idx != (IdxT)-1)
+	 {
+	 index[j] = idx ;
+	 ++j ;
+	 }
       }
    // stage 2: solve the reduced problem
    if (name < subsize)
       {
       // names are not yet unique, so recurse
-      Create(s1, index, subsize, name, mapped_newline) ;
+      Create(s1, index, subsize, name, IdxT(mapped_newline)) ;
       }
    else
       {
@@ -272,7 +278,10 @@ bool Create(const IdT* ids, IdxT* index, IdxT num_ids, IdT num_types,
       {
       bool curr_bit = ls_types->getBit(i) ;
       if (!prev_bit && curr_bit)
-	 s1[j++] = i ;
+	 {
+	 s1[j] = i ;
+	 ++j ;
+	 }
       prev_bit = curr_bit ;
       }
    // retrieve original index in 'ids'
