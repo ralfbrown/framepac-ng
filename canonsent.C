@@ -33,13 +33,15 @@ extern std::locale utf8locale ;
 /************************************************************************/
 /************************************************************************/
 
-char* canonicalize_sentence(const char* sent, std::locale& locale, bool force_uppercase,
+char* canonicalize_sentence(const char* orig_sent, std::locale& locale, bool force_uppercase,
 			    const char *delim, char const* const* abbrevs)
 {
    (void)delim; (void)abbrevs ;
 
-   if (!sent)
+   if (!orig_sent)
       return nullptr ;
+   char* sent = dup_string(orig_sent) ;
+   char* sent_copy = sent ;
    StringBuilder sb ;
    // strip leading and trailing whitespace
    sent = trim_whitespace(sent,locale) ;
@@ -54,7 +56,8 @@ char* canonicalize_sentence(const char* sent, std::locale& locale, bool force_up
 
       ++sent ;
       }
-   return sb.cstring() ;
+   delete[] sent_copy ;
+   return sb.c_str() ;
 }
 
 //----------------------------------------------------------------------------

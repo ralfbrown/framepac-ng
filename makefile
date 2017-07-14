@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 08jul2017
+# Last change: 13jul2017
 
 #########################################################################
 # define the locations of all the files
@@ -241,7 +241,8 @@ RELEASE=0.01
 OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	argopt$(OBJ) argopt_real$(OBJ) argparser$(OBJ) \
 	bidindex_cstr$(OBJ) bitvector$(OBJ) \
-	bufbuilder_char$(OBJ) bwt$(OBJ) charget$(OBJ) cfile$(OBJ) \
+	bufbuilder_char$(OBJ) bwt$(OBJ) canonsent$(OBJ) \
+	charget$(OBJ) cfile$(OBJ) \
 	cluster$(OBJ) cluster_growseed$(OBJ) cluster_kmeans$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
 	fasthash64$(OBJ) \
@@ -385,6 +386,7 @@ bignum$(OBJ):		bignum$(C) framepac/bignum.h
 bitvector$(OBJ):	bitvector$(C) framepac/bitvector.h framepac/fasthash64.h
 bufbuilder_char$(OBJ):	bufbuilder_char$(C) template/bufbuilder.cc
 bwt$(OBJ):		bwt$(C) framepac/config.h
+canonsent$(OBJ):	canonsent$(C) framepac/stringbuilder.h framepac/texttransforms.h
 charget$(OBJ):		charget$(C) framepac/charget.h
 cfile$(OBJ):		cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
 cluster$(OBJ):		cluster$(C) framepac/cluster.h

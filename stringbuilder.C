@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-07-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -65,7 +65,7 @@ void StringBuilder::append(const char *s)
 
 //----------------------------------------------------------------------------
 
-char* StringBuilder::cstring() const
+char* StringBuilder::c_str() const
 {
    size_t len = currentLength() ;
    char* s = new char[len+1] ;

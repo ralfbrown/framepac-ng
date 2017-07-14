@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-05					*/
+/* Version 0.01, last edit 2017-07-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -32,17 +32,19 @@ namespace Fr {
 
 //----------------------------------------------------------------------------
 
+class CFile ;
+
 class StringBuilder : public BufferBuilder<char>
    {
    private:
    public:
       StringBuilder() {}
-      StringBuilder(class Fr::CFile*, size_t maxlen = (size_t)~0) ;
+      StringBuilder(CFile*, size_t maxlen = (size_t)~0) ;
       ~StringBuilder() {}
       using BufferBuilder<char>::append ;
       void append(const char* s) ;
       String *string() const { return String::create(currentBuffer(),currentLength()) ; }
-      char* cstring() const ;
+      char* c_str() const ;
    } ;
 
 } // end namespace Fr

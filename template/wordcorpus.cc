@@ -137,7 +137,9 @@ bool WordCorpusT<IdT,IdxT>::discardText()
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::discardAttributes()
 {
-   return false ;//FIXME
+   delete[] m_attributes ;
+   m_attributes = nullptr ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
