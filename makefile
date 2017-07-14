@@ -254,7 +254,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	hashtable_helper$(OBJ) \
 	init$(OBJ) linebatch$(OBJ) random$(OBJ) \
 	integer$(OBJ) jsonreader$(OBJ) list$(OBJ) listbuilder$(OBJ) \
-	map$(OBJ) matrix$(OBJ) \
+	loadfilelist$(OBJ) map$(OBJ) matrix$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
 	nonobject$(OBJ) object$(OBJ) objreader$(OBJ) printf$(OBJ) \
 	rational$(OBJ) slab$(OBJ) \
@@ -421,7 +421,8 @@ jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/builder.h framepa
 jsonwriter$(OBJ):	jsonwriter$(C) framepac/file.h framepac/list.h
 linebatch$(OBJ):	linebatch$(C) framepac/file.h
 list$(OBJ):		list$(C) framepac/list.h framepac/fasthash64.h framepac/init.h
-listbuilder$(OBJ):	listbuilder$(C) framepac/list.h
+listbuilder$(OBJ):	listbuilder$(C) framepac/list.h framepac/string.h
+loadfilelist$(OBJ):	loadfilelist$(C) framepac/file.h framepac/list.h framepac/message.h
 map$(OBJ):		map$(C) framepac/map.h framepac/fasthash64.h
 matrix$(OBJ):		matrix$(C) framepac/matrix.h
 message$(OBJ):		message$(C) framepac/message.h framepac/texttransforms.h

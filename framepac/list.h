@@ -197,6 +197,7 @@ class ListBuilder
       void prependList(List* l) ;
       // add an element to the end of the list
       void append(Object* o) ;
+      void append(const char* o) ;
       void appendClone(Object* o) ;
       // concatenate an entire list to the end of the existing list
       void appendList(List* l) ;
@@ -206,7 +207,7 @@ class ListBuilder
       void reverse() ;
 
       ListBuilder& operator += (Object* o) { append(o) ; return *this ; }
-
+      ListBuilder& operator += (const char* s) { append(s) ; return *this ; }
    } ;
 
 //----------------------------------------------------------------------------

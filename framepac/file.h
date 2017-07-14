@@ -260,6 +260,9 @@ class FilePath
 
 //----------------------------------------------------------------------------
 
+List* load_file_list(bool use_stdin, const char* listfile, const char* what = nullptr,
+   bool terminate_on_error = true) ;
+
 } // end namespace Fr
 
 #endif /* !_Fr_FILE_H_INCLUDED */

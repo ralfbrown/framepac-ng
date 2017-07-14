@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include "framepac/list.h"
+#include "framepac/string.h"
 
 namespace Fr
 {
@@ -74,6 +75,17 @@ void ListBuilder::append(Object* o)
       return ;
       }
    *m_list_end = List::create(o) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void ListBuilder::append(const char* s)
+{
+   if (s)
+      {
+      append(String::create(s)) ;
+      }
    return ;
 }
 
