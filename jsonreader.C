@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-05					*/
+/* Version 0.01, last edit 2017-07-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -19,10 +19,11 @@
 /*									*/
 /************************************************************************/
 
-//#include "framepac/hashtable.h"
 #include "framepac/list.h"
 #include "framepac/map.h"
+#include "framepac/number.h"
 #include "framepac/objreader.h"
+#include "framepac/stringbuilder.h"
 
 using namespace Fr ;
 
@@ -31,15 +32,13 @@ using namespace Fr ;
 
 static Object *read_json_map(const ObjectReader *reader, CharGetter &getter)
 {
-   (void)reader;//FIXME
    (void)getter.get() ;		// discard the opening left brace
    int nextch ;
-//   FrObjHashTable *map = new FrObjHashTable ;
    Map *map = Map::create() ;
    while ((nextch = getter.peekNonWhite()) != EOF && nextch != '}')
       {
       // map consists of keyword/value pairs
-//!!!      Object *keyword = reader->read(getter) ; //FIXME
+      Object *keyword = reader->read(getter) ; //FIXME
       // JSON requires a colon after the keyword, but we'll muddle on if it's missing
       if (getter.peekNonWhite() == ':')
 	 getter.get() ;
@@ -47,16 +46,16 @@ static Object *read_json_map(const ObjectReader *reader, CharGetter &getter)
 	 {
 	 // incomplete structure!  Set the value to null and bail out
 	 getter.get() ;
-//!!!	 map->add(keyword,nullptr) ;
+	 map->add(keyword,nullptr) ;
 	 return map ;
 	 }
       // get the value for the keyword/value pair
-//!!!      Object *value = reader->read(getter) ;
+      Object *value = reader->read(getter) ;
       // JSON requires a comma after the value, but we'll muddle on if it's missing
       if (getter.peekNonWhite() == ',')
 	 getter.get() ;
       // insert the pair into the hash table
-//!!!      map->add(keyword,value) ;
+      map->add(keyword,value) ;
       }
    return map ;
 }
@@ -88,24 +87,33 @@ static Object *read_json_array(const ObjectReader *reader, CharGetter &getter)
 
 static Object *read_json_number(const ObjectReader *reader, CharGetter &getter)
 {
-   (void)reader; (void)getter ;
-   return nullptr ;
+   return reader->readNumber(getter) ;
 }
 
 //----------------------------------------------------------------------------
 
 static Object *read_json_number_negative(const ObjectReader *reader, CharGetter &getter)
 {
-   (void)reader; (void)getter ;
-   return nullptr ;
+   return reader->readNumber(getter) ;
 }
 
 //----------------------------------------------------------------------------
 
-static Object *read_json_string(const ObjectReader *reader, CharGetter &getter)
+static Object *read_json_string(const ObjectReader *, CharGetter &getter)
 {
-   (void)reader; (void)getter ;
-   return nullptr ;
+   char delim = getter.get() ;
+   StringBuilder sb ;
+   int nextch ;
+   while ((nextch = getter.get()) != EOF && nextch != delim)
+      {
+      if (nextch == '\\')
+	 {
+	 nextch = getter.get() ;
+	 if (nextch == EOF) break ;
+	 }
+      sb += (char)nextch ;
+      }
+   return String::create(sb.c_str()) ;
 }
 
 /************************************************************************/

@@ -416,8 +416,8 @@ hashtable_u32u32$(OBJ):	hashtable_u32u32$(C) template/hashtable.cc
 hazardptr$(OBJ):	hazardptr$(C) framepac/atomic.h
 init$(OBJ):		init$(C) framepac/init.h
 integer$(OBJ):		integer$(C) framepac/number.h framepac/fasthash64.h
-jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/builder.h framepac/bignum.h framepac/list.h \
-			framepac/rational.h framepac/string.h framepac/symbol.h
+jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/stringbuilder.h framepac/list.h \
+			framepac/map.h framepac/number.h
 jsonwriter$(OBJ):	jsonwriter$(C) framepac/file.h framepac/list.h
 linebatch$(OBJ):	linebatch$(C) framepac/file.h
 list$(OBJ):		list$(C) framepac/list.h framepac/fasthash64.h framepac/init.h
@@ -431,7 +431,7 @@ nonobject$(OBJ):	nonobject$(C) framepac/nonobject.h
 number$(OBJ):		number$(C) framepac/bignum.h framepac/rational.h
 object$(OBJ):		object$(C) framepac/object.h
 objreader$(OBJ):	objreader$(C) framepac/objreader.h framepac/symbol.h framepac/bignum.h framepac/rational.h \
-			framepac/list.h framepac/builder.h
+			framepac/list.h framepac/number.h framepac/builder.h
 printf$(OBJ):		printf$(C) framepac/texttransforms.h
 progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
 ptrie_u32$(OBJ):	ptrie_u32$(C) template/ptrie.cc

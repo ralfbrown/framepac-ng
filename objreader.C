@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-07-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -24,6 +24,7 @@
 #include "framepac/builder.h"
 #include "framepac/objreader.h"
 #include "framepac/list.h"
+#include "framepac/number.h"
 #include "framepac/rational.h"
 #include "framepac/string.h"
 #include "framepac/symbol.h"
@@ -43,11 +44,11 @@ static ObjectReaderFunc readsym ;
 static ObjectReaderFunc readqsym ;
 static ObjectReaderFunc readstr ;
 
-class Object *symbolEOF { nullptr };
+class Object* symbolEOF { nullptr };
 
-ObjectReader *ObjectReader::s_current { nullptr };
+ObjectReader* ObjectReader::s_current { nullptr };
 
-ObjectReaderFunc *ObjectReader::s_defaultdispatch[256]
+ObjectReaderFunc* ObjectReader::s_defaultdispatch[256]
    {
       nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,  // 00-07
       skip_ws, skip_ws, skip_ws, nullptr, skip_ws, nullptr, nullptr, nullptr,  // 08-0F
@@ -99,7 +100,7 @@ static bool is_symbol_char(int ch)
 /************************************************************************/
 /************************************************************************/
 
-static Object *skip_ws(const ObjectReader *reader, CharGetter &getter)
+static Object* skip_ws(const ObjectReader *reader, CharGetter &getter)
 {
    (void)getter.peekNonWhite() ;	// skip all consecutive whitespace characters
    return getter.eof() ? symbolEOF : reader->read(getter) ;
@@ -107,7 +108,7 @@ static Object *skip_ws(const ObjectReader *reader, CharGetter &getter)
 
 //----------------------------------------------------------------------------
 
-static Object *readsym(const ObjectReader *, CharGetter &getter,
+static Object* readsym(const ObjectReader *, CharGetter &getter,
 		       char prefixchar)
 {
    BufferBuilder<char> buf ;
@@ -130,15 +131,15 @@ static Object *readsym(const ObjectReader *, CharGetter &getter,
 
 //----------------------------------------------------------------------------
 
-static Object *readsym(const ObjectReader *reader, CharGetter &getter)
+static Object* readsym(const ObjectReader *reader, CharGetter &getter)
 {
    return readsym(reader,getter,'\0') ;
 }
 
 //----------------------------------------------------------------------------
 
-static Object *readnum(const ObjectReader *, CharGetter &getter,
-		       bool negate)
+static Number* readnum(const ObjectReader *, CharGetter &getter,
+		        bool negate)
 {
    BufferBuilder<char> buf ;
    bool havedecimal { false };
@@ -197,7 +198,7 @@ static Object *readnum(const ObjectReader *, CharGetter &getter,
    //FIXME
       }
    buf += '\0' ;
-   Object *obj ;
+   Number *obj ;
    if (isfloat)
       {
       obj = Float::create(*buf) ;
@@ -211,7 +212,7 @@ static Object *readnum(const ObjectReader *, CharGetter &getter,
 
 //----------------------------------------------------------------------------
 
-static Object *readnum(const ObjectReader *reader, CharGetter &getter)
+static Object* readnum(const ObjectReader *reader, CharGetter &getter)
 {
    return readnum(reader,getter,false) ;
 }
@@ -220,7 +221,7 @@ static Object *readnum(const ObjectReader *reader, CharGetter &getter)
 //  check whether a sequence of characters starting with a plus or minus sign
 //  is a Number or a Symbol
 
-static Object *readneg(const ObjectReader *reader, CharGetter &getter)
+static Object* readneg(const ObjectReader *reader, CharGetter &getter)
 {
    int c { *getter };
    bool negated { c == '-' };
@@ -232,7 +233,7 @@ static Object *readneg(const ObjectReader *reader, CharGetter &getter)
 
 //----------------------------------------------------------------------------
 
-static char *read_delimited_string(const ObjectReader *,
+static char* read_delimited_string(const ObjectReader *,
 				   CharGetter &getter,
 				   char quotechar, unsigned &len)
 {
@@ -278,7 +279,7 @@ static char *read_delimited_string(const ObjectReader *,
 
 //----------------------------------------------------------------------------
 
-static Object *readqsym(const ObjectReader *reader, CharGetter &getter)
+static Object* readqsym(const ObjectReader *reader, CharGetter &getter)
 {
    unsigned len ;
    char *buf { read_delimited_string(reader,getter,'|',len) };
@@ -289,7 +290,7 @@ static Object *readqsym(const ObjectReader *reader, CharGetter &getter)
 
 //----------------------------------------------------------------------------
 
-static Object *readstr(const ObjectReader *reader, CharGetter &getter)
+static Object* readstr(const ObjectReader *reader, CharGetter &getter)
 {
    unsigned len ;
    char *buf { read_delimited_string(reader,getter,'\\',len) };
@@ -300,7 +301,7 @@ static Object *readstr(const ObjectReader *reader, CharGetter &getter)
 
 //----------------------------------------------------------------------------
 
-static Object *skip_balanced_comment(const ObjectReader *reader,
+static Object* skip_balanced_comment(const ObjectReader *reader,
 				     CharGetter &getter)
 {
    int nextch ;
@@ -343,7 +344,7 @@ static bool valid_digit(int digit, unsigned radix)
 
 //----------------------------------------------------------------------------
 
-static Object *read_radix_number(const ObjectReader *,
+static Object* read_radix_number(const ObjectReader *,
 				 CharGetter &getter,
 				 unsigned radix)
 {
@@ -435,7 +436,7 @@ static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
 
 //----------------------------------------------------------------------------
 
-static Object *rdframe(const ObjectReader *reader, CharGetter &getter)
+static Object* rdframe(const ObjectReader *reader, CharGetter &getter)
 {
    (void)reader;
    (void)getter.get() ;		// consume the opening left bracket
@@ -446,7 +447,7 @@ static Object *rdframe(const ObjectReader *reader, CharGetter &getter)
 
 //----------------------------------------------------------------------------
 
-static Object *rdlist(const ObjectReader *reader, CharGetter &getter)
+static Object* rdlist(const ObjectReader *reader, CharGetter &getter)
 {
    (void)getter.get() ;		// consume the opening paren
    int nextch ;
@@ -462,7 +463,7 @@ static Object *rdlist(const ObjectReader *reader, CharGetter &getter)
 	 }
       // not whitespace or the list terminator, so read an object and
       //   add it to the list
-      Object *nextobj { reader->read(getter) };
+      Object* nextobj { reader->read(getter) };
       //FIXME
       (void)nextobj;
       }
@@ -500,7 +501,7 @@ bool ObjectReader::initialize()
 
 //----------------------------------------------------------------------------
 
-Object *ObjectReader::read(CharGetter &getter) const
+Object* ObjectReader::read(CharGetter &getter) const
 {
    int nextch { getter.peek() };
    if (nextch == -1)
@@ -517,7 +518,7 @@ Object *ObjectReader::read(CharGetter &getter) const
 
 //----------------------------------------------------------------------------
 
-Object *ObjectReader::readObject(istream &in) const
+Object* ObjectReader::readObject(istream& in) const
 {
    CharGetterStream getter(in) ;
    return read(getter) ;
@@ -525,7 +526,7 @@ Object *ObjectReader::readObject(istream &in) const
 
 //----------------------------------------------------------------------------
 
-Object *ObjectReader::readObject(FILE *infp) const
+Object* ObjectReader::readObject(FILE* infp) const
 {
    CharGetterFILE getter(infp) ;
    return read(getter) ;
@@ -533,7 +534,7 @@ Object *ObjectReader::readObject(FILE *infp) const
 
 //----------------------------------------------------------------------------
 
-Object *ObjectReader::readObject(char *&instr) const
+Object* ObjectReader::readObject(char*& instr) const
 {
    CharGetterCString getter(instr) ;
    return read(getter) ;
@@ -541,16 +542,27 @@ Object *ObjectReader::readObject(char *&instr) const
 
 //----------------------------------------------------------------------------
 
-Object *ObjectReader::readObject(std::string &instr) const
+Object* ObjectReader::readObject(std::string& instr) const
 {
    CharGetterStdString getter(instr) ;
    return read(getter) ;
 }
 
+//----------------------------------------------------------------------------
+
+Number* ObjectReader::readNumber(CharGetter& getter) const
+{
+   int c = getter.peekNonWhite() ;
+   if (c == EOF) return nullptr ;
+   bool negated { c == '-' };
+   if (negated) (void)getter.get() ;
+   return readnum(nullptr,getter,negated) ;
+}
+
 /************************************************************************/
 /************************************************************************/
 
-istream &operator >> (istream &in, Object &obj)
+istream& operator >> (istream& in, Object& obj)
 {
    (void)obj; //FIXME
 

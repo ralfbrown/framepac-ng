@@ -22,7 +22,7 @@
 #ifndef _Fr_MAP_H_INCLUDED
 #define _Fr_MAP_H_INCLUDED
 
-#include <map>
+#include <unordered_map>
 #include "framepac/object.h"
 
 namespace Fr {
@@ -64,7 +64,7 @@ class Map : public Object
       static Map *create(const List *) ;
       static Map *create(const Map *) ;
 
-      bool reserve(size_t n) ;
+      bool add(Object* key, Object* value) { return m_map.insert({ key, value }).second ; }
 
       // *** standard info functions ***
       size_t size() const { return m_size ; }
@@ -80,11 +80,14 @@ class Map : public Object
       MapIter end() { return MapIter(this,size()) ; }
       MapIter cend() const { return MapIter(const_cast<Map*>(this),size()) ; }
 
+      // STL compatibility
+      bool reserve(size_t n) ;
+      
    private: // static members
       static Allocator s_allocator ;
    private:
       size_t m_size ;
-      std::map<Object*,Object*> m_map ;
+      std::unordered_map<Object*,Object*> m_map ;
    protected: // construction/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }

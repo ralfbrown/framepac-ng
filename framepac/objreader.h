@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-07-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -27,14 +27,16 @@ namespace Fr {
 /************************************************************************/
 /************************************************************************/
 
-typedef Object *ObjectReaderFunc(const class ObjectReader *, CharGetter &) ;
+class Number ;
+
+typedef Object* ObjectReaderFunc(const class ObjectReader*, CharGetter&) ;
 
 class ObjectReader
    {
    protected:
-      static ObjectReader *s_current ;
-      static ObjectReaderFunc *s_defaultdispatch[256] ;
-      ObjectReaderFunc *m_dispatch[256] ;// function to call for any given starting byte
+      static ObjectReader* s_current ;
+      static ObjectReaderFunc* s_defaultdispatch[256] ;
+      ObjectReaderFunc* m_dispatch[256] ;// function to call for any given starting byte
    public:
       ObjectReader() ;
       ~ObjectReader() ;
@@ -42,15 +44,17 @@ class ObjectReader
       static bool initialize() ;
       static ObjectReader *current() { return s_current ; }
 
-      Object *read(CharGetter &) const ;
-      Object *readObject(istream &) const ;
-      Object *readObject(FILE *) const ;
-      Object *readObject(char *&) const ;
-      Object *readObject(std::string&) const ;
+      Object* read(CharGetter&) const ;
+      Object* readObject(istream&) const ;
+      Object* readObject(FILE*) const ;
+      Object* readObject(char*&) const ;
+      Object* readObject(std::string&) const ;
 
-      ObjectReaderFunc *getDispatcher(unsigned char index) const
+      Number* readNumber(CharGetter&) const ;
+      
+      ObjectReaderFunc* getDispatcher(unsigned char index) const
          { return m_dispatch[index] ; }
-      void registerDispatcher(unsigned index, ObjectReaderFunc *fn)
+      void registerDispatcher(unsigned index, ObjectReaderFunc* fn)
          { m_dispatch[index] = fn ; }
    } ;
 
@@ -65,8 +69,8 @@ class JSONReader : public ObjectReader
       ~JSONReader() ;
    } ;
 
-istream &operator >> (istream &, Object &) ;
-istream &operator >> (istream &, Object *&) ;
+istream& operator >> (istream&, Object&) ;
+istream& operator >> (istream&, Object*&) ;
 
 } ; // end namespace Fr
 
