@@ -80,7 +80,7 @@ static Object *read_json_array(const ObjectReader *reader, CharGetter &getter)
 	 getter.get() ;
 	 }
       }
-   return *array ;
+   return array.move() ;
 }
 
 //----------------------------------------------------------------------------

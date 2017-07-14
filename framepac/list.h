@@ -180,7 +180,7 @@ class ListBuilder
       ListBuilder() : m_list(List::emptyList()), m_list_end(&m_list) {}
       ListBuilder(const ListBuilder&) = delete ;
       ListBuilder(List*&&) ;
-      ~ListBuilder() {}
+      ~ListBuilder() { clear() ; }
       ListBuilder& operator= (const ListBuilder&) = delete ;
 
       // retrieve contents
