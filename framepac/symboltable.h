@@ -23,6 +23,7 @@
 #define _Fr_SYMBOLTABLE_H_INCLUDED
 
 #include "framepac/hashtable.h"
+#include "framepac/init.h"
 
 /************************************************************************/
 /************************************************************************/
@@ -34,6 +35,9 @@ namespace Fr
 
 class SymbolTable : public Object
    {
+   protected:
+      typedef Fr::Initializer<SymbolTable> Initializer ;
+
    public:
       static SymbolTable* create(size_t capacity = 0) ;
       static SymbolTable* current() ;
@@ -58,6 +62,7 @@ class SymbolTable : public Object
 
    private: // static members
       static Allocator s_allocator ;
+      static Initializer s_init ;
    protected:
       SymHashSet m_symbols ;
       unsigned   m_table_id ;
@@ -113,6 +118,10 @@ class SymbolTable : public Object
       // *** iterator support ***
       static Object* next_(const Object*) { return nullptr ; }
       static ObjectIter& next_iter(const Object*, ObjectIter& it) { it.incrIndex() ; return it ; }
+   public:
+      // *** startup/shutdown functions ***
+      static void StaticInitialization() ;
+      //static void StaticCleanup() ;
    } ;
 
 

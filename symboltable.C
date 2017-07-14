@@ -36,6 +36,7 @@ namespace Fr
 /************************************************************************/
 
 Allocator SymbolTable::s_allocator(FramepaC::Object_VMT<SymbolTable>::instance(),sizeof(SymbolTable)) ;
+SymbolTable::Initializer SymbolTable::s_init ;
 
 static Atomic<SymbolTable*> symbol_tables[256] ;
 Atomic<unsigned> current_symbol_table ;
@@ -263,6 +264,19 @@ int SymbolTable::lessThan_(const Object *obj, const Object *other)
       return 0 ;
 
    return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+void SymbolTable::StaticInitialization()
+{
+   // initialize a default symbol table
+   if (!current())
+      {
+      SymbolTable* symtab = SymbolTable::create(10000) ;
+      symtab->select() ;
+      }
+   return;
 }
 
 //----------------------------------------------------------------------------

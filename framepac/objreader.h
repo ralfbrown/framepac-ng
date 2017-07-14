@@ -21,6 +21,7 @@
 
 #include "framepac/object.h"
 #include "framepac/charget.h"
+#include "framepac/init.h"
 
 namespace Fr {
 
@@ -34,14 +35,12 @@ typedef Object* ObjectReaderFunc(const class ObjectReader*, CharGetter&) ;
 class ObjectReader
    {
    protected:
-      static ObjectReader* s_current ;
-      static ObjectReaderFunc* s_defaultdispatch[256] ;
-      ObjectReaderFunc* m_dispatch[256] ;// function to call for any given starting byte
+      typedef Fr::Initializer<ObjectReader> Initializer ;
+
    public:
       ObjectReader() ;
       ~ObjectReader() ;
 
-      static bool initialize() ;
       static ObjectReader *current() { return s_current ; }
 
       Object* read(CharGetter&) const ;
@@ -59,6 +58,17 @@ class ObjectReader
          { return m_dispatch[index] ; }
       void registerDispatcher(unsigned index, ObjectReaderFunc* fn)
          { m_dispatch[index] = fn ; }
+   private:
+      static Initializer s_init ;
+   protected:
+      static ObjectReader* s_current ;
+      static ObjectReaderFunc* s_defaultdispatch[256] ;
+
+   protected:
+      ObjectReaderFunc* m_dispatch[256] ;// function to call for any given starting byte
+
+   public:
+      static void StaticInitialization() ;
    } ;
 
 //----------------------------------------------------------------------------

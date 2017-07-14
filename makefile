@@ -588,7 +588,7 @@ framepac/stringbuilder.h:	framepac/builder.h framepac/string.h
 framepac/symbol.h:	framepac/string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/symboltable.h:	framepac/hashtable.h
+framepac/symboltable.h:	framepac/hashtable.h framepac/init.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/synchevent.h:	framepac/atomic.h

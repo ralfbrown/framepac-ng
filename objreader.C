@@ -46,6 +46,7 @@ static ObjectReaderFunc readstr ;
 
 class Object* symbolEOF { nullptr };
 
+ObjectReader::Initializer ObjectReader::s_init ;
 ObjectReader* ObjectReader::s_current { nullptr };
 
 ObjectReaderFunc* ObjectReader::s_defaultdispatch[256]
@@ -517,7 +518,7 @@ static Object* rdlist(const ObjectReader *reader, CharGetter &getter)
 
 ObjectReader::ObjectReader()
 {
-
+   memcpy(m_dispatch,s_defaultdispatch,sizeof(m_dispatch)) ;
    return ;
 }
 
@@ -527,17 +528,6 @@ ObjectReader::~ObjectReader()
 {
 
    return ;
-}
-
-//----------------------------------------------------------------------------
-
-bool ObjectReader::initialize()
-{
-   if (!current())
-      {
-      s_current = new ObjectReader ;
-      }
-   return current() != nullptr ;
 }
 
 //----------------------------------------------------------------------------
@@ -610,6 +600,15 @@ Number* ObjectReader::readNumber(CharGetter& getter) const
    bool negated { c == '-' };
    if (negated) (void)getter.get() ;
    return readnum(nullptr,getter,negated) ;
+}
+
+//----------------------------------------------------------------------------
+
+void ObjectReader::StaticInitialization()
+{
+   if (!s_current)
+      s_current = new ObjectReader ;
+   return ;
 }
 
 /************************************************************************/

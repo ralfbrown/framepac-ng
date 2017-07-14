@@ -56,12 +56,6 @@ bool Initialize()
    if (!initialized)
       {
       initialized = true ;
-      // initialize a default symbol table
-      if (!SymbolTable::current())
-	 {
-	 SymbolTable* symtab = SymbolTable::create(10000) ;
-	 symtab->select() ;
-	 }
 //TODO: perform any other required FramepaC-ng initialization
 
       // install termination handler

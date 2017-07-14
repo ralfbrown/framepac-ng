@@ -58,6 +58,9 @@ class ListIter
 
 class List : public Object
    {
+   protected:
+      typedef Fr::Initializer<List> Initializer ;
+
    public:
       // *** object factories ***
       static List* create() ;
@@ -99,6 +102,7 @@ class List : public Object
 
    private: // static members
       static Allocator s_allocator ;
+      static Initializer s_init ;
       static List* empty_list ;
    private:
       List*   m_next ;
