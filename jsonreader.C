@@ -113,7 +113,7 @@ static Object *read_json_string(const ObjectReader *, CharGetter &getter)
 	 }
       sb += (char)nextch ;
       }
-   return String::create(sb.c_str()) ;
+   return sb.string() ;
 }
 
 /************************************************************************/
