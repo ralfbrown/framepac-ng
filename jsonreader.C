@@ -32,7 +32,7 @@ using namespace Fr ;
 
 static Object *read_json_map(const ObjectReader *reader, CharGetter &getter)
 {
-   (void)getter.get() ;		// discard the opening left brace
+   *getter ;		// discard the opening left brace
    int nextch ;
    Map *map = Map::create() ;
    while ((nextch = getter.peekNonWhite()) != EOF && nextch != '}')
@@ -41,11 +41,11 @@ static Object *read_json_map(const ObjectReader *reader, CharGetter &getter)
       Object *keyword = reader->read(getter) ;
       // JSON requires a colon after the keyword, but we'll muddle on if it's missing
       if (getter.peekNonWhite() == ':')
-	 getter.get() ;
+	 *getter ;
       if (getter.peekNonWhite() == '}')
 	 {
 	 // incomplete structure!  Set the value to null and bail out
-	 getter.get() ;
+	 *getter ;
 	 map->add(keyword,nullptr) ;
 	 return map ;
 	 }
@@ -53,7 +53,7 @@ static Object *read_json_map(const ObjectReader *reader, CharGetter &getter)
       Object *value = reader->read(getter) ;
       // JSON requires a comma after the value, but we'll muddle on if it's missing
       if (getter.peekNonWhite() == ',')
-	 getter.get() ;
+	 *getter ;
       // insert the pair into the hash table
       map->add(keyword,value) ;
       }
@@ -64,7 +64,7 @@ static Object *read_json_map(const ObjectReader *reader, CharGetter &getter)
 
 static Object *read_json_array(const ObjectReader *reader, CharGetter &getter)
 {
-   (void)getter.get() ;		// discard the opening left bracket
+   *getter ;		// discard the opening left bracket
    ListBuilder array ;
    int nextch ;
    while ((nextch = getter.peekNonWhite()) != EOF && nextch != ']')
@@ -77,7 +77,7 @@ static Object *read_json_array(const ObjectReader *reader, CharGetter &getter)
       // check for a comma (it's required by JSON, but we'll allow it to be omitted)
       if (getter.peekNonWhite() == ',')
 	 {
-	 getter.get() ;
+	 *getter ;
 	 }
       }
    return array.move() ;
@@ -101,14 +101,14 @@ static Object *read_json_number_negative(const ObjectReader *reader, CharGetter 
 
 static Object *read_json_string(const ObjectReader *, CharGetter &getter)
 {
-   char delim = getter.get() ;
+   char delim = *getter ;
    StringBuilder sb ;
    int nextch ;
-   while ((nextch = getter.get()) != EOF && nextch != delim)
+   while ((nextch = *getter) != EOF && nextch != delim)
       {
       if (nextch == '\\')
 	 {
-	 nextch = getter.get() ;
+	 nextch = *getter ;
 	 if (nextch == EOF) break ;
 	 }
       sb += (char)nextch ;
