@@ -190,7 +190,7 @@ char* SymbolTable::toCstring_(const Object *, char *buffer, size_t buflen, size_
 {
    if (buflen < indent + 9) return buffer ;
    (void)wrap_at;(void)wrapped_indent;//FIXME
-   buffer += snprintf(buffer,buflen,"%*s",indent,"#SymTab(") ;
+   buffer += snprintf(buffer,buflen,"%*s",(int)indent,"#Y(") ;
    //FIXME
 
    *buffer++ = ')' ;

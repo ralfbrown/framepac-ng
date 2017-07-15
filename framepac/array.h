@@ -51,7 +51,7 @@ class RevArrayIter
 class Array : public Object
    {
    public:
-      static Array* create(size_t initial_size = 0) ;
+      static Array* create(size_t initial_size = 0) { return new Array(initial_size) ; }
       static Array* create(const Object*) ;
       static Array* create(const Array*) ;
 
@@ -66,9 +66,9 @@ class Array : public Object
       Array* subseq(ArrayIter start, ArrayIter stop, bool shallow = false) const ;
 
       // *** iterator support ***
-      ArrayIter begin() { return ArrayIter(m_array) ; }
+      ArrayIter begin() const { return ArrayIter(m_array) ; }
       ArrayIter cbegin() const { return ArrayIter(m_array) ; }
-      ArrayIter end() { return ArrayIter(m_array + size()) ; }
+      ArrayIter end() const { return ArrayIter(m_array + size()) ; }
       ArrayIter cend() const { return ArrayIter(m_array + size()) ; }
 
       RevArrayIter rbegin() { return RevArrayIter(m_array + size() - 1) ; }
@@ -87,9 +87,8 @@ class Array : public Object
       void erase(size_t pos) ;
       void erase(size_t pos1, size_t pos2) ;
 
-      Object* at(size_t pos) const ;
+      Object* at(size_t pos) const { return (pos < size()) ? m_array[pos] : nullptr ; }
       Object*& operator[] (size_t pos) ;
-      const Object*& operator[] (size_t pos) const ;
 
       Object* back() const ;	// get last element in array
       Object** data() const { return m_array ; }

@@ -110,9 +110,9 @@ char* Map::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_a
 {
    if (buflen < indent + 4) return buffer ;
    char* bufend = buffer + buflen ;
-   buffer += snprintf(buffer,buflen,"%*s",indent,"#H(") ;
+   buffer += snprintf(buffer,buflen,"%*s",(int)indent,"#H(") ;
    
-   (void)wrap_at; (void)wrapped_indent; //FIXME
+   (void)bufend; (void)wrap_at; (void)wrapped_indent; //FIXME
    //FIXME
    *buffer++ = ')' ;
    return buffer ;

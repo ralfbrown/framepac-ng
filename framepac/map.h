@@ -60,11 +60,11 @@ class MapIter
 class Map : public Object
    {
    public:
-      static Map *create() ;
+      static Map *create(size_t capacity = 0) { return new Map(capacity) ; }
       static Map *create(const List *) ;
-      static Map *create(const Map *) ;
+      static Map *create(const Map *orig) { return new Map(orig) ; }
 
-      bool add(Object* key, Object* value) { return m_map.insert({ key, value }).second ; }
+      bool add(Object* key, Object* value = nullptr) { return m_map.insert({ key, value }).second ; }
 
       // *** standard info functions ***
       size_t size() const { return m_size ; }

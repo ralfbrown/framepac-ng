@@ -433,9 +433,9 @@ mmapfile$(OBJ):		mmapfile$(C) framepac/mmapfile.h framepac/file.h
 nonobject$(OBJ):	nonobject$(C) framepac/nonobject.h
 number$(OBJ):		number$(C) framepac/bignum.h framepac/rational.h
 object$(OBJ):		object$(C) framepac/object.h
-objreader$(OBJ):	objreader$(C) framepac/objreader.h framepac/symboltable.h framepac/bignum.h \
-			framepac/bitvector.h framepac/rational.h \
-			framepac/list.h framepac/number.h framepac/stringbuilder.h
+objreader$(OBJ):	objreader$(C) framepac/objreader.h framepac/symboltable.h framepac/array.h framepac/bignum.h \
+			framepac/bitvector.h framepac/map.h framepac/rational.h \
+			framepac/list.h framepac/number.h framepac/stringbuilder.h framepac/texttransforms.h
 printf$(OBJ):		printf$(C) framepac/texttransforms.h
 progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
 ptrie_u32$(OBJ):	ptrie_u32$(C) template/ptrie.cc

@@ -21,14 +21,17 @@
 
 #include <istream>
 #include "framepac/objreader.h"
+#include "framepac/array.h"
 #include "framepac/bignum.h"
 #include "framepac/bitvector.h"
 #include "framepac/list.h"
+#include "framepac/map.h"
 #include "framepac/number.h"
 #include "framepac/rational.h"
 #include "framepac/string.h"
 #include "framepac/stringbuilder.h"
 #include "framepac/symboltable.h"
+#include "framepac/texttransforms.h"
 
 namespace Fr {
 
@@ -406,9 +409,41 @@ static Object* read_radix_number(const ObjectReader *,
 
 //----------------------------------------------------------------------------
 
+static Object* read_array(const ObjectReader *reader, CharGetter &getter)
+{
+   Array* arr = Array::create(1000) ;
+
+   size_t idx { 0 } ;
+   int nextch ;
+   while ((nextch = getter.peek()) != EOF)
+      {
+      // skip whitespace
+      if (reader->getDispatcher(nextch) == skip_ws)
+	 {
+	 *getter ;			// consume the character
+	 continue ;
+	 }
+      else if (nextch == ')')
+	 {
+	 *getter ;		    	// consume the character
+	 break ;
+	 }
+      // not whitespace or the array terminator, so read an object and
+      //   add it to the array
+      Object* nextobj { reader->read(getter) };
+      if (idx >= arr->capacity())
+	 arr->reserve(2*arr->capacity()) ;
+      (*arr)[idx++] = nextobj ;
+      }
+   // we either hit the terminating paren or ran out of input, so return what we got so far
+   arr->resize(idx) ;
+   return arr ;
+}
+
+//----------------------------------------------------------------------------
+
 static Object* read_bitvector(const ObjectReader*, CharGetter& getter)
 {
-   (void)getter ;
    // accumulate digits until we hit something other than '0' or '1'
    StringBuilder sb ;
    int nextdigit ;
@@ -418,6 +453,44 @@ static Object* read_bitvector(const ObjectReader*, CharGetter& getter)
       }
    sb += '\0' ;
    return BitVector::create(*sb) ;
+}
+
+//----------------------------------------------------------------------------
+
+static Object* read_hashtable(const ObjectReader* reader, CharGetter& getter, const char* digits)
+{
+   *getter ;				// discard the opening parenthesis
+   size_t capacity = 200 ;
+   if (digits && *digits)
+      {
+      capacity = atol(digits) ;
+      }
+   Map* map = Map::create(capacity) ;
+
+   int nextch ;
+   while ((nextch = getter.peek()) != EOF)
+      {
+      // skip whitespace
+      if (reader->getDispatcher(nextch) == skip_ws)
+	 {
+	 *getter ;			// consume the character
+	 continue ;
+	 }
+      else if (nextch == ')')
+	 {
+	 // end of listing of hashtable entries
+	 *getter ;			// consume the character
+	 break ;
+	 }
+      // read key and add it to the map
+      Object* key { reader->read(getter) } ;
+      if (key)
+	 {
+	 map->add(key) ;
+	 }
+      }
+   // we either hit the terminating paren or ran out of input, so return what we got so far
+   return map ;
 }
 
 //----------------------------------------------------------------------------
@@ -434,11 +507,13 @@ static Object* read_bitvector(const ObjectReader*, CharGetter& getter)
 //    #A( )   array
 //    #Bbbb   binary integer
 //    #H( )   hash table
+//    #N      nullptr  -- should only be present inside an Array
 //    #Oooo   octal integer
 //    #Q( )   queue
 //    #Rnnn   integer in given radix
 //    #S( )   struct
 //    #Xxxx   hexadecimal integer
+//    #Y( )   symboltable
 //    other   symbol starting with #
 
 static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
@@ -454,11 +529,11 @@ static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
 	 digits[numdigits++] = *getter ;
       }
    digits[numdigits] = '\0' ;
-   int type { *getter };	// figure out what type of hash-expression this is
+   int type { getter.peek() } ;
+   if (type != EOF) *getter ;
    switch (type)
       {
       case EOF:
-	 //FIXME
 	 break ;
       case '|':			// balanced comment (non-nested)
 	 return skip_balanced_comment(reader,getter) ;
@@ -473,8 +548,8 @@ static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
 	 return SymbolTable::current()->add(buf) ;
 	 }
       case '(':
-	 // TODO: read vector
-	 break ;
+	 // read vector: simulate as an array
+	 return read_array(reader,getter) ;
       case ':':
 	 return read_uninterned_symbol(reader,getter) ;
       case '#':
@@ -485,27 +560,42 @@ static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
 	 break ;
       case '*':
 	 return read_bitvector(reader,getter) ;
-	 break ;
       case 'A':
-	 // TODO: read array
+	 // read array if the next character is an open paren, else treat it as a symbol
+	 if (getter.peek() == '(')
+	    {
+	    *getter ;
+	    return read_array(reader,getter) ;
+	    }
 	 break ;
       case 'b':
       case 'B':
 	 return read_radix_number(reader,getter,2) ;
       case 'H':
-	 // TODO: read hashtable
+	 if (getter.peek() == '(')
+	    return read_hashtable(reader,getter,digits) ;
 	 break ;
+      case 'N':
+	 return nullptr ;  // special case for Array elements
       case 'o':
       case 'O':
 	 return read_radix_number(reader,getter,8) ;
       case 'Q':
 	 // TODO: read queue
+	 if (getter.peek() == '(')
+	    {
+	    //FIXME
+	    }
 	 break ;
       case 'r':
       case 'R':
 	 return read_radix_number(reader,getter,atoi(digits)) ;
       case 'S':
 	 // TODO: read struct, ???simulated as a hashtable?
+	 if (getter.peek() == '(')
+	    {
+	    //FIXME
+	    }
 	 break ;
       case'x':
       case 'X':
@@ -514,7 +604,15 @@ static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
 	 // TODO: read symbol starting with #
 	 break ;
       }
-   return symbolEOF ;
+   // return the accumulated characters as a symbol: hash mark + digits + typechar
+   char* symname ;
+   if (type == EOF)
+      symname = aprintf("#%s",digits) ;
+   else
+      symname = aprintf("#%s%c",digits,(char)type) ;
+   Symbol* sym = SymbolTable::current()->add(symname) ;
+   delete[] symname ;
+   return sym ;
 }
 
 //----------------------------------------------------------------------------
@@ -652,6 +750,12 @@ void ObjectReader::StaticInitialization()
 {
    if (!s_current)
       s_current = new ObjectReader ;
+   if (!symbolEOF)
+      {
+      SymbolTable::StaticInitialization() ;  // ensure that we have a default symbol table
+      SymHashSet::threadInit() ;	     // and initialize per-thread data for main thread
+      symbolEOF = SymbolTable::current()->add("*EOF*") ;
+      }
    return ;
 }
 

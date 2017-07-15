@@ -103,6 +103,83 @@ Array::~Array()
 
 //----------------------------------------------------------------------------
 
+static Object* dummy_obj = nullptr ;
+
+Object*& Array::operator [] (size_t N)
+{
+   return (N < size()) ? m_array[N] : dummy_obj ;
+}
+
+//----------------------------------------------------------------------------
+
+bool Array::reserve(size_t N)
+{
+   if (N > capacity())
+      {
+      Object** new_arr = new Object*[N] ;
+      if (new_arr)
+	 {
+	 for (size_t i = 0 ; i < size() ; ++i)
+	    new_arr[i] = m_array[i] ;
+	 for (size_t i = size() ; i < N ; ++i)
+	    new_arr[i] = nullptr ;
+	 delete[] m_array ;
+	 m_array = new_arr ;
+	 m_alloc = N ;
+	 return true ;
+	 }
+      }
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
+void Array::resize(size_t N)
+{
+   Object** new_arr = new Object*[N] ;
+   if (new_arr)
+      {
+      for (size_t i = 0 ; i < size() && i < N ; ++i)
+	 new_arr[i] = m_array[i] ;
+      for (size_t i = size() ; i < N ; ++i)
+	 new_arr[i] = nullptr ;
+      delete[] m_array ;
+      m_array = new_arr ;
+      m_size = std::min(size(),N) ;
+      m_alloc = N ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void Array::resize(size_t N, Object*)
+{
+   (void)N;
+   return ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+void Array::shrink_to_fit()
+{
+   if (size() < capacity())
+      {
+      Object** new_arr = new Object*[size()] ;
+      if (new_arr)
+	 {
+	 for (size_t i = 0 ; i < size() ; ++i)
+	    new_arr[i] = m_array[i] ;
+	 m_alloc = size() ;
+	 delete[] m_array ;
+	 m_array = new_arr ;
+	 }
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 ObjectPtr Array::clone_(const Object *)
 {
 
@@ -171,7 +248,32 @@ char* Array::toCstring_(const Object* obj,char* buffer, size_t buflen, size_t wr
 	 *buffer++ = ' ' ;
       }
    *buffer++ = ')' ;
+   *buffer = '\0' ;
    return buffer ;
+}
+
+//----------------------------------------------------------------------------
+
+size_t Array::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
+{
+   (void)wrap; //FIXME
+   size_t len = indent + 2 ; // initial and trailing brackets
+   size_t items = 0 ;
+   for (const Object* o : *static_cast<const Array*>(obj))
+      {
+      if (o)
+	 len += o->jsonStringLength(wrap,0) ;
+      }
+   return len + (items ? items-1 : 0) ;
+}
+
+//----------------------------------------------------------------------------
+
+bool Array::toJSONString_(const Object* obj, char* buffer, size_t buflen,
+			 bool /*wrap*/, size_t indent)
+{
+   (void)obj; (void)buffer; (void)buflen; (void)indent;
+   return false ; //FIXME
 }
 
 //----------------------------------------------------------------------------
