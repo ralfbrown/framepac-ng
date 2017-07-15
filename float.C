@@ -54,7 +54,7 @@ Float* Float::create(const char* value)
 
 size_t Float::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   return snprintf(nullptr,0,"%g",obj->floatValue() + indent) ;
+   return indent + snprintf(nullptr,0,"%g",obj->floatValue()) ;
 }
 
 //----------------------------------------------------------------------------

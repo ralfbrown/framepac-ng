@@ -179,6 +179,7 @@ char* Symbol::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t 
       memcpy(buffer,name,copycount) ;
       buffer += copycount ;
       }
+   *buffer = '\0' ;
    return buffer ;
 }
 

@@ -74,7 +74,9 @@ void ListBuilder::append(Object* o)
       m_list_end = m_list->nextPtr() ;
       return ;
       }
-   *m_list_end = List::create(o) ;
+   List* newelt = List::create(o) ;
+   *m_list_end = newelt ;
+   m_list_end = newelt->nextPtr() ;
    return ;
 }
 
@@ -108,7 +110,14 @@ void ListBuilder::appendClone(Object* o)
 void ListBuilder::appendList(List* l)
 {
    List* tail = l->last() ;
-   *m_list_end = l ;
+   if (m_list == List::emptyList())
+      {
+      m_list = l ;
+      }
+   else
+      {
+      *m_list_end = l ;
+      }
    m_list_end = tail->nextPtr() ;
    return ;
 }

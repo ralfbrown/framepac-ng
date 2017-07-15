@@ -323,6 +323,7 @@ char* List::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t wr
       buffer = list->front()->toCstring(buffer,bufend-buffer,wrap_at,wrapped?indent+1:(i?1:0),wrapped_indent) ;
       }
    *buffer++ = ')' ;
+   *buffer = '\0' ;
    return buffer ;
 }
 
