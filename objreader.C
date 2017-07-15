@@ -451,7 +451,7 @@ static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
    while ((nextch = getter.peek()) != EOF && isdigit(nextch))
       {
       if (numdigits < lengthof(digits)-1)
-	 digits[numdigits++] = (char)nextch ;
+	 digits[numdigits++] = *getter ;
       }
    digits[numdigits] = '\0' ;
    int type { *getter };	// figure out what type of hash-expression this is
