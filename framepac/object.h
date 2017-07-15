@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-12					*/
+/* Version 0.01, last edit 2017-07-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -122,6 +122,8 @@ class Object
       FrVIRTFUNC0(bool,isVector,isVector_,const) ;
 
       // *** I/O ***
+      // generate printed representation to a stream
+      ostream& print(ostream&) const ;
       // generate printed representation; returned value must be freed
       char* cString(size_t wrap_at = 0, size_t indent = 0) const ;
       char* jsonString(bool wrap = false, size_t indent = 0) const ;
@@ -230,6 +232,11 @@ inline ObjectIter& ObjectIter::operator++ ()
 /************************************************************************/
 
 bool equal(const Object* obj1, const Object* obj2) ;
+
+inline ostream& operator << (ostream& out, const Object* obj)
+{
+   return obj->print(out) ;
+}
 
 // end of namespace Fr
 } ;

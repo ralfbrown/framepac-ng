@@ -69,10 +69,22 @@ ObjectPtr Object::subseq_iter(const Object *obj, ObjectIter start, ObjectIter st
 
 //----------------------------------------------------------------------------
 
+ostream& Object::print(ostream& out) const
+{
+   // FIXME: make a virtual function that dispatches to the proper
+   //   type so that we don't need to go via a string conversion first
+   char* printed { cString() } ;
+   out << printed << flush ;
+   delete[] printed ;
+   return out ;
+}
+
+//----------------------------------------------------------------------------
+
 char* Object::cString(size_t wrap_at, size_t indent) const
 {
    size_t buflen { cStringLength(wrap_at,indent) };
-   char *buffer { new char[buflen+1] };
+   char* buffer { new char[buflen+1] };
    if (toCstring(buffer,buflen+1,wrap_at,indent))
       return buffer ;
    else

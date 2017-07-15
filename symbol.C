@@ -91,11 +91,12 @@ bool Symbol::nameNeedsQuoting(const char* name)
 {
    if (name)
       {
-      if (*name == '-' || isdigit(*name))
-	 return true ; // looks like a number....
+      char c = *name ;
+      if (!isupper(c) && c != '_')
+	 return true ;
       while (*name)
 	 {
-	 char c = *name ;
+	 c = *name ;
 	 if (islower(c)) return true ;
 	 if (!isalnum(c) && c != '-' && c != '_')
 	    return true ;
@@ -116,7 +117,7 @@ ObjectPtr Symbol::subseq_int(const Object *, size_t start, size_t stop)
 
 //----------------------------------------------------------------------------
 
-ObjectPtr Symbol::subseq_iter(const Object *, ObjectIter start, ObjectIter stop)
+ObjectPtr Symbol::subseq_iter(const Object*, ObjectIter start, ObjectIter stop)
 {
    (void)start; (void)stop; //FIXME
 
@@ -125,20 +126,59 @@ ObjectPtr Symbol::subseq_iter(const Object *, ObjectIter start, ObjectIter stop)
 
 //----------------------------------------------------------------------------
 
-size_t Symbol::cStringLength_(const Object *, size_t wrap_at, size_t indent)
+size_t Symbol::cStringLength_(const Object* obj, size_t /*wrap_at*/, size_t indent)
 {
-   (void)wrap_at; (void)indent; //FIXME
-
-   return 0 ; //FIXME
+   size_t namelen = static_cast<const Symbol*>(obj)->c_len() ;
+   const char* name = static_cast<const Symbol*>(obj)->c_str() ;
+   size_t len = namelen + indent ;
+   if (nameNeedsQuoting(name))
+      {
+      for (size_t i = 0 ; i < namelen ; ++i)
+	 {
+	 if (name[i] == '|')
+	    len++ ;
+	 }
+      }
+   return len ;
 }
 
 //----------------------------------------------------------------------------
 
-bool Symbol::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at, size_t indent)
+bool Symbol::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t /*wrap_at*/, size_t indent)
 {
-   (void)buffer; (void)buflen; (void)wrap_at; (void)indent; //FIXME
-   //FIXME
-   return true ;
+   const char* name = static_cast<const Symbol*>(obj)->c_str() ;
+   size_t len = static_cast<const Symbol*>(obj)->c_len() ;
+   for (size_t i = 0 ; i < indent && buflen > 0 ; ++i)
+      {
+      --buflen ;
+      *buffer++ = ' ' ;
+      }
+   bool success = true ;
+   if (nameNeedsQuoting(name))
+      {
+      if (buflen < 2) return false ;
+      *buffer++ = '|' ;
+      for ( ; *name && buflen > 1 ; ++name)
+	 {
+	 if (*name == '|')
+	    {
+	    if (--buflen < 2)
+	       {
+	       success = false ;
+	       break ;
+	       }
+	    *buffer++ = *name ;
+	    }
+	 --buflen ;
+	 *buffer++ = *name ;
+	 }
+      *buffer = '|' ;
+      }
+   else
+      {
+      memcpy(buffer,name,std::min(buflen,len)) ;
+      }
+   return success ;
 }
 
 //----------------------------------------------------------------------------
