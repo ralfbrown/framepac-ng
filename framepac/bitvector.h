@@ -70,12 +70,13 @@ class BitVector : public Object
 
       // *** object factories ***
       static BitVector* create(size_t capacity) ;
+      static BitVector* create(const char*) ; // string of '0' and '1' characters
       static BitVector* create(const List*) ;
       static BitVector* create(const List&) ;
       static BitVector* create(const Array&) ;
 
       // *** standard info functions ***
-      size_t size() const ;
+      size_t size() const { return m_size ; }
       size_t empty() const { return size() == 0 ; }
 
       // *** standard access functions ***
@@ -89,8 +90,8 @@ class BitVector : public Object
       BitVectorIter end() const { return BitVectorIter(this,size()) ; }
       BitVectorIter cend() const { return BitVectorIter(this,size()) ; }
 
-   private: // static members
-      static Allocator s_allocator ;
+      // STL compatibility
+      size_t capacity() const { return m_capacity ; }
 
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
@@ -128,7 +129,7 @@ class BitVector : public Object
 				size_t indent) ;
 
       // *** standard info functions ***
-      static size_t size_(const Object*) ;
+      static size_t size_(const Object* obj) { return obj->size() ; }
       static bool empty_(const Object* obj) { return obj->size() == 0 ; }
 
       // *** standard access functions ***
@@ -142,6 +143,13 @@ class BitVector : public Object
       static int compare_(const Object* obj, const Object* other) ;
       static int lessThan_(const Object* obj, const Object* other) ;
 
+   private: // static members
+      static Allocator s_allocator ;
+   protected: // data members
+      size_t* m_bits ;
+      size_t  m_size ;
+      size_t  m_capacity ;
+      
    } ;
 
 //----------------------------------------------------------------------------

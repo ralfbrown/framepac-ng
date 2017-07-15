@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-08					*/
+/* Version 0.01, last edit 2017-07-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -19,11 +19,19 @@
 /*									*/
 /************************************************************************/
 
+#include <cstring>
 #include "framepac/bitvector.h"
+#include "framepac/number.h"
 #include "framepac/fasthash64.h"
 
 namespace Fr
 {
+
+/************************************************************************/
+/*	Static variables for class BitVector				*/
+/************************************************************************/
+
+Allocator BitVector::s_allocator(FramepaC::Object_VMT<BitVector>::instance(),sizeof(BitVector)) ;
 
 /************************************************************************/
 /*	Methods for class BitVector					*/
@@ -41,6 +49,40 @@ BitVector* BitVector::create(size_t /*capacity*/)
 {
 
    return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+BitVector* BitVector::create(const char* bits)
+{
+   size_t capacity = bits ? strlen(bits) : 0 ;
+   BitVector* bv = new BitVector(capacity) ;
+   for (size_t i = 0 ; i < capacity ; ++i)
+      {
+      if (bits[i] == '1') bv->setBit(i,true) ;
+      }
+   return bv ;
+}
+
+//----------------------------------------------------------------------------
+
+bool BitVector::getBit(size_t N) const
+{
+   if (N >= m_size) return false ;
+   
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+void BitVector::setBit(size_t N, bool state)
+{
+   if (N < m_size)
+      {
+      (void)state ;
+//FIXME
+      }
+   return;
 }
 
 //----------------------------------------------------------------------------
@@ -132,6 +174,14 @@ bool BitVector::toJSONString_(const Object* obj, char* buffer, size_t buflen,
 {
    (void)obj; (void)buffer; (void)buflen; (void)indent;
    return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+Object* BitVector::front_(Object* obj)
+{
+   bool bit = static_cast<BitVector*>(obj)->getBit(0) ;
+   return Integer::create(bit ? 1 : (uint32_t)0) ;
 }
 
 //----------------------------------------------------------------------------
