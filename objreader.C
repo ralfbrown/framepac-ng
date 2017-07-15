@@ -457,7 +457,7 @@ static Object* read_bitvector(const ObjectReader*, CharGetter& getter)
 
 //----------------------------------------------------------------------------
 
-static Object* read_hashtable(const ObjectReader* reader, CharGetter& getter, const char* digits)
+static Object* read_hashmap(const ObjectReader* reader, CharGetter& getter, const char* digits)
 {
    *getter ;				// discard the opening parenthesis
    size_t capacity = 200 ;
@@ -465,6 +465,48 @@ static Object* read_hashtable(const ObjectReader* reader, CharGetter& getter, co
       {
       capacity = atol(digits) ;
       }
+   Map* map = Map::create(capacity) ;
+
+   int nextch ;
+   while ((nextch = getter.peek()) != EOF)
+      {
+      // skip whitespace
+      if (reader->getDispatcher(nextch) == skip_ws)
+	 {
+	 *getter ;			// consume the character
+	 continue ;
+	 }
+      else if (nextch == ')')
+	 {
+	 // end of listing of hashtable entries
+	 *getter ;			// consume the character
+	 break ;
+	 }
+      // read key and value and add them to the map
+      Object* key { reader->read(getter) } ;
+      Object* value { nullptr } ;
+      if (getter.peekNonWhite() != EOF && getter.peek() != ')')
+	 value = reader->read(getter) ;
+      if (key)
+	 {
+	 map->add(key,value) ;
+	 }
+      }
+   // we either hit the terminating paren or ran out of input, so return what we got so far
+   return map ;
+}
+
+//----------------------------------------------------------------------------
+
+static Object* read_hashset(const ObjectReader* reader, CharGetter& getter, const char* digits)
+{
+   *getter ;				// discard the opening parenthesis
+   size_t capacity = 200 ;
+   if (digits && *digits)
+      {
+      capacity = atol(digits) ;
+      }
+   //FIXME: use Set instead of Map
    Map* map = Map::create(capacity) ;
 
    int nextch ;
@@ -506,8 +548,9 @@ static Object* read_hashtable(const ObjectReader* reader, CharGetter& getter, co
 //    #*bbbb  bitvector
 //    #A( )   array
 //    #Bbbb   binary integer
-//    #H( )   hash table
-//    #N      nullptr  -- should only be present inside an Array
+//    #H( )   hash set (keys only)
+//    #M( )   hash map (key/value pairs)
+//    #N      nullptr  -- should only occur inside an Array
 //    #Oooo   octal integer
 //    #Q( )   queue
 //    #Rnnn   integer in given radix
@@ -573,7 +616,11 @@ static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
 	 return read_radix_number(reader,getter,2) ;
       case 'H':
 	 if (getter.peek() == '(')
-	    return read_hashtable(reader,getter,digits) ;
+	    return read_hashset(reader,getter,digits) ;
+	 break ;
+      case 'M':
+	 if (getter.peek() == '(')
+	    return read_hashmap(reader,getter,digits) ;
 	 break ;
       case 'N':
 	 return nullptr ;  // special case for Array elements
