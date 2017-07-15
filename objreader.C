@@ -20,14 +20,15 @@
 /************************************************************************/
 
 #include <istream>
-#include "framepac/bignum.h"
 #include "framepac/objreader.h"
+#include "framepac/bignum.h"
+#include "framepac/bitvector.h"
 #include "framepac/list.h"
 #include "framepac/number.h"
 #include "framepac/rational.h"
 #include "framepac/string.h"
 #include "framepac/stringbuilder.h"
-#include "framepac/symbol.h"
+#include "framepac/symboltable.h"
 
 namespace Fr {
 
@@ -121,13 +122,13 @@ static Object* readsym(const ObjectReader *, CharGetter &getter,
       int nextch = getter.peek() ;
       if (is_symbol_char(nextch))
 	 {
-	 sb += *getter ;
+	 sb += toupper(*getter) ;
 	 }
       else
 	 break ;
       }
    sb += '\0' ;
-   return Symbol::create(*sb) ;
+   return SymbolTable::current()->add(*sb) ;
 }
 
 //----------------------------------------------------------------------------
@@ -151,16 +152,16 @@ static Number* readnum(const ObjectReader *, CharGetter &getter,
 
    if (negate)
       {
-      sb += '-' ;
       atstart = false ;
+      sb += '-' ;
       }
    while (getter)
       {
       int nextch { getter.peek() };
       if (isdigit(nextch))
 	 {
-	 sb += *getter ;
 	 atstart = false ;
+	 sb += *getter ;
 	 }
       else if (nextch == '.' || nextch == 'e' || nextch == 'E')
 	 {
@@ -183,20 +184,18 @@ static Number* readnum(const ObjectReader *, CharGetter &getter,
 	 }
       else if (nextch == '/')
 	 {
-	 if (!isfloat && !isrational)
-	    {
-	    isrational = true ;
-	    sb += *getter ;
-	    }
-	 else
+	 if (isfloat || isrational)
 	    break ;
+	 isrational = true ;
+	 sb += *getter ;
 	 }
       else if (atstart && (nextch == '-' || nextch == '+'))
 	 {
-	 sb += *getter ;
 	 atstart = false ;
+	 sb += *getter ;
 	 }
-   //FIXME
+      else
+	 break ;
       }
    Number *obj ;
    sb += '\0' ;
@@ -243,7 +242,7 @@ static char* read_delimited_string(const ObjectReader *,
 
    while (getter)
       {
-      int nextch { *getter };
+      int nextch = *getter ;
       if (nextch == quotechar)
 	 {
 	 if (delim == quotechar)
@@ -260,7 +259,16 @@ static char* read_delimited_string(const ObjectReader *,
 	 else // interpret the quoted character
 	    {
 	    nextch = *getter ;
-	    //FIXME
+	    if (quotechar == '\\')
+	       {
+	       if (nextch == 'a') nextch = '\a' ;
+	       else if (nextch == 'b') nextch = '\b' ;
+	       else if (nextch == 'f') nextch = '\f' ;
+	       else if (nextch == 'n') nextch = '\n' ;
+	       else if (nextch == 'r') nextch = '\r' ;
+	       else if (nextch == 't') nextch = '\t' ;
+	       else if (nextch == 'v') nextch = '\v' ;
+	       }
 	    sb += nextch ;
 	    }
 	 }
@@ -270,7 +278,7 @@ static char* read_delimited_string(const ObjectReader *,
 	 }
       else
 	 {
-	 sb += *getter ;
+	 sb += nextch ;
 	 }
       }
    len = sb.currentLength() ;
@@ -283,15 +291,47 @@ static char* read_delimited_string(const ObjectReader *,
 static Object* readqsym(const ObjectReader *reader, CharGetter &getter)
 {
    unsigned len ;
-   char *buf { read_delimited_string(reader,getter,'|',len) };
-   Object *obj { Symbol::create(buf) };
-   delete [] buf ;
+   char* buf { read_delimited_string(reader,getter,'|',len) };
+   Object* obj { SymbolTable::current()->add(buf) };
+   delete[] buf ;
    return obj ;
 }
 
 //----------------------------------------------------------------------------
 
-static Object* readstr(const ObjectReader *reader, CharGetter &getter)
+static Object* read_uninterned_symbol(const ObjectReader* 
+reader, CharGetter& getter)
+{
+   char* buf ;
+   if (getter.peek() == '|')
+      {
+      unsigned len ;
+      buf = read_delimited_string(reader,getter,'|',len) ;
+      Object* obj { Symbol::create(buf) } ;
+      delete[] buf ;
+      return obj ;
+      }
+   else
+      {
+      StringBuilder sb ;
+      while (getter)
+	 {
+	 int nextch = getter.peek() ;
+	 if (is_symbol_char(nextch))
+	    {
+	    sb += *getter ;
+	    }
+	 else
+	    break ;
+	 }
+      sb += '\0' ;
+      return Symbol::create(*sb) ;
+      }
+}
+
+//----------------------------------------------------------------------------
+
+static Object* readstr(const ObjectReader *reader, CharGetter& getter)
 {
    unsigned len ;
    char *buf { read_delimited_string(reader,getter,'\\',len) };
@@ -302,8 +342,8 @@ static Object* readstr(const ObjectReader *reader, CharGetter &getter)
 
 //----------------------------------------------------------------------------
 
-static Object* skip_balanced_comment(const ObjectReader *reader,
-				     CharGetter &getter)
+static Object* skip_balanced_comment(const ObjectReader* reader,
+				     CharGetter& getter)
 {
    int nextch ;
    int nesting { 1 };
@@ -377,8 +417,7 @@ static Object* read_bitvector(const ObjectReader*, CharGetter& getter)
       sb += *getter ;
       }
    sb += '\0' ;
-//FIXME: return BitVector::create(*sb) ;
-   return nullptr ;
+   return BitVector::create(*sb) ;
 }
 
 //----------------------------------------------------------------------------
@@ -424,18 +463,20 @@ static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
       case '|':			// balanced comment (non-nested)
 	 return skip_balanced_comment(reader,getter) ;
       case '\'':		// FUNCTION shortcut
-	 return List::create(Symbol::create("FUNCTION"),
+	 return List::create(SymbolTable::current()->add("FUNCTION"),
 			     reader->read(getter)) ;
       case '\\':		// Character (simulated as single-char Symbol)
 	 {
 	 char buf[2] ;
 	 buf[0] = *getter ;
 	 buf[1] = '\0' ;
-	 return Symbol::create(buf) ;
+	 return SymbolTable::current()->add(buf) ;
 	 }
       case '(':
 	 // TODO: read vector
 	 break ;
+      case ':':
+	 return read_uninterned_symbol(reader,getter) ;
       case '#':
 	 // TODO: shared object reference
 	 break ;
@@ -491,26 +532,29 @@ static Object* rdframe(const ObjectReader *reader, CharGetter &getter)
 
 static Object* rdlist(const ObjectReader *reader, CharGetter &getter)
 {
-   (void)getter.get() ;		// consume the opening paren
+   *getter ;		// consume the opening paren
+   ListBuilder lb ;
    int nextch ;
    while ((nextch = getter.peek()) != EOF)
       {
       // skip whitespace
       if (reader->getDispatcher(nextch) == skip_ws)
-	 continue ;
-      if (nextch == ')')
 	 {
-	 // finalize the list and return it
-	 //FIXME
+	 *getter ;			// consume the character
+	 continue ;
+	 }
+      else if (nextch == ')')
+	 {
+	 *getter ;		    	// consume the character
+	 break ;
 	 }
       // not whitespace or the list terminator, so read an object and
       //   add it to the list
       Object* nextobj { reader->read(getter) };
-      //FIXME
-      (void)nextobj;
+      lb += nextobj ;
       }
-   //FIXME
-   return nullptr ;
+   // we either hit the terminating paren or ran out of input, so return what we got so far
+   return lb.move() ;
 }
 
 /************************************************************************/

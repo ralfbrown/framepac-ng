@@ -32,12 +32,25 @@ int main(int /*argc*/, char** /*argv*/)
    Fr::Initialize() ;
    Symbol* NIL { SymbolTable::current()->add("NIL") } ;
    Object* obj { nullptr } ;
-   while (obj != NIL)
+   while (obj != NIL && !cin.eof())
       {
       cout << "Type an object, or NIL to quit: " << flush ;
       cin >> obj ;
+      if (obj == nullptr)
+	 {
+	 cout << "Returned value was nullptr!" << endl ;
+	 continue ;
+	 }
+      cout << "You entered: " << obj << endl ;
+      cout << "That object is of type " << obj->typeName() << endl ;
+      const char* str = obj->stringValue() ;
+      if (str)
+	 cout << "Its string value is " << str << endl ;
+      else
+	 cout << "It has no string value" << endl ;
       //FIXME
       }
+   cout << "\nGoodbye." << endl ;
    return 0 ;
 }
 
