@@ -290,19 +290,40 @@ ObjectPtr List::subseq_iter(const Object *, ObjectIter start, ObjectIter stop)
 
 //----------------------------------------------------------------------------
 
-size_t List::cStringLength_(const Object *, size_t wrap_at, size_t indent)
+size_t List::cStringLength_(const Object* obj, size_t wrap_at, size_t indent, size_t wrapped_indent)
 {
-   (void)wrap_at; (void)indent; //FIXME
-   return 0 ; //FIXME
+   const List* list = static_cast<const List*>(obj) ;
+   size_t len = indent + 2 ;
+   bool wrapped { false } ;
+   (void)wrapped_indent; //FIXME
+   for (size_t i = 0 ; list && list != empty_list ; ++i, list = list->next())
+      {
+      size_t objlen = list->front()->cStringLength(wrap_at,wrapped?indent+1:(i?1:0),wrapped_indent) ;
+      len += objlen ;
+      }
+   return len ;
 }
 
 //----------------------------------------------------------------------------
 
-bool List::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at, size_t indent)
+char* List::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t wrap_at, size_t indent,
+   size_t wrapped_indent)
 {
-   (void)buffer; (void)buflen; (void)wrap_at; (void)indent; //FIXME
-   //FIXME
-   return true ;
+   if (buflen < indent+2) return buffer ;
+   char* bufend = buffer + buflen ;
+   for (size_t i = 0 ; i < indent ; ++i)
+      {
+      *buffer++ = ' ' ;
+      }
+   *buffer++ = '(' ;
+   bool wrapped { false } ;
+   const List* list = static_cast<const List*>(obj) ;
+   for (size_t i = 0 ; list && list != empty_list ; ++i, list = list->next())
+      {
+      buffer = list->front()->toCstring(buffer,bufend-buffer,wrap_at,wrapped?indent+1:(i?1:0),wrapped_indent) ;
+      }
+   *buffer++ = ')' ;
+   return buffer ;
 }
 
 //----------------------------------------------------------------------------

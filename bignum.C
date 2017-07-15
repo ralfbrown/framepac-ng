@@ -95,22 +95,28 @@ BigNum::~BigNum()
 
 //----------------------------------------------------------------------------
 
-size_t BigNum::cStringLength_(const Object *obj, size_t wrap_at, size_t indent)
+size_t BigNum::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   (void)obj; (void)wrap_at; (void)indent; //FIXME
-//   return snprintf(nullptr,0,"%ld",((BigNum_*)obj)->m_value + indent) ;
-   return 0 ; //FIXME
+   size_t len = indent ;
+   (void)obj; //FIXME
+//   len += snprintf(nullptr,0,"%ld",((BigNum_*)obj)->m_value + indent) ;
+   return indent ;
 }
 
 //----------------------------------------------------------------------------
 
-bool BigNum::toCstring_(const Object *obj, char *buffer, size_t buflen,
-                        size_t wrap_at, size_t indent)
+char* BigNum::toCstring_(const Object *obj, char *buffer, size_t buflen,
+   size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   (void)obj; (void)buffer; (void)wrap_at; (void)indent; //FIXME
+   if (buflen < indent) return buffer ;
+   (void)obj; //FIXME
+   for (size_t i = 0 ; i < indent ; ++i)
+      {
+      *buffer++ = ' ' ;
+      }
 //   size_t needed = snprintf(buffer,buflen,"%*s%ld",indent,"",((BigNum_*)obj)->m_value) ;
-   size_t needed = ~0 ; //FIXME
-   return needed <= buflen ;
+//FIXME
+   return buffer ;
 }
 
 //----------------------------------------------------------------------------

@@ -144,19 +144,27 @@ ObjectPtr BitVector::subseq_iter(const Object* obj, ObjectIter start, ObjectIter
 
 //----------------------------------------------------------------------------
 
-size_t BitVector::cStringLength_(const Object*, size_t wrap_at, size_t indent)
+size_t BitVector::cStringLength_(const Object* obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   (void)wrap_at; (void)indent; //FIXME
-   return 0 ; //FIXME
+   const BitVector* bv = static_cast<const BitVector*>(obj) ;
+   return indent + 2 + bv->size() ;
 }
 
 //----------------------------------------------------------------------------
 
-bool BitVector::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at, size_t indent)
+char* BitVector::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t /*wrap_at*/, size_t indent,
+   size_t /*wrapped_indent*/)
 {
-   (void)buffer; (void)buflen; (void)wrap_at; (void)indent; //FIXME
-   //FIXME
-   return true ;
+   const BitVector* bv = static_cast<const BitVector*>(obj) ;
+   if (buflen < indent+3+bv->size()) return buffer ;
+   buffer += snprintf(buffer,buflen,"%*s",(int)indent,"#*") ;
+   buflen -= (indent + 2) ;
+   for (size_t i = 0 ; i < bv->size() && buflen > 0 ; ++i)
+      {
+      *buffer++ = (bv->getBit(i) ? '1' : '0') ;
+      --buflen ;
+      }
+   return buffer ;
 }
 
 //----------------------------------------------------------------------------

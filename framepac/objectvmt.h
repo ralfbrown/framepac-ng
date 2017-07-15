@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-07-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -52,6 +52,10 @@
    static ret altname(isconst Object *,t1 a1,t2 a2,t3 a3,t4 a4) ; 	\
    ret name(t1 a1, t2 a2, t3 a3, t4 a4) isconst	           		\
       { return FramepaC::Slab::VMT(this)->altname(this,a1,a2,a3,a4) ; }
+#define FrVIRTFUNC5(ret,name,altname,isconst,t1,a1,t2,a2,t3,a3,t4,a4,t5,a5) \
+   static ret altname(isconst Object *,t1 a1,t2 a2,t3 a3,t4 a4,t5 a5) ; 	\
+   ret name(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5) isconst			\
+      { return FramepaC::Slab::VMT(this)->altname(this,a1,a2,a3,a4,a5) ; }
 
 #define FrVIRTFUNC0OVR(ret,name,alttype,altname,isconst)		\
    static ret altname##_(isconst Object *) ;                       	\
@@ -74,6 +78,10 @@
    static ret altname##_(isconst Object *,t1 a1,t2 a2,t3 a3,t4 a4) ;	\
    ret name(t1 a1, t2 a2, t3 a3, t4 a4) isconst	        		\
       { return reinterpret_cast<ret>(FramepaC::Slab::isconst##VMT(this)->altname(this,a1,a2,a3,a4)) ; }
+#define FrVIRTFUNC5OVR(ret,name,altname,isconst,t1,a1,t2,a2,t3,a3,t4,a4,t5,a5) \
+   static ret altname##_(isconst Object *,t1 a1,t2 a2,t3 a3,t4 a4,t5 a5) ;	\
+   ret name(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5) isconst			\
+      { return reinterpret_cast<ret>(FramepaC::Slab::isconst##VMT(this)->altname(this,a1,a2,a3,a4,a5)) ; }
 
 /************************************************************************/
 /************************************************************************/
@@ -192,9 +200,10 @@ class ObjectVMT
 
       // *** I/O ***
       // generate printed representation into a buffer
-      size_t (*cStringLength_)(const Fr::Object*, size_t wrap_at, size_t indent) ;
+      size_t (*cStringLength_)(const Fr::Object*, size_t wrap_at, size_t indent, size_t wrapped_indent) ;
       size_t (*jsonStringLength_)(const Fr::Object*, bool wrap, size_t indent) ;
-      bool (*toCstring_)(const Fr::Object*, char* buffer, size_t buflen, size_t wrap_at, size_t indent) ;
+      char* (*toCstring_)(const Fr::Object*, char* buffer, size_t buflen, size_t wrap_at,
+	 size_t indent, size_t wrapped_indent) ;
       bool (*toJSONString_)(const Fr::Object*, char* buffer, size_t buflen, bool wrap, size_t indent) ;
 } ;
 

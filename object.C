@@ -81,11 +81,11 @@ ostream& Object::print(ostream& out) const
 
 //----------------------------------------------------------------------------
 
-char* Object::cString(size_t wrap_at, size_t indent) const
+char* Object::cString(size_t wrap_at, size_t indent, size_t wrapped_indent) const
 {
-   size_t buflen { cStringLength(wrap_at,indent) };
+   size_t buflen { cStringLength(wrap_at,indent,wrapped_indent) };
    char* buffer { new char[buflen+1] };
-   if (toCstring(buffer,buflen+1,wrap_at,indent))
+   if (toCstring(buffer,buflen+1,wrap_at,indent,wrapped_indent))
       return buffer ;
    else
       {
@@ -96,7 +96,7 @@ char* Object::cString(size_t wrap_at, size_t indent) const
 
 //----------------------------------------------------------------------------
 
-size_t Object::cStringLength_(const Object* obj, size_t /*wrap_at*/, size_t indent)
+size_t Object::cStringLength_(const Object* obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
    const char* type = obj ? obj->typeName() : "" ;
    return snprintf(nullptr,0,"%*s#Object<%s:%lu>",(int)indent,"",type,(unsigned long)obj) ;
@@ -104,13 +104,14 @@ size_t Object::cStringLength_(const Object* obj, size_t /*wrap_at*/, size_t inde
 
 //----------------------------------------------------------------------------
 
-bool Object::toCstring_(const Object *obj, char *buffer, size_t buflen, size_t /*wrap_at*/, size_t indent)
+char* Object::toCstring_(const Object *obj, char *buffer, size_t buflen, size_t /*wrap_at*/, size_t indent,
+   size_t /*wrapped_indent*/)
 {
    if (!buffer)
-      return false ;
+      return buffer ;
    const char* type = obj ? obj->typeName() : "" ;
    size_t count = snprintf(buffer,buflen,"%*s#Object<%s:%lu>%c",(int)indent,"",type,(unsigned long)obj,'\0') ;
-   return count <= buflen ;
+   return (count <= buflen) ? buffer + count : buffer ;
 }
 
 //----------------------------------------------------------------------------

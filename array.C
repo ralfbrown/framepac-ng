@@ -120,7 +120,7 @@ ObjectPtr Array::subseq_int(const Object *, size_t start, size_t stop)
 
 //----------------------------------------------------------------------------
 
-ObjectPtr Array::subseq_iter(const Object *,ObjectIter start, ObjectIter stop)
+ObjectPtr Array::subseq_iter(const Object*,ObjectIter start, ObjectIter stop)
 {
    (void)start; (void)stop; //FIXME
 
@@ -129,20 +129,49 @@ ObjectPtr Array::subseq_iter(const Object *,ObjectIter start, ObjectIter stop)
 
 //----------------------------------------------------------------------------
 
-size_t Array::cStringLength_(const Object *,size_t wrap_at, size_t indent)
+size_t Array::cStringLength_(const Object* obj,size_t wrap_at, size_t indent, size_t wrapped_indent)
 {
-   (void)wrap_at; (void)indent;//FIXME
-
-   return 0 ; //FIXME
+   const Array* arr = static_cast<const Array*>(obj) ;
+   size_t len = indent + 4 + (arr->size() ? arr->size()-1 : 0) ;
+   bool wrapped { false } ;
+   (void)wrapped_indent; //FIXME
+   for (size_t i = 0 ; i < arr->size() ; ++i)
+      {
+      const Object* o = arr->at(i) ;
+      if (o)
+	 len += o->cStringLength(wrap_at,wrapped?indent+3:0,wrapped_indent) ;
+      else
+	 len++ ; //FIXME: need real, readable representation of nullptr
+      }
+   return len ;
 }
 
 //----------------------------------------------------------------------------
 
-bool Array::toCstring_(const Object *,char *buffer, size_t buflen, size_t wrap_at, size_t indent)
+char* Array::toCstring_(const Object* obj,char* buffer, size_t buflen, size_t wrap_at, size_t indent,
+   size_t wrapped_indent)
 {
-   (void)buffer; (void)buflen; (void)wrap_at; (void)indent; //FIXME
-   //FIXME
-   return true ;
+   const Array* arr = static_cast<const Array*>(obj) ;
+   size_t needed = snprintf(buffer,buflen,"%*s",(int)indent,"#A(") ;
+   if (needed > buflen) return buffer ;
+   const char* bufend = buffer + buflen ;
+   buffer += needed ;
+   bool wrapped { false } ;
+   (void)wrapped_indent; //FIXME
+   for (size_t i = 0 ; i < arr->size() ; ++i)
+      {
+      const Object* o = arr->at(i) ;
+      if (o)
+	 buffer = o->toCstring(buffer,bufend - buffer,wrap_at,wrapped?indent+3:0,wrapped_indent) ;
+      else
+	 {
+	 *buffer++ = '*' ; //FIXME: need real, readable representation of nullptr
+	 }
+      if (i + 1< arr->size())
+	 *buffer++ = ' ' ;
+      }
+   *buffer++ = ')' ;
+   return buffer ;
 }
 
 //----------------------------------------------------------------------------

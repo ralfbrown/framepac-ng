@@ -139,9 +139,9 @@ class List : public Object
 
       // *** I/O ***
       // generate printed representation into a buffer
-      static size_t cStringLength_(const Object*,size_t wrap_at, size_t indent) ;
-      static bool toCstring_(const Object*,char* buffer, size_t buflen,
-			     size_t wrap_at, size_t indent) ;
+      static size_t cStringLength_(const Object*,size_t wrap_at, size_t indent, size_t wrapped_indent) ;
+      static char* toCstring_(const Object*,char* buffer, size_t buflen,
+			     size_t wrap_at, size_t indent, size_t wrapped_indent) ;
       static size_t jsonStringLength_(const Object*, bool wrap, size_t indent) ;
       static bool toJSONString_(const Object*, char* buffer, size_t buflen, bool wrap,
 				size_t indent) ;

@@ -52,18 +52,18 @@ Float* Float::create(const char* value)
 
 //----------------------------------------------------------------------------
 
-size_t Float::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent)
+size_t Float::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
    return snprintf(nullptr,0,"%g",obj->floatValue() + indent) ;
 }
 
 //----------------------------------------------------------------------------
 
-bool Float::toCstring_(const Object *obj, char *buffer, size_t buflen,
-		       size_t /*wrap_at*/, size_t indent)
+char* Float::toCstring_(const Object *obj, char *buffer, size_t buflen,
+   size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
    size_t needed = snprintf(buffer,buflen,"%*s%g",(int)indent,"",obj->floatValue()) ;
-   return needed <= buflen ;
+   return (needed <= buflen) ? buffer + needed : buffer ;
 }
 
 //----------------------------------------------------------------------------

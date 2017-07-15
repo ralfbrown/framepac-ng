@@ -56,19 +56,21 @@ Complex* Complex::subseq(...)
 
 //----------------------------------------------------------------------------
 
-size_t Complex::cStringLength_(const Object*, size_t wrap_at, size_t indent)
+size_t Complex::cStringLength_(const Object*, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   (void)wrap_at; (void)indent; //FIXME
-   return 0 ; //FIXME
+   size_t len = indent ;
+   //FIXME
+   return len ;
 }
 
 //----------------------------------------------------------------------------
 
-bool Complex::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at, size_t indent)
+char* Complex::toCstring_(const Object *, char *buffer, size_t buflen, size_t /*wrap_at*/, size_t indent,
+   size_t /*wrapped_indent*/)
 {
-   (void)buffer; (void)buflen; (void)wrap_at; (void)indent; //FIXME
+   if (buflen < indent) return buffer ;
    //FIXME
-   return true ;
+   return buffer ;
 }
 
 //----------------------------------------------------------------------------

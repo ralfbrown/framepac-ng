@@ -96,19 +96,26 @@ ObjectPtr Map::subseq_iter(const Object *,ObjectIter start, ObjectIter stop)
 
 //----------------------------------------------------------------------------
 
-size_t Map::cStringLength_(const Object *, size_t wrap_at, size_t indent)
+size_t Map::cStringLength_(const Object *, size_t wrap_at, size_t indent, size_t wrapped_indent)
 {
-   (void)wrap_at; (void)indent; //FIXME
-   return 0 ; //FIXME
+   size_t len = indent + 4 ;
+   (void)wrap_at; (void)wrapped_indent; //FIXME
+   return len ;
 }
 
 //----------------------------------------------------------------------------
 
-bool Map::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at, size_t indent)
+char* Map::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at, size_t indent,
+   size_t wrapped_indent)
 {
-   (void)buffer; (void)buflen; (void)wrap_at; (void)indent; //FIXME
+   if (buflen < indent + 4) return buffer ;
+   char* bufend = buffer + buflen ;
+   buffer += snprintf(buffer,buflen,"%*s",indent,"#H(") ;
+   
+   (void)wrap_at; (void)wrapped_indent; //FIXME
    //FIXME
-   return true ;
+   *buffer++ = ')' ;
+   return buffer ;
 }
 
 //----------------------------------------------------------------------------

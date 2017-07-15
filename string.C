@@ -142,9 +142,8 @@ ObjectPtr String::subseq_iter(const Object *, ObjectIter start, ObjectIter stop)
 
 //----------------------------------------------------------------------------
 
-size_t String::cStringLength_(const Object *obj, size_t wrap_at, size_t indent)
+size_t String::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   (void)wrap_at; //FIXME
    const String *str { reinterpret_cast<const String*>(obj) };
    //FIXME: need to quote special characters!
    return snprintf(nullptr,0,"%*s\"%s\"",(int)indent,"",str->stringValue()) ;
@@ -152,14 +151,16 @@ size_t String::cStringLength_(const Object *obj, size_t wrap_at, size_t indent)
 
 //----------------------------------------------------------------------------
 
-bool String::toCstring_(const Object *obj, char *buffer, size_t buflen,
-			size_t wrap_at, size_t indent)
+char* String::toCstring_(const Object *obj, char *buffer, size_t buflen,
+			size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   (void)wrap_at; //FIXME
    const String *str { reinterpret_cast<const String*>(obj) };
    //FIXME: need to quote special characters!
    size_t needed = snprintf(buffer,buflen,"%*s\"%s\"",(int)indent,"",str->stringValue()) ;
-   return needed <= buflen ;
+   if (needed < buflen)
+      return buffer + needed ;
+   else
+      return buffer ;
 }
 
 //----------------------------------------------------------------------------

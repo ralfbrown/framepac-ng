@@ -174,20 +174,27 @@ ObjectPtr SymbolTable::subseq_iter(const Object *, ObjectIter start, ObjectIter 
 
 //----------------------------------------------------------------------------
 
-size_t SymbolTable::cStringLength_(const Object *, size_t wrap_at, size_t indent)
+size_t SymbolTable::cStringLength_(const Object *, size_t wrap_at, size_t indent, size_t wrapped_indent)
 {
-   (void)wrap_at;(void)indent;//FIXME
+   size_t len = indent + 9 ;
+   (void)wrap_at;(void)wrapped_indent;//FIXME
+   //FIXME
 
-   return 0 ; //FIXME
+   return len ;
 }
 
 //----------------------------------------------------------------------------
 
-bool SymbolTable::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at, size_t indent)
+char* SymbolTable::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at, size_t indent,
+   size_t wrapped_indent)
 {
-   (void)buffer;(void)buflen;(void)wrap_at;(void)indent;//FIXME
+   if (buflen < indent + 9) return buffer ;
+   (void)wrap_at;(void)wrapped_indent;//FIXME
+   buffer += snprintf(buffer,buflen,"%*s",indent,"#SymTab(") ;
    //FIXME
-   return true ;
+
+   *buffer++ = ')' ;
+   return buffer ;
 }
 
 //----------------------------------------------------------------------------

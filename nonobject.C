@@ -33,19 +33,20 @@ namespace Fr
 /*	Methods for class NonObject					*/
 /************************************************************************/
 
-size_t NonObject::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent)
+size_t NonObject::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   return snprintf(nullptr,0,"%*s#NonObject<%lu>",(int)indent,"",(unsigned long)obj) ;
+   return snprintf(nullptr,0,"%*s#NonObject<%lu>",(int)indent,"",(uintptr_t)obj) ;
 }
 
 //----------------------------------------------------------------------------
 
-bool NonObject::toCstring_(const Object *obj, char *buffer, size_t buflen, size_t /*wrap_at*/, size_t indent)
+char* NonObject::toCstring_(const Object *obj, char *buffer, size_t buflen, size_t /*wrap_at*/, size_t indent,
+   size_t /*wrapped_indent*/)
 {
    if (!buffer)
-      return false ;
-   size_t count = snprintf(buffer,buflen,"%*s#NonObject<%lu>%c",(int)indent,"",(unsigned long)obj,'\0') ;
-   return count <= buflen ;
+      return buffer ;
+   size_t count = snprintf(buffer,buflen,"%*s#NonObject<%lu>%c",(int)indent,"",(uintptr_t)obj,'\0') ;
+   return (count <= buflen) ? buffer + count : buffer ;
 }
 
 //----------------------------------------------------------------------------

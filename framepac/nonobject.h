@@ -55,10 +55,11 @@ class NonObject : public Object
       static bool empty_(const Object*) { return false ; }
 
       // generate printed representation into a buffer
-      static bool toCstring_(const Object* obj, char* buffer,size_t buflen,size_t wrap_at,size_t indent) ;
+      static char* toCstring_(const Object* obj, char* buffer,size_t buflen,size_t wrap_at,size_t indent,
+	 size_t wrapped_indent) ;
       static bool toJSONString_(const Object* obj,char* buffer,size_t buflen,bool wrap,size_t indent) ;
       // determine length of buffer required for string representation of object
-      static size_t cStringLength_(const Object* obj,size_t wrap_at,size_t indent) ;
+      static size_t cStringLength_(const Object* obj,size_t wrap_at,size_t indent, size_t wrapped_indent) ;
       static size_t jsonStringLength_(const Object* obj,bool wrap,size_t indent) ;
 } ;
 

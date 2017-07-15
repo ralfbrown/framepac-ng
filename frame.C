@@ -93,20 +93,23 @@ ObjectPtr Frame::subseq_iter(const Object *, ObjectIter start, ObjectIter stop)
 
 //----------------------------------------------------------------------------
 
-size_t Frame::cStringLength_(const Object *, size_t wrap_at, size_t indent)
+size_t Frame::cStringLength_(const Object *, size_t wrap_at, size_t indent, size_t wrapped_indent)
 {
-   (void)wrap_at; (void)indent; //FIXME
-
-   return 0 ; //FIXME
+   size_t len = indent ;
+   (void)wrap_at; (void)indent; (void)wrapped_indent; //FIXME
+   //FIXME
+   return len ;
 }
 
 //----------------------------------------------------------------------------
 
-bool Frame::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at, size_t indent)
+char* Frame::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at, size_t indent,
+   size_t wrapped_indent)
 {
-   (void)buffer; (void)buflen; (void)wrap_at; (void)indent; //FIXME
+   if (buflen < indent) return buffer ;
+   (void)wrap_at; (void)wrapped_indent; //FIXME
    //FIXME
-   return true ;
+   return buffer ;
 }
 
 //----------------------------------------------------------------------------

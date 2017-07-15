@@ -96,22 +96,28 @@ Rational::~Rational()
 
 //----------------------------------------------------------------------------
 
-size_t Rational::cStringLength_(const Object *obj, size_t wrap_at, size_t indent)
+size_t Rational::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   (void)obj; (void)wrap_at; (void)indent;//FIXME
-//   return snprintf(nullptr,0,"%ld",((Rational_*)obj)->m_value + indent) ;
-   return 0 ; //FIXME
+   size_t len = indent ;
+   (void)obj;//FIXME
+//   len += snprintf(nullptr,0,"%ld",((Rational_*)obj)->m_value + indent) ;
+   return len ;
 }
 
 //----------------------------------------------------------------------------
 
-bool Rational::toCstring_(const Object *obj, char *buffer, size_t buflen,
-			  size_t wrap_at, size_t indent)
+char* Rational::toCstring_(const Object *obj, char *buffer, size_t buflen,
+   size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   (void)obj; (void)buffer; (void)wrap_at; (void)indent; //FIXME
+   if (buflen < indent+1) return buffer ;
+   (void)obj; //FIXME
+   for (size_t i = 0 ; i < indent ; ++i)
+      {
+      *buffer++ = ' ' ;
+      }
 //   size_t needed = snprintf(buffer,buflen,"%*s%ld",indent,"",((Rational_*)obj)->m_value) ;
-   size_t needed = ~0 ; //FIXME
-   return needed <= buflen ;
+//FIXME
+   return buffer ;
 }
 
 //----------------------------------------------------------------------------

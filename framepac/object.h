@@ -125,17 +125,16 @@ class Object
       // generate printed representation to a stream
       ostream& print(ostream&) const ;
       // generate printed representation; returned value must be freed
-      char* cString(size_t wrap_at = 0, size_t indent = 0) const ;
+      char* cString(size_t wrap_at = 0, size_t indent = 0, size_t wrapped_indent = 0) const ;
       char* jsonString(bool wrap = false, size_t indent = 0) const ;
       // generate printed representation into a buffer
-      FrVIRTFUNC4(bool,toCstring,toCstring_,const,char*,buffer,size_t,buflen,size_t,wrap_at,size_t,indent) ;
-      bool toCstring(char* buffer, size_t buflen) const { return toCstring(buffer,buflen,0,0) ; }
+      FrVIRTFUNC5(char*,toCstring,toCstring_,const,char*,buffer,size_t,buflen,size_t,wrap_at,size_t,indent,size_t,wrapped_indent) ;
+      char* toCstring(char* buffer, size_t buflen) const { return toCstring(buffer,buflen,0,0,0) ; }
       FrVIRTFUNC4(bool,toJSONString,toJSONString_,const,char*,buffer,size_t,buflen,bool,wrap,size_t,indent) ;
       bool toJSONString(char* buffer, size_t buflen) const { return toJSONString(buffer,buflen,false,0) ; }
       // determine length of buffer required for string representation of object
-      FrVIRTFUNC2(size_t,cStringLength,cStringLength_,const,size_t,wrap_at,size_t,indent) ;
-      size_t cStringLength(size_t wrap_at) const { return cStringLength(wrap_at,0) ; }
-      size_t cStringLength() const { return cStringLength(0,0) ; }
+      FrVIRTFUNC3(size_t,cStringLength,cStringLength_,const,size_t,wrap_at,size_t,indent,size_t,wrapped_indent) ;
+      size_t cStringLength(size_t wrap_at = ~0UL) const { return cStringLength(wrap_at,0,0) ; }
       FrVIRTFUNC2(size_t,jsonStringLength,jsonStringLength_,const,bool,wrap,size_t,indent) ;
       size_t jsonStringLength(bool wrap) const { return jsonStringLength(wrap,0) ; }
       size_t jsonStringLength() const { return jsonStringLength(false,0) ; }

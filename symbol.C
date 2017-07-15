@@ -126,7 +126,7 @@ ObjectPtr Symbol::subseq_iter(const Object*, ObjectIter start, ObjectIter stop)
 
 //----------------------------------------------------------------------------
 
-size_t Symbol::cStringLength_(const Object* obj, size_t /*wrap_at*/, size_t indent)
+size_t Symbol::cStringLength_(const Object* obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
    size_t namelen = static_cast<const Symbol*>(obj)->c_len() ;
    const char* name = static_cast<const Symbol*>(obj)->c_str() ;
@@ -144,7 +144,8 @@ size_t Symbol::cStringLength_(const Object* obj, size_t /*wrap_at*/, size_t inde
 
 //----------------------------------------------------------------------------
 
-bool Symbol::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t /*wrap_at*/, size_t indent)
+char* Symbol::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t /*wrap_at*/, size_t indent,
+   size_t /*wrapped_indent*/)
 {
    const char* name = static_cast<const Symbol*>(obj)->c_str() ;
    size_t len = static_cast<const Symbol*>(obj)->c_len() ;
@@ -153,10 +154,9 @@ bool Symbol::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t /
       --buflen ;
       *buffer++ = ' ' ;
       }
-   bool success = true ;
    if (nameNeedsQuoting(name))
       {
-      if (buflen < 2) return false ;
+      if (buflen < 2) return buffer ;
       *buffer++ = '|' ;
       for ( ; *name && buflen > 1 ; ++name)
 	 {
@@ -164,7 +164,6 @@ bool Symbol::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t /
 	    {
 	    if (--buflen < 2)
 	       {
-	       success = false ;
 	       break ;
 	       }
 	    *buffer++ = *name ;
@@ -172,13 +171,15 @@ bool Symbol::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t /
 	 --buflen ;
 	 *buffer++ = *name ;
 	 }
-      *buffer = '|' ;
+      *buffer++ = '|' ;
       }
    else
       {
-      memcpy(buffer,name,std::min(buflen,len)) ;
+      size_t copycount = std::min(buflen,len) ;
+      memcpy(buffer,name,copycount) ;
+      buffer += copycount ;
       }
-   return success ;
+   return buffer ;
 }
 
 //----------------------------------------------------------------------------
