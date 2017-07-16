@@ -218,7 +218,7 @@ size_t Array::cStringLength_(const Object* obj,size_t wrap_at, size_t indent, si
       if (o)
 	 len += o->cStringLength(wrap_at,wrapped?indent+3:0,wrapped_indent) ;
       else
-	 len++ ; //FIXME: need real, readable representation of nullptr
+	 len += 2 ; // nullptr generates #N in the printed representation
       }
    return len ;
 }
@@ -237,15 +237,16 @@ char* Array::toCstring_(const Object* obj,char* buffer, size_t buflen, size_t wr
    (void)wrapped_indent; //FIXME
    for (size_t i = 0 ; i < arr->size() ; ++i)
       {
+      if (i) *buffer++ = ' ' ;
       const Object* o = arr->at(i) ;
       if (o)
 	 buffer = o->toCstring(buffer,bufend - buffer,wrap_at,wrapped?indent+3:0,wrapped_indent) ;
       else
 	 {
-	 *buffer++ = '*' ; //FIXME: need real, readable representation of nullptr
+	 // put in #N as a representation of nullptr
+	 *buffer++ = '#' ;
+	 *buffer++ = 'N' ;
 	 }
-      if (i + 1< arr->size())
-	 *buffer++ = ' ' ;
       }
    *buffer++ = ')' ;
    *buffer = '\0' ;
