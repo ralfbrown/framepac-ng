@@ -28,6 +28,7 @@
 #include "framepac/map.h"
 #include "framepac/number.h"
 #include "framepac/rational.h"
+#include "framepac/set.h"
 #include "framepac/string.h"
 #include "framepac/stringbuilder.h"
 #include "framepac/symboltable.h"
@@ -266,6 +267,7 @@ static char* read_delimited_string(const ObjectReader *,
 	       {
 	       if (nextch == 'a') nextch = '\a' ;
 	       else if (nextch == 'b') nextch = '\b' ;
+	       else if (nextch == 'e') nextch = '\e' ;
 	       else if (nextch == 'f') nextch = '\f' ;
 	       else if (nextch == 'n') nextch = '\n' ;
 	       else if (nextch == 'r') nextch = '\r' ;
@@ -506,8 +508,7 @@ static Object* read_hashset(const ObjectReader* reader, CharGetter& getter, cons
       {
       capacity = atol(digits) ;
       }
-   //FIXME: use Set instead of Map
-   Map* map = Map::create(capacity) ;
+   Set* set = Set::create(capacity) ;
 
    int nextch ;
    while ((nextch = getter.peek()) != EOF)
@@ -524,15 +525,15 @@ static Object* read_hashset(const ObjectReader* reader, CharGetter& getter, cons
 	 *getter ;			// consume the character
 	 break ;
 	 }
-      // read key and add it to the map
+      // read key and add it to the set
       Object* key { reader->read(getter) } ;
       if (key)
 	 {
-	 map->add(key) ;
+	 set->add(key) ;
 	 }
       }
    // we either hit the terminating paren or ran out of input, so return what we got so far
-   return map ;
+   return set ;
 }
 
 //----------------------------------------------------------------------------

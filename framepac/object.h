@@ -115,6 +115,7 @@ class Object
       FrVIRTFUNC0(bool,isNumber,isNumber_,const) ;
       FrVIRTFUNC0(bool,isObject,isObject_,const) ;
       FrVIRTFUNC0(bool,isRational,isRational_,const) ;
+      FrVIRTFUNC0(bool,isSet,isSet_,const) ;
       FrVIRTFUNC0(bool,isSparseVector,isSparseVector_,const) ;
       FrVIRTFUNC0(bool,isString,isString_,const) ;
       FrVIRTFUNC0(bool,isSymbol,isSymbol_,const) ;
@@ -195,6 +196,7 @@ inline bool Object::isMap_(const Object*) { return false ; }
 inline bool Object::isNumber_(const Object*) { return false ; }
 inline bool Object::isObject_(const Object*) { return true ; }
 inline bool Object::isRational_(const Object*) { return false ; }
+inline bool Object::isSet_(const Object*) { return false ; }
 inline bool Object::isSparseVector_(const Object*) { return false ; }
 inline bool Object::isString_(const Object*) { return false ; }
 inline bool Object::isSymbol_(const Object*) { return false ; }

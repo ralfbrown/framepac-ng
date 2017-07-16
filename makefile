@@ -257,7 +257,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	loadfilelist$(OBJ) map$(OBJ) matrix$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
 	nonobject$(OBJ) object$(OBJ) objreader$(OBJ) printf$(OBJ) \
-	rational$(OBJ) slab$(OBJ) \
+	rational$(OBJ) set$(OBJ) slab$(OBJ) \
 	slabgroup$(OBJ) smallalloc$(OBJ) \
 	sparsematrix$(OBJ) string$(OBJ) stringbuilder$(OBJ) \
 	sufarray_u32u32$(OBJ) sufarray_u32u40$(OBJ) \
@@ -441,6 +441,7 @@ progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
 ptrie_u32$(OBJ):	ptrie_u32$(C) template/ptrie.cc
 random$(OBJ):		random$(C) framepac/random.h
 rational$(OBJ):		rational$(C) framepac/rational.h
+set$(OBJ):		set$(C) framepac/set.h
 slab$(OBJ):		slab$(C) framepac/memory.h
 slabgroup$(OBJ):	slabgroup$(C) framepac/memory.h
 smallalloc$(OBJ):	smallalloc$(C) framepac/memory.h
@@ -544,7 +545,7 @@ framepac/hashtable.h:	framepac/counter.h framepac/init.h framepac/list.h framepa
 framepac/list.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/map.h:		framepac/object.h
+framepac/map.h:		framepac/hashtable.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/matrix.h:	framepac/object.h
@@ -580,7 +581,10 @@ framepac/rational.h:	framepac/number.h
 framepac/semaphore.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/string.h:	framepac/object.h framepac/map.h
+framepac/set.h:	framepac/hashtable.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/string.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/stringbuilder.h:	framepac/builder.h framepac/string.h

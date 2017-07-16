@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-09					*/
+/* Version 0.01, last edit 2017-07-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -19,8 +19,8 @@
 /*									*/
 /************************************************************************/
 
-#ifndef _Fr_MAP_H_INCLUDED
-#define _Fr_MAP_H_INCLUDED
+#ifndef _Fr_SET_H_INCLUDED
+#define _Fr_SET_H_INCLUDED
 
 #include "framepac/hashtable.h"
 
@@ -29,41 +29,41 @@ namespace Fr {
 //----------------------------------------------------------------------------
 // forward declarations
 
-class Map ;
+class Set ;
 class List ;
 
 //----------------------------------------------------------------------------
 
-class MapIter
+class SetIter
    {
    private:
-      Map   *m_map ;
+      Set   *m_set ;
       size_t m_index ;
    public:
-      MapIter(Map *m,size_t idx) : m_map(m), m_index(idx) {}
-      MapIter(const MapIter &) = default ;
-      ~MapIter() = default ;
+      SetIter(Set *s,size_t idx) : m_set(s), m_index(idx) {}
+      SetIter(const SetIter &) = default ;
+      ~SetIter() = default ;
 
       Object* operator* () ;
       const Object* operator* () const ;
       Object* operator-> () ;
-      MapIter& operator++ () { ++m_index ; return *this ; }
+      SetIter& operator++ () { ++m_index ; return *this ; }
       const Object* operator[] (size_t index) const ;
 
-      bool operator== (const MapIter& other) const { return m_map == other.m_map && m_index == other.m_index ; }
-      bool operator!= (const MapIter& other) const { return m_map != other.m_map || m_index != other.m_index ; }
+      bool operator== (const SetIter& other) const { return m_set == other.m_set && m_index == other.m_index ; }
+      bool operator!= (const SetIter& other) const { return m_set != other.m_set || m_index != other.m_index ; }
    } ;
 
 //----------------------------------------------------------------------------
 
-class Map : public Object
+class Set : public Object
    {
    public:
-      static Map *create(size_t capacity = 0) { return new Map(capacity) ; }
-      static Map *create(const List *) ;
-      static Map *create(const Map *orig) { return new Map(orig) ; }
+      static Set *create(size_t capacity = 0) { return new Set(capacity) ; }
+      static Set *create(const List *) ;
+      static Set *create(const Set *orig) { return new Set(orig) ; }
 
-      bool add(Object* key, Object* value = nullptr) { return m_map.add(key,value) ; }
+      bool add(Object* key) { return m_set.add(key) ; }
 
       // *** standard info functions ***
       size_t size() const { return m_size ; }
@@ -71,13 +71,13 @@ class Map : public Object
 
       // *** standard access functions ***
       Object *front() const { return *cbegin() ; }
-      Map *subseq(MapIter start, MapIter stop, bool shallow = false) const ;
+      Set *subseq(SetIter start, SetIter stop, bool shallow = false) const ;
 
       // *** iterator support ***
-      MapIter begin() { return MapIter(this,0) ; }
-      MapIter cbegin() const { return MapIter(const_cast<Map*>(this),0) ; }
-      MapIter end() { return MapIter(this,size()) ; }
-      MapIter cend() const { return MapIter(const_cast<Map*>(this),size()) ; }
+      SetIter begin() { return SetIter(this,0) ; }
+      SetIter cbegin() const { return SetIter(const_cast<Set*>(this),0) ; }
+      SetIter end() { return SetIter(this,size()) ; }
+      SetIter cend() const { return SetIter(const_cast<Set*>(this),size()) ; }
 
       // STL compatibility
       bool reserve(size_t n) ;
@@ -85,24 +85,24 @@ class Map : public Object
    private: // static members
       static Allocator s_allocator ;
    private:
-      size_t       m_size ;
-      ObjHashTable m_map ;
+      size_t     m_size ;
+      ObjHashSet m_set ;
    protected: // construction/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
-      Map(size_t initial_size = 0) ;
-      Map(const Map* orig) ;
-      Map(const Map& orig) ;
-      ~Map() ;
+      Set(size_t initial_size = 0) ;
+      Set(const Set* orig) ;
+      Set(const Set& orig) ;
+      ~Set() ;
 
    protected: // implementation functions for virtual methods
-      friend class FramepaC::Object_VMT<Map> ;
-      friend class MapIter ;
+      friend class FramepaC::Object_VMT<Set> ;
+      friend class SetIter ;
       friend class SymbolTable ; //TEMP
 
       // type determination predicates
-      static bool isMap_(const Object*) { return true ; }
-      static const char *typeName_(const Object*) { return "Map" ; }
+      static bool isSet_(const Object*) { return true ; }
+      static const char *typeName_(const Object*) { return "Set" ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object*) ;
@@ -120,12 +120,12 @@ class Map : public Object
 			        size_t indent) ;
 
       // *** standard info functions ***
-      static size_t size_(const Object* obj) { return static_cast<const Map*>(obj)->size() ; }
-      static bool empty_(const Object* obj) { return static_cast<const Map*>(obj)->empty() ; }
+      static size_t size_(const Object* obj) { return static_cast<const Set*>(obj)->size() ; }
+      static bool empty_(const Object* obj) { return static_cast<const Set*>(obj)->empty() ; }
 
       // *** standard access functions ***
-      static Object* front_(Object* obj) { return static_cast<const Map*>(obj)->front() ; }
-      static const Object* front_(const Object *obj) { return static_cast<const Map*>(obj)->front() ; }
+      static Object* front_(Object* obj) { return static_cast<const Set*>(obj)->front() ; }
+      static const Object* front_(const Object *obj) { return static_cast<const Set*>(obj)->front() ; }
 
       // *** comparison functions ***
       static size_t hashValue_(const Object*) ;
@@ -138,10 +138,10 @@ class Map : public Object
 
 //----------------------------------------------------------------------------
 
-//inline Object* MapIter::operator* () { return m_map->getIndex(m_index) ; }
-//inline const Object* MapIter::operator* () const { return m_map->getIndex(m_index) ; }
-inline Object* MapIter::operator* () { return nullptr ; } //FIXME
-inline const Object* MapIter::operator* () const { return nullptr ; } //FIXME
+//inline Object* SetIter::operator* () { return m_set->getIndex(m_index) ; }
+//inline const Object* SetIter::operator* () const { return m_set->getIndex(m_index) ; }
+inline Object* SetIter::operator* () { return nullptr ; } //FIXME
+inline const Object* SetIter::operator* () const { return nullptr ; } //FIXME
 
 } ; // end namespace Fr
 
@@ -151,10 +151,10 @@ inline const Object* MapIter::operator* () const { return nullptr ; } //FIXME
 namespace FramepaC
 {
 
-extern template class FramepaC::Object_VMT<Fr::Map> ;
+extern template class FramepaC::Object_VMT<Fr::Set> ;
 
 } ; // end namespace FramepaC
 
-#endif /* !_Fr_MAP_H_INCLUDED */
+#endif /* !_Fr_SET_H_INCLUDED */
 
-// end of file map.h //
+// end of file set.h //
