@@ -95,24 +95,38 @@ ObjectPtr Set::subseq_iter(const Object *,ObjectIter start, ObjectIter stop)
 
 //----------------------------------------------------------------------------
 
-size_t Set::cStringLength_(const Object *, size_t wrap_at, size_t indent, size_t wrapped_indent)
+size_t Set::cStringLength_(const Object* obj, size_t wrap_at, size_t indent, size_t wrapped_indent)
 {
    size_t len = indent + 4 ;
-   (void)wrap_at; (void)wrapped_indent; //FIXME
+   bool first { true } ;
+   for (const auto key : static_cast<const Set*>(obj)->m_set)
+      {
+      len += key.first->cStringLength(wrap_at,indent,wrapped_indent) ;
+      if (first)
+	 first = false ;
+      else
+	 ++len ;
+      }
    return len ;
 }
 
 //----------------------------------------------------------------------------
 
-char* Set::toCstring_(const Object *, char *buffer, size_t buflen, size_t wrap_at, size_t indent,
+char* Set::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t wrap_at, size_t indent,
    size_t wrapped_indent)
 {
    if (buflen < indent + 4) return buffer ;
    char* bufend = buffer + buflen ;
    buffer += snprintf(buffer,buflen,"%*s",(int)indent,"#H(") ;
-   
-   (void)bufend; (void)wrap_at; (void)wrapped_indent; //FIXME
-   //FIXME
+   bool first { true } ;
+   for (const auto key : static_cast<const Set*>(obj)->m_set)
+      {
+      if (first)
+	 first = false ;
+      else
+	 *buffer++ = ' ' ;
+      buffer = key.first->toCstring(buffer,bufend-buffer,wrap_at,0,wrapped_indent) ;
+      }
    *buffer++ = ')' ;
    return buffer ;
 }
