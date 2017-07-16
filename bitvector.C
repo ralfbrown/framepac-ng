@@ -33,22 +33,28 @@ namespace Fr
 
 Allocator BitVector::s_allocator(FramepaC::Object_VMT<BitVector>::instance(),sizeof(BitVector)) ;
 
+static constexpr size_t bits_per_sizet = (CHAR_BIT * sizeof(size_t)) ;
+
 /************************************************************************/
 /*	Methods for class BitVector					*/
 /************************************************************************/
 
-BitVector::BitVector(size_t /*capacity*/)
+BitVector::BitVector(size_t capacity)
 {
-   //FIXME
+   m_size = capacity ;
+   capacity = (capacity + bits_per_sizet - 1) / bits_per_sizet ;
+   m_bits = new size_t[capacity] ;
+   if (m_bits)
+      {
+      m_capacity = capacity * bits_per_sizet ;
+      for (size_t i = 0 ; i < capacity ; ++i)
+	 m_bits[i] = 0 ;
+      }
+   else
+      {
+      m_size = m_capacity = 0 ;
+      }
    return ;
-}
-
-//----------------------------------------------------------------------------
-
-BitVector* BitVector::create(size_t /*capacity*/)
-{
-
-   return nullptr ; //FIXME
 }
 
 //----------------------------------------------------------------------------
@@ -69,8 +75,9 @@ BitVector* BitVector::create(const char* bits)
 bool BitVector::getBit(size_t N) const
 {
    if (N >= m_size) return false ;
-   
-   return false ; //FIXME
+   size_t idx = N / bits_per_sizet ;
+   size_t bit = N % bits_per_sizet ;
+   return (m_bits[idx] & (1UL<<bit)) != 0 ;
 }
 
 //----------------------------------------------------------------------------
@@ -79,8 +86,12 @@ void BitVector::setBit(size_t N, bool state)
 {
    if (N < m_size)
       {
-      (void)state ;
-//FIXME
+      size_t idx = N / bits_per_sizet ;
+      size_t bit = N % bits_per_sizet ;
+      if (state)
+	 m_bits[idx] |= (1UL << bit) ;
+      else
+	 m_bits[idx] &= ~(1UL << bit) ;
       }
    return;
 }

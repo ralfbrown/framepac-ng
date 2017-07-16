@@ -64,16 +64,15 @@ class BitVectorIter
 class BitVector : public Object
    {
    public:
-
-      bool getBit(size_t N) const ;
-      void setBit(size_t N, bool set) ;
-
       // *** object factories ***
-      static BitVector* create(size_t capacity) ;
+      static BitVector* create(size_t capacity) { return new BitVector(capacity) ; }
       static BitVector* create(const char*) ; // string of '0' and '1' characters
       static BitVector* create(const List*) ;
       static BitVector* create(const List&) ;
       static BitVector* create(const Array&) ;
+
+      bool getBit(size_t N) const ;
+      void setBit(size_t N, bool set) ;
 
       // *** standard info functions ***
       size_t size() const { return m_size ; }
