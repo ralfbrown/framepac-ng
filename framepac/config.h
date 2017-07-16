@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-28					*/
+/* Version 0.02, last edit 2017-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -31,7 +31,7 @@ using namespace std ;
 /************************************************************************/
 /************************************************************************/
 
-#define FramepaC_VERSION "0.01"
+#define FramepaC_VERSION "0.02"
 
 // uncomment the following to remove thread-local storage and synchronization
 //   primitives; FramepaC will no longer have any thread safety
@@ -60,26 +60,8 @@ using namespace std ;
 //   value are 64 bits)
 #define FrHASHTABLE_INTERLEAVED_ENTRIES
 
-//*** Memory Allocator ***
-
-// uncomment the following line to be able to generate memory-allocation statistics (slightly slower)
-//#define FrHASHTABLE_STATS
-
 /************************************************************************/
 /************************************************************************/
-
-// public constants
-namespace Fr
-{
-
-// maximum length of a Symbol's name
-// we need to subtract one for the terminating NUL as well as the size
-//   of the flags field
-const int SYMBOL_MAX_NAME = 384 - 1 - sizeof(uint8_t) ;
-
-} ;
-
-//----------------------------------------------------------------------------
 
 // private classes, types, and functions
 namespace FramepaC
@@ -111,7 +93,7 @@ constexpr int SLAB_GROUP_SIZE = 4095 ;
 # define if_NONTHREADED(x) x
 #else
 # ifdef __GNUC__
-//  for GCC, the __thread extension is *far* faster than thread_local,
+//  for x86 GCC, the __thread extension is *far* faster than thread_local,
 //  because the latter involves a branch and multiple function calls
 //  per access to a variable of that storage class, while __thread
 //  simply uses an fs: override
@@ -126,13 +108,13 @@ constexpr int SLAB_GROUP_SIZE = 4095 ;
 
 #ifdef FRAMEPAC_GPL
 #  include <gmp.h>
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 60))
-  // emulate BigNum with 128-bit integers and Rational with 128-bit floats from quadmath.h
+#elif defined(FRAMEPAC_LGPL) && defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 60))
+  // emulate BigNum with 128-bit integers and Rational with 128-bit floats from quadmath.h (dist with GCC but LGPL)
 # include <quadmath.h>
   typedef __int128_t mpz_t ;
   typedef __float128 mpq_t ;
 # define mpz_zero() 0
-# define mpq_zero() 0.0L
+# define mpq_zero() 0.0Q
 #else
   // emulate BigNum with the biggest integer type available and Rational with double-precision floating point
   typedef intmax_t mpz_t ;
