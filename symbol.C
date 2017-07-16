@@ -92,8 +92,9 @@ bool Symbol::nameNeedsQuoting(const char* name)
    if (name)
       {
       char c = *name ;
-      if (!isupper(c) && c != '_')
+      if (!isupper(c) && c != '_' && c != '#')
 	 return true ;
+      ++name ;
       while (*name)
 	 {
 	 c = *name ;
@@ -133,6 +134,7 @@ size_t Symbol::cStringLength_(const Object* obj, size_t /*wrap_at*/, size_t inde
    size_t len = namelen + indent ;
    if (nameNeedsQuoting(name))
       {
+      len += 2 ;			// account for leading and trailing vertical bars
       for (size_t i = 0 ; i < namelen ; ++i)
 	 {
 	 if (name[i] == '|')

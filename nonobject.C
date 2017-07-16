@@ -35,7 +35,7 @@ namespace Fr
 
 size_t NonObject::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   return snprintf(nullptr,0,"%*s#NonObject<%lu>",(int)indent,"",(uintptr_t)obj) ;
+   return snprintf(nullptr,0,"%*s#<NonObject:%lu>",(int)indent,"",(uintptr_t)obj) ;
 }
 
 //----------------------------------------------------------------------------
@@ -45,7 +45,7 @@ char* NonObject::toCstring_(const Object *obj, char *buffer, size_t buflen, size
 {
    if (!buffer)
       return buffer ;
-   size_t count = snprintf(buffer,buflen,"%*s#NonObject<%lu>%c",(int)indent,"",(uintptr_t)obj,'\0') ;
+   size_t count = snprintf(buffer,buflen,"%*s#<NonObject:%lu>%c",(int)indent,"",(uintptr_t)obj,'\0') ;
    return (count <= buflen) ? buffer + count : buffer ;
 }
 

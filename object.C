@@ -99,7 +99,7 @@ char* Object::cString(size_t wrap_at, size_t indent, size_t wrapped_indent) cons
 size_t Object::cStringLength_(const Object* obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
    const char* type = obj ? obj->typeName() : "" ;
-   return snprintf(nullptr,0,"%*s#Object<%s:%lu>",(int)indent,"",type,(unsigned long)obj) ;
+   return snprintf(nullptr,0,"%*s#<%s:%lu>",(int)indent,"",type,(unsigned long)obj) ;
 }
 
 //----------------------------------------------------------------------------
@@ -110,7 +110,7 @@ char* Object::toCstring_(const Object *obj, char *buffer, size_t buflen, size_t 
    if (!buffer)
       return buffer ;
    const char* type = obj ? obj->typeName() : "" ;
-   size_t count = snprintf(buffer,buflen,"%*s#Object<%s:%lu>%c",(int)indent,"",type,(unsigned long)obj,'\0') ;
+   size_t count = snprintf(buffer,buflen,"%*s#<%s:%lu>%c",(int)indent,"",type,(unsigned long)obj,'\0') ;
    return (count <= buflen) ? buffer + count : buffer ;
 }
 

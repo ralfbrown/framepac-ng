@@ -43,6 +43,8 @@ class StringBuilder : public BufferBuilder<char>
       ~StringBuilder() {}
       using BufferBuilder<char>::append ;
       void append(const char* s) ;
+      using BufferBuilder<char>::operator+= ;
+      StringBuilder& operator += (const char* s) { append(s) ; return *this ; }
       String *string() const { return String::create(currentBuffer(),currentLength()) ; }
       char* c_str() const ;
    } ;

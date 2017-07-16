@@ -114,13 +114,8 @@ static Object* skip_ws(const ObjectReader *reader, CharGetter &getter)
 
 //----------------------------------------------------------------------------
 
-static Object* readsym(const ObjectReader *, CharGetter &getter,
-		       char prefixchar)
+static Object* readsym(const ObjectReader *, CharGetter &getter, StringBuilder& sb)
 {
-   StringBuilder sb ;
-
-   if (prefixchar)
-      sb += prefixchar ;
    while (getter)
       {
       int nextch = getter.peek() ;
@@ -139,7 +134,8 @@ static Object* readsym(const ObjectReader *, CharGetter &getter,
 
 static Object* readsym(const ObjectReader *reader, CharGetter &getter)
 {
-   return readsym(reader,getter,'\0') ;
+   StringBuilder sb ;
+   return readsym(reader,getter,sb) ;
 }
 
 //----------------------------------------------------------------------------
@@ -232,7 +228,11 @@ static Object* readneg(const ObjectReader *reader, CharGetter &getter)
    if (isdigit(getter.peek()))
       return readnum(reader,getter,negated) ;
    else
-      return readsym(reader,getter,c) ;
+      {
+      StringBuilder sb ;
+      sb += c ;
+      return readsym(reader,getter,sb) ;
+      }
 }
 
 //----------------------------------------------------------------------------
@@ -540,7 +540,7 @@ static Object* read_hashset(const ObjectReader* reader, CharGetter& getter, cons
 // read a Lisp-style form
 //    #|  |#  balanced comment
 //    #(  )   vector
-//    #<  >
+//    #<  >   FramepaC object by typeName()
 //    #'foo   -> (FUNCTION foo)
 //    #\a     -> |a|
 //    #:FOO   uninterned symbol
@@ -551,7 +551,7 @@ static Object* read_hashset(const ObjectReader* reader, CharGetter& getter, cons
 //    #Bbbb   binary integer
 //    #H( )   hash set (keys only)
 //    #M( )   hash map (key/value pairs)
-//    #N      nullptr  -- should only occur inside an Array
+//    #N<>    nullptr  -- should only occur inside an Array
 //    #Oooo   octal integer
 //    #Q( )   queue
 //    #Rnnn   integer in given radix
@@ -575,92 +575,114 @@ static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
    digits[numdigits] = '\0' ;
    int type { getter.peek() } ;
    if (type != EOF) *getter ;
-   switch (type)
+   nextch = getter.peek() ;
+   if (!isalpha(type) || nextch == '(' || nextch == '<')
       {
-      case EOF:
-	 break ;
-      case '|':			// balanced comment (non-nested)
-	 return skip_balanced_comment(reader,getter) ;
-      case '\'':		// FUNCTION shortcut
-	 return List::create(SymbolTable::current()->add("FUNCTION"),
-			     reader->read(getter)) ;
-      case '\\':		// Character (simulated as single-char Symbol)
+      switch (type)
+	 {
+	 case '|':			// balanced comment (non-nested)
+	    return skip_balanced_comment(reader,getter) ;
+	 case '\'':		// FUNCTION shortcut
+	    return List::create(SymbolTable::current()->add("FUNCTION"),
+	       reader->read(getter)) ;
+	 case '\\':		// Character (simulated as single-char Symbol)
 	 {
 	 char buf[2] ;
 	 buf[0] = *getter ;
 	 buf[1] = '\0' ;
 	 return SymbolTable::current()->add(buf) ;
 	 }
-      case '(':
-	 // read vector: simulate as an array
-	 return read_array(reader,getter) ;
-      case ':':
-	 return read_uninterned_symbol(reader,getter) ;
-      case '#':
-	 // TODO: shared object reference
-	 break ;
-      case '=':
-	 // TODO: shared object definition
-	 break ;
-      case '*':
-	 return read_bitvector(reader,getter) ;
-      case 'A':
-	 // read array if the next character is an open paren, else treat it as a symbol
-	 if (getter.peek() == '(')
-	    {
-	    *getter ;
+	 case '(':
+	    // read vector: simulate as an array
 	    return read_array(reader,getter) ;
-	    }
-	 break ;
-      case 'b':
-      case 'B':
-	 return read_radix_number(reader,getter,2) ;
-      case 'H':
-	 if (getter.peek() == '(')
-	    return read_hashset(reader,getter,digits) ;
-	 break ;
-      case 'M':
-	 if (getter.peek() == '(')
-	    return read_hashmap(reader,getter,digits) ;
-	 break ;
-      case 'N':
-	 return nullptr ;  // special case for Array elements
-      case 'o':
-      case 'O':
-	 return read_radix_number(reader,getter,8) ;
-      case 'Q':
-	 // TODO: read queue
-	 if (getter.peek() == '(')
+	 case '<':
+	    // FramepaC object with no specific output format.  For now, just ignore
+	    while ((nextch = *getter) != EOF && nextch != '>')
+	       continue ;
+	    return nullptr ;
+	 case ':':
+	    return read_uninterned_symbol(reader,getter) ;
+	 case '#':
+	    // TODO: shared object reference
+	    if (!is_symbol_char(nextch))
+	       {
+	       // retrieve the object stored in the hash table under the index given by 'digits'
+	       }
+	    break ;
+	 case '=':
+	    // TODO: shared object definition
+	    // read an object, store a copy in a hash table under the
+	    //   index given by 'digits', and then return that object
+	    break ;
+	 case '*':
+	    return read_bitvector(reader,getter) ;
+	 case 'A':
+	    // read array if the next character is an open paren, else treat it as a symbol
+	    if (getter.peek() == '(')
+	       {
+	       *getter ;
+	       return read_array(reader,getter) ;
+	       }
+	    break ;
+	 case 'b':
+	 case 'B':
+	    return read_radix_number(reader,getter,2) ;
+	 case 'H':
+	    if (getter.peek() == '(')
+	       return read_hashset(reader,getter,digits) ;
+	    break ;
+	 case 'M':
+	    if (getter.peek() == '(')
+	       return read_hashmap(reader,getter,digits) ;
+	    break ;
+	 case 'N':
 	    {
-	    //FIXME
+	    if (nextch == '<')
+	       {
+	       *getter ;
+	       if (getter.peek() == '>')
+		  {
+		  *getter ;
+		  return nullptr ;  // special case for Array elements
+		  }
+	       }
+	    break ;
 	    }
-	 break ;
-      case 'r':
-      case 'R':
-	 return read_radix_number(reader,getter,atoi(digits)) ;
-      case 'S':
-	 // TODO: read struct, ???simulated as a hashtable?
-	 if (getter.peek() == '(')
-	    {
-	    //FIXME
-	    }
-	 break ;
-      case'x':
-      case 'X':
-	 return read_radix_number(reader,getter,16) ;
-      default:
-	 // TODO: read symbol starting with #
-	 break ;
+	 case 'o':
+	 case 'O':
+	    return read_radix_number(reader,getter,8) ;
+	 case 'Q':
+	    // TODO: read queue
+	    if (getter.peek() == '(')
+	       {
+	       //FIXME
+	       }
+	    break ;
+	 case 'r':
+	 case 'R':
+	    return read_radix_number(reader,getter,atoi(digits)) ;
+	 case 'S':
+	    // TODO: read struct, ???simulated as a hashtable?
+	    if (getter.peek() == '(')
+	       {
+	       //FIXME
+	       }
+	    break ;
+	 case 'x':
+	 case 'X':
+	    return read_radix_number(reader,getter,16) ;
+	 case EOF:
+	 default:
+	    // this is a symbol starting with #, which we'll complete reading below
+	    break ;
+	 }
       }
-   // return the accumulated characters as a symbol: hash mark + digits + typechar
-   char* symname ;
-   if (type == EOF)
-      symname = aprintf("#%s",digits) ;
-   else
-      symname = aprintf("#%s%c",digits,(char)type) ;
-   Symbol* sym = SymbolTable::current()->add(symname) ;
-   delete[] symname ;
-   return sym ;
+   // return the accumulated characters as a symbol: hash mark + digits + typechar + additional chars
+   StringBuilder sb ;
+   sb += '#' ;
+   if (*digits) sb += digits ;
+   sb += (char)type ;
+   return readsym(reader,getter,sb) ;
 }
 
 //----------------------------------------------------------------------------
