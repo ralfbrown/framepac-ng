@@ -147,6 +147,10 @@ class SparseVector : public Vector<ValT>
    public:
       static SparseVector* create(size_t numelts) ;
 
+      // retrieve elements of the vector
+      IdxT keyAt(size_t N) ;
+      ValT valueAt(size_t N) ;
+
       // support for iterating through elements for e.g. vector similarity functions
       size_t elementIndex(size_t N) const { return (size_t)m_indices[N] ; }
 
@@ -163,6 +167,7 @@ class SparseVector : public Vector<ValT>
 
       // type determination predicates
       static bool isSparseVector_(const Object *) { return true ; }
+      static const char* typeName_(const Object*) { return "SparseVector" ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object *) ;
@@ -207,6 +212,10 @@ class SparseVector : public Vector<ValT>
    protected:
       IdxT*  m_indices ;
    } ;
+
+extern template class SparseVector<uint32_t,uint32_t> ;
+extern template class SparseVector<uint32_t,float> ;
+extern template class SparseVector<uint32_t,double> ;
 
 //----------------------------------------------------------------------------
 

@@ -30,24 +30,61 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-class TermCountVector : public SparseVector<uint32_t,uint32_t>
+template <typename ValT>
+class TermVectorT : public SparseVector<uint32_t,ValT>
    {
    public:
-      static TermCountVector* create() { return new TermCountVector ; }
+      static TermVectorT* create() { return new TermVectorT ; }
 
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      TermCountVector() : SparseVector<uint32_t,uint32_t>()
+      TermVectorT() : SparseVector<uint32_t,ValT>()
 	 {
 	 }
+      ~TermVectorT() ;
 
    protected: // implementation functions for virtual methods
-      friend class FramepaC::Object_VMT<TermCountVector> ;
+      friend class FramepaC::Object_VMT<TermVectorT> ;
 
       // type determination predicates
       static bool isTermVector_(const Object*) { return true ; }
-      static const char* typeName_(const Object*) { return "TermCountVector" ; }
+      static const char* typeName_(const Object*) { return "TermVector" ; }
+
+      // *** copying ***
+      static ObjectPtr clone_(const Object*) ;
+      static Object* shallowCopy_(const Object* obj) { return clone_(obj) ; }
+      static ObjectPtr subseq_int(const Object*, size_t start, size_t stop) ;
+      static ObjectPtr subseq_iter(const Object*, ObjectIter start, ObjectIter stop) ;
+
+      // *** destroying ***
+      static void free_(Object* obj) { delete static_cast<TermVectorT*>(obj) ; }
+      // use shallowFree() on a shallowCopy()
+      static void shallowFree_(Object* obj) { free_(obj) ; }
+
+      // *** I/O ***
+      // generate printed representation into a buffer
+      using SparseVector<uint32_t,ValT>::cStringLength_ ;
+      using SparseVector<uint32_t,ValT>::toCstring_ ;
+      using SparseVector<uint32_t,ValT>::jsonStringLength_ ;
+      using SparseVector<uint32_t,ValT>::toJSONString_ ;
+
+      // *** standard info functions ***
+      static size_t size_(const Object*) ;
+      //static bool empty_(const Object* obj) : inherited from SparseVector
+
+      // *** standard access functions ***
+      static Object* front_(Object*) ;
+      static const Object* front_(const Object*) ;
+      static double floatValue_(const Object* obj) { return static_cast<const TermVectorT*>(obj)->vectorLength() ; }
+      static long int intValue(const Object* obj)
+	 { return (int)(static_cast<const TermVectorT*>(obj)->vectorLength() + 0.5) ; }
+
+      // *** comparison functions ***
+      static size_t hashValue_(const Object*) ;
+      static bool equal_(const Object* obj, const Object* other) ;
+      static int compare_(const Object* obj, const Object* other) ;
+      static int lessThan_(const Object* obj, const Object* other) ;
 
    private: // static members
       static Allocator s_allocator ;
@@ -55,28 +92,17 @@ class TermCountVector : public SparseVector<uint32_t,uint32_t>
 
 //----------------------------------------------------------------------------
 
-class TermVector : public SparseVector<uint32_t,float>
-   {
-   public:
-      static TermVector* create() { return new TermVector ; }
+typedef TermVectorT<uint32_t> TermCountVector ;
 
-   protected: // construction/destruction
-      void* operator new(size_t) { return s_allocator.allocate() ; }
-      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      TermVector() : SparseVector<uint32_t,float>()
-	 {
-	 }
+template <>
+const char* TermVectorT<uint32_t>::typeName_(const Object*) { return "TermCountVector" ; }
 
-   protected: // implementation functions for virtual methods
-      friend class FramepaC::Object_VMT<TermVector> ;
+//----------------------------------------------------------------------------
 
-      // type determination predicates
-      static bool isTermVector_(const Object*) { return true ; }
-      static const char* typeName_(const Object*) { return "TermVector" ; }
+typedef TermVectorT<float> TermVector ;
 
-   private: // static members
-      static Allocator s_allocator ;
-   } ;
+template <>
+const char* TermVectorT<float>::typeName_(const Object*) { return "TermVector" ; }
 
 } ; // end of namespace Fr
 
