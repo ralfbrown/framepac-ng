@@ -127,12 +127,15 @@ constexpr int SLAB_GROUP_SIZE = 4095 ;
 #ifdef FRAMEPAC_GPL
 #  include <gmp.h>
 #elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 60))
-  typedef __int128 mpz_t ;
-  typedef double mpq_t ;
+  // emulate BigNum with 128-bit integers and Rational with 128-bit floats from quadmath.h
+# include <quadmath.h>
+  typedef __int128_t mpz_t ;
+  typedef __float128 mpq_t ;
 # define mpz_zero() 0
-# define mpq_zero() 0.0
+# define mpq_zero() 0.0L
 #else
-  typedef long long mpz_t ;
+  // emulate BigNum with the biggest integer type available and Rational with double-precision floating point
+  typedef intmax_t mpz_t ;
   typedef double mpq_t ;
 # define mpz_zero() 0
 # define mpq_zero() 0.0

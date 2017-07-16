@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-08					*/
+/* Version 0.01, last edit 2017-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -97,8 +97,8 @@ size_t Complex::hashValue_(const Object* obj)
    // the hash value of a complex number is the hash of the hashes of its two components
    const Complex* c = reinterpret_cast<const Complex*>(obj) ;
    uint64_t hashstate = fasthash64_init(2) ;
-   hashstate = fasthash64_add(hashstate,fasthash64_float(c->m_real)) ;
-   hashstate = fasthash64_add(hashstate,fasthash64_float(c->m_imag)) ;
+   hashstate = fasthash64_add(hashstate,fasthash64_float(c->m_value.real())) ;
+   hashstate = fasthash64_add(hashstate,fasthash64_float(c->m_value.imag())) ;
    return fasthash64_finalize(hashstate) ;
 }
 

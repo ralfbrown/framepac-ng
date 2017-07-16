@@ -22,6 +22,7 @@
 #ifndef _Fr_COMPLEX_H_INCLUDED
 #define _Fr_COMPLEX_H_INCLUDED
 
+#include <complex>
 #include "framepac/number.h"
 
 /************************************************************************/
@@ -46,8 +47,7 @@ class Complex : public Number
    private: // static members
       static Allocator s_allocator ;
    private:
-      double m_real ;
-      double m_imag ;
+      std::complex<double> m_value ;
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
@@ -88,9 +88,9 @@ class Complex : public Number
 				size_t indent) ;
 
       // *** standard access functions ***
-      static long int intValue_(const Object* obj) { return (long)((Complex*)obj)->m_real ; }
-      static double floatValue_(const Object* obj) { return ((Complex*)obj)->m_real ; }
-      static double imagValue_(const Object* obj) { return ((Complex*)obj)->m_imag ; }
+      static long int intValue_(const Object* obj) { return (long)((Complex*)obj)->m_value.real() ; }
+      static double floatValue_(const Object* obj) { return ((Complex*)obj)->m_value.real() ; }
+      static double imagValue_(const Object* obj) { return ((Complex*)obj)->m_value.imag() ; }
       static mpz_t bignumValue_(const Object*) ;
 
       // *** comparison functions ***
