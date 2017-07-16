@@ -45,11 +45,10 @@ class Vector : public Object
       size_t numElements() const { return m_size ; }
       ValT elementValue(size_t N) const { return m_values[N] ; }
       size_t elementIndex(size_t N) const { return N ; }
-   protected:
-      ValT*  m_values ;
-      double m_length ;   // vector length (L2-norm)
-      size_t m_size ;	  // number of elements in vector
+
    protected: // creation/destruction
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       Vector() ;
       Vector(const Vector&) ;
       ~Vector() { delete [] m_values ; m_size = 0 ; }
@@ -100,6 +99,13 @@ class Vector : public Object
       // *** iterator support ***
       static Object* next_(const Object *) { return nullptr ; }
       static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
+
+   private:
+      static Allocator s_allocator ;
+   protected:
+      ValT*  m_values ;
+      double m_length ;   // vector length (L2-norm)
+      size_t m_size ;	  // number of elements in vector
    } ;
 
 //----------------------------------------------------------------------------
@@ -119,6 +125,8 @@ class DenseVector : public Vector<ValT>
       static DenseVector* create(size_t numelts) ;
 
    protected: // creation/destruction
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       DenseVector() : Vector<ValT>() {}
       DenseVector(const Vector<ValT>&v) : Vector<ValT>(v) {}
       ~DenseVector() {}
@@ -126,6 +134,9 @@ class DenseVector : public Vector<ValT>
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<DenseVector> ;
+
+   private:
+      static Allocator s_allocator ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -138,7 +149,10 @@ class SparseVector : public Vector<ValT>
 
       // support for iterating through elements for e.g. vector similarity functions
       size_t elementIndex(size_t N) const { return (size_t)m_indices[N] ; }
+
    protected: // creation/destruction
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       SparseVector() ;
       SparseVector(const SparseVector&) ;
       ~SparseVector() { delete [] m_indices ; }
@@ -188,6 +202,8 @@ class SparseVector : public Vector<ValT>
       static Object* next_(const Object *) { return nullptr ; }
       static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
 
+   private:
+      static Allocator s_allocator ;
    protected:
       IdxT*  m_indices ;
    } ;
@@ -201,6 +217,8 @@ class OneHotVector : public Vector<ValT>
       static OneHotVector* create(size_t numelts) ;
 
    protected:
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       OneHotVector(IdxT index, ValT value = (ValT)1) ;
       OneHotVector(const OneHotVector&) ;
       ~OneHotVector() { m_value = (ValT)0 ; }
@@ -239,6 +257,8 @@ class OneHotVector : public Vector<ValT>
       static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
 
    private:
+      static Allocator s_allocator ;
+   protected:
       IdxT m_index ;
       ValT m_value ;
    } ;
@@ -248,6 +268,12 @@ class OneHotVector : public Vector<ValT>
 class TermCountVector : public SparseVector<uint32_t,uint32_t>
    {
    public:
+      static TermCountVector* create() ;
+
+   protected:
+      TermCountVector() : SparseVector<uint32_t,uint32_t>()
+	 {
+	 }
 
    private:
 
@@ -258,6 +284,12 @@ class TermCountVector : public SparseVector<uint32_t,uint32_t>
 class TermVector : public SparseVector<uint32_t,float>
    {
    public:
+      static TermCountVector* create() ;
+
+   protected:
+      TermVector() : SparseVector<uint32_t,float>()
+	 {
+	 }
 
    private:
 
