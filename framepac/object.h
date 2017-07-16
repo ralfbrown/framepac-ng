@@ -120,6 +120,7 @@ class Object
       FrVIRTFUNC0(bool,isString,isString_,const) ;
       FrVIRTFUNC0(bool,isSymbol,isSymbol_,const) ;
       FrVIRTFUNC0(bool,isSymbolTable,isSymbolTable_,const) ;
+      FrVIRTFUNC0(bool,isTermVector,isTermVector_,const) ;
       FrVIRTFUNC0(bool,isVector,isVector_,const) ;
 
       // *** I/O ***
@@ -201,6 +202,7 @@ inline bool Object::isSparseVector_(const Object*) { return false ; }
 inline bool Object::isString_(const Object*) { return false ; }
 inline bool Object::isSymbol_(const Object*) { return false ; }
 inline bool Object::isSymbolTable_(const Object*) { return false ; }
+inline bool Object::isTermVector_(const Object*) { return false ; }
 inline bool Object::isVector_(const Object*) { return false ; }
 
 inline size_t Object::size_(const Object*) { return 0 ; }

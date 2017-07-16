@@ -197,6 +197,7 @@ class ObjectVMT
       bool (*isString_)(const Fr::Object*) ;
       bool (*isSymbolTable_)(const Fr::Object*) ;
       bool (*isSymbol_)(const Fr::Object*) ;
+      bool (*isTermVector_)(const Fr::Object*) ;
       bool (*isVector_)(const Fr::Object*) ;
 
       // *** I/O ***
@@ -268,6 +269,7 @@ class Object_VMT : public ObjectVMT
 	 isString_ = &ObjT::isString_ ;
 	 isSymbolTable_ = &ObjT::isSymbolTable_ ;
 	 isSymbol_ = &ObjT::isSymbol_ ;
+	 isTermVector_ = &ObjT::isTermVector_ ;
 	 isVector_ = &ObjT::isVector_ ;
 	 cStringLength_ = &ObjT::cStringLength_ ;
 	 jsonStringLength_ = &ObjT::jsonStringLength_ ;

@@ -19,7 +19,7 @@
 /*									*/
 /************************************************************************/
 
-#include "framepac/vector.h"
+#include "framepac/termvector.h"
 
 namespace Fr
 {

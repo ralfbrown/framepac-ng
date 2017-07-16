@@ -265,36 +265,6 @@ class OneHotVector : public Vector<ValT>
 
 //----------------------------------------------------------------------------
 
-class TermCountVector : public SparseVector<uint32_t,uint32_t>
-   {
-   public:
-      static TermCountVector* create() ;
-
-   protected:
-      TermCountVector() : SparseVector<uint32_t,uint32_t>()
-	 {
-	 }
-
-   private:
-
-   } ;
-
-//----------------------------------------------------------------------------
-
-class TermVector : public SparseVector<uint32_t,float>
-   {
-   public:
-      static TermCountVector* create() ;
-
-   protected:
-      TermVector() : SparseVector<uint32_t,float>()
-	 {
-	 }
-
-   private:
-
-   } ;
-
 } ; // end of namespace Fr
 
 #endif /* !__FrVECTOR_H_INCLUDED */

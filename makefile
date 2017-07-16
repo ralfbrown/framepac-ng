@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 13jul2017
+# Last change: 16jul2017
 
 #########################################################################
 # define the locations of all the files
@@ -256,15 +256,16 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	integer$(OBJ) jsonreader$(OBJ) list$(OBJ) listbuilder$(OBJ) \
 	loadfilelist$(OBJ) map$(OBJ) matrix$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
-	nonobject$(OBJ) object$(OBJ) objreader$(OBJ) printf$(OBJ) \
+	nonobject$(OBJ) object$(OBJ) objreader$(OBJ) \
+	printf$(OBJ) ptrie_u32$(OBJ) \
 	rational$(OBJ) set$(OBJ) slab$(OBJ) \
 	slabgroup$(OBJ) smallalloc$(OBJ) \
 	sparsematrix$(OBJ) string$(OBJ) stringbuilder$(OBJ) \
 	sufarray_u32u32$(OBJ) sufarray_u32u40$(OBJ) \
 	symbol$(OBJ) symboltable$(OBJ) synchevent$(OBJ) \
-	texttransforms$(OBJ) \
+	termvector$(OBJ) texttransforms$(OBJ) \
 	threadpool$(OBJ) timer$(OBJ) \
-	trie$(OBJ) trie_u32dbl$(OBJ) trie_u32u32$(OBJ) ptrie_u32$(OBJ) \
+	trie$(OBJ) trie_u32dbl$(OBJ) trie_u32u32$(OBJ) \
 	vecsim_u32_dbl$(OBJ) vecsim_u32_flt$(OBJ) \
 	vector_obj_dbl$(OBJ) vector_obj_flt$(OBJ) \
 	vector_u32_dbl$(OBJ) vector_u32_flt$(OBJ) vector_u32_u32$(OBJ) \
@@ -453,6 +454,7 @@ sufarray_u32u40$(OBJ):	sufarray_u32u40$(C) template/sufarray.cc framepac/byteord
 symbol$(OBJ):		symbol$(C) framepac/symbol.h framepac/nonobject.h framepac/fasthash64.h
 symboltable$(OBJ):	symboltable$(C) framepac/symboltable.h framepac/fasthash64.h framepac/texttransforms.h
 synchevent$(OBJ):	synchevent$(C) framepac/synchevent.h
+termvector$(OBJ):	termvector$(C) framepac/termvector.h
 texttransforms$(OBJ):	texttransforms$(C) framepac/texttransforms.h
 threadpool$(OBJ):	threadpool$(C) framepac/threadpool.h framepac/thread.h
 timer$(OBJ):		timer$(C) framepac/timer.h
@@ -464,8 +466,8 @@ vecsim_u32_flt$(OBJ):	vecsim_u32_flt$(C) template/vecsim.cc
 vector_obj_dbl$(OBJ):	vector_obj_dbl$(C) framepac/vector.h
 vector_obj_flt$(OBJ):	vector_obj_flt$(C) framepac/vector.h
 vector_u32_dbl$(OBJ):	vector_u32_dbl$(C) framepac/vector.h
-vector_u32_flt$(OBJ):	vector_u32_flt$(C) framepac/vector.h
-vector_u32_u32$(OBJ):	vector_u32_u32$(C) framepac/vector.h
+vector_u32_flt$(OBJ):	vector_u32_flt$(C) framepac/termvector.h
+vector_u32_u32$(OBJ):	vector_u32_u32$(C) framepac/termvector.h
 wordcorpus_u32u32$(OBJ): wordcorpus_u32u32$(C) template/wordcorpus.cc
 wordcorpus_u32u40$(OBJ): wordcorpus_u32u40$(C) template/wordcorpus.cc
 wordsplit$(OBJ):	wordsplit$(C) framepac/words.h
@@ -598,6 +600,9 @@ framepac/symboltable.h:	framepac/hashtable.h framepac/init.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/synchevent.h:	framepac/atomic.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/termvector.h:	framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/thread.h:	framepac/init.h
