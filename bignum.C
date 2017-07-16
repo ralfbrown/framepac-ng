@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.01, last edit 2017-07-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -98,9 +98,18 @@ BigNum::~BigNum()
 size_t BigNum::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
    size_t len = indent ;
-   (void)obj; //FIXME
-//   len += snprintf(nullptr,0,"%ld",((BigNum_*)obj)->m_value + indent) ;
-   return indent ;
+#ifdef FRAMEPAC_GPL
+   //TODO: using libgmp
+#else
+   mpz_t val = static_cast<const BigNum*>(obj)->m_value ;
+   if (val == 0) return len+1 ;
+   while (val > 0)
+      {
+      val /= 10 ;
+      len++ ;
+      }
+#endif
+   return len ;
 }
 
 //----------------------------------------------------------------------------
@@ -108,14 +117,32 @@ size_t BigNum::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t inde
 char* BigNum::toCstring_(const Object *obj, char *buffer, size_t buflen,
    size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   if (buflen < indent) return buffer ;
-   (void)obj; //FIXME
+   mpz_t val = static_cast<const BigNum*>(obj)->m_value ;
+   if (buflen < indent + 1 + (val < 0)) return buffer ;
+   char* bufend = buffer + buflen ;
    for (size_t i = 0 ; i < indent ; ++i)
       {
       *buffer++ = ' ' ;
       }
-//   size_t needed = snprintf(buffer,buflen,"%*s%ld",indent,"",((BigNum_*)obj)->m_value) ;
-//FIXME
+   if (val < 0)
+      {
+      *buffer++ = '-' ;
+      val = -val ;
+      }
+   char* buf = buffer ;
+   if (val == 0)
+      *buffer++ = '0' ;
+   else
+      {
+      while (val > 0 && buf < bufend)
+	 {
+	 *buf++ = '0' + (val % 10) ;
+	 val /= 10 ;
+	 }
+      //FIXME: reverse the digits
+      
+      }
+   *buffer = '\0' ;
    return buffer ;
 }
 
