@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-14					*/
+/* Version 0.02, last edit 2017-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -46,6 +46,7 @@ class ObjectReader
       Object* read(CharGetter&) const ;
       Object* readObject(istream&) const ;
       Object* readObject(FILE*) const ;
+      Object* readObject(CFile&) const ;
       Object* readObject(char*&) const ;
       Object* readObject(const char*&) const ;
       // unlike the above, the following reader does not provide any way to find out the position of left-over

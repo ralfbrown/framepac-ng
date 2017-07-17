@@ -523,7 +523,10 @@ framepac/bitvector.h:	framepac/object.h
 framepac/builder.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/bwt.h:		framepac/config.h
+framepac/bwt.h:	framepac/config.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/charget.h:	framepac/file.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/complex.h:	framepac/number.h

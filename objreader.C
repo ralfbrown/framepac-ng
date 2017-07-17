@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-14					*/
+/* Version 0.02, last edit 2017-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -783,6 +783,14 @@ Object* ObjectReader::readObject(istream& in) const
 Object* ObjectReader::readObject(FILE* infp) const
 {
    CharGetterFILE getter(infp) ;
+   return read(getter) ;
+}
+
+//----------------------------------------------------------------------------
+
+Object* ObjectReader::readObject(CFile& infile) const
+{
+   CharGetterFILE getter(infile) ;
    return read(getter) ;
 }
 
