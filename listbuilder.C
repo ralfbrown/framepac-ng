@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-12					*/
+/* Version 0.02, last edit 2017-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -31,12 +31,18 @@ namespace Fr
 ListBuilder::ListBuilder(List*&& init_list)
 {
    m_list = init_list ;
-   List* tail = m_list ;
-   if (tail != List::emptyList())
-      {
-      while (tail->next() != List::emptyList())
-	 tail = tail->next() ;
-      }
+   List* tail = m_list->last() ;
+   m_list_end = tail->nextPtr() ;
+   init_list = List::emptyList() ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ListBuilder::ListBuilder(const List* init_list, bool)
+{
+   m_list = static_cast<List*>((Object*)init_list->clone()) ;
+   List* tail = m_list->last() ;
    m_list_end = tail->nextPtr() ;
    init_list = List::emptyList() ;
    return ;

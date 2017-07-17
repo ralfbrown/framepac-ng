@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.02, last edit 2017-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -183,7 +183,8 @@ class ListBuilder
    public:
       ListBuilder() : m_list(List::emptyList()), m_list_end(&m_list) {}
       ListBuilder(const ListBuilder&) = delete ;
-      ListBuilder(List*&&) ;
+      ListBuilder(List*&&) ;  // move given list
+      ListBuilder(const List*, bool) ; // copy given list
       ~ListBuilder() { clear() ; }
       ListBuilder& operator= (const ListBuilder&) = delete ;
 
