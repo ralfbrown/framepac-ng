@@ -791,8 +791,9 @@ class HashTable : public HashTableBase
 	    // this is the version for everyone *but* Fr::SymHashSet
 	    return isEqual(key1,key2) ;
 	 }
-      // special support for Fr::SymHashSet; must be overridden
-      static bool isEqual(const char *keyname, size_t namelen, KeyT key) ;
+      // special support for Fr::SymHashSet; must be overridden.  This is the default version for
+      //   all key types except Symbol
+      static bool isEqual(const char * /*keyname*/, size_t /*namelen*/, KeyT /*key*/) { return false ; }
 
       // ============== Definitions to reduce duplication ================
       // much of the HashTable API just calls through to Table after

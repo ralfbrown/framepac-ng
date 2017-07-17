@@ -30,13 +30,6 @@ namespace Fr
 // request explicit instantiation
 template class HashTable<Object*,Object*> ;
 
-template <>
-bool HashTable<Object*,Object*>::isEqual(const char* name, size_t namelen, Object* key)
-{
-   (void)name; (void)namelen; (void)key;
-   return false ; //FIXME
-}
-
 } // end namespace Fr
 
 // end of file hashtable_objobj.C //

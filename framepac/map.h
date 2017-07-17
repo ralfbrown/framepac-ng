@@ -59,11 +59,16 @@ class MapIter
 class Map : public Object
    {
    public:
+      typedef bool remove_fn(Object*,Object*) ;
+   public:
       static Map *create(size_t capacity = 0) { return new Map(capacity) ; }
       static Map *create(const List *) ;
       static Map *create(const Map *orig) { return new Map(orig) ; }
 
       bool add(Object* key, Object* value = nullptr) { return m_map.add(key,value) ; }
+      Object* lookup(const Object* key) const { return m_map.lookup(const_cast<Object*>(key)) ; }
+
+      void onRemove(remove_fn* fn) { m_map.onRemove(fn) ; }
 
       // *** standard info functions ***
       size_t size() const { return m_size ; }

@@ -53,6 +53,7 @@ class ObjectPtr
 
       Object& operator* () const { return *m_object ; }
       Object* operator-> () const { return m_object ; }
+      Object* operator& () const { return m_object ; }
       ObjectPtr& operator= (ObjectPtr &o)
 	 {
 	 if (m_object != o.m_object) free() ;
@@ -132,6 +133,7 @@ class Object
       FrVIRTFUNC0(bool,isVector,isVector_,const) ;
 
       // *** I/O ***
+      const char* printableName() { return (this != nullptr) ? stringValue() : nullptr ; }
       // generate printed representation to a stream
       ostream& print(ostream&) const ;
       // generate printed representation; returned value must be freed
