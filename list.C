@@ -105,6 +105,28 @@ List* List::create(Object* obj1, Object* obj2, Object* obj3)
 
 //----------------------------------------------------------------------------
 
+List* List::create(Object* obj1, Object* obj2, Object* obj3, Object* obj4)
+{
+   List* tail { create(obj2,obj3,obj4) };
+   List* l = new List ;
+   l->m_next = tail ;
+   l->m_item = obj1 ;
+   return l ;
+}
+
+//----------------------------------------------------------------------------
+
+List* List::create(Object* obj1, Object* obj2, Object* obj3, Object* obj4, Object* obj5)
+{
+   List* tail { create(obj2,obj3,obj4,obj5) };
+   List* l = new List ;
+   l->m_next = tail ;
+   l->m_item = obj1 ;
+   return l ;
+}
+
+//----------------------------------------------------------------------------
+
 List* List::create(const char* /*string_rep*/)
 {
 
@@ -117,6 +139,30 @@ List* List::create(istream&)
 {
    //FIXME
    return empty_list ;
+}
+
+//----------------------------------------------------------------------------
+
+bool List::member(const Object* o) const
+{
+   const List* l = this ;
+   while (l && l != empty_list)
+      {
+      Object* f = l->front() ;
+      if (!f && !o) return true ;
+      if (f->equal(o)) return true ;
+      }
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
+List* List::nconc(List* newtail)
+{
+   List* t = last() ;
+   if (t == empty_list) return newtail ;
+   t->setNext(newtail) ;
+   return this ;
 }
 
 //----------------------------------------------------------------------------
@@ -178,9 +224,9 @@ void List::shallowFree_(Object *obj)
 
 List* List::last() const
 {
-   if (this == emptyList())
-      return const_cast<List*>(this) ;
    const List* l = this ;
+   if (l == emptyList() || l == nullptr)
+      return emptyList() ;
    while (l->next() != emptyList())
       l = l->next() ;
    return const_cast<List*>(l) ;

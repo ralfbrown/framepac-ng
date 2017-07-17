@@ -95,6 +95,7 @@ class Integer : public Number
    public:
       static Integer *create(long val = 0) { return new Integer(val) ; }
       static Number *create(uint32_t val) { return new Integer((long)val) ; }
+      static Number *create(size_t val) { return new Integer((long)val) ; }
       static Integer *create(double val) { return new Integer((long)val) ; }
       static Integer *create(const Object *obj) { return new Integer(obj->intValue()) ; }
       static Integer *create(const Integer *obj) { return new Integer(obj->m_value) ; }

@@ -19,6 +19,9 @@
 /*									*/
 /************************************************************************/
 
+#ifndef __FrARRAY_H_INCLUDED
+#define __FrARRAY_H_INCLUDED
+
 #include <vector>
 #include "framepac/object.h"
 
@@ -56,6 +59,8 @@ class Array : public Object
       static Array* create(const Array*) ;
 
       bool append(Object*) ;
+      Object* getNth(size_t N) const { return N < m_size ? m_array[N] : nullptr ; }
+      void setNth(size_t N, Object* val) { if (N < m_size) m_array[N] = val ; }
 
       // *** standard info functions ***
       size_t size() const { return m_size ; }
@@ -157,5 +162,7 @@ class Array : public Object
    } ;
 
 } ; // end namespace Fr
+
+#endif /* !__FrARRAY_H_INCLUDED */
 
 // end of file array.h //

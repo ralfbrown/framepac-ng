@@ -67,12 +67,19 @@ class List : public Object
       static List* create(Object*) ;
       static List* create(Object*, Object*) ;
       static List* create(Object*, Object*, Object*) ;
+      static List* create(Object*, Object*, Object*, Object*) ;
+      static List* create(Object*, Object*, Object*, Object*, Object*) ;
       static List* create(const char*) ;
       static List* create(istream&) ;
+
+      bool member(const Object* o) const ;
+      List* push(Object* o) { List* l = List::create(o) ; l->setNext(this) ; return l ; }
+      List* nconc(List* newtail) ;
 
       // *** standard info functions ***
       size_t size() const ;
       size_t empty() const { return this == empty_list ; }
+      operator bool () const { return this != empty_list && this != nullptr ; }
 
       // *** standard access functions ***
       Object* front() const { return m_item ; }
