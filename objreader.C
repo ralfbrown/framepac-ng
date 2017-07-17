@@ -800,6 +800,7 @@ Object* ObjectReader::readObject(char*& instr) const
 {
    CharGetterCString getter(instr) ;
    Object* o = read(getter) ;
+   // update caller's string pointer so that multiple objects can be read from one string
    instr = const_cast<char*>(getter.data()) ;
    return o ;
 }
@@ -852,7 +853,7 @@ void ObjectReader::StaticInitialization()
 /*	Additional methods for class Object				*/
 /************************************************************************/
 
-ObjectPtr Object::create(const char* printed)
+ObjectPtr Object::create(const char*& printed)
 {
    return ObjectPtr(ObjectReader::current()->readObject(printed)) ;
 }
@@ -866,9 +867,23 @@ ObjectPtr Object::create(FILE* fp)
 
 //----------------------------------------------------------------------------
 
+ObjectPtr Object::create(CFile& file)
+{
+   return ObjectPtr(ObjectReader::current()->readObject(file)) ;
+}
+
+//----------------------------------------------------------------------------
+
 ObjectPtr Object::create(istream& in)
 {
    return ObjectPtr(ObjectReader::current()->readObject(in)) ;
+}
+
+//----------------------------------------------------------------------------
+
+ObjectPtr Object::create(const std::string& s)
+{
+   return ObjectPtr(ObjectReader::current()->readObject(s)) ;
 }
 
 //----------------------------------------------------------------------------

@@ -31,8 +31,9 @@
 
 namespace Fr {
 
-// forward declaration
+// forward declarations
 class Object ;
+class CFile ;
 
 /************************************************************************/
 /************************************************************************/
@@ -82,11 +83,18 @@ class Object
       Object() {}
    public:
       ~Object() {}
-      static ObjectPtr create(const char* printed_representation) ;
+      static ObjectPtr create(const char*& printed_representation) ;
       static ObjectPtr create(const Object*) ;
       static ObjectPtr create(FILE*) ;
+      static ObjectPtr create(CFile&) ;
       static ObjectPtr create(istream&) ;
       static ObjectPtr create(const std::string&) ;
+
+      static ObjectPtr createFromJSON(const char*& printed_representation) ;
+      static ObjectPtr createFromJSON(FILE*) ;
+      static ObjectPtr createFromJSON(CFile&) ;
+      static ObjectPtr createFromJSON(istream&) ;
+      static ObjectPtr createFromJSON(const std::string&) ;
 
       // *** copying ***
       FrVIRTFUNC0(ObjectPtr,clone,clone_,const) ;

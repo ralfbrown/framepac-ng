@@ -110,6 +110,9 @@ static Object* read_json_string(const ObjectReader* reader, CharGetter& getter)
 /************************************************************************/
 /************************************************************************/
 
+namespace Fr
+{
+
 JSONReader::JSONReader()
 {
    registerDispatcher('{',read_json_map) ;
@@ -138,5 +141,46 @@ JSONReader& JSONReader::instance()
 
    return singleton ;
 }
+
+/************************************************************************/
+/*	Additional methods for class Object				*/
+/************************************************************************/
+
+ObjectPtr Object::createFromJSON(const char*& printed)
+{
+   return ObjectPtr(JSONReader::instance().readObject(printed)) ;
+}
+
+//----------------------------------------------------------------------------
+
+ObjectPtr Object::createFromJSON(FILE* fp)
+{
+   return ObjectPtr(JSONReader::instance().readObject(fp)) ;
+}
+
+//----------------------------------------------------------------------------
+
+ObjectPtr Object::createFromJSON(CFile& file)
+{
+   return ObjectPtr(JSONReader::instance().readObject(file)) ;
+}
+
+//----------------------------------------------------------------------------
+
+ObjectPtr Object::createFromJSON(istream& in)
+{
+   return ObjectPtr(JSONReader::instance().readObject(in)) ;
+}
+
+//----------------------------------------------------------------------------
+
+ObjectPtr Object::createFromJSON(const std::string& s)
+{
+   return ObjectPtr(JSONReader::instance().readObject(s)) ;
+}
+
+//----------------------------------------------------------------------------
+
+} // end namespace Fr
 
 // end of file jsonreader.C //
