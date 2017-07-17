@@ -30,15 +30,15 @@ using namespace Fr ;
 /************************************************************************/
 /************************************************************************/
 
-static Object *read_json_map(const ObjectReader *reader, CharGetter &getter)
+static Object* read_json_map(const ObjectReader* reader, CharGetter& getter)
 {
    *getter ;		// discard the opening left brace
    int nextch ;
-   Map *map = Map::create() ;
+   Map* map = Map::create() ;
    while ((nextch = getter.peekNonWhite()) != EOF && nextch != '}')
       {
       // map consists of keyword/value pairs
-      Object *keyword = reader->read(getter) ;
+      Object* keyword = reader->read(getter) ;
       // JSON requires a colon after the keyword, but we'll muddle on if it's missing
       if (getter.peekNonWhite() == ':')
 	 *getter ;
@@ -50,7 +50,7 @@ static Object *read_json_map(const ObjectReader *reader, CharGetter &getter)
 	 return map ;
 	 }
       // get the value for the keyword/value pair
-      Object *value = reader->read(getter) ;
+      Object* value = reader->read(getter) ;
       // JSON requires a comma after the value, but we'll muddle on if it's missing
       if (getter.peekNonWhite() == ',')
 	 *getter ;
@@ -62,15 +62,21 @@ static Object *read_json_map(const ObjectReader *reader, CharGetter &getter)
 
 //----------------------------------------------------------------------------
 
-static Object *read_json_array(const ObjectReader *reader, CharGetter &getter)
+static Object* read_json_array(const ObjectReader* reader, CharGetter& getter)
 {
    *getter ;		// discard the opening left bracket
    ListBuilder array ;
    int nextch ;
    while ((nextch = getter.peekNonWhite()) != EOF && nextch != ']')
       {
+      if (nextch == ',')
+	 {
+	 // null element in the list
+	 array += List::emptyList() ;
+	 continue ;
+	 }
       // get the next object and add it to the tail of the list
-      Object *obj = reader->read(getter) ;
+      Object* obj = reader->read(getter) ;
       if (obj == nullptr)
 	 break ;
       array += obj ;
@@ -85,35 +91,20 @@ static Object *read_json_array(const ObjectReader *reader, CharGetter &getter)
 
 //----------------------------------------------------------------------------
 
-static Object *read_json_number(const ObjectReader *reader, CharGetter &getter)
+static Object* read_json_number(const ObjectReader* reader, CharGetter& getter)
 {
    return reader->readNumber(getter) ;
 }
 
 //----------------------------------------------------------------------------
 
-static Object *read_json_number_negative(const ObjectReader *reader, CharGetter &getter)
+static Object* read_json_string(const ObjectReader* reader, CharGetter& getter)
 {
-   return reader->readNumber(getter) ;
-}
-
-//----------------------------------------------------------------------------
-
-static Object *read_json_string(const ObjectReader *, CharGetter &getter)
-{
-   char delim = *getter ;
-   StringBuilder sb ;
-   int nextch ;
-   while ((nextch = *getter) != EOF && nextch != delim)
-      {
-      if (nextch == '\\')
-	 {
-	 nextch = *getter ;
-	 if (nextch == EOF) break ;
-	 }
-      sb += (char)nextch ;
-      }
-   return sb.string() ;
+   size_t len ;
+   char* buf { reader->read_delimited_string(getter,'\\',len) } ;
+   String* s = String::create(buf,len) ;
+   delete[] buf ;
+   return s ;
 }
 
 /************************************************************************/
@@ -128,7 +119,7 @@ JSONReader::JSONReader()
    for (char c = '0' ; c <= '9' ; ++c)
       registerDispatcher(c,read_json_number) ;
    registerDispatcher('+',read_json_number) ;
-   registerDispatcher('-',read_json_number_negative) ;
+   registerDispatcher('-',read_json_number) ;
    return ;
 }
 

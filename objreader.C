@@ -237,9 +237,7 @@ static Object* readneg(const ObjectReader *reader, CharGetter &getter)
 
 //----------------------------------------------------------------------------
 
-static char* read_delimited_string(const ObjectReader *,
-				   CharGetter &getter,
-				   char quotechar, unsigned &len)
+char* ObjectReader::read_delimited_string(CharGetter &getter, char quotechar, size_t &len)
 {
    StringBuilder sb ;
    int delim { *getter };	// consume the opening delimiter
@@ -273,6 +271,19 @@ static char* read_delimited_string(const ObjectReader *,
 	       else if (nextch == 'r') nextch = '\r' ;
 	       else if (nextch == 't') nextch = '\t' ;
 	       else if (nextch == 'v') nextch = '\v' ;
+	       else if (nextch == 'u')
+		  {
+		  //TODO: interpret Unicode sequence
+		  }
+	       else if (nextch == 'x')
+		  {
+		  //TODO: interpret hex sequence
+		  }
+	       else if (nextch == '0')
+		  {
+		  //TODO: interpret octal sequence
+		  nextch = '\0' ;
+		  }
 	       }
 	    sb += nextch ;
 	    }
@@ -295,8 +306,8 @@ static char* read_delimited_string(const ObjectReader *,
 
 static Object* readqsym(const ObjectReader *reader, CharGetter &getter)
 {
-   unsigned len ;
-   char* buf { read_delimited_string(reader,getter,'|',len) };
+   size_t len ;
+   char* buf { reader->read_delimited_string(getter,'|',len) };
    Object* obj { SymbolTable::current()->add(buf) };
    delete[] buf ;
    return obj ;
@@ -310,8 +321,8 @@ reader, CharGetter& getter)
    char* buf ;
    if (getter.peek() == '|')
       {
-      unsigned len ;
-      buf = read_delimited_string(reader,getter,'|',len) ;
+      size_t len ;
+      buf = reader->read_delimited_string(getter,'|',len) ;
       Object* obj { Symbol::create(buf) } ;
       delete[] buf ;
       return obj ;
@@ -338,8 +349,8 @@ reader, CharGetter& getter)
 
 static Object* readstr(const ObjectReader *reader, CharGetter& getter)
 {
-   unsigned len ;
-   char *buf { read_delimited_string(reader,getter,'\\',len) };
+   size_t len ;
+   char *buf { reader->read_delimited_string(getter,'\\',len) };
    Object *obj { String::create(buf,len) };
    delete [] buf ;
    return obj ;
@@ -360,7 +371,7 @@ static Object* skip_balanced_comment(const ObjectReader* reader,
 	    // discard this character, after checking for another #| opening delimiter
 	    if (nextch == '#' && getter.peek() == '|')
 	       {
-	       (void)getter.get() ;
+	       *getter ;		// consume the character
 	       nesting++ ;
 	       }
 	    }
@@ -562,7 +573,7 @@ static Object* read_hashset(const ObjectReader* reader, CharGetter& getter, cons
 
 static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
 {
-   (void)getter.get() ;		// consume the hash mark
+   *getter ;			// consume the hash mark
    // accumulate any leading digits (used e.g. to specify radix for #R)
    char digits[200] ;
    unsigned numdigits { 0 };
@@ -690,7 +701,7 @@ static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
 static Object* rdframe(const ObjectReader *reader, CharGetter &getter)
 {
    (void)reader;
-   (void)getter.get() ;		// consume the opening left bracket
+   *getter ;			// consume the opening left bracket
 
    //FIXME
    return nullptr ;
@@ -810,7 +821,7 @@ Number* ObjectReader::readNumber(CharGetter& getter) const
    int c = getter.peekNonWhite() ;
    if (c == EOF) return nullptr ;
    bool negated { c == '-' };
-   if (negated) (void)getter.get() ;
+   if (negated) *getter ;
    return readnum(nullptr,getter,negated) ;
 }
 

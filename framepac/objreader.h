@@ -53,7 +53,9 @@ class ObjectReader
       Object* readObject(const std::string&) const ;
 
       Number* readNumber(CharGetter&) const ;
-      
+
+      static char* read_delimited_string(CharGetter&, char quotechar, size_t& len) ;
+
       ObjectReaderFunc* getDispatcher(unsigned char index) const
          { return m_dispatch[index] ; }
       void registerDispatcher(unsigned index, ObjectReaderFunc* fn)
@@ -72,7 +74,7 @@ class ObjectReader
    } ;
 
 //----------------------------------------------------------------------------
-// a very thing wrapper around ObjectReader that simply changes the dispatchers
+// a very thin wrapper around ObjectReader that simply changes the dispatchers
 //   to handle data in JSON format instead of Lisp format
 
 class JSONReader : public ObjectReader
