@@ -80,6 +80,9 @@ class ObjectReader
 class JSONReader : public ObjectReader
    {
    public:
+      static JSONReader& instance() ;
+      
+   protected:
       JSONReader() ;
       ~JSONReader() ;
    } ;

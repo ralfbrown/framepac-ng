@@ -130,4 +130,13 @@ JSONReader::~JSONReader()
    return ;
 }
 
+//----------------------------------------------------------------------------
+
+JSONReader& JSONReader::instance()
+{
+   static JSONReader singleton ;
+
+   return singleton ;
+}
+
 // end of file jsonreader.C //
