@@ -72,6 +72,9 @@ class List : public Object
       static List* create(const char*) ;
       static List* create(istream&) ;
 
+      // generate a list of strings from a 'sentence' with single blanks delimiting tokens
+      static List* createWordList(const char*) ;
+
       bool member(const Object* o) const ;
       List* push(Object* o) { List* l = List::create(o) ; l->setNext(this) ; return l ; }
       List* nconc(List* newtail) ;
