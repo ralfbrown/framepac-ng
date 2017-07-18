@@ -327,6 +327,7 @@ bool SuffixArray<IdT,IdxT>::generate(const IdT *ids, IdxT num_ids, IdT num_types
 {
    m_ids = ids ;
    m_numids = num_ids ;
+   m_types = num_types ;
    m_newline = mapped_newline ;
    if (!ids || !num_ids)
       return false ;

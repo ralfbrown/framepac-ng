@@ -39,7 +39,12 @@ class SuffixArray
       SuffixArray(const SuffixArray&) = delete ;
       SuffixArray(const IdT* ids, IdxT num_ids, IdT num_types, IdT newline, const IdxT* freqs = nullptr)
 	 { generate(ids,num_ids, num_types, newline, freqs) ; }
-      ~SuffixArray() ;
+      ~SuffixArray()
+	 {
+	    delete[] m_index ;
+	    m_index = nullptr ;
+	    m_numids = 0 ;
+	 }
       SuffixArray& operator= (const SuffixArray&) = delete ;
 
       bool generate(const IdT* ids, IdxT num_ids, IdT num_types,
@@ -48,9 +53,15 @@ class SuffixArray
       bool load(CFile& file) ; // load from open file starting at current file position
       bool load(void*& mmap) ; // load starting from specified position in mmap'ed file
 
+      IdxT indexSize() const { return m_numids ; }
+      IdT vocabSize() const { return  m_types ; }
       bool lookup(const IdT* key, unsigned keylen, IdxT& first_match, IdxT& last_match) const ;
 
       void clear() ;
+
+      // temporary FrankenpaC support
+      IdxT* rawIndex() const { return m_index ; }
+      void rawIndex(IdxT* index) { m_index = index ; }
 
    protected:
       template <typename I>
@@ -75,6 +86,7 @@ class SuffixArray
       const IdT* m_ids { nullptr } ;
       IdxT*      m_index { nullptr } ;
       IdxT       m_numids { 0 } ;
+      IdT        m_types { 0 } ;
       IdT        m_newline { IdT(-1) } ;
       IdxT       m_last_linenum { IdxT(-1) } ;
    } ;
