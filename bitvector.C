@@ -208,8 +208,9 @@ Object* BitVector::front_(Object* obj)
 size_t BitVector::hashValue_(const Object* obj)
 {
    const BitVector* bv = reinterpret_cast<const BitVector*>(obj) ;
-   (void)bv ; //FIXME
-   return 0 ; //FIXME
+   FastHash64 hash(bv->size()) ;
+   hash.add(bv->m_bits,bv->size()/8) ;
+   return *hash ;
 }
 
 //----------------------------------------------------------------------------
@@ -218,8 +219,13 @@ bool BitVector::equal_(const Object *obj, const Object *other)
 {
    if (obj == other)
       return true ;
-
-   return false ; //FIXME
+   if (!other || !other->isBitVector())
+      return false ;
+   const BitVector* bv1 = static_cast<const BitVector*>(obj) ;
+   const BitVector* bv2 = static_cast<const BitVector*>(other) ;
+   if (bv1->size() != bv2->size())
+      return false ;
+   return memcmp(bv1->m_bits,bv2->m_bits,(bv1->size()+7)/8) == 0 ;
 }
 
 //----------------------------------------------------------------------------
@@ -228,8 +234,18 @@ int BitVector::compare_(const Object *obj, const Object *other)
 {
    if (obj == other)
       return 0 ;
-
-   return 0 ; //FIXME
+   if (!other || !other->isBitVector())
+      return +1 ;
+   const BitVector* bv1 = static_cast<const BitVector*>(obj) ;
+   const BitVector* bv2 = static_cast<const BitVector*>(other) ;
+   int cmp = memcmp(bv1->m_bits, bv2->m_bits, (std::min(bv1->size(),bv2->size())+7)/8) ;
+   if (cmp)
+      return cmp ;
+   if (bv1->size() < bv2->size())
+      return -1 ;
+   else if (bv1->size() > bv2->size())
+      return +1 ;
+   return 0 ;
 }
 
 //----------------------------------------------------------------------------
@@ -238,8 +254,16 @@ int BitVector::lessThan_(const Object *obj, const Object *other)
 {
    if (obj == other)
       return 0 ;
-
-   return 0 ; //FIXME
+   if (!other || !other->isBitVector())
+      return 1 ;
+   const BitVector* bv1 = static_cast<const BitVector*>(obj) ;
+   const BitVector* bv2 = static_cast<const BitVector*>(other) ;
+   int cmp = memcmp(bv1->m_bits, bv2->m_bits, (std::min(bv1->size(),bv2->size())+7)/8) ;
+   if (cmp < 1)
+      return 1 ;
+   if (cmp == 0 && obj->size() < other->size())
+      return 1 ;
+   return 0 ;
 }
 
 //----------------------------------------------------------------------------
