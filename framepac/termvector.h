@@ -49,7 +49,7 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
 
       // type determination predicates
       static bool isTermVector_(const Object*) { return true ; }
-      static const char* typeName_(const Object*) { return "TermVector" ; }
+      static const char* typeName_(const Object*) ;
 
       // *** copying ***
       static ObjectPtr clone_(const Object*) ;
@@ -74,11 +74,11 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
       //static bool empty_(const Object* obj) : inherited from SparseVector
 
       // *** standard access functions ***
-      static Object* front_(Object*) ;
-      static const Object* front_(const Object*) ;
-      static double floatValue_(const Object* obj) { return static_cast<const TermVectorT*>(obj)->vectorLength() ; }
+      static Object* front_(Object*) { return nullptr ; }
+      static const Object* front_(const Object*) { return nullptr ; }
+      static double floatValue_(const Object* obj) { return static_cast<const TermVectorT*>(obj)->length() ; }
       static long int intValue(const Object* obj)
-	 { return (int)(static_cast<const TermVectorT*>(obj)->vectorLength() + 0.5) ; }
+	 { return (long)(floatValue_(obj) + 0.5) ; }
 
       // *** comparison functions ***
       static size_t hashValue_(const Object*) ;
@@ -92,17 +92,19 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
 
 //----------------------------------------------------------------------------
 
-typedef TermVectorT<uint32_t> TermCountVector ;
-
 template <>
 const char* TermVectorT<uint32_t>::typeName_(const Object*) { return "TermCountVector" ; }
 
-//----------------------------------------------------------------------------
+typedef TermVectorT<uint32_t> TermCountVector ;
+extern template class TermVectorT<uint32_t> ;
 
-typedef TermVectorT<float> TermVector ;
+//----------------------------------------------------------------------------
 
 template <>
 const char* TermVectorT<float>::typeName_(const Object*) { return "TermVector" ; }
+
+typedef TermVectorT<float> TermVector ;
+extern template class TermVectorT<float> ;
 
 } ; // end of namespace Fr
 

@@ -455,7 +455,7 @@ sufarray_u32u40$(OBJ):	sufarray_u32u40$(C) template/sufarray.cc framepac/byteord
 symbol$(OBJ):			symbol$(C) framepac/symbol.h framepac/nonobject.h framepac/fasthash64.h
 symboltable$(OBJ):		symboltable$(C) framepac/symboltable.h framepac/fasthash64.h framepac/texttransforms.h
 synchevent$(OBJ):		synchevent$(C) framepac/synchevent.h
-termvector$(OBJ):		termvector$(C) framepac/termvector.h
+termvector$(OBJ):		termvector$(C) template/termvector.cc
 texttransforms$(OBJ):	texttransforms$(C) framepac/texttransforms.h
 threadpool$(OBJ):		threadpool$(C) framepac/threadpool.h framepac/thread.h
 timer$(OBJ):			timer$(C) framepac/timer.h
@@ -492,6 +492,9 @@ template/ptrie.cc:	framepac/trie.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/sufarray.cc:	framepac/sufarray.h framepac/bitvector.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/termvector.cc:	framepac/termvector.h framepac/fasthash64.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/trie.cc:	framepac/trie.h

@@ -222,6 +222,20 @@ void List::shallowFree_(Object *obj)
 
 //----------------------------------------------------------------------------
 
+bool List::contains(const Object* o) const
+{
+   const List* l = this ;
+   while (l && l != empty_list)
+      {
+      Object* f = l->front() ;
+      if (!f && !o) return true ;
+      if (f->equal(o)) return true ;
+      }
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
 List* List::last() const
 {
    const List* l = this ;
@@ -441,13 +455,12 @@ const Object *List::front_(const Object *obj)
 size_t List::hashValue_(const Object* obj)
 {
    // the hash value of a list is the hash of the hash values of its elements
-   size_t len = size_(obj) ;
-   uint64_t hashstate = fasthash64_init(len) ;
+   FastHash64 hash(size_(obj)) ;
    for (auto elt : *reinterpret_cast<const List*>(obj))
       {
-      if (elt) hashstate = fasthash64_add(hashstate,elt->hashValue()) ;
+      if (elt) hash += elt->hashValue() ;
       }
-   return (size_t)fasthash64_finalize(hashstate) ;
+   return (size_t)*hash ;
 }
 
 //----------------------------------------------------------------------------

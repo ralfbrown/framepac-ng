@@ -57,7 +57,7 @@ class Vector : public Object
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<Vector> ;
 
-      double vectorLength() ;
+      double vectorLength() const ;
 
       // type determination predicates
       static bool isVector_(const Object *) { return true ; }
@@ -104,8 +104,8 @@ class Vector : public Object
       static Allocator s_allocator ;
    protected:
       ValT*  m_values ;
-      double m_length ;   // vector length (L2-norm)
-      size_t m_size ;	  // number of elements in vector
+      mutable double m_length ; // cached vector length (L2-norm)
+      size_t m_size ;	  	// number of elements in vector
    } ;
 
 //----------------------------------------------------------------------------

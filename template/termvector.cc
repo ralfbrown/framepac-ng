@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-16					*/
+/* Version 0.02, last edit 2017-07-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -19,16 +19,30 @@
 /*									*/
 /************************************************************************/
 
-#include "template/termvector.cc"
+#include "framepac/termvector.h"
+#include "framepac/fasthash64.h"
 
 namespace Fr
 {
 
-// request explicit instantiations
-template class TermVectorT<uint32_t> ;
-template class TermVectorT<float> ;
+/************************************************************************/
+/************************************************************************/
+
+template <typename ValT>
+size_t TermVectorT<ValT>::hashValue_(const Object* obj)
+{
+   auto tv = static_cast<const TermVectorT*>(obj) ;
+   size_t numelts = tv->numElements() ;
+   FastHash64 hash(numelts) ;
+   for (size_t i = 0 ; i < numelts ; ++i)
+      {
+      hash += tv->elementIndex(i) ;
+      hash += tv->elementValue(i) ;
+      }
+   return *hash ;
+}
 
 
 } // end namespace Fr
 
-// end of file termvector.C //
+// end of file termvector.cc //

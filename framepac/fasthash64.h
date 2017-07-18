@@ -101,6 +101,62 @@ inline std::uint64_t fasthash64_float(double value, std::uint64_t seed = 0)
 
 } // end namespace FramepaC
 
+/************************************************************************/
+/************************************************************************/
+
+namespace Fr
+{
+
+class FastHash64
+   {
+   public:
+      FastHash64() { m_hash = 0 ; }
+      //  initialize with just the data length
+      FastHash64(std::uint64_t len, std::uint64_t seed)
+	 {
+	 m_hash = FramepaC::fasthash64_init(len,seed) ;
+	 }
+      FastHash64(double value, std::uint64_t seed = 0) : FastHash64(sizeof(double),seed)
+	 {
+	 std::uint64_t* val64 = reinterpret_cast<std::uint64_t*>(&value) ;
+	 m_hash = FramepaC::fasthash64_add(m_hash,*val64) ;
+	 }
+      FastHash64(const void* data, std::size_t len, std::uint64_t seed = 0)
+	 {
+	 m_hash = FramepaC::fasthash64(data,len,seed) ;
+	 }
+
+      // update the hash value with additional data
+      FastHash64& operator += (unsigned val)
+	 {
+	 m_hash = FramepaC::fasthash64_add(m_hash,val) ;
+	 return *this ;
+	 }
+      FastHash64& operator += (std::uint64_t val)
+	 {
+	 m_hash = FramepaC::fasthash64_add(m_hash,val) ;
+	 return *this ;
+	 }
+      FastHash64& operator += (double val)
+	 {
+	 std::uint64_t* val64 = reinterpret_cast<std::uint64_t*>(&val) ;
+	 m_hash = FramepaC::fasthash64_add(m_hash,*val64) ;
+	 return *this ;
+	 }
+      FastHash64& add(const void* data, std::size_t len)
+	 {
+	 m_hash = FramepaC::fasthash64(data,len,m_hash) ;
+	 return *this ;
+	 }
+
+      std::uint64_t operator* () const { return FramepaC::fasthash64_finalize(m_hash) ; }
+
+   protected:
+      std::uint64_t m_hash ;
+   } ;
+
+} // end namespace Fr
+
 #endif /* !__FrFASTHASH64_H_INCLUDED */
 
 // end of file fasthash64.h
