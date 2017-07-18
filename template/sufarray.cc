@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.02, last edit 2017-07-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -22,6 +22,7 @@
 #include <cstring>
 #include "framepac/bitvector.h"
 #include "framepac/sufarray.h"
+#include "framepac/threadpool.h"
 
 /************************************************************************/
 /************************************************************************/
@@ -446,6 +447,168 @@ bool SuffixArray<IdT,IdxT>::lookup(const IdT* key, unsigned keylen, IdxT& first_
    last_match = lo ;
    if (lo > 0) --last_match ;
    return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool SuffixArray<IdT,IdxT>::enumerateSegment(IdxT startpos, IdT firstID, IdT lastID,
+   unsigned minlen, unsigned maxlen, size_t minfreq, EnumFunc* fn, void* user_arg) const
+{
+   if (minlen < 1)
+      minlen = 1 ;
+   if (maxlen < minlen)
+      maxlen = minlen ;
+   // use the unigram frequency table to quickly skip over all phrases starting with a word
+   //   that is below the frequency threshold
+   for (IdT i = firstID ; i < lastID ; ++i)
+      {
+      IdxT freq = getFreq(i) ;
+      if (freq >= minfreq)
+         {
+         if (freq > 1)
+            {
+            if (!enumerate(startpos,startpos+freq,minlen,maxlen,minfreq,fn,user_arg))
+               return false ;
+            }
+         else
+            {
+            // special-case singletons; go from long to short to match the user function
+            //   invocations elsewhere
+            for (size_t len = maxlen ; len >= minlen ; --len)
+               {
+               fn(m_ids + m_index[startpos],len,1,this,startpos,user_arg) ;
+               }
+            }
+         }
+      startpos += freq ;
+      }
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool SuffixArray<IdT,IdxT>::enumerate(IdxT startpos, IdxT endpos, unsigned minlen, unsigned maxlen,
+   size_t minfreq, EnumFunc* fn, void* user_arg) const
+{
+   IdxT keystart[maxlen+1] ;
+   IdT keyval[maxlen+1] ;
+   for (unsigned i = 0 ; i < maxlen ; i++)
+      {
+      keystart[i+1] = startpos ;
+      keyval[i] = idAt(m_index[startpos] + i) ;
+      }
+   for (IdxT idx = startpos+1 ; idx < endpos ; ++idx)
+      {
+      // compare the key for the current position in the index to that
+      //   of the previous position, and figure out the length of the
+      //   common prefix
+      unsigned common = 0 ;
+      for ( ; common < maxlen ; ++common)
+         {
+         IdxT pos = m_index[idx] + common ;
+         if (keyval[common] != idAt(pos))
+            break ;
+         }
+      // if the common prefix is less than 'maxlen', invoke the
+      //   caller's function for each length from prefix-len to
+      //   'maxlen', provided that the number of occurrences at that
+      //   length is at least 'minfreq'
+      if (common < maxlen)
+         {
+         for (size_t len = maxlen ; len > common ; --len)
+            {
+            if (len >= minlen)
+               {
+               size_t freq = idx - keystart[len] ;
+               if (freq >= minfreq)
+                  {
+                  fn(keyval, len, freq, this, keystart[len], user_arg) ;
+                  }
+               }
+            // update the first occurrence of a key of the current length
+            keystart[len] = idx ;
+            keyval[len-1] = idAt(m_index[idx]+len-1) ;
+            }
+         }
+      }
+   // process the final key at each length
+   for (size_t len = maxlen ; len >= minlen ; --len)
+      {
+      size_t freq = endpos - keystart[len] ;
+      if (freq >= minfreq)
+         {
+         fn(keyval, len, freq, this, keystart[len], user_arg) ;
+         }
+      }
+   return true ;                                                                                                           }
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+void SuffixArray<IdT,IdxT>::enumerate_segment(const void* in, void*)
+{
+   const Job* info = reinterpret_cast<const Job*>(in) ;
+   info->index->enumerateSegment(info->startpos,info->startID,info->stopID,info->minlen,info->maxlen,
+      info->minfreq,info->fn,info->user_arg) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool SuffixArray<IdT,IdxT>::enumerateParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
+   EnumFunc* fn, void* user_arg) const
+{
+   // split the suffix array into segments on first-word boundaries;
+   //   we use 4 times the number of threads to keep overhead low
+   //   while avoiding having one or two stragglers at the end
+   ThreadPool *tpool = ThreadPool::defaultPool() ;
+   size_t num_segments(tpool->numThreads() * 4) ;
+   if (num_segments == 0)
+      return enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,minfreq,fn,user_arg) ;
+   size_t segment_size((m_numids - getFreq(m_sentinel) + num_segments-1) / num_segments) ;
+   size_t prev_start(getFreq(m_sentinel)) ;
+   size_t count(0) ;
+   size_t prev_id(1) ;
+   bool success(true) ;
+   Job orders[num_segments] ;
+   size_t jobnum(0) ;
+   for (size_t i = 1 ; i < vocabSize() ; ++i)
+      {
+      count += getFreq(i) ;
+      if (count >= segment_size)
+         {
+         orders[jobnum].startpos = prev_start ;
+         orders[jobnum].startID = prev_id ;
+         orders[jobnum].stopID = i+1 ;
+         orders[jobnum].minlen = minlen ;
+         orders[jobnum].maxlen = maxlen ;
+         orders[jobnum].minfreq = minfreq ;
+         orders[jobnum].index = this ;
+         orders[jobnum].fn = fn ;
+         orders[jobnum].user_arg = user_arg ;
+         tpool->dispatch(&enumerate_segment,&orders[jobnum],nullptr) ;
+         jobnum++ ;
+         prev_start += count ;
+         prev_id = i+1 ;
+         count = 0 ;
+         }
+      }
+   // handle the leftover at the end
+   orders[jobnum].startpos = prev_start ;
+   orders[jobnum].startID = prev_id ;
+   orders[jobnum].stopID = vocabSize() ;
+   orders[jobnum].minlen = minlen ;
+   orders[jobnum].maxlen = maxlen ;
+   orders[jobnum].minfreq = minfreq ;
+   orders[jobnum].index = this ;
+   orders[jobnum].fn = fn ;
+   orders[jobnum].user_arg = user_arg ;
+   tpool->dispatch(&enumerate_segment,&orders[jobnum],nullptr) ;
+   tpool->waitUntilIdle() ;
+   return success ;
 }
 
 //----------------------------------------------------------------------------

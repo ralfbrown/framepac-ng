@@ -35,6 +35,10 @@ template <typename IdT, typename IdxT>
 class SuffixArray
    {
    public:
+      typedef bool EnumFunc(const IdT* key, unsigned keylen, size_t freq, const SuffixArray*, IdxT first_match,
+                            void *user_arg) ;
+      static constexpr IdT ErrorID = ~0 ;
+   public:
       SuffixArray() {}
       SuffixArray(const SuffixArray&) = delete ;
       SuffixArray(const IdT* ids, IdxT num_ids, IdT num_types, IdT newline, const IdxT* freqs = nullptr)
@@ -55,13 +59,37 @@ class SuffixArray
 
       IdxT indexSize() const { return m_numids ; }
       IdT vocabSize() const { return  m_types ; }
+      IdT idAt(IdxT N) const { return (N < m_numids) ? m_ids[N] : ErrorID ; }
+      IdxT getFreq(IdT N) const { return (m_freq && N < m_types) ? m_freq[N] : (IdxT)0 ; }
       bool lookup(const IdT* key, unsigned keylen, IdxT& first_match, IdxT& last_match) const ;
 
+      bool enumerate(IdxT startpos, IdxT endpos, unsigned minlen, unsigned maxlen, size_t minfreq,
+	              EnumFunc* fn, void* user_arg) const ;
+      bool enumerateSegment(IdxT startpos, IdT firstID,  IdT lastID, unsigned minlen, unsigned maxlen,
+ 	              size_t minfreq, EnumFunc* fn, void* user_arg) const ;
+      bool enumerateParallel(unsigned minlen, unsigned maxlen, size_t minfreq, EnumFunc* fn, void* user_arg) const ;
       void clear() ;
 
       // temporary FrankenpaC support
+      void setSentinel(IdT sent) { m_sentinel = sent ; }
+      void setFreqTable(IdxT* freq) { m_freq = freq ; }
       IdxT* rawIndex() const { return m_index ; }
       void rawIndex(IdxT* index) { m_index = index ; }
+
+   //protected:
+   public: //FrankenpaC
+      struct Job
+	 {
+	    IdxT startpos ;
+	    IdT startID ;
+	    IdT stopID ;
+	    unsigned minlen ;
+	    unsigned maxlen ;
+	    size_t minfreq ;
+	    const SuffixArray* index ;
+	    EnumFunc* fn ;
+	    void* user_arg ;
+	 } ;
 
    protected:
       template <typename I>
@@ -82,16 +110,22 @@ class SuffixArray
       int compareAt(IdxT, IdxT, unsigned keylen) const ;
       int compareAt(IdxT, const IdT*, unsigned keylen) const ;
 
+      static void enumerate_segment(const void* in, void* out) ;
+
    protected:
       const IdT* m_ids { nullptr } ;
       IdxT*      m_index { nullptr } ;
+      IdxT*      m_freq { nullptr } ;
       IdxT       m_numids { 0 } ;
       IdT        m_types { 0 } ;
+      IdT        m_sentinel { 0 } ;
       IdT        m_newline { IdT(-1) } ;
       IdxT       m_last_linenum { IdxT(-1) } ;
    } ;
 
 //----------------------------------------------------------------------------
+
+extern template class SuffixArray<uint32_t,uint32_t> ;
 
 // end of namespace Fr
 } ;
