@@ -26,12 +26,19 @@
 
 namespace Fr {
 
+// forward declaration
+class BitVector ;
+
+//----------------------------------------------------------------------------
+
 template <typename IdT, typename IdxT>
 class SuffixArray
    {
    public:
-      SuffixArray() ;
+      SuffixArray() {}
       SuffixArray(const SuffixArray&) = delete ;
+      SuffixArray(const IdT* ids, IdxT num_ids, IdT num_types, IdT newline, const IdxT* freqs = nullptr)
+	 { generate(ids,num_ids, num_types, newline, freqs) ; }
       ~SuffixArray() ;
       SuffixArray& operator= (const SuffixArray&) = delete ;
 
@@ -41,12 +48,35 @@ class SuffixArray
       bool load(CFile& file) ; // load from open file starting at current file position
       bool load(void*& mmap) ; // load starting from specified position in mmap'ed file
 
+      bool lookup(const IdT* key, unsigned keylen, IdxT& first_match, IdxT& last_match) const ;
+
       void clear() ;
 
    protected:
-      const IdT* m_ids ;
-      IdxT*      m_index ;
-      size_t     m_numids ;
+      template <typename I>
+      bool Create(const I* ids, IdxT* index, IdxT num_ids, IdT num_types, const IdxT* freqs = nullptr) ;
+      template <typename I>
+      IdT convertEOL(I id, IdT num_types) const ;
+      template <typename I>
+      IdxT* bucketBoundaries(const I* ids, IdxT num_ids, IdT num_types, const IdxT* freqs) ;
+      static IdxT* copyBucketBoundaries(const IdxT* bounds, IdT num_types) ;
+      template <typename I>
+      void classifyLS(BitVector& ls_types, const I* ids, IdxT num_ids, IdT num_types) ;
+      template <typename I>
+      void induce(const I* ids, IdxT* SA, IdxT num_ids, IdT num_types, IdxT* buckets,
+	          const BitVector& ls_types) ;
+
+      static int compare(IdT, IdT) ;
+      int compare(const IdT*, const IdT*, unsigned keylen) const ;
+      int compareAt(IdxT, IdxT, unsigned keylen) const ;
+      int compareAt(IdxT, const IdT*, unsigned keylen) const ;
+
+   protected:
+      const IdT* m_ids { nullptr } ;
+      IdxT*      m_index { nullptr } ;
+      IdxT       m_numids { 0 } ;
+      IdT        m_newline { IdT(-1) } ;
+      IdxT       m_last_linenum { IdxT(-1) } ;
    } ;
 
 //----------------------------------------------------------------------------

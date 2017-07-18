@@ -26,23 +26,32 @@
 /************************************************************************/
 /************************************************************************/
 
-namespace FramepaC
-{
-namespace SuffixArray {
+namespace Fr {
+
+// Suffix array construction code adapted/optimized from
+// Ge Nong, Sen Zhang, and Wai Hong Chan.  Two Efficient Algorithms for Linear Time Suffix Array Construction
+
+// see also
+//   Anish Man Singh Shrestha, Martin C. Frith, and Paul Horton.  A
+//      bioinformatician's guide to the forefront of suffix array
+//      construction algorithms.  Briefings in Bioinformatics (2014) 15(2):138-154.
+// ( http://bib.oxfordjournals.org/content/15/2/138.full )
 
 //----------------------------------------------------------------------------
 
-template <typename IdT>
-IdT ConvertEOL(IdT id, IdT num_types, IdT newline)
+// special case for EOL markers, since they can encode line numbers
+template <typename IdT, typename IdxT>
+template <typename I>
+IdT SuffixArray<IdT,IdxT>::convertEOL(I id, IdT num_types) const
 {
-   return (id >= num_types) ? newline : id ;
+   return (id >= num_types) ? I(m_newline) : id ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-IdxT* BucketBoundaries(const IdT* ids, IdxT num_ids, IdT num_types, const IdxT* freqs,
-		       IdT newline)
+template <typename I>
+IdxT* SuffixArray<IdT,IdxT>::bucketBoundaries(const I* ids, IdxT num_ids, IdT num_types, const IdxT* freqs)
 {
    // allocate and clear buckets
    IdxT* buckets = new IdxT[num_types+2] ;
@@ -54,7 +63,7 @@ IdxT* BucketBoundaries(const IdT* ids, IdxT num_ids, IdT num_types, const IdxT* 
 	 // accumulate bucket sizes
 	 for (IdxT i = 0 ; i < num_ids ; ++i)
 	    {
-	    IdT id = ConvertEOL(ids[i],num_types,newline) ;
+	    IdT id = convertEOL(ids[i],num_types) ;
 	    ++buckets[id] ;
 	    }
 	 freqs = buckets ;
@@ -77,7 +86,7 @@ IdxT* BucketBoundaries(const IdT* ids, IdxT num_ids, IdT num_types, const IdxT* 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-IdxT* CopyBucketBoundaries(const IdxT* bounds, IdT num_types)
+IdxT* SuffixArray<IdT,IdxT>::copyBucketBoundaries(const IdxT* bounds, IdT num_types)
 {
    // make a copy of the bucket positions
    IdxT* copy = new IdxT[num_types+1] ;
@@ -91,10 +100,11 @@ IdxT* CopyBucketBoundaries(const IdxT* bounds, IdT num_types)
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-void Induce(const IdT* ids, IdxT* SA, IdxT num_ids, IdT num_types, IdxT* buckets,
-	    const Fr::BitVector& ls_types, IdT newline)
+template <typename I>
+void SuffixArray<IdT,IdxT>::induce(const I* ids, IdxT* SA, IdxT num_ids, IdT num_types, IdxT* buckets,
+	    const Fr::BitVector& ls_types)
 {
-   IdxT* bucket_ends = CopyBucketBoundaries(buckets+1,num_types) ;
+   IdxT* bucket_ends = copyBucketBoundaries(buckets+1,num_types) ;
    // induce on bucket starts (SAl in original paper)
    for (IdxT i = 0 ; i < num_ids ; ++i)
       {
@@ -104,7 +114,7 @@ void Induce(const IdT* ids, IdxT* SA, IdxT num_ids, IdT num_types, IdxT* buckets
       --j ;
       if (!ls_types.getBit(j))
 	 {
-	 IdxT bck = ConvertEOL(ids[j],num_types,newline) ;
+	 IdxT bck = convertEOL(ids[j],num_types) ;
 	 SA[buckets[bck]] = j ;
 	 ++buckets[bck] ;
 	 }
@@ -119,7 +129,7 @@ void Induce(const IdT* ids, IdxT* SA, IdxT num_ids, IdT num_types, IdxT* buckets
       --j ;
       if (ls_types.getBit(j))
 	 {
-	 IdxT bck = ConvertEOL(ids[j],num_types,newline) ;
+	 IdxT bck = convertEOL(ids[j],num_types) ;
 	 SA[--bucket_ends[bck]] = j ;
 	 }
       }
@@ -130,7 +140,8 @@ void Induce(const IdT* ids, IdxT* SA, IdxT num_ids, IdT num_types, IdxT* buckets
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-void ClassifyLS(Fr::BitVector& ls_types, const IdT* ids, IdxT num_ids, IdT num_types, IdT newline)
+template <typename I>
+void SuffixArray<IdT,IdxT>::classifyLS(Fr::BitVector& ls_types, const I* ids, IdxT num_ids, IdT num_types)
 {
    // classify elements of 'ids' array
    ls_types.setBit(num_ids+1,true) ;
@@ -139,10 +150,10 @@ void ClassifyLS(Fr::BitVector& ls_types, const IdT* ids, IdxT num_ids, IdT num_t
    bool bit = true ;
    if (num_ids >= 2)
       {
-      IdxT id2 = ConvertEOL(ids[num_ids-1],num_types,newline) ;
+      IdxT id2 = convertEOL(ids[num_ids-1],num_types) ;
       for (IdxT i = num_ids-1 ; i > 0 ; --i)
 	 {
-	 IdxT id1 = ConvertEOL(ids[i-1],num_types,newline) ;
+	 IdxT id1 = convertEOL(ids[i-1],num_types) ;
 	 bit = (id1 < id2 || (id1 == id2 && bit)) ;
 	 ls_types.setBit(i-1,bit) ;
 	 id2 = id1 ;
@@ -154,21 +165,21 @@ void ClassifyLS(Fr::BitVector& ls_types, const IdT* ids, IdxT num_ids, IdT num_t
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool Create(const IdT* ids, IdxT* index, IdxT num_ids, IdT num_types,
-	    IdT mapped_newline, const IdxT* freqs = nullptr)
+template <typename I>
+bool SuffixArray<IdT,IdxT>::Create(const I* ids, IdxT* index, IdxT num_ids, IdT num_types, const IdxT* freqs)
 {
    if (num_ids == IdxT(0))
       return false ;
    Fr::BitVector *ls_types = Fr::BitVector::create(num_ids+2) ;
    if (!ls_types)
       return false ;
-   ClassifyLS(*ls_types,ids,num_ids,num_types,mapped_newline) ;
+   classifyLS(*ls_types,ids,num_ids,num_types) ;
    for (IdxT i = 0U ; i < num_ids ; ++i)
       {
       index[i] = (IdxT)-1 ;
       }
-   IdxT* buckets = BucketBoundaries(ids, num_ids, num_types, freqs, mapped_newline) ;
-   IdxT* bucket_ends = CopyBucketBoundaries(buckets+1,num_types) ;
+   IdxT* buckets = bucketBoundaries(ids, num_ids, num_types, freqs) ;
+   IdxT* bucket_ends = copyBucketBoundaries(buckets+1,num_types) ;
    bool prev_type = ls_types->getBit(0) ;
    for (IdxT i = 1 ; i < num_ids ; ++i)
       {
@@ -176,13 +187,13 @@ bool Create(const IdT* ids, IdxT* index, IdxT num_ids, IdT num_types,
       bool curr_type = ls_types->getBit(i) ;
       if (!prev_type && curr_type)
 	 {
-	 IdT bck = ConvertEOL(ids[i],num_types,mapped_newline) ;
+	 IdT bck = convertEOL(ids[i],num_types) ;
 	 index[--bucket_ends[bck]] = i ;
 	 }
       prev_type = curr_type ;
       }
    delete [] bucket_ends ;
-   Induce(ids, index, num_ids, num_types, buckets, *ls_types, mapped_newline) ;
+   induce(ids, index, num_ids, num_types, buckets, *ls_types) ;
    // compact all of the sorted substrings into the start of 'suffix_index'
    IdxT subsize { 0 } ;
    for (IdxT i = 0 ; i < num_ids ; ++i)
@@ -260,7 +271,7 @@ bool Create(const IdT* ids, IdxT* index, IdxT num_ids, IdT num_types,
    if (name < subsize)
       {
       // names are not yet unique, so recurse
-      Create(s1, index, subsize, name, IdxT(mapped_newline)) ;
+      Create(s1, index, subsize, name) ;
       }
    else
       {
@@ -293,30 +304,22 @@ bool Create(const IdT* ids, IdxT* index, IdxT num_ids, IdT num_types,
       {
       index[i] = -1 ;		// init remainder of suffix_index
       }
-   buckets = BucketBoundaries(ids, num_ids, num_types, freqs, mapped_newline) ;
-   bucket_ends = CopyBucketBoundaries(buckets+1, num_types) ;
+   buckets = bucketBoundaries(ids, num_ids, num_types, freqs) ;
+   bucket_ends = copyBucketBoundaries(buckets+1, num_types) ;
    for (IdxT i = subsize ; i > 0 ; --i)
       {
       IdxT j = index[i-1] ;
       index[i-1] = -1 ;
-      IdT bck = ConvertEOL(ids[j],num_types,mapped_newline) ;
+      IdT bck = convertEOL(ids[j],num_types) ;
       index[--bucket_ends[bck]] = j ;
       }
    delete [] bucket_ends ;
-   Induce(ids, index, num_ids, num_types, buckets, *ls_types, mapped_newline) ;
+   induce(ids, index, num_ids, num_types, buckets, *ls_types) ;
    ls_types->free() ;
    return true ;
 }
 
 //----------------------------------------------------------------------------
-
-} ; // end of namespace FramepaC::SuffixArray
-} ; // end of namespace FramepaC
-
-/************************************************************************/
-/************************************************************************/
-
-namespace Fr {
 
 template <typename IdT, typename IdxT>
 bool SuffixArray<IdT,IdxT>::generate(const IdT *ids, IdxT num_ids, IdT num_types,
@@ -324,6 +327,7 @@ bool SuffixArray<IdT,IdxT>::generate(const IdT *ids, IdxT num_ids, IdT num_types
 {
    m_ids = ids ;
    m_numids = num_ids ;
+   m_newline = mapped_newline ;
    if (!ids || !num_ids)
       return false ;
    m_index = new IdxT[num_ids] ;
@@ -332,7 +336,115 @@ bool SuffixArray<IdT,IdxT>::generate(const IdT *ids, IdxT num_ids, IdT num_types
       m_numids = 0 ;
       return false ;
       }
-   return FramepaC::SuffixArray::Create(ids,m_index,num_ids,num_types,mapped_newline,freqs) ;
+   return Create(ids,m_index,num_ids,num_types,freqs) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+int SuffixArray<IdT,IdxT>::compare(IdT id1, IdT id2)
+{
+   return (id1 < id2) ? -1 : ((id1 > id2) ? +1 : 0) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+int SuffixArray<IdT,IdxT>::compare(const IdT* key1, const IdT* key2, unsigned keylen) const
+{
+   int comp = 0 ;
+   unsigned pos = 0 ;
+   while (pos < keylen && (comp = compare(key1[pos],key2[pos]) == 0))
+      {
+      if (key1[pos] >= m_last_linenum || key2[pos] >= m_last_linenum)
+	 break ;
+      ++pos ;
+      }
+   return comp ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+int SuffixArray<IdT,IdxT>::compareAt(IdxT idx1, IdxT idx2, unsigned keylen) const
+{
+   int comp = 0 ;
+   unsigned pos = 0 ;
+   while (pos < keylen && (comp = compare(m_ids[idx1],m_ids[idx2]) == 0))
+      {
+      if (m_ids[idx1] >= m_last_linenum || m_ids[idx2] >= m_last_linenum)
+	 break ;
+      idx1 = (idx1 + 1) % m_numids ;
+      idx2 = (idx2 + 1) % m_numids ;
+      ++pos ;
+      }
+   return comp ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+int SuffixArray<IdT,IdxT>::compareAt(IdxT idx1, const IdT* key2, unsigned keylen) const
+{
+   int comp = 0 ;
+   unsigned pos = 0 ;
+   while (pos < keylen && (comp = compare(m_ids[idx1],key2[pos]) == 0))
+      {
+      if (m_ids[idx1] >= m_last_linenum || key2[pos] >= m_last_linenum)
+	 break ;
+      idx1 = (idx1 + 1) % m_numids ;
+      ++pos ;
+      }
+   return comp ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool SuffixArray<IdT,IdxT>::lookup(const IdT* key, unsigned keylen, IdxT& first_match, IdxT& last_match) const
+{
+   if (!m_index)			// do we actually have an index?
+      return false ;
+   // binary search for the first match of the key
+   IdxT lo(0), hi(m_numids) ;
+   while (lo < hi)
+      {
+      IdxT mid = lo + (hi-lo)/2 ;
+      int cmp = compareAt(m_index[mid],key,keylen) ;
+      if (cmp < 0)
+         {
+         lo = mid + 1 ;
+         }
+      else // if (cmp >= 0)
+         {
+         hi = mid ;
+         }
+      }
+   // if there was no match, we can bail out now
+   if (lo >= m_numids || compareAt(m_index[lo],key,keylen) != 0)
+      {
+      return false ;
+      }
+   first_match = lo ;
+   // binary search for the last match of the key
+   lo = 0 ;
+   hi = m_numids ;
+   while (lo < hi)
+      {
+      IdxT mid = lo + (hi-lo)/2 ;
+      int cmp = compareAt(m_index[mid],key,keylen) ;
+      if (cmp <= 0)
+         {
+         lo = mid + 1 ;
+         }
+      else // if (cmp > 0)
+         {
+         hi = mid ;
+         }
+      }
+   last_match = lo ;
+   if (lo > 0) --last_match ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
