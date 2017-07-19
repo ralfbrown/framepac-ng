@@ -294,7 +294,6 @@ class STLset : public unordered_set<INTEGER_TYPE>
       size_t numberOfResizeWaits() const { return 0 ; }
       size_t numberOfReclamations() const { return 0 ; }
       size_t numberOfFullNeighborhoods() const { return 0 ; }
-      size_t numberOfChainLockCollisions() const { return 0 ; }
       size_t numberOfSpins() const { return 0 ; }
       size_t numberOfYields() const { return 0 ; }
       size_t numberOfSleeps() const { return 0 ; }
@@ -848,7 +847,6 @@ static void hash_test(ThreadPool* user_pool, ostream& out, size_t threads, size_
    size_t stat_wait = ht->numberOfResizeWaits() ;
    size_t stat_reclam = ht->numberOfReclamations() ;
    size_t stat_full = ht->numberOfFullNeighborhoods() ;
-   size_t stat_chain_coll = ht->numberOfChainLockCollisions() ;
    size_t retries = (stat_ins_att >= stat_ins - stat_ins_dup) ? stat_ins_att - (stat_ins - stat_ins_dup) : 0 ;
    if (!terse && (stat_ins || stat_cont || stat_lookup || stat_rem))
       {
@@ -859,11 +857,11 @@ static void hash_test(ThreadPool* user_pool, ostream& out, size_t threads, size_
 	  << stat_rem_count << '/' << stat_rem << '+' << stat_rem_forw << " rem"
 	  << endl ;
       }
-   if (!terse && (stat_resize || stat_resize_assist || stat_wait || stat_full || stat_reclam || stat_chain_coll))
+   if (!terse && (stat_resize || stat_resize_assist || stat_wait || stat_full || stat_reclam))
       {
       out << "  Admn: " << stat_resize << " resizes (" << stat_resize_assist << " assists, "
 	  << stat_wait << " waits), " << stat_full << " congest, "
-	  << stat_reclam << " reclam, " << stat_chain_coll << " chainlock" << endl ;
+	  << stat_reclam << " reclam" << endl ;
       }
 #ifndef FrSINGLE_THREADED
    size_t stat_spin = ht->numberOfSpins() ;

@@ -131,7 +131,6 @@ class HashTable_Stats
    {
    public:
       size_t insert ;
-      size_t insert_dup ;
       size_t insert_attempt ;
       size_t insert_forwarded ;
       size_t insert_resize ;
@@ -144,18 +143,18 @@ class HashTable_Stats
       size_t lookup ;
       size_t lookup_found ;
       size_t lookup_forwarded ;
-      size_t resize ;
-      size_t resize_assist ;
-      size_t resize_cleanup ;
-      size_t resize_wait ;
       size_t reclaim ;
-      size_t neighborhood_full ;
-      size_t CAS_coll ;
-      size_t chain_lock_coll ;
       size_t spin ;
       size_t yield ;
-      size_t sleep ;
-      size_t none ;			// dummy for use in macros that require a counter name
+      uint32_t sleep ;
+      uint32_t insert_dup ;
+      uint32_t CAS_coll ;
+      uint32_t neighborhood_full ;
+      uint32_t resize ;
+      uint32_t resize_assist ;
+      uint32_t resize_cleanup ;
+      uint32_t resize_wait ;
+      uint32_t none ;			// dummy for use in macros that require a counter name
    public:
       void clear() ;
       void add(const HashTable_Stats *other_stats) ;
@@ -656,10 +655,10 @@ class HashTable : public HashTableBase
 	 size_t	           m_size ;		// capacity of hash array [constant for life of table]
 	 size_t	           m_fullsize ;		// capacity including padding [constant for life of table]
       protected:
-	 Fr::Atomic<size_t> m_segments_total { 0 } ;
-	 Fr::Atomic<size_t> m_segments_assigned { 0 } ;
 	 Fr::Atomic<size_t> m_first_incomplete { ~0U } ;
 	 Fr::Atomic<size_t> m_last_incomplete { 0 } ;
+	 Fr::Atomic<uint32_t> m_segments_total { 0 } ;
+	 Fr::Atomic<uint32_t> m_segments_assigned { 0 } ;
 	 Fr::SynchEvent     m_resizestarted ;
 	 Fr::SynchEventCountdown m_resizepending ;
 	 Fr::Atomic<bool>   m_resizelock { false } ; // ensures that only one thread can initiate a resize
@@ -1020,7 +1019,6 @@ class HashTable : public HashTableBase
       size_t numberOfReclamations() const { return m_stats.reclaim ; }
       size_t numberOfFullNeighborhoods() const { return  m_stats.neighborhood_full ; }
       size_t numberOfCASCollisions() const { return m_stats.CAS_coll ; }
-      size_t numberOfChainLockCollisions() const { return m_stats.chain_lock_coll ; }
       size_t numberOfSpins() const { return  m_stats.spin ; }
       size_t numberOfYields() const { return m_stats.yield ; }
       size_t numberOfSleeps() const { return m_stats.sleep ; }
@@ -1045,7 +1043,6 @@ class HashTable : public HashTableBase
       static size_t numberOfReclamations() { return 0 ; }
       static size_t numberOfFullNeighborhoods() { return 0 ; }
       static size_t numberOfCASCollisions() { return 0 ; }
-      static size_t numberOfChainLockCollisions() { return 0 ; }
       static size_t numberOfSpins() { return 0 ; }
       static size_t numberOfYields() { return 0 ; }
       static size_t numberOfSleeps() { return 0 ; }

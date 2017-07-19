@@ -55,7 +55,6 @@ void HashTable_Stats::clear()
    reclaim = 0 ;
    CAS_coll = 0 ;
    neighborhood_full = 0 ;
-   chain_lock_coll = 0 ;
    spin = yield = sleep = none = 0 ;
    return ;
 }
@@ -63,12 +62,12 @@ void HashTable_Stats::clear()
 //----------------------------------------------------------------------------
 
 #define REF(x) Fr::Atomic<size_t>::ref(x)
+#define REF32(x) Fr::Atomic<uint32_t>::ref(x)
 
 void HashTable_Stats::add(const HashTable_Stats* other)
 {
    if (!other) return;
    REF(insert) += other->insert ;
-   REF(insert_dup) += other->insert_dup ;
    REF(insert_attempt) += other->insert_attempt ;
    REF(insert_forwarded) += other->insert_forwarded ;
    REF(insert_resize) += other->insert_resize ;
@@ -81,18 +80,18 @@ void HashTable_Stats::add(const HashTable_Stats* other)
    REF(lookup) += other->lookup ;
    REF(lookup_found) += other->lookup_found ;
    REF(lookup_forwarded) += other->lookup_forwarded ;
-   REF(resize) += other->resize ;
-   REF(resize_assist) += other->resize_assist ;
-   REF(resize_cleanup) += other->resize_cleanup ;
-   REF(resize_wait) += other->resize_wait ;
    REF(reclaim) += other->reclaim ;
-   REF(CAS_coll) += other->CAS_coll ;
-   REF(neighborhood_full) += other->neighborhood_full ;
-   REF(chain_lock_coll) += other->chain_lock_coll ;
    REF(spin) += other->spin ;
    REF(yield) += other->yield ;
-   REF(sleep) += other->sleep ;
-   REF(none) += other->none ;
+   REF32(sleep) += other->sleep ;
+   REF32(insert_dup) += other->insert_dup ;
+   REF32(CAS_coll) += other->CAS_coll ;
+   REF32(neighborhood_full) += other->neighborhood_full ;
+   REF32(resize) += other->resize ;
+   REF32(resize_assist) += other->resize_assist ;
+   REF32(resize_cleanup) += other->resize_cleanup ;
+   REF32(resize_wait) += other->resize_wait ;
+   REF32(none) += other->none ;
    return ;
 }
 
