@@ -27,6 +27,9 @@
 namespace Fr
 {
 
+// forward declaration
+class CharGetter ;
+
 /************************************************************************/
 /************************************************************************/
 
@@ -43,6 +46,8 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
 	 {
 	 }
       ~TermVectorT() ;
+
+      static TermVectorT* read(CharGetter& getter) ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<TermVectorT> ;

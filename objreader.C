@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-16					*/
+/* Version 0.02, last edit 2017-07-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -470,6 +470,40 @@ static Object* read_bitvector(const ObjectReader*, CharGetter& getter)
 
 //----------------------------------------------------------------------------
 
+static Object* read_generic_object(const ObjectReader* /*reader*/, CharGetter& getter)
+{
+   char type_name[500] ;
+   unsigned namelen { 0 } ;
+
+   // collect the type name
+   int nextch ;
+   while ((nextch = *getter) != EOF && nextch != ':' && nextch != '>')
+      {
+      type_name[namelen++] = (char)nextch ;
+      if (namelen+1 >= sizeof(type_name)) break ;
+      }
+   type_name[namelen] = '\0' ;
+   if (nextch == '>')
+      return nullptr ;	       // empty object descriptor!
+   // check for standard, known type names
+   if (strcmp(type_name,"TermVector") == 0)
+      {
+//FIXME
+      }
+   else if (strcmp(type_name,"TermCountVector") == 0)
+      {
+//FIXME
+      }
+   //TODO: check list of registered readers for any additional user-defined types
+
+   // nothing matched, so this is an unknown type.  Skip to the terminating right bracket
+   while ((nextch = *getter) != EOF && nextch != '>')
+      continue ;
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
 static Object* read_hashmap(const ObjectReader* reader, CharGetter& getter, const char* digits)
 {
    *getter ;				// discard the opening parenthesis
@@ -571,7 +605,7 @@ static Object* read_hashset(const ObjectReader* reader, CharGetter& getter, cons
 //    #Y( )   symboltable
 //    other   symbol starting with #
 
-static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
+static Object* rdhash(const ObjectReader* reader, CharGetter& getter)
 {
    *getter ;			// consume the hash mark
    // accumulate any leading digits (used e.g. to specify radix for #R)
@@ -607,10 +641,8 @@ static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
 	    // read vector: simulate as an array
 	    return read_array(reader,getter) ;
 	 case '<':
-	    // FramepaC object with no specific output format.  For now, just ignore
-	    while ((nextch = *getter) != EOF && nextch != '>')
-	       continue ;
-	    return nullptr ;
+	    // FramepaC object by typeName
+	    return read_generic_object(reader,getter) ;
 	 case ':':
 	    return read_uninterned_symbol(reader,getter) ;
 	 case '#':
@@ -698,7 +730,7 @@ static Object *rdhash(const ObjectReader *reader, CharGetter &getter)
 
 //----------------------------------------------------------------------------
 
-static Object* rdframe(const ObjectReader *reader, CharGetter &getter)
+static Object* rdframe(const ObjectReader* reader, CharGetter& getter)
 {
    (void)reader;
    *getter ;			// consume the opening left bracket
@@ -709,7 +741,7 @@ static Object* rdframe(const ObjectReader *reader, CharGetter &getter)
 
 //----------------------------------------------------------------------------
 
-static Object* rdlist(const ObjectReader *reader, CharGetter &getter)
+static Object* rdlist(const ObjectReader* reader, CharGetter& getter)
 {
    *getter ;		// consume the opening paren
    ListBuilder lb ;
