@@ -49,7 +49,7 @@ class Vector : public Object
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      Vector() ;
+      Vector(size_t capacity = 0) ;
       Vector(const Vector&) ;
       ~Vector() { delete [] m_values ; m_size = 0 ; }
       Vector& operator= (const Vector&) ;
@@ -122,12 +122,12 @@ template <typename ValT>
 class DenseVector : public Vector<ValT>
    {
    public:
-      static DenseVector* create(size_t numelts) ;
+      static DenseVector* create(size_t capacity) { return new DenseVector(capacity) ; }
 
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      DenseVector() : Vector<ValT>() {}
+      DenseVector(size_t capacity = 0) : Vector<ValT>(capacity) {}
       DenseVector(const Vector<ValT>&v) : Vector<ValT>(v) {}
       ~DenseVector() {}
       DenseVector& operator= (const DenseVector&) ;

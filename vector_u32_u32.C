@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-16					*/
+/* Version 0.02, last edit 2017-07-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -28,6 +28,16 @@ namespace Fr
 // request explicit instantiations of TermCountVector
 template class DenseVector<uint32_t> ;
 template class SparseVector<uint32_t,uint32_t> ;
+
+// static data for the instantiated templates
+template <>
+Allocator DenseVector<uint32_t>::s_allocator(FramepaC::Object_VMT<DenseVector<uint32_t>>::instance(),
+   sizeof(DenseVector<uint32_t>)) ;
+
+template <>
+Allocator SparseVector<uint32_t,uint32_t>::s_allocator(FramepaC::Object_VMT<SparseVector<uint32_t,uint32_t>>::instance(),
+   sizeof(SparseVector<uint32_t,uint32_t>)) ;
+
 
 } // end namespace Fr
 

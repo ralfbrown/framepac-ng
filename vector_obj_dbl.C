@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-07-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -26,6 +26,11 @@ namespace Fr
 
 // request explicit instantiation
 template class SparseVector<Object*,double> ;
+
+// static data for the instantiated template
+template <>
+Allocator SparseVector<Object*,double>::s_allocator(FramepaC::Object_VMT<SparseVector<Object*,double>>::instance(),
+   sizeof(SparseVector<Object*,double>)) ;
 
 } // end namespace Fr
 

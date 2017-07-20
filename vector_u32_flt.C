@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-16					*/
+/* Version 0.02, last edit 2017-07-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -28,6 +28,16 @@ namespace Fr
 // request explicit instantiations
 template class DenseVector<float> ;
 template class SparseVector<uint32_t,float> ;
+
+// static data for the instantiated templates
+template <>
+Allocator DenseVector<float>::s_allocator(FramepaC::Object_VMT<DenseVector<float>>::instance(),
+   sizeof(DenseVector<float>)) ;
+
+template <>
+Allocator SparseVector<uint32_t,float>::s_allocator(FramepaC::Object_VMT<SparseVector<uint32_t,float>>::instance(),
+   sizeof(SparseVector<uint32_t,float>)) ;
+
 
 } // end namespace Fr
 
