@@ -437,7 +437,8 @@ number$(OBJ):			number$(C) framepac/bignum.h framepac/rational.h
 object$(OBJ):			object$(C) framepac/object.h
 objreader$(OBJ):		objreader$(C) framepac/objreader.h framepac/symboltable.h framepac/array.h \
 			framepac/bignum.h framepac/bitvector.h framepac/map.h framepac/rational.h \
-			framepac/list.h framepac/number.h framepac/stringbuilder.h framepac/texttransforms.h
+			framepac/list.h framepac/number.h framepac/stringbuilder.h framepac/termvector.h \
+			framepac/texttransforms.h
 printf$(OBJ):			printf$(C) framepac/texttransforms.h
 progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
 ptrie_u32$(OBJ):		ptrie_u32$(C) template/ptrie.cc
@@ -494,7 +495,10 @@ template/ptrie.cc:	framepac/trie.h
 template/sufarray.cc:	framepac/sufarray.h framepac/bitvector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/termvector.cc:	framepac/termvector.h framepac/fasthash64.h
+template/sparsevector.cc:	framepac/vector.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/termvector.cc:	framepac/termvector.h framepac/charget.h framepac/fasthash64.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/trie.cc:	framepac/trie.h

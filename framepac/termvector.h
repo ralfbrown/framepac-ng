@@ -37,17 +37,19 @@ template <typename ValT>
 class TermVectorT : public SparseVector<uint32_t,ValT>
    {
    public:
-      static TermVectorT* create() { return new TermVectorT ; }
+      static TermVectorT* create(size_t capacity = 0) { return new TermVectorT(capacity) ; }
+
+      static TermVectorT* read(CharGetter& getter, size_t size_hint = 0) ;
 
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      TermVectorT() : SparseVector<uint32_t,ValT>()
+      TermVectorT(size_t capacity) : SparseVector<uint32_t,ValT>(capacity)
 	 {
 	 }
       ~TermVectorT() ;
 
-      static TermVectorT* read(CharGetter& getter) ;
+      using SparseVector<uint32_t,ValT>::setElement ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<TermVectorT> ;
@@ -98,7 +100,7 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
 //----------------------------------------------------------------------------
 
 template <>
-const char* TermVectorT<uint32_t>::typeName_(const Object*) { return "TermCountVector" ; }
+inline const char* TermVectorT<uint32_t>::typeName_(const Object*) { return "TermCountVector" ; }
 
 typedef TermVectorT<uint32_t> TermCountVector ;
 extern template class TermVectorT<uint32_t> ;
@@ -106,7 +108,7 @@ extern template class TermVectorT<uint32_t> ;
 //----------------------------------------------------------------------------
 
 template <>
-const char* TermVectorT<float>::typeName_(const Object*) { return "TermVector" ; }
+inline const char* TermVectorT<float>::typeName_(const Object*) { return "TermVector" ; }
 
 typedef TermVectorT<float> TermVector ;
 extern template class TermVectorT<float> ;

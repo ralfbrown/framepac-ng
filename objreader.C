@@ -32,6 +32,7 @@
 #include "framepac/string.h"
 #include "framepac/stringbuilder.h"
 #include "framepac/symboltable.h"
+#include "framepac/termvector.h"
 #include "framepac/texttransforms.h"
 
 namespace Fr {
@@ -470,7 +471,7 @@ static Object* read_bitvector(const ObjectReader*, CharGetter& getter)
 
 //----------------------------------------------------------------------------
 
-static Object* read_generic_object(const ObjectReader* /*reader*/, CharGetter& getter)
+static Object* read_generic_object(const ObjectReader* /*reader*/, CharGetter& getter, size_t size_hint)
 {
    char type_name[500] ;
    unsigned namelen { 0 } ;
@@ -486,14 +487,16 @@ static Object* read_generic_object(const ObjectReader* /*reader*/, CharGetter& g
    if (nextch == '>')
       return nullptr ;	       // empty object descriptor!
    // check for standard, known type names
+#if FIXME // currently generates link errors due to unimplemented standard functions
    if (strcmp(type_name,"TermVector") == 0)
       {
-//FIXME
+      return TermVector::read(getter,size_hint) ;
       }
    else if (strcmp(type_name,"TermCountVector") == 0)
       {
-//FIXME
+      return TermCountVector::read(getter,size_hint) ;
       }
+#endif /* FIXME */
    //TODO: check list of registered readers for any additional user-defined types
 
    // nothing matched, so this is an unknown type.  Skip to the terminating right bracket
@@ -642,7 +645,7 @@ static Object* rdhash(const ObjectReader* reader, CharGetter& getter)
 	    return read_array(reader,getter) ;
 	 case '<':
 	    // FramepaC object by typeName
-	    return read_generic_object(reader,getter) ;
+	    return read_generic_object(reader,getter,strtoul(digits,nullptr,10)) ;
 	 case ':':
 	    return read_uninterned_symbol(reader,getter) ;
 	 case '#':

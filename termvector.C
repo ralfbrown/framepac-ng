@@ -24,10 +24,22 @@
 namespace Fr
 {
 
+#if 0  // instantiation currently results in link errors due to missing standard functions
+
 // request explicit instantiations
 template class TermVectorT<uint32_t> ;
 template class TermVectorT<float> ;
 
+// static data for the instantiated templates
+template <>
+Allocator TermVectorT<uint32_t>::s_allocator(FramepaC::Object_VMT<TermVectorT<uint32_t>>::instance(),
+   sizeof(TermVectorT<uint32_t>));
+
+template <>
+Allocator TermVectorT<float>::s_allocator(FramepaC::Object_VMT<TermVectorT<float>>::instance(),
+   sizeof(TermVectorT<float>));
+
+#endif /* 0 */
 
 } // end namespace Fr
 

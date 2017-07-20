@@ -145,7 +145,7 @@ template <typename IdxT, typename ValT>
 class SparseVector : public Vector<ValT>
    {
    public:
-      static SparseVector* create(size_t numelts) ;
+      static SparseVector* create(size_t numelts) { return new SparseVector(numelts) ; }
 
       // retrieve elements of the vector
       IdxT keyAt(size_t N) const { return  m_indices[N] ; }
@@ -157,7 +157,7 @@ class SparseVector : public Vector<ValT>
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      SparseVector() ;
+      SparseVector(size_t capacity = 0) ;
       SparseVector(const SparseVector&) ;
       ~SparseVector() { delete [] m_indices ; }
       SparseVector& operator= (const SparseVector&) ;
@@ -206,6 +206,13 @@ class SparseVector : public Vector<ValT>
       // *** iterator support ***
       static Object* next_(const Object *) { return nullptr ; }
       static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
+
+   protected:
+      void setElement(size_t N, IdxT key, ValT value)
+	 {
+	    this->m_indices[N] = key ;
+	    this->m_values[N] = value ;
+	 }
 
    protected:
       // helper functions, needed to properly output various index and value types
