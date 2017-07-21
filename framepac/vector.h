@@ -54,6 +54,9 @@ class Vector : public Object
       ~Vector() { delete [] m_values ; m_size = 0 ; }
       Vector& operator= (const Vector&) ;
 
+      size_t size() const { return m_size ; }
+      size_t capacity() const { return m_capacity ; }
+
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<Vector> ;
 
@@ -100,12 +103,16 @@ class Vector : public Object
       static Object* next_(const Object *) { return nullptr ; }
       static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
 
+      // STL compatibility
+      bool reserve(size_t n) ;
+      
    private:
       static Allocator s_allocator ;
    protected:
       ValT*  m_values ;
       mutable double m_length ; // cached vector length (L2-norm)
       size_t m_size ;	  	// number of elements in vector
+      size_t m_capacity ;	// number of elements allocated (may be greater than m_size)
    } ;
 
 //----------------------------------------------------------------------------
@@ -210,8 +217,11 @@ class SparseVector : public Vector<ValT>
    protected:
       void setElement(size_t N, IdxT key, ValT value)
 	 {
-	    this->m_indices[N] = key ;
-	    this->m_values[N] = value ;
+	 if (N >= Vector<ValT>::m_capacity && !this->reserve(std::max(N+1,2*Vector<ValT>::m_capacity)))
+	    return ;
+	 if (N >= this->m_size) this->m_size = N+1 ;
+	 this->m_indices[N] = key ;
+	 this->m_values[N] = value ;
 	 }
 
    protected:

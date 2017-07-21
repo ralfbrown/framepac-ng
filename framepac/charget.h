@@ -31,6 +31,9 @@ using namespace std ;
 namespace Fr
 {
 
+// forward declaration
+class Object ;
+
 /************************************************************************/
 /************************************************************************/
 
@@ -132,6 +135,21 @@ class CharGetterStdString : public CharGetter
 //----------------------------------------------------------------------------
 
 } // end of namespace Fr
+
+/************************************************************************/
+/************************************************************************/
+
+namespace FramepaC
+{
+
+// helper functions to read values of various types from within a generic-object form
+
+bool read_value(Fr::CharGetter&, uint32_t&) ;
+bool read_value(Fr::CharGetter&, float&) ;
+bool read_value(Fr::CharGetter&, double&) ;
+bool read_value(Fr::CharGetter&, Fr::Object*&) ;
+
+} // end namespace Fr
 
 #endif /* !_Fr_CHARGET_H_INCLUDED */
 

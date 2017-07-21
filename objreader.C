@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-19					*/
+/* Version 0.02, last edit 2017-07-20					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -939,5 +939,103 @@ Object* Object::read(istream& in)
 
 
 } ; // end namespace Fr
+
+/************************************************************************/
+/************************************************************************/
+
+namespace FramepaC
+{
+
+using namespace Fr ;
+
+bool read_value(CharGetter& getter, uint32_t& value)
+{
+   int nextch ;
+   uint32_t val { 0 } ;
+   while ((nextch = getter.peek()) != EOF && isdigit(nextch))
+      {
+      *getter ;
+      val = 10 * val + (nextch - '0') ;
+      }
+   value = val ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+void read_floating_point(CharGetter& getter, StringBuilder& sb)
+{
+   int nextch = getter.peek() ;
+   if (nextch == '+' || nextch == '-')
+      {
+      *getter ;
+      sb += (char)nextch ;
+      }
+   while ((nextch = getter.peek()) != EOF && isdigit(nextch))
+      {
+      *getter ;
+      sb += (char)nextch ;
+      }
+   if (nextch == '.')
+      {
+      // read the decimal part
+      *getter ;
+      sb += (char)nextch ;
+      while ((nextch = getter.peek()) != EOF && isdigit(nextch))
+	 {
+	 *getter ;
+	 sb += (char)nextch ;
+	 }
+      }
+   if (nextch == 'e' || nextch == 'E')
+      {
+      // read exponent
+      sb += (char)nextch ;
+      nextch = getter.peek() ;
+      if (nextch == '+' || nextch == '-')
+	 {
+	 *getter ;
+	 sb += (char)nextch ;
+	 }
+      while ((nextch = getter.peek()) != EOF && isdigit(nextch))
+	 {
+	 *getter ;
+	 sb += (char)nextch ;
+	 }
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+bool read_value(CharGetter& getter, float& value)
+{
+   StringBuilder sb ;
+   read_floating_point(getter,sb) ;
+   value = strtof(*sb,nullptr) ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+bool read_value(CharGetter& getter, double& value)
+{
+   StringBuilder sb ;
+   read_floating_point(getter,sb) ;
+   value = strtod(*sb,nullptr) ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+bool read_value(CharGetter& getter, Object*& value)
+{
+   (void)getter; (void)value ;
+//FIXME
+   return false ;
+}
+
+
+} // end namespace FramepaC
 
 // end of file objreader.C //

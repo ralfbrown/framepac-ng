@@ -52,21 +52,18 @@ TermVectorT<ValT>* TermVectorT<ValT>::read(CharGetter& getter, size_t size_hint)
    int nextch ;
    for (size_t i = 0 ; ; ++i)
       {
-      uint32_t index { 0 } ;
-      while ((nextch = *getter) != EOF && nextch != ':' && nextch != '>')
-	 {
-	 if (isdigit(nextch))
-	    index = 10*index + (nextch - '0') ;
-	 }
-      if (nextch == EOF || nextch == '>')
+      getter.peekNonWhite() ;		// discard whitespace
+      uint32_t index ;
+      FramepaC::read_value(getter,index) ;
+      nextch = *getter ;		// consume the terminating character
+      if (nextch == EOF || nextch == '>') // end of object descriptor?
 	 break ;
       ValT value { 0 } ;
-      if (nextch == ':')
+      if (nextch == ':')		// verify that we have a value before reading it
 	 {
-//FIXME: read value
+	 FramepaC::read_value(getter,value) ;
 	 }
       tv->setElement(i,index,value) ;
-      getter.peekNonWhite() ;
       }
    return tv ;
 }
