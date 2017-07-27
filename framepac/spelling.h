@@ -29,6 +29,51 @@ namespace Fr
 
 //----------------------------------------------------------------------------
 
+class CognateAlignment
+   {
+   public:
+      CognateAlignment() : m_srclen(0), m_trglen(0) {}
+
+      size_t sourceLength() const { return m_srclen ; }
+      size_t targetLength() const { return m_trglen ; }
+
+   protected:
+      size_t m_srclen ;
+      size_t m_trglen ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+class CognateData
+   {
+   public:
+      CognateData() ;
+      CognateData(const char* cognates, size_t fuzzy_match_score = 0) ; // 0 = don't change
+      CognateData(const List* cognates, size_t fuzzy_match_score = 0) ; // 0 = don't change
+      ~CognateData() ;
+
+      static CognateData* load(const char* filename, size_t fuzzy_match_score = 0) ; // 0 = don't change
+      bool save(const char* filename) ;
+
+      bool areCognate(char letter1, char letter2, bool casefold = true) const ;
+      size_t cognateLetters(const char* str1, const char* str2, size_t& len1,size_t& len2,
+	 bool casefold = true) const ;
+      double score(const char* word1, const char* word2, bool casefold = true, bool score_rel_to_shorter = false,
+	 bool score_rel_to_average = false, bool exact_letter_match_only = false, CognateAlignment** align = nullptr)
+	 const ;
+      double score(const Object* word1, const Object* word2, bool casefold = true, bool score_rel_to_shorter = false,
+	 bool score_rel_to_average = false, bool exact_letter_match_only = false, CognateAlignment** align = nullptr)
+	 const ;
+
+   protected:
+      char* m_forward[256] ;
+      char* m_reverse[256] ;
+      char* m_fwdbuffer ;
+      char* m_revbuffer ;
+   } ;
+
+//----------------------------------------------------------------------------
+
 class LetterConfusionMatrix
    {
    public:

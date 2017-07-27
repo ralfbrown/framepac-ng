@@ -242,7 +242,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	argopt$(OBJ) argopt_real$(OBJ) argparser$(OBJ) \
 	bidindex_cstr$(OBJ) bitvector$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) canonsent$(OBJ) \
-	charget$(OBJ) cfile$(OBJ) \
+	charget$(OBJ) cfile$(OBJ) cognate$(OBJ) \
 	cluster$(OBJ) cluster_growseed$(OBJ) cluster_kmeans$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
 	fasthash64$(OBJ) \
@@ -260,7 +260,8 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	printf$(OBJ) ptrie_u32$(OBJ) \
 	rational$(OBJ) set$(OBJ) slab$(OBJ) \
 	slabgroup$(OBJ) smallalloc$(OBJ) \
-	sparsematrix$(OBJ) string$(OBJ) stringbuilder$(OBJ) \
+	sparsematrix$(OBJ) spelling$(OBJ) \
+	string$(OBJ) stringbuilder$(OBJ) \
 	sufarray_u32u32$(OBJ) sufarray_u32u40$(OBJ) \
 	symbol$(OBJ) symboltable$(OBJ) synchevent$(OBJ) \
 	termvector$(OBJ) texttransforms$(OBJ) \
@@ -398,6 +399,7 @@ cluster_agglom$(OBJ):	cluster_agglom$(C) framepac/cluster.h
 cluster_growseed$(OBJ):	cluster_growseed$(C) framepac/cluster.h
 cluster_incr$(OBJ):		cluster_incr$(C) framepac/cluster.h
 cluster_kmeans$(OBJ):	cluster_kmeans$(C) framepac/cluster.h
+cognate$(OBJ):		cognate$(C) framepac/spelling.h
 complex$(OBJ):		complex$(C) framepac/complex.h framepac/fasthash64.h
 critsect$(OBJ):		critsect$(C) framepac/critsect.h
 cstring$(OBJ):		cstring$(C) framepac/cstring.h framepac/fasthash64.h
@@ -449,6 +451,7 @@ slab$(OBJ):			slab$(C) framepac/memory.h
 slabgroup$(OBJ):		slabgroup$(C) framepac/memory.h
 smallalloc$(OBJ):		smallalloc$(C) framepac/memory.h
 sparsematrix$(OBJ):		sparsematrix$(C) framepac/matrix.h
+spelling$(OBJ):		spelling$(C) framepac/spelling.h
 string$(OBJ):			string$(C) framepac/string.h framepac/fasthash64.h
 stringbuilder$(OBJ):		stringbuilder$(C) framepac/stringbuilder.h framepac/file.h
 sufarray_u32u32$(OBJ):	sufarray_u32u32$(C) template/sufarray.cc
