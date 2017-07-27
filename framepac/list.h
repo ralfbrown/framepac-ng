@@ -79,6 +79,8 @@ class List : public Object
       List* push(Object* o) { List* l = List::create(o) ; l->setNext(this) ; return l ; }
       List* nconc(List* newtail) ;
 
+      List* removeIf(ObjectPredicateFn*) ;
+
       void setFront(Object* o) { m_item = o ? o : empty_list ; }
 
       // *** standard info functions ***

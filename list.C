@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.02, last edit 2017-07-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -167,6 +167,23 @@ List* List::nconc(List* newtail)
 
 //----------------------------------------------------------------------------
 
+List* List::removeIf(ObjectPredicateFn* fn)
+{
+   if (!fn) return this ;
+   ListBuilder result ;
+   for (auto item : *this)
+      {
+      if (!fn(item))
+	 result += item ;
+      else if (item)
+	 item->free() ;
+      }
+   this->shallowFree() ;
+   return result.move() ;
+}
+
+//----------------------------------------------------------------------------
+
 ObjectPtr List::clone_(const Object *obj)
 {
    const List *old_l { static_cast<const List*>(obj) };
@@ -175,7 +192,7 @@ ObjectPtr List::clone_(const Object *obj)
       {
       newlist.appendClone(item) ;
       }
-   return ObjectPtr(*newlist) ;
+   return ObjectPtr(newlist.move()) ;
 }
 
 //----------------------------------------------------------------------------
@@ -188,7 +205,7 @@ Object *List::shallowCopy_(const Object *obj)
       {
       newlist += item ;
       }
-   return *newlist ;
+   return newlist.move() ;
 }
 
 //----------------------------------------------------------------------------
@@ -312,7 +329,7 @@ List *List::subseq(ListIter start, ListIter stop, bool shallow) const
       else
 	 copy.appendClone(*start) ;
       }
-   return *copy ;
+   return copy.move() ;
 }
 
 //----------------------------------------------------------------------------
@@ -333,7 +350,7 @@ ObjectPtr List::subseq_int(const Object *obj, size_t start, size_t stop)
 	 copy.appendClone(l->front()) ;
 	 }
       }
-   return ObjectPtr(*copy) ;
+   return ObjectPtr(copy.move()) ;
 }
 
 //----------------------------------------------------------------------------
@@ -345,7 +362,7 @@ ObjectPtr List::subseq_iter(const Object *, ObjectIter start, ObjectIter stop)
       {
       copy.appendClone(*start) ;
       }
-   return ObjectPtr(*copy) ;
+   return ObjectPtr(copy.move()) ;
 }
 
 //----------------------------------------------------------------------------
