@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-14					*/
+/* Version 0.02, last edit 2017-07-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -244,7 +244,9 @@ class FilePath
 
       bool pathOnly() const { return m_root == nullptr && m_extension == nullptr ; }
 
+      bool defaultDirectory(const char *path) ;
       bool forceDirectory(const char *new_path) ;
+      bool defaultExtension(const char *extension) ;
       bool forceExtension(const char *new_extension) ;
 
    protected:

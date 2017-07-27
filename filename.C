@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-14					*/
+/* Version 0.02, last edit 2017-07-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -21,6 +21,7 @@
 
 #include <cstring>
 #include "framepac/file.h"
+#include "framepac/texttransforms.h"
 
 namespace Fr
 {
@@ -85,18 +86,23 @@ bool FilePath::forceDirectory(const char *new_dir)
       new_dir = "." ;
    if (strcmp(new_dir,m_directory) == 0)
       return false ; // no change
-   size_t len = strlen(new_dir) ;
-   char *dir = new char[len+1] ;
+   char *dir = dup_string(new_dir) ;
    if (dir)
       {
       delete [] m_directory ;
       m_directory = dir ;
-      strcpy(dir,new_dir) ;
       delete [] m_path ;
       m_path = nullptr ;
       return true ;
       }
    return false ;
+}
+
+//----------------------------------------------------------------------------
+
+bool FilePath::defaultDirectory(const char* dir)
+{
+   return *m_directory ? true : forceDirectory(dir) ;
 }
 
 //----------------------------------------------------------------------------
@@ -109,13 +115,11 @@ bool FilePath::forceExtension(const char *new_ext)
       new_ext++ ;
    if (strcmp(new_ext,m_extension) == 0)
       return false ; // no change
-   size_t len = strlen(new_ext) ;
-   char *ext = new char[len+1] ;
+   char *ext = dup_string(new_ext) ;
    if (ext)
       {
       delete [] m_extension ;
       m_extension = ext ;
-      strcpy(ext,new_ext) ;
       delete [] m_basename ;
       m_basename = nullptr ;
       delete [] m_path ;
@@ -123,6 +127,13 @@ bool FilePath::forceExtension(const char *new_ext)
       return true ;
       }
    return false ;
+}
+
+//----------------------------------------------------------------------------
+
+bool FilePath::defaultExtension(const char* ext)
+{
+   return *m_extension ? true : forceExtension(ext) ;
 }
 
 //----------------------------------------------------------------------------

@@ -404,7 +404,7 @@ complex$(OBJ):		complex$(C) framepac/complex.h framepac/fasthash64.h
 critsect$(OBJ):		critsect$(C) framepac/critsect.h
 cstring$(OBJ):		cstring$(C) framepac/cstring.h framepac/fasthash64.h
 fasthash64$(OBJ):		fasthash64$(C) framepac/fasthash64.h
-filename$(OBJ):		filename$(C) framepac/file.h
+filename$(OBJ):		filename$(C) framepac/file.h framepac/texttransforms.h
 float$(OBJ):			float$(C) framepac/number.h framepac/fasthash64.h
 frame$(OBJ):			frame$(C) framepac/frame.h
 globaldata$(OBJ):		globaldata$(C)

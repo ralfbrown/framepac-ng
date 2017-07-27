@@ -104,7 +104,7 @@ class SpellCorrectionData
       // accessors
       size_t longestSubstitution() const { return m_maxsubst ; }
       const ObjHashTable* goodWords() const { return m_good_words ; }
-      const SymCountHashTable* wordCounts() const { retun m_wordcounts ; }
+      const SymCountHashTable* wordCounts() const { return m_wordcounts ; }
       const ObjHashTable* substitutions() const { return m_substitutions ; }
       const LetterConfusionMatrix* confusionMatrix() const { return m_confmatrix ; }
 
@@ -117,7 +117,7 @@ class SpellCorrectionData
 	 bool allow_self = true) const ;
 
    protected:
-      ObjHashTable* m_good_words ;
+      const ObjHashTable* m_good_words ;
       ObjHashTable* m_substitutions ;
       const SymCountHashTable* m_wordcounts ;
       LetterConfusionMatrix* m_confmatrix ;
