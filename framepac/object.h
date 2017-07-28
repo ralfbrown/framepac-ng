@@ -247,10 +247,19 @@ class ScopedObject
    {
    public:
       ScopedObject() { m_object = T::create() ; }
+      ScopedObject(nullptr_t) { m_object = nullptr ; }
       template <typename ...Args>
       ScopedObject(Args... args) { m_object = T::create(args...) ; }
-      ~ScopedObject() { m_object->free() ; }
+      ~ScopedObject() { if (m_object) m_object->free() ; }
 
+      ScopedObject& operator = (ScopedObject&) = delete ;
+      ScopedObject& operator = (ObjectPtr& op)
+	 { if (m_object) m_object->free() ; m_object = static_cast<T*>(&op) ; op.release() ; return *this ; }
+      ScopedObject& operator = (T* o) { if (m_object) m_object->free() ; m_object = o ; return *this ; }
+
+      void release() { m_object = nullptr ; }
+
+      operator bool () const { return m_object != nullptr ; }
       operator T* () const { return m_object ; }
       T* operator -> () const { return  m_object ; }
 
@@ -266,8 +275,11 @@ class ScopedObjectPtr
    {
    public:
       ScopedObjectPtr(T* o) : m_object(o) { }
-      ~ScopedObjectPtr() { m_object->free() ; }
+      ~ScopedObjectPtr() { if (m_object) m_object->free() ; }
 
+      void release() { m_object = nullptr ; }
+
+      operator bool () const { return m_object != nullptr ; }
       operator T* () const { return m_object ; }
       T* operator -> () const { return  m_object ; }
 

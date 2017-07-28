@@ -73,8 +73,11 @@ class CognateData
 	 CognateAlignment** align = nullptr) const ;
 
    protected:
-      char* m_forward[256] ;
-      char* m_reverse[256] ;
+      uint8_t m_one2one[256][256] ;
+      char* m_one2many[256] ;
+      char* m_many2one[256] ;
+      char** m_many2many ;
+      size_t m_many2many_count ;
       char* m_fwdbuffer ;
       char* m_revbuffer ;
       bool  m_casefold ;
