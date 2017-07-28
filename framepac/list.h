@@ -76,6 +76,8 @@ class List : public Object
       static List* createWordList(const char*) ;
 
       bool member(const Object* o) const ;
+      Object* member(const Object* o, ObjectCompareFn* fn) ;
+
       List* push(Object* o) { List* l = List::create(o) ; l->setNext(this) ; return l ; }
       List* nconc(List* newtail) ;
 
@@ -197,7 +199,7 @@ class ListBuilder
    public:
       ListBuilder() : m_list(List::emptyList()), m_list_end(&m_list) {}
       ListBuilder(const ListBuilder&) = delete ;
-      ListBuilder(List*&&) ;  // move given list
+      ListBuilder(List*&) ;  // move given list
       ListBuilder(const List*, bool) ; // copy given list
       ~ListBuilder() { clear() ; }
       ListBuilder& operator= (const ListBuilder&) = delete ;

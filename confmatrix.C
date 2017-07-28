@@ -28,65 +28,53 @@ namespace Fr
 /*	Methods for class LetterConfusionMatrix				*/
 /************************************************************************/
 
-
-/************************************************************************/
-/*	Methods for class SpellCorrectionData				*/
-/************************************************************************/
-
-SpellCorrectionData::SpellCorrectionData(const ObjHashTable* gw, const SymCountHashTable* wc,
-   LetterConfusionMatrix* cm, ObjHashTable* subst, size_t maxsubst)
+LetterConfusionMatrix::LetterConfusionMatrix()
 {
-   m_good_words = gw ;
-   m_wordcounts = wc ;
-   m_confmatrix = cm ;
-   m_substitutions = subst ;
-   m_maxsubst = maxsubst ;
+
    return ;
 }
 
 //----------------------------------------------------------------------------
 
-SpellCorrectionData::~SpellCorrectionData()
+LetterConfusionMatrix::~LetterConfusionMatrix()
 {
-   m_good_words = nullptr ;
-   m_substitutions = nullptr ;
-   m_wordcounts = nullptr ;
-   m_confmatrix = nullptr ;
-   m_maxsubst = 0 ;
+
    return ;
 }
 
 //----------------------------------------------------------------------------
 
-bool SpellCorrectionData::knownPhrase(const char* term, bool allow_norm, char split_char) const
+LetterConfusionMatrix* LetterConfusionMatrix::load(const char* /*filename*/)
 {
-   (void)term; (void)allow_norm; (void)split_char;
-
-   return false ; //FIXME
-}
-
-//----------------------------------------------------------------------------
-
-bool SpellCorrectionData::spellingSuggestion(const char* term, char* suggestion, const char* typo_letters,
-   bool allow_norm) const
-{
-   (void)term; (void)suggestion; (void)typo_letters; (void)allow_norm;
-
-   return false ; //FIXME
-}
-
-//----------------------------------------------------------------------------
-
-List* SpellCorrectionData::spellingSuggestions(const char* term, const char* typo_letters, bool allow_norm,
-   bool allow_self) const
-{
-   (void)term; (void)typo_letters; (void)allow_norm; (void)allow_self;
 
    return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool LetterConfusionMatrix::save(const char* /*filename*/) const
+{
+
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+double LetterConfusionMatrix::score(char /*letter1*/, char /*letter2*/) const
+{
+
+   return 0.0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+double LetterConfusionMatrix::score(const char* /*seq1*/, const char* /*seq2*/) const
+{
+
+   return 0.0 ; //FIXME
 }
 
 
 } // end namespace Fr
 
-
-// end of file spelling.C //
+// end of file confmatrix.C //

@@ -94,7 +94,8 @@ class LetterConfusionMatrix
 class SpellCorrectionData
    {
    public:
-      SpellCorrectionData() ;
+      SpellCorrectionData(const ObjHashTable* gw = nullptr, const SymCountHashTable* wc = nullptr,
+	 LetterConfusionMatrix* cm = nullptr, ObjHashTable* subst = nullptr, size_t maxsubst = 0) ;
       ~SpellCorrectionData() ;
 
       // modifiers

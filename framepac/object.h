@@ -39,6 +39,7 @@ class CFile ;
 /************************************************************************/
 
 typedef bool ObjectPredicateFn(const Object*) ;
+typedef bool ObjectCompareFn(const Object*, const Object*) ;
 
 /************************************************************************/
 /************************************************************************/
@@ -237,6 +238,42 @@ inline ObjectIter& Object::next_iter(const Object*,ObjectIter& it) { it.m_object
 //----------------------------------------------------------------------------
 
 inline void ObjectPtr::free() { if (m_object) { m_object->free() ; release() ; } }
+
+/************************************************************************/
+/************************************************************************/
+
+template <typename T = Object>
+class ScopedObject
+   {
+   public:
+      ScopedObject() { m_object = T::create() ; }
+      template <typename ...Args>
+      ScopedObject(Args... args) { m_object = T::create(args...) ; }
+      ~ScopedObject() { m_object->free() ; }
+
+      operator T* () const { return m_object ; }
+      T* operator -> () const { return  m_object ; }
+
+   protected:
+      T* m_object ;
+   } ;
+
+/************************************************************************/
+/************************************************************************/
+
+template <typename T = Object>
+class ScopedObjectPtr
+   {
+   public:
+      ScopedObjectPtr(T* o) : m_object(o) { }
+      ~ScopedObjectPtr() { m_object->free() ; }
+
+      operator T* () const { return m_object ; }
+      T* operator -> () const { return  m_object ; }
+
+   protected:
+      T* m_object ;
+   } ;
 
 /************************************************************************/
 /************************************************************************/

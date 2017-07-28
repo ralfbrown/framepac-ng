@@ -242,7 +242,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	argopt$(OBJ) argopt_real$(OBJ) argparser$(OBJ) \
 	bidindex_cstr$(OBJ) bitvector$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) canonsent$(OBJ) \
-	charget$(OBJ) cfile$(OBJ) cognate$(OBJ) \
+	charget$(OBJ) cfile$(OBJ) cognate$(OBJ) confmatrix$(OBJ) \
 	cluster$(OBJ) cluster_growseed$(OBJ) cluster_kmeans$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
 	fasthash64$(OBJ) \
@@ -401,6 +401,7 @@ cluster_incr$(OBJ):		cluster_incr$(C) framepac/cluster.h
 cluster_kmeans$(OBJ):	cluster_kmeans$(C) framepac/cluster.h
 cognate$(OBJ):		cognate$(C) framepac/spelling.h
 complex$(OBJ):		complex$(C) framepac/complex.h framepac/fasthash64.h
+confmatrix$(OBJ):		confmatrix$(C) framepac/spelling.h
 critsect$(OBJ):		critsect$(C) framepac/critsect.h
 cstring$(OBJ):		cstring$(C) framepac/cstring.h framepac/fasthash64.h
 fasthash64$(OBJ):		fasthash64$(C) framepac/fasthash64.h

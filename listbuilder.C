@@ -28,7 +28,7 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-ListBuilder::ListBuilder(List*&& init_list)
+ListBuilder::ListBuilder(List*& init_list)
 {
    m_list = init_list ;
    List* tail = m_list->last() ;
