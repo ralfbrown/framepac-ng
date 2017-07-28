@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.02, last edit 2017-07-28					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -28,7 +28,7 @@
 namespace Fr
 {
 
-List* List::createWordList(const char* s)
+List* List::createWordList(const char* s, char delim)
 {
    ListBuilder lb ;
    if (s && *s)
@@ -38,7 +38,7 @@ List* List::createWordList(const char* s)
 	 --eos ;
       for (const char* blank = s ; blank < eos ; ++blank)
 	 {
-	 if (*blank == ' ')
+	 if (*blank == delim)
 	    {
 	    lb += String::create(s,blank-s) ;
 	    s = blank + 1 ;		// advance past the blank

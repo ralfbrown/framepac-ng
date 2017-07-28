@@ -182,6 +182,31 @@ const List* List::assoc(const Object* key) const
 
 //----------------------------------------------------------------------------
 
+List* List::pop(Object*& obj)
+{
+   if (this == empty_list)
+      {
+      obj = nullptr ;
+      return this ;
+      }
+   obj = this->front() ;
+   List* nxt = this->next() ;
+   this->setNext(empty_list) ;
+   this->shallowFree() ;
+   return nxt ;
+}
+
+//----------------------------------------------------------------------------
+
+List* List::elide(size_t start, size_t stop)
+{
+   (void)start; (void)stop ;
+
+   return this ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
 List* List::nconc(List* newtail)
 {
    List* t = last() ;
@@ -304,6 +329,15 @@ List* List::reverse()
       l = next ;
       }
    return l ;
+}
+
+//----------------------------------------------------------------------------
+
+List* List::sort(ObjectOrderingFn* cmp)
+{
+   if (!cmp) return this ; //FIXME
+
+   return this ;
 }
 
 //----------------------------------------------------------------------------

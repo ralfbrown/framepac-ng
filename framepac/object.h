@@ -40,6 +40,7 @@ class CFile ;
 
 typedef bool ObjectPredicateFn(const Object*) ;
 typedef bool ObjectCompareFn(const Object*, const Object*) ;
+typedef int ObjectOrderingFn(const Object*, const Object*) ;
 
 /************************************************************************/
 /************************************************************************/

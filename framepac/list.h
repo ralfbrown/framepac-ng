@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-16					*/
+/* Version 0.02, last edit 2017-07-28					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -73,12 +73,14 @@ class List : public Object
       static List* create(istream&) ;
 
       // generate a list of strings from a 'sentence' with single blanks delimiting tokens
-      static List* createWordList(const char*) ;
+      static List* createWordList(const char*, char delim = ' ') ;
 
       bool member(const Object* o) const ;
       Object* member(const Object* o, ObjectCompareFn* fn) const ;
 
       List* push(Object* o) { List* l = List::create(o) ; l->setNext(this) ; return l ; }
+      List* pop(Object*& o) ;
+      List* elide(size_t start, size_t stop) ;
       List* nconc(List* newtail) ;
 
       List* removeIf(ObjectPredicateFn*) ;
@@ -106,6 +108,7 @@ class List : public Object
       bool contains(const Object*) const ;
       List* last() const ;
       List* reverse() ;
+      List* sort(ObjectOrderingFn*) ;
       Object* nth(size_t N) const ;
       List* nthcdr(size_t N) ;
       const List* nthcdr(size_t N) const ;
