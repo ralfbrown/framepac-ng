@@ -76,7 +76,7 @@ class List : public Object
       static List* createWordList(const char*) ;
 
       bool member(const Object* o) const ;
-      Object* member(const Object* o, ObjectCompareFn* fn) ;
+      Object* member(const Object* o, ObjectCompareFn* fn) const ;
 
       List* push(Object* o) { List* l = List::create(o) ; l->setNext(this) ; return l ; }
       List* nconc(List* newtail) ;

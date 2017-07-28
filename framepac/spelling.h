@@ -52,24 +52,34 @@ class CognateData
       CognateData(const List* cognates, size_t fuzzy_match_score = 0) ; // 0 = don't change
       ~CognateData() ;
 
+      static CognateData* defaultInstance() ;
+
       static CognateData* load(const char* filename, size_t fuzzy_match_score = 0) ; // 0 = don't change
       bool save(const char* filename) ;
 
+      // configuration
+      void casefold(bool fold) { m_casefold = fold ; }
+      bool casefold() const { return m_casefold ; }
+
+      void relativeToShorter(bool rel) { m_rel_to_shorter = rel ; m_rel_to_average = false ; }
+      void relativeToAverage(bool rel) { m_rel_to_average = rel ; m_rel_to_shorter = false ; }
+      void defaultScoring() { m_rel_to_average = false ; m_rel_to_shorter = false ; }
+
       bool areCognate(char letter1, char letter2, bool casefold = true) const ;
-      size_t cognateLetters(const char* str1, const char* str2, size_t& len1,size_t& len2,
-	 bool casefold = true) const ;
-      double score(const char* word1, const char* word2, bool casefold = true, bool score_rel_to_shorter = false,
-	 bool score_rel_to_average = false, bool exact_letter_match_only = false, CognateAlignment** align = nullptr)
-	 const ;
-      double score(const Object* word1, const Object* word2, bool casefold = true, bool score_rel_to_shorter = false,
-	 bool score_rel_to_average = false, bool exact_letter_match_only = false, CognateAlignment** align = nullptr)
-	 const ;
+      size_t cognateLetters(const char* str1, const char* str2, size_t& len1,size_t& len2) const ;
+      double score(const char* word1, const char* word2, bool exact_letter_match_only = false,
+	 CognateAlignment** align = nullptr) const ;
+      double score(const Object* word1, const Object* word2, bool exact_letter_match_only = false,
+	 CognateAlignment** align = nullptr) const ;
 
    protected:
       char* m_forward[256] ;
       char* m_reverse[256] ;
       char* m_fwdbuffer ;
       char* m_revbuffer ;
+      bool  m_casefold ;
+      bool  m_rel_to_shorter ;
+      bool  m_rel_to_average ;
    } ;
 
 //----------------------------------------------------------------------------

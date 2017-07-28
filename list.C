@@ -157,6 +157,19 @@ bool List::member(const Object* o) const
 
 //----------------------------------------------------------------------------
 
+Object* List::member(const Object* o, ObjectCompareFn *fn) const
+{
+   const List* l = this ;
+   while (l && l != empty_list)
+      {
+      Object* f = l->front() ;
+      if (fn(f,o)) return f ;
+      }
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
 List* List::nconc(List* newtail)
 {
    List* t = last() ;

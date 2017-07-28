@@ -41,10 +41,12 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
 
       static TermVectorT* read(CharGetter& getter, size_t size_hint = 0) ;
 
+      size_t vectorFreq() const { return m_freq ; }
+
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      TermVectorT(size_t capacity) : SparseVector<uint32_t,ValT>(capacity)
+      TermVectorT(size_t capacity = 1) : SparseVector<uint32_t,ValT>(capacity), m_freq(0)
 	 {
 	 }
       ~TermVectorT() ;
@@ -95,6 +97,9 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
 
    private: // static members
       static Allocator s_allocator ;
+
+   protected:
+      size_t m_freq ;
    } ;
 
 //----------------------------------------------------------------------------
