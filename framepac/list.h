@@ -109,7 +109,7 @@ class List : public Object
       Object* nth(size_t N) const ;
       List* nthcdr(size_t N) ;
       const List* nthcdr(size_t N) const ;
-      List* assoc(const Object* key) const ;
+      const List* assoc(const Object* key) const ;
 
       void setNext(List* nxt) { m_next = nxt ; }
       List** nextPtr() { return &m_next ; }

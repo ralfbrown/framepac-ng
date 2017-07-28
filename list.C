@@ -170,6 +170,18 @@ Object* List::member(const Object* o, ObjectCompareFn *fn) const
 
 //----------------------------------------------------------------------------
 
+const List* List::assoc(const Object* key) const
+{
+   for (const auto a : *this)
+      {
+      if (a && a->isList() && a->front() && a->front()->equal(key))
+	 return static_cast<const List*>(a) ;
+      }
+   return empty_list ;
+}
+
+//----------------------------------------------------------------------------
+
 List* List::nconc(List* newtail)
 {
    List* t = last() ;
