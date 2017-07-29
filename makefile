@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 16jul2017
+# Last change: 28jul2017
 
 #########################################################################
 # define the locations of all the files
@@ -265,7 +265,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	sufarray_u32u32$(OBJ) sufarray_u32u40$(OBJ) \
 	symbol$(OBJ) symboltable$(OBJ) synchevent$(OBJ) \
 	termvector$(OBJ) texttransforms$(OBJ) \
-	threadpool$(OBJ) timer$(OBJ) \
+	threadpool$(OBJ) threshold$(OBJ) timer$(OBJ) \
 	trie$(OBJ) trie_u32dbl$(OBJ) trie_u32u32$(OBJ) \
 	vecsim_u32_dbl$(OBJ) vecsim_u32_flt$(OBJ) \
 	vector_obj_dbl$(OBJ) vector_obj_flt$(OBJ) \
@@ -463,6 +463,7 @@ synchevent$(OBJ):		synchevent$(C) framepac/synchevent.h
 termvector$(OBJ):		termvector$(C) template/termvector.cc
 texttransforms$(OBJ):	texttransforms$(C) framepac/texttransforms.h
 threadpool$(OBJ):		threadpool$(C) framepac/threadpool.h framepac/thread.h
+threshold$(OBJ):		threshold$(C) framepac/threshold.h
 timer$(OBJ):			timer$(C) framepac/timer.h
 trie$(OBJ):			trie$(C) framepac/trie.h
 trie_u32dbl$(OBJ):		trie_u32dbl$(C) template/trie.cc
@@ -635,7 +636,7 @@ framepac/trie.h:	framepac/config.h
 framepac/vecsim.h:	framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/vector.h:	framepac/object.h
+framepac/vector.h:	framepac/list.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/words.h:	framepac/bidindex.h framepac/file.h framepac/string.h

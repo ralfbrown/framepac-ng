@@ -22,7 +22,7 @@
 #ifndef __FrVECTOR_H_INCLUDED
 #define __FrVECTOR_H_INCLUDED
 
-#include "framepac/object.h"
+#include "framepac/list.h"
 
 namespace Fr {
 
@@ -367,6 +367,36 @@ class OneHotVector : public Vector<ValT>
    protected:
       IdxT m_index ;
       ValT m_value ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+template <typename T>
+class VectorGroup
+   {
+   public:
+      VectorGroup() ;
+      VectorGroup(const VectorGroup&) ;
+      ~VectorGroup() ;
+
+      void clear() ;
+      bool addMembers(List* newmembers) ;
+      bool addMember(T* v) ;
+      void trimMembers(bool clear_cluster_membership = false) ;
+      void setCentroid(T* c) { m_centroid = c ; }
+      bool merge(VectorGroup* other, bool sum_sizes) ;
+
+      // accessors
+      T* centroid() const { return m_centroid ; }
+      size_t size() const { return m_size ; }
+      size_t capacity() const { return m_capacity ; }
+      const T** members() const { return m_vectors ; }
+      
+   protected:
+      T**    m_vectors ;
+      T*     m_centroid ;
+      size_t m_size ;			// number of vectors in group
+      size_t m_capacity ;		// size of vector array
    } ;
 
 //----------------------------------------------------------------------------
