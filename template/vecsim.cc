@@ -635,7 +635,7 @@ double cocogaston_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOp
    typename VecT1::value_type common, v1_only, v2_only ;
    contingency_table(v1,v2,opt,common,v1_only,v2_only) ;
    typename VecT1::value_type dif(v1_only + v2_only) ;
-   if (common + dif)
+   if (common + dif == 0)
       return 1.0 ;			// all-zero vectors are defined to be identical
    return dif / (2.0 * common + dif) ;
 }
