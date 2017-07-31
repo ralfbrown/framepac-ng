@@ -87,10 +87,38 @@ bool CognateData::save(const char* /*filename*/)
 
 //----------------------------------------------------------------------------
 
-bool CognateData::areCognate(char /*letter1*/, char /*letter2*/, bool /*casefold*/) const
+bool CognateData::setCognateScoring(const char* /*cognates*/)
 {
 
    return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool CognateData::setOne2ManyScore(char /*source*/, const char* /*targets*/)
+{
+
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool CognateData::setMany2OneScore(const char* /*sources*/, char /*target*/)
+{
+
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool CognateData::areCognate(char letter1, char letter2, bool casefold) const
+{
+   if (casefold)
+      {
+      letter1 = tolower(letter1) ;
+      letter2 = tolower(letter2) ;
+      }
+   return m_one2one[(unsigned)letter1][(unsigned)letter2] != 0 ;
 }
 
 //----------------------------------------------------------------------------

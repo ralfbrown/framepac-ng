@@ -60,7 +60,10 @@ class CognateData
       // configuration
       void casefold(bool fold) { m_casefold = fold ; }
       bool casefold() const { return m_casefold ; }
-
+      bool setCognateScoring(const char* cognates) ;
+      bool setOne2ManyScore(char source, const char* targets) ;
+      bool setMany2OneScore(const char* sources, char target) ;
+      
       void relativeToShorter(bool rel) { m_rel_to_shorter = rel ; m_rel_to_average = false ; }
       void relativeToAverage(bool rel) { m_rel_to_average = rel ; m_rel_to_shorter = false ; }
       void defaultScoring() { m_rel_to_average = false ; m_rel_to_shorter = false ; }
@@ -73,11 +76,12 @@ class CognateData
 	 CognateAlignment** align = nullptr) const ;
 
    protected:
-      uint8_t m_one2one[256][256] ;
-      char* m_one2many[256] ;
-      char* m_many2one[256] ;
-      char** m_many2many ;
-      size_t m_many2many_count ;
+      uint8_t m_one2one[256][256] ;	// similarity scores for all single-char X->Y mappings
+      char* m_one2many[256] ;		// pointers to X->YY mappings for each X
+      char* m_many2one[256] ;		// pointers to XX->Y mappings for each Y
+      char** m_many2many ;		// info about XX->YY mappings
+      size_t m_many2many_count ;	// how many XX->YY mappings we have
+      size_t m_longest_source ;		// longest many-to-X mapping, determines how much buffer we need
       char* m_fwdbuffer ;
       char* m_revbuffer ;
       bool  m_casefold ;
