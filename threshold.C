@@ -21,6 +21,35 @@
 
 #include "framepac/threshold.h"
 
+namespace Fr
+{
 
+/************************************************************************/
+/************************************************************************/
+
+ThresholdList::ThresholdList(const char* threshold_filename, double def_threshold)
+   : m_defthresh(def_threshold)
+{
+   if (threshold_filename && *threshold_filename)
+      {
+      //TODO
+
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ThresholdList::~ThresholdList()
+{
+//TODO
+   return  ;
+}
+
+//----------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------
+
+} // end namespace Fr
 
 // end of file threshold.h //

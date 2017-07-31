@@ -28,9 +28,14 @@ namespace Fr
 class ThresholdList
    {
    public:
+      ThresholdList(double def_threshold = 0.0) : m_defthresh(def_threshold) {}
+      ThresholdList(const char* threshold_filename, double def_threshold) ;
+      ~ThresholdList() ;
+
+      double defaultThreshold() const { return m_defthresh ; }
 
    protected:
-      
+      double m_defthresh ;
    } ;
 
 } // end namespace Fr
