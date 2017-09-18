@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-08					*/
+/* Version 0.01, last edit 2017-09-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -23,6 +23,20 @@
 using namespace std ;
 using namespace FramepaC ;
 
+/************************************************************************/
+/************************************************************************/
+
+#if __cplusplus__ >= 201700
+#define FALLTHROUGH [[fallthrough]]
+#elif defined(__GNUC__)
+#define FALLTHROUGH [[gnu::fallthrough]]
+#else
+#define FALLTHROUGH
+#endif
+
+/************************************************************************/
+/************************************************************************/
+
 namespace FramepaC
 {
 
@@ -42,6 +56,7 @@ uint64_t fasthash64(const void* data, size_t len, uint64_t seed)
       {
       case 7:
 	 value = ((uint64_t)ptr2[6]) << 48 ;
+	 FALLTHROUGH ;
       case 6:
 	 value |= ((uint64_t)*((uint16_t*)(ptr2+4))) << 40 ;
 	 value |= *((uint32_t*)ptr2) ;
@@ -49,17 +64,21 @@ uint64_t fasthash64(const void* data, size_t len, uint64_t seed)
 	 break ;
       case 5:
 	 value |= ((uint64_t)ptr2[4]) << 32 ;
+	 FALLTHROUGH ;
       case 4:
 	 value |= *((uint32_t*)ptr2) ;
 	 state = fasthash64_add(state,value) ;
 	 break ;
       case 3:
 	 value = ((uint64_t)ptr2[2]) << 16 ;
+	 FALLTHROUGH ;
       case 2:
 	 value |= ((uint64_t)ptr2[1]) << 8 ;
+	 FALLTHROUGH ;
       case 1:
 	 value |= ((uint64_t)ptr2[0]) ;
 	 state = fasthash64_add(state,value) ;
+	 FALLTHROUGH ;
       case 0:
 	 break ;
       }

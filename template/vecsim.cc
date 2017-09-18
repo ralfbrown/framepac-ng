@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.01, last edit 2017-09-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -1299,7 +1299,7 @@ double binary_lennon_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarit
    double total2(both + v2_only) ;
    double denom(total1 + total2) ;
    // all-zero vectors are defined to be identical
-   return denom ? (2.0 * std::abs(v1_only - v2_only) / denom) : 0.0 ;
+   return denom ? (2.0 * std::abs((ssize_t)(v1_only - v2_only)) / denom) : 0.0 ;
 }
 
 //============================================================================
@@ -1600,7 +1600,7 @@ double binary_modgini_sim(const VecT1* v1, const VecT2* v2, const VectorSimilari
    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
    double N(both + v1_only + v2_only + neither) ;
    double prod((both+v1_only)/N*(both+v2_only)/N) ;
-   return (both/N - prod) / (1.0 - std::abs(v1_only-v2_only)/(2.0*N) - prod) ;
+   return (both/N - prod) / (1.0 - std::abs((ssize_t)(v1_only-v2_only))/(2.0*N) - prod) ;
 }
 
 //============================================================================

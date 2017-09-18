@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-20					*/
+/* Version 0.02, last edit 2017-09-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -496,6 +496,8 @@ static Object* read_generic_object(const ObjectReader* /*reader*/, CharGetter& g
       {
       return TermCountVector::read(getter,size_hint) ;
       }
+#else
+   (void)size_hint; //suppress unused-arg warning
 #endif /* FIXME */
    //TODO: check list of registered readers for any additional user-defined types
 

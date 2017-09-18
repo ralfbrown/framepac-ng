@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-10					*/
+/* Version 0.01, last edit 2017-09-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -1492,8 +1492,10 @@ template <typename KeyT, typename ValT>
 HashTable<KeyT,ValT>::HashTable(const HashTable &ht)
    : HashTableBase(), m_table(nullptr)
 {
+#if __GNUC__ < 6
    if (&ht == nullptr)
       return ;
+#endif
    init(ht.maxSize()) ;
    Table *table = m_table.load() ;
    Table *othertab = ht.m_table.load() ;
