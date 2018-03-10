@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-22					*/
+/* Version 0.02, last edit 2018-03-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2015,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2015,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -24,6 +24,7 @@
 #include <sstream>
 #include <unordered_set>
 #include "framepac/argparser.h"
+#include "framepac/fasthash64.h"
 #include "framepac/hashtable.h"
 #include "framepac/message.h"
 #include "framepac/random.h"
@@ -41,10 +42,6 @@ using namespace Fr ;
 //   of the chains in the hash array
 #define SHOW_CHAINS
 #define SHOW_LOST_CHAINS
-
-// uncomment the following line to show the population densities within
-//   the search window around each location in the hash array
-#define SHOW_NEIGHBORHOODS
 
 #define INTEGER_TYPE uint32_t
 
@@ -81,7 +78,8 @@ enum Operation
    Op_RANDOM_LOWREMOVE,
    Op_RANDOM_NOREMOVE,
    Op_RANDOM_ADDONLY,
-   Op_RECLAIM
+   Op_RECLAIM,
+   Op_THROUGHPUT			// timed throughput test a la Herlihy et al
 } ;
 
 typedef void HashRequestFunc(class HashRequestOrder*) ;
@@ -98,6 +96,7 @@ class HashRequestOrder
       size_t	  slice_size ;
       size_t	  current_cycle ;
       size_t	  total_ops ;
+      size_t	  lookup_frac ;
       bool	  m_verbose ;
       atom_bool   m_terse ;
       bool	  strict ;		// check results?
@@ -304,6 +303,14 @@ class STLset : public unordered_set<INTEGER_TYPE>
    } ;
 
 /************************************************************************/
+/*	Global variables for this module				*/
+/************************************************************************/
+
+static volatile bool stop_run { false } ;
+static bool show_neighbors { false } ;
+static int time_limit { 4 } ;
+      
+/************************************************************************/
 /*	Syntactic sugar for conditional compilation			*/
 /************************************************************************/
 
@@ -427,9 +434,10 @@ static void hash_add(HashRequestOrder* order)
    KeyT* syms  = (KeyT*)order->syms ;
    for (size_t i = order->slice_start ; i < slice_end ; ++i)
       {
-      if (ht->add(syms[i]))
+      KeyT sym = syms[i] ;
+      if (ht->add(sym))
 	 {
-	 err_msg("a symbol already in the table:",order->id,syms[i]) ;
+	 err_msg("symbol already in the table:",order->id,sym) ;
 	 }
       }
    return ;
@@ -449,9 +457,10 @@ static void hash_check(HashRequestOrder* order)
       {
       for (size_t i = order->slice_start ; i < slice_end ; ++i)
 	 {
-	 if (ht->contains(syms[i]))
+	 KeyT sym = syms[i] ;
+	 if (ht->contains(sym))
 	    {
-	    err_msg("spurious symbol",order->id,syms[i]) ;
+	    err_msg("spurious symbol",order->id,sym) ;
 	    }
 	 }
       }
@@ -459,9 +468,10 @@ static void hash_check(HashRequestOrder* order)
       {
       for (size_t i = order->slice_start ; i < slice_end ; ++i)
 	 {
-	 if (!ht->contains(syms[i]) && order->strict)
+	 KeyT sym = syms[i] ;
+	 if (!ht->contains(sym) && order->strict)
 	    {
-	    err_msg("missing symbol",order->id,syms[i]) ;
+	    err_msg("missing symbol",order->id,sym) ;
 	    }
 	 }
       }
@@ -592,6 +602,58 @@ static void hash_random_add(HashRequestOrder* order)
 
 //----------------------------------------------------------------------
 
+template <class HashT, typename KeyT>
+static void hash_throughput(HashRequestOrder* order)
+{
+   my_job_id = order->id ;
+   HashT* ht = (HashT*)order->ht ;
+   KeyT* keys1 = (KeyT*)order->syms + order->slice_start ;
+   KeyT* keys2 = (KeyT*)order->syms + order->size + order->slice_start ;
+   KeyT* lookup_keys1 = keys1 ;
+   KeyT* lookup_keys2 = keys2 ;
+   size_t lookup_frac = order->lookup_frac ;
+   size_t modify_frac = (100 - lookup_frac) / 2 ;
+   // test like in Herlihy et al:
+   //   insert/remove (100-N) elements
+   //   lookup N elements which are in the table and N which are not
+   //   swap in-table and not-in-table arrays once the slice is exhausted
+   //   loop until 'stop' variable is set by main thread
+   size_t modify_offset = 0 ;
+   size_t lookup_offset = order->slice_size-1 ;
+   while (!stop_run)
+      {
+      for (size_t i = 0 ; i < modify_frac ; ++i)
+	 {
+	 (void)ht->remove(keys1[modify_offset]) ;
+	 (void)ht->add(keys2[modify_offset]) ;
+	 if (++modify_offset >= order->slice_size)
+	    {
+	    std::swap(keys1,keys2) ;
+	    modify_offset = 0 ;
+	    }
+	 }
+      modify_offset += modify_frac ;
+      for (size_t i = 0 ; i < lookup_frac ; ++i)
+	 {
+	 if (lookup_offset-- == 0)
+	    {
+	    std::swap(lookup_keys1,lookup_keys2) ;
+	    lookup_offset = order->slice_size-1 ;
+	    }
+	 (void)ht->contains(lookup_keys1[lookup_offset]) ;
+	 (void)ht->contains(lookup_keys2[lookup_offset]) ;
+	 }
+      order->total_ops += 2 * (modify_frac + lookup_frac) ;
+      }
+   if (order->m_verbose)
+      {
+      print_msg(cout,";  Job %ld complete.\n",order->id) ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------
+
 template <class HashT>
 static void hash_dispatch(const void* input, void* /*output*/ )
 {
@@ -684,6 +746,7 @@ static void hash_test(ThreadPool* user_pool, ostream& out, size_t threads, size_
       ht->clearGlobalStats() ;
       ht->clearPerThreadStats() ;
       }
+   stop_run = false ;
    Timer timer ;
    for (size_t i = 0 ; i < slices ; ++i)
       {
@@ -703,6 +766,7 @@ static void hash_test(ThreadPool* user_pool, ostream& out, size_t threads, size_
       hashorders[i].slice_size = (i+1 < slices) ? slice_size : (maxsize - hashorders[i].slice_start) ;
       hashorders[i].extra_arg = 0 ;
       hashorders[i].total_ops = 0 ;
+      hashorders[i].lookup_frac = 0 ;
       switch (op)
 	 {
 	 case Op_NONE:
@@ -745,6 +809,11 @@ static void hash_test(ThreadPool* user_pool, ostream& out, size_t threads, size_
 	 case Op_RANDOM_ADDONLY:
 	    hashorders[i].func = hash_random_add<HashT,KeyT> ;
 	    break ;
+	 case Op_THROUGHPUT:
+	    hashorders[i].cycles = 1 ;
+	    hashorders[i].lookup_frac = (size_t)overhead ; // re-using parm to set fraction of lookups
+	    hashorders[i].func = hash_throughput<HashT,KeyT> ;
+	    break;
 	 default:
 	    SystemMessage::missed_case("hash_test") ;
 	 }
@@ -752,6 +821,12 @@ static void hash_test(ThreadPool* user_pool, ostream& out, size_t threads, size_
       }
    if (!terse)
       out << "  Waiting for thread completion" << endl ;
+   if (op == Op_THROUGHPUT)
+      {
+      overhead = 0 ;			// we re-used this parm to set the fraction of lookups
+      std::this_thread::sleep_for(std::chrono::seconds(cycles)) ;
+      stop_run = true ;
+      }
    tpool->waitUntilIdle() ;
    if (op == Op_NONE)
       {
@@ -771,7 +846,7 @@ static void hash_test(ThreadPool* user_pool, ostream& out, size_t threads, size_
    if (walltime > overhead) walltime -= overhead ;
    size_t ops = cycles * maxsize ;
    if (op == Op_RANDOM || op == Op_RANDOM_LOWREMOVE || op == Op_RANDOM_HIGHREMOVE ||
-       op == Op_RANDOM_NOREMOVE)
+       op == Op_RANDOM_NOREMOVE || op == Op_THROUGHPUT)
       {
       // sum up the per-thread counts of operations performed
       ops = 0 ;
@@ -1016,12 +1091,12 @@ void lost_chains(ostream& out, STLset* ht, size_t* chains, size_t max_chain)
 template <class HashT, typename KeyT>
 static void run_tests(size_t threads, size_t writethreads, size_t startsize, size_t maxsize,
 		      size_t cycles, KeyT* keys, uint32_t* randnums, ostream &out,
-		      bool terse)
+   		      bool terse, int throughput = -1, int timelimit = 4)
 {
    if_SHOW_CHAINS(size_t* chains[6]);
    if_SHOW_CHAINS(size_t max_chain[6]) ;
-   if_SHOW_NEIGHBORS(size_t* neighborhoods[5]) ;
-   if_SHOW_NEIGHBORS(size_t max_neighbors[5]) ;
+   size_t* neighborhoods[5] ;
+   size_t max_neighbors[5] ;
 
    HashT* ht = new HashT(startsize) ;
    ThreadPool tpool(threads) ;
@@ -1033,7 +1108,8 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
    out << "Filling hash table      " << endl ;
    hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_ADD,terse,overhead) ;
    if_SHOW_CHAINS(chains[0] = ht->chainLengths(max_chain[0]));
-   if_SHOW_NEIGHBORS(neighborhoods[0] = ht->neighborhoodDensities(max_neighbors[0])) ;
+   if (show_neighbors)
+      neighborhoods[0] = ht->neighborhoodDensities(max_neighbors[0]) ;
    out << "Lookups (100% present)  " << endl ;
    hash_test(&tpool,out,threads,cycles,ht,maxsize,keys,Op_CHECK,terse,overhead) ;
    out << "Lookups (50% present)   " << endl ;
@@ -1043,51 +1119,78 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
    swap_segments(keys,2*maxsize,threads) ;
    out << "Lookups (0% present)    " << endl ;
    hash_test(&tpool,out,threads,cycles,ht,maxsize,keys+maxsize,Op_CHECKMISS,terse,overhead) ;
+   if (throughput >= 0)
+      {
+      out << "Timed throughput test (10%) " << endl;
+      hash_test(&tpool,out,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,10,false,randnums) ;
+      out << "Timed throughput test (30%) " << endl;
+      hash_test(&tpool,out,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,30,false,randnums) ;
+      out << "Timed throughput test (50%) " << endl;
+      hash_test(&tpool,out,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,50,false,randnums) ;
+      out << "Timed throughput test (70%) " << endl;
+      hash_test(&tpool,out,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,70,false,randnums) ;
+      out << "Timed throughput test (90%) " << endl;
+      hash_test(&tpool,out,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,90,false,randnums) ;
+      if (throughput != 10 && throughput != 30 && throughput != 50 && throughput != 70 && throughput != 90)
+	 {
+	 out << "Timed throughput test (" << throughput << "%) " << endl;
+	 hash_test(&tpool,out,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,throughput,false,randnums) ;
+	 }
+      for (size_t i = 0 ; i < maxsize ; i++)
+	 {
+	 (void)ht->remove(keys[maxsize+i]) ;
+	 }
+      }
    out << "Emptying hash table     " << endl ;
-   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead) ;
-   out << "Lookups in empty table  " << endl ;
-   hash_test(&tpool,out,threads,cycles,ht,maxsize,keys,Op_CHECKMISS,terse,overhead) ;
-   delete ht ;
-   ht = new HashT(startsize) ;
-   out << "Random additions        " << endl ;
-   hash_test(&tpool,out,writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_ADDONLY,terse,overhead,true,
-	     randnums) ;
-   if_SHOW_CHAINS(chains[1] = ht->chainLengths(max_chain[1])) ;
-   out << "Emptying hash table     " << endl ;
-   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
-   delete ht ;
-   ht = new HashT(startsize) ;
-   out << "Random ops (del=1)      " << endl ;
-   hash_test(&tpool,out,writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
-	     randnums + maxsize/2 - 1) ;
-   if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
-   out << "Random ops (del=1,full) " << endl ;
-   hash_test(&tpool,out,writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
-	     randnums + maxsize/2 - 1) ;
-   if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
-   out << "Emptying hash table     " << endl ;
-   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
-   delete ht ;
-   ht = new HashT(startsize) ;
-   out << "Random ops (del=3)      " << endl ;
-   hash_test(&tpool,out,writethreads,cycles,ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
-	     randnums + maxsize - 1) ;
-   if_SHOW_CHAINS(chains[3] = ht->chainLengths(max_chain[3])) ;
-   if_SHOW_NEIGHBORS(neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1])) ;
-   out << "Emptying hash table     " << endl ;
-   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
-   delete ht  ;
-   ht = new HashT(startsize) ;
-   out << "Random ops (del=7)      " << endl ;
-   hash_test(&tpool,out,writethreads,cycles,ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
-	     randnums + maxsize - 1) ;
-   if_SHOW_CHAINS(chains[4] = ht->chainLengths(max_chain[4])) ;
-   if_SHOW_NEIGHBORS(neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1])) ;
-   out << "Emptying hash table     " << endl ;
-   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
-   if_SHOW_CHAINS(chains[5] = ht->chainLengths(max_chain[5])) ;
+   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,throughput < 0) ;
+   if (throughput < 0)
+      {
+      out << "Lookups in empty table  " << endl ;
+      hash_test(&tpool,out,threads,cycles,ht,maxsize,keys,Op_CHECKMISS,terse,overhead) ;
+      delete ht ;
+      ht = new HashT(startsize) ;
+      out << "Random additions        " << endl ;
+      hash_test(&tpool,out,writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_ADDONLY,terse,overhead,true,
+	 randnums) ;
+      if_SHOW_CHAINS(chains[1] = ht->chainLengths(max_chain[1])) ;
+      out << "Emptying hash table     " << endl ;
+      hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+      delete ht ;
+      ht = new HashT(startsize) ;
+      out << "Random ops (del=1)      " << endl ;
+      hash_test(&tpool,out,writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
+	 randnums + maxsize/2 - 1) ;
+      if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
+      out << "Random ops (del=1,full) " << endl ;
+      hash_test(&tpool,out,writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
+	 	randnums + maxsize/2 - 1) ;
+      if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
+      out << "Emptying hash table     " << endl ;
+      hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+      delete ht ;
+      ht = new HashT(startsize) ;
+      out << "Random ops (del=3)      " << endl ;
+      hash_test(&tpool,out,writethreads,cycles,ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
+	 randnums + maxsize - 1) ;
+      if_SHOW_CHAINS(chains[3] = ht->chainLengths(max_chain[3])) ;
+      if (show_neighbors)
+	 neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1]) ;
+      out << "Emptying hash table     " << endl ;
+      hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+      delete ht  ;
+      ht = new HashT(startsize) ;
+      out << "Random ops (del=7)      " << endl ;
+      hash_test(&tpool,out,writethreads,cycles,ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
+	 randnums + maxsize - 1) ;
+      if_SHOW_CHAINS(chains[4] = ht->chainLengths(max_chain[4])) ;
+      if (show_neighbors)
+	 neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1]) ;
+      out << "Emptying hash table     " << endl ;
+      hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+      if_SHOW_CHAINS(chains[5] = ht->chainLengths(max_chain[5])) ;
+      }
 #ifdef SHOW_CHAINS
-   if (!terse)
+   if (!terse && throughput < 0)
       {
       for (size_t i = 0 ; i < 6 ; i++)
 	 {
@@ -1098,8 +1201,7 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
       }
 #endif /* SHOW_CHAINS */
    delete ht ;
-#ifdef SHOW_NEIGHBORHOODS
-   if (!terse)
+   if (!terse && show_neighbors && throughput < 0)
       {
       for (size_t i = 0 ; i < 2 ; i++)
 	 {
@@ -1107,29 +1209,27 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
 	 delete [] neighborhoods[i] ;
 	 }
       }
-#endif /* SHOW_NEIGHBORHOODS */
    return  ;
 }
 
 //----------------------------------------------------------------------
 
 void hash_command(ostream &out, int threads, bool terse, uint32_t* randnums,
-		  size_t startsize, size_t maxsize, size_t cycles)
+		  size_t startsize, size_t maxsize, size_t cycles, int throughput)
 {
    out << "Parallel (threaded) Object Hash Table operations" << endl << endl ;
    Symbol** keys = new Symbol*[2*maxsize] ;
    // speed up symbol creation and avoid memory fragmentation by
    //  expanding the symbol table to hold all the symbols we will
    //  create
-   size_t needed = 2*maxsize ;//FIXME
-   needed *= 1.33 ; // gensyms tend to cluster in the table, since they are so similar in name
+   size_t needed = (size_t)(2.5*maxsize) ;
    SymbolTable* symtab = SymbolTable::create(needed) ;
    symtab->select() ;
    out << "Preparing symbols       " << endl ;
    hash_test(nullptr,out,threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_GENSYM,terse) ;
    out << "Checking symbols        " << endl ;
    hash_test(nullptr,out,threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_CHECKSYMS,terse) ;
-   run_tests<ObjHashTable>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse) ;
+   run_tests<ObjHashTable>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse,throughput,time_limit) ;
    symtab->free() ;
    delete[] keys ;
    return ;
@@ -1174,7 +1274,7 @@ static INTEGER_TYPE* gen_keys(ostream& out, size_t maxsize, size_t order, size_t
       }
    else if (order == 3)
       {
-      out << "\nGenerating keys spaced by " << stride << endl ;
+      out << "Generating keys spaced by " << stride << endl ;
       size_t val = 0 ;
       size_t adj = 1 ;
       for (size_t i = 0 ; i < 2*maxsize ; i++)
@@ -1190,17 +1290,25 @@ static INTEGER_TYPE* gen_keys(ostream& out, size_t maxsize, size_t order, size_t
 	    }
 	 }
       }
+   else if (order == 4)
+      {
+      out << "Generating keys by applying FastHash64 to sequence" << endl ;
+      for (size_t i = 0 ; i < 2*maxsize ; i++)
+	 {
+	 keys[i] = FramepaC::fasthash64_int(i) ;
+	 }
+      }
    return keys ;
 }
 
 //----------------------------------------------------------------------
 
 void stlset_command(ostream &out, int threads, bool terse, uint32_t* randnums, size_t startsize,
-		    size_t maxsize, size_t cycles, size_t order, size_t stride)
+		    size_t maxsize, size_t cycles, size_t order, size_t stride, int throughput)
 {
    out << "Parallel (threaded) STL integer unordered_set operations" << endl << endl ;
    INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride) ;
-   run_tests<STLset>(threads,STL_WRITE_THREADS,startsize,maxsize,cycles,keys,randnums,out,terse) ;
+   run_tests<STLset>(threads,STL_WRITE_THREADS,startsize,maxsize,cycles,keys,randnums,out,terse,throughput,time_limit) ;
    delete[] keys ;
    return ;
 }
@@ -1208,11 +1316,11 @@ void stlset_command(ostream &out, int threads, bool terse, uint32_t* randnums, s
 //----------------------------------------------------------------------
 
 void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, size_t startsize,
-		   size_t maxsize, size_t cycles, size_t order, size_t stride)
+   		   size_t maxsize, size_t cycles, size_t order, size_t stride, int throughput)
 {
    out << "Parallel (threaded) Integer Hash Table operations" << endl << endl ;
    INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride) ;
-   run_tests<HashSet_U32>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse) ;
+   run_tests<HashSet_U32>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse,throughput,time_limit) ;
    delete[] keys ;
    return ;
 }
@@ -1225,9 +1333,10 @@ int main(int argc, char** argv)
 //   const char* operation ;
    bool use_int_hashtable { false } ;
    bool use_STL_unorderedset { false } ;
+   int throughput { -1 } ;
    int threads { 0 } ;
-   size_t start_size { 8*1024*1024 } ;
-   size_t grow_size { 4*1024*1024 } ;
+   size_t start_size { 8000000 } ;   // as in Herlihy et al
+   size_t grow_size { 6000000 } ;    // 75% load factor
    size_t repetitions { 1 } ;
    size_t stride { 2 } ;
    int key_order { 1 } ;
@@ -1241,10 +1350,13 @@ int main(int argc, char** argv)
 //      .add(operation,"f","function","")
       .add(grow_size,"g","","")
       .add(threads,"j","threads","")
-      .add(key_order,"k","keys","key order: 0=seq, 1=random, 2=fixrandom, 3=stride",0,3)
+      .add(key_order,"k","keys","key order: 0=seq, 1=random, 2=fixrandom, 3=stride, 4=fasthash64",0,4)
+      .add(show_neighbors,"N","densities","show densities within neighborhoods of hash buckets")
       .add(repetitions,"r","reps","number of repetitions to run")
       .add(start_size,"s","initsize","initial size of hash table")
       .add(stride,"S","stride","")
+      .add(throughput,"T","throughput","do a timed throughput test with N% loookups",0,100)
+      .add(time_limit,"","time","set time limit for time throughput tests",1,60)
       .addHelp("h","help","show usage summary") ;
    if (!cmdline_flags.parseArgs(argc,argv))
       {
@@ -1258,6 +1370,11 @@ int main(int argc, char** argv)
       {
       terse = true ;
       threads = -threads ;
+      }
+   if (throughput >= 0 && threads == 0)
+      {
+      cout << "Unable to perform throughput test single-threaded" << endl  ;
+      throughput = -1 ;
       }
    if (grow_size == 0)
       {
@@ -1274,12 +1391,12 @@ int main(int argc, char** argv)
 	 }
       if (use_STL_unorderedset)
 	 {
-	 stlset_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride) ;
+	 stlset_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride,throughput) ;
 	 }
       else if (use_int_hashtable)
-	 ihash_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride) ;
+	 ihash_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride,throughput) ;
       else
-	 hash_command(cout,threads,terse,randnums,start_size,grow_size,repetitions) ;
+	 hash_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,throughput) ;
       delete[] randnums ;
       }
    return 0 ;

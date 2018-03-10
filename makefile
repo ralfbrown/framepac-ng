@@ -653,9 +653,9 @@ tests/argparser$(OBJ):	tests/argparser$(C) framepac/argparser.h
 tests/membench$(OBJ):	tests/membench$(C) framepac/argparser.h framepac/memory.h framepac/threadpool.h \
 			framepac/timer.h
 tests/objtest$(OBJ):	tests/objtest$(C) framepac/objreader.h framepac/symboltable.h
-tests/parhash$(OBJ):	tests/parhash$(C) framepac/argparser.h framepac/hashtable.h framepac/message.h \
-			framepac/random.h framepac/symboltable.h framepac/texttransforms.h framepac/threadpool.h \
-			framepac/timer.h
+tests/parhash$(OBJ):	tests/parhash$(C) framepac/argparser.h framepac/fasthash64.h framepac/hashtable.h \
+			framepac/message.h framepac/random.h framepac/symboltable.h framepac/texttransforms.h \
+			framepac/threadpool.h framepac/timer.h
 tests/stringtest$(OBJ):	tests/stringtest$(C) framepac/argparser.h framepac/string.h framepac/memory.h \
 			framepac/threadpool.h framepac/timer.h
 tests/tpool$(OBJ):	tests/tpool$(C) framepac/argparser.h framepac/random.h framepac/threadpool.h framepac/timer.h
