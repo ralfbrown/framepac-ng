@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2018-03-09					*/
+/* Version 0.02, last edit 2018-03-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -36,6 +36,10 @@
 #include "framepac/semaphore.h"
 #include "framepac/symbol.h"
 #include "framepac/synchevent.h"
+
+#ifdef FrHASHTABLE_USE_FASTHASH64
+#  include "framepac/fasthash64.h"
+#endif /* FrHASHTABLE_USE_FASTHASH64
 
 //#undef FrHASHTABLE_VERBOSITY
 //#define FrHASHTABLE_VERBOSITY 2
@@ -1091,10 +1095,16 @@ Fr::ThreadInitializer<HashTable<KeyT,ValT> > HashTable<KeyT,ValT>::initializer ;
 //----------------------------------------------------------------------
 // specializations: integer keys
 
+#ifdef FrHASHTABLE_USE_FASTHASH64
+#  define FrHASHTABLE_INT_HASH(k) (size_t)FramepaC::fasthash64_int(k)
+#else
+#  define FrHASHTABLE_INT_HASH(k) ((size_t)k)
+#endif /* FrHASHTABLE_USE_FASTHASH64 */
+
 #define FrMAKE_INTEGER_HASHTABLE_CLASS(NAME,K,V) \
 \
 template <> \
-inline size_t HashTable<K,V>::hashVal(const K key) const { return (size_t)key ; } \
+inline size_t HashTable<K,V>::hashVal(const K key) const { return FrHASHTABLE_INT_HASH(key) ; } \
 \
 template <> \
 inline bool HashTable<K,V>::isEqual(const K key1, const K key2) const \

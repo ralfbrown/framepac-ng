@@ -58,6 +58,10 @@ using namespace std ;
 //   value are 64 bits)
 #define FrHASHTABLE_INTERLEAVED_ENTRIES
 
+// uncomment the following line to pass integer keys through FastHash64
+//   instead of using them as-is
+//#define FrHASHTABLE_USE_FASTHASH64
+
 /************************************************************************/
 /************************************************************************/
 
