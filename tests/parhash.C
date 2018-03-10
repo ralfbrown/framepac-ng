@@ -1223,14 +1223,14 @@ void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, si
 int main(int argc, char** argv)
 {
 //   const char* operation ;
-   bool use_int_hashtable ;
-   bool use_STL_unorderedset ;
+   bool use_int_hashtable { false } ;
+   bool use_STL_unorderedset { false } ;
    int threads { 0 } ;
-   size_t start_size { 1 } ;
-   size_t grow_size ;
+   size_t start_size { 8*1024*1024 } ;
+   size_t grow_size { 4*1024*1024 } ;
    size_t repetitions { 1 } ;
    size_t stride { 2 } ;
-   int key_order { 0 } ;
+   int key_order { 1 } ;
    bool terse = false ;
 
    Fr::Initialize() ;
