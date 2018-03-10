@@ -38,6 +38,9 @@ using namespace Fr ;
 /************************************************************************/
 /************************************************************************/
 
+// uncomment the following line to enable testing the Herlihy et al (2008) Hopscotch hash table
+#define TEST_HOPSCOTCH
+
 // uncomment the following line to show statistcs on the lengths
 //   of the chains in the hash array
 #define SHOW_CHAINS
@@ -59,6 +62,20 @@ using namespace Fr ;
 #else
 # define STL_WRITE_THREADS 1
 #endif
+
+/************************************************************************/
+/************************************************************************/
+
+#ifdef TEST_HOPSCOTCH
+
+// typedefs used by HopscotchHashMap
+typedef uint32_t _u32 ;
+#define inline_ inline
+// functions used by HopscotchHashMap (forward declarations)
+static int first_msb_bit_indx(INTEGER_TYPE) ;
+#include "hopscotch/HopscotchHashMap.h"
+
+#endif /* TEST_HOPSCOTCH */
 
 /************************************************************************/
 /*	Type declarations						*/
@@ -237,6 +254,8 @@ class ScopedWriteLock
 #endif /* STL_MUTEX */
    } ;
    
+//----------------------------------------------------------------------
+
 class STLset : public unordered_set<INTEGER_TYPE>
    {
    public:
@@ -301,6 +320,116 @@ class STLset : public unordered_set<INTEGER_TYPE>
    private:
       RWLock m_lock ;
    } ;
+
+//----------------------------------------------------------------------
+
+#ifdef TEST_HOPSCOTCH
+
+// adapter to API HopscotchHashMap expects its hashers to use
+class HopscotchHASH
+   {
+   public:
+      static const unsigned int _EMPTY_HASH ;
+      static const unsigned int _BUSY_HASH ;
+      static const INTEGER_TYPE _EMPTY_KEY ;
+      static const short _EMPTY_DATA ;
+
+      static unsigned int Calc(INTEGER_TYPE key) { return (unsigned int)(key) ; }
+      static bool IsEqual(INTEGER_TYPE key1, INTEGER_TYPE key2) { return key1 == key2 ; }
+      static void relocate_key_reference(INTEGER_TYPE volatile& key1, const INTEGER_TYPE volatile& key2)
+	 { key1 = key2 ; }
+      static void relocate_data_reference(short volatile &data1, const short volatile& data2)
+	 { data1 = data2 ; }
+      static void relocate_data_reference(short& data1, const short& data2)
+	 { data1 = data2 ; }
+      
+   } ;
+
+const INTEGER_TYPE HopscotchHASH::_EMPTY_KEY = (INTEGER_TYPE)(~0ULL) ;
+const short HopscotchHASH::_EMPTY_DATA = 0 ;
+const unsigned int HopscotchHASH::_EMPTY_HASH = ~0U ;
+const unsigned int HopscotchHASH::_BUSY_HASH = ~1U ;
+
+// adapter to API HopscotchHashMap expects its locks to use
+class HopscotchLock : public Fr::CriticalSection
+   {
+   public:
+      HopscotchLock() {}
+      ~HopscotchLock() {}
+      void init() {}
+      //inherited: void lock();
+      //inherited: void unlock();
+      bool tryLock() { return try_lock() ; }
+      bool isLocked() const { return locked() ; }
+   } ;
+
+// adapter to API HopscotchMap expects its memory allocator to use
+class HopscotchAllocator
+   {
+   public:
+      static void* byte_aligned_malloc(size_t n, size_t align = 64)
+	 {
+	    void* alloc;
+	    return posix_memalign(&alloc, align, n) ? nullptr : alloc ;
+	 }
+      static void byte_aligned_free(void* ptr) { free(ptr) ; }
+   } ;
+
+static int first_msb_bit_indx(INTEGER_TYPE val)
+{
+   return val ? __builtin_ffs(val) : -1 ;
+}
+      
+class HopscotchMap : public unordered_set<INTEGER_TYPE>
+   {
+   public:
+      HopscotchHashMap<INTEGER_TYPE,short,HopscotchHASH,HopscotchLock,HopscotchAllocator> ht ;
+   public:
+      HopscotchMap(size_t init_size) : ht(init_size)
+	 {
+	 }
+      ~HopscotchMap() = default ;
+
+      bool add(INTEGER_TYPE key) { (void)ht.putIfAbsent(key,0) ; return false; }
+      bool contains(INTEGER_TYPE key) { return ht.containsKey(key) ; }
+      bool remove(INTEGER_TYPE key) { (void)ht.remove(key) ; return false; }
+      size_t* chainLengths(size_t& max_length) const { max_length = 0 ; return nullptr ; }
+      size_t* neighborhoodDensities(size_t& num_densities) const { num_densities = 0 ; return nullptr ; }
+      static void threadInit() {}
+      void clearGlobalStats() {}
+      static void clearPerThreadStats() {}
+      void updateGlobalStats() {}
+      void reclaimDeletions(size_t, size_t) {}
+      size_t currentSize() const { return size() ; }
+      size_t countItems() const { return size() ; }
+      size_t countDeletedItems() const { return 0 ; }
+      size_t numberOfInsertions() const { return 0 ; }
+      size_t numberOfDupInsertions() const { return 0 ; }
+      size_t numberOfInsertionAttempts() const { return 0 ; }
+      size_t numberOfForwardedInsertions() const { return 0 ; }
+      size_t numberOfResizeInsertions() const { return 0 ; }
+      size_t numberOfContainsCalls() const { return 0 ; }
+      size_t numberOfSuccessfulContains() const { return 0 ; }
+      size_t numberOfForwardedContains() const { return 0 ; }
+      size_t numberOfLookups() const { return 0 ; }
+      size_t numberOfSuccessfulLookups() const { return 0 ; }
+      size_t numberOfForwardedLookups() const { return 0 ; }
+      size_t numberOfRemovals() const { return 0 ; }
+      size_t numberOfItemsRemoved() const { return 0 ; }
+      size_t numberOfForwardedRemovals() const { return 0 ; }
+      size_t numberOfResizes() const { return 0 ; }
+      size_t numberOfResizeAssists() const { return 0 ; }
+      size_t numberOfResizeWaits() const { return 0 ; }
+      size_t numberOfReclamations() const { return 0 ; }
+      size_t numberOfFullNeighborhoods() const { return 0 ; }
+      size_t numberOfSpins() const { return 0 ; }
+      size_t numberOfYields() const { return 0 ; }
+      size_t numberOfSleeps() const { return 0 ; }
+      size_t numberOfCASCollisions() const { return 0 ; }
+      size_t numberOfResizeCleanups() const { return 0 ; }
+   } ;
+
+#endif /* TEST_HOPSCOTCH */
 
 /************************************************************************/
 /*	Global variables for this module				*/
@@ -1063,6 +1192,15 @@ static void lost_chains(ostream& out, HashT* ht, size_t* chains, size_t max_chai
    return ;
 }
 
+#ifdef TEST_HOPSCOTCH
+template <>
+void lost_chains(ostream& out, HopscotchMap* ht, size_t* chains, size_t max_chain)
+{
+   (void)out; (void)ht; (void)chains; (void)max_chain;
+   return ;
+}
+#endif /* TEST_HOPSCOTCH */
+
 //----------------------------------------------------------------------
       
 template<>
@@ -1315,6 +1453,20 @@ void stlset_command(ostream &out, int threads, bool terse, uint32_t* randnums, s
 
 //----------------------------------------------------------------------
 
+#ifdef TEST_HOPSCOTCH
+void hopscotch_command(ostream &out, int threads, bool terse, uint32_t* randnums, size_t startsize,
+		       size_t maxsize, size_t cycles, size_t order, size_t stride, int throughput)
+{
+   out << "Parallel Hopscotch integer map operations" << endl << endl ;
+   INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride) ;
+   run_tests<HopscotchMap>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse,throughput,time_limit) ;
+   delete[] keys ;
+   return ;
+}
+#endif /* TEST_HOPSCOTCH */
+
+//----------------------------------------------------------------------
+
 void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, size_t startsize,
    		   size_t maxsize, size_t cycles, size_t order, size_t stride, int throughput)
 {
@@ -1333,6 +1485,7 @@ int main(int argc, char** argv)
 //   const char* operation ;
    bool use_int_hashtable { false } ;
    bool use_STL_unorderedset { false } ;
+   bool use_hopscotch { false } ;
    int throughput { -1 } ;
    int threads { 0 } ;
    size_t start_size { 8000000 } ;   // as in Herlihy et al
@@ -1347,6 +1500,9 @@ int main(int argc, char** argv)
    cmdline_flags
       .add(use_int_hashtable,"i","int","use integer-keyed hash table instead of Object-keyed")
       .add(use_STL_unorderedset,"I","stl","use STL unordered_set with integer keys, not FramepaC hashtable")
+#ifdef TEST_HOPSCOTCH
+      .add(use_hopscotch,"H","hopscotch","use Herlihy et al (2008) Hopscotch hash map with integer keys")
+#endif /* TEST_HOPSCOTCH */
 //      .add(operation,"f","function","")
       .add(grow_size,"g","","")
       .add(threads,"j","threads","")
@@ -1392,6 +1548,12 @@ int main(int argc, char** argv)
       if (use_STL_unorderedset)
 	 {
 	 stlset_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride,throughput) ;
+	 }
+      else if (use_hopscotch)
+	 {
+#ifdef TEST_HOPSCOTCH
+	 hopscotch_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride,throughput) ;
+#endif /* TEST_HOPSCOTCH */
 	 }
       else if (use_int_hashtable)
 	 ihash_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride,throughput) ;
