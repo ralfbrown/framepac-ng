@@ -85,7 +85,7 @@
 #  define INT16_MAX 32767
 #endif
 
-#define FrHASHTABLE_SEARCHRANGE 0x7FF
+#define FrHASHTABLE_SEARCHRANGE 0xFFE
 
 #ifdef FrHASHTABLE_STATS
 #  define if_HASHSTATS(x) x

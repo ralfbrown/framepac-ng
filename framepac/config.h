@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-16					*/
+/* Version 0.02, last edit 2018-03-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -47,8 +47,6 @@ using namespace std ;
 //   0 - completely silent except for critical errors
 //   1 - important messsages only
 //   2 - status messages
-//   3 - extra sanity checking
-//   4 - expensive sanity checking
 #define FrHASHTABLE_VERBOSITY 0
 
 // uncomment the following line to collect operational statistics (slightly slower)
@@ -76,7 +74,8 @@ constexpr int SLAB_SIZE = 4096 ;
 
 // number of slabs to allocate from the OS at once; higher values
 //   reduce OS overhead and reduce the wastage due to the need to
-//   align on the slab size, but may lead to wasted memory.
+//   align on the slab size, but may lead to wasted memory as a
+//   result of requesting more from the OS than actually needed.
 //   Setting this to one less than a power of two will make SlabGroups
 //   use up memory in powers of two
 // 4096 slabs of 4096 bytes = 16MB
