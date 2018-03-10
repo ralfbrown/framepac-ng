@@ -39,7 +39,7 @@
 
 #ifdef FrHASHTABLE_USE_FASTHASH64
 #  include "framepac/fasthash64.h"
-#endif /* FrHASHTABLE_USE_FASTHASH64
+#endif /* FrHASHTABLE_USE_FASTHASH64 */
 
 //#undef FrHASHTABLE_VERBOSITY
 //#define FrHASHTABLE_VERBOSITY 2
@@ -444,24 +444,6 @@ class HashTable : public HashTableBase
 	 swapValue(ValT) { return nullVal() ; }
 	 ALWAYS_INLINE static constexpr KeyT DELETED() {return (KeyT)~0UL ; } 
 
-	 // I/O
-#if FIXME
-	 ostream &printValue(ostream &output) const
-	    {
-	       output << m_key ;
-	       return output ;
-	    }
-	 char *displayValue(char *buffer) const
-	    {
-	       buffer = m_key.load().print(buffer) ;
-	       *buffer = '\0' ;
-	       return buffer ;
-	    }
-	 size_t displayLength() const
-	    {
-	       return m_key ? m_key->displayLength() : 3 ;
-	    }
-#endif /* FIXME */
       protected: // members
 	 Atomic<KeyT> m_key ;
 	 ValT         m_value[std::is_empty<ValT>::value ? 0 : 1] ;
@@ -637,10 +619,10 @@ class HashTable : public HashTableBase
 	 [[gnu::cold]] bool verify() const ;
 
 	 // ============= Object support =============
+	 ostream &printValue(ostream &output) const ;
 	 ostream &printKeyValue(ostream &output, KeyT key) const ;
 	 size_t keyDisplayLength(KeyT key) const ;
 	 char *displayKeyValue(char *buffer, KeyT key) const ;
-	 ostream &printValue(ostream &output) const ;
 	 char *displayValue(char *buffer) const ;
 	 // get size of buffer needed to display the string representation of the hash table
 	 // NOTE: will not be valid if there are any add/remove/resize calls between calling
@@ -1061,29 +1043,14 @@ class HashTable : public HashTableBase
       size_t size_() const { return currentSize() ; }
       size_t hashValue_() const { return 0 ; } //FIXME
 
+      virtual ostream &printValue(ostream &output) const { DELEGATE(printValue(output)) ; }
+
       // get size of buffer needed to display the string representation of the hash table
       // NOTE: will not be valid if there are any add/remove/resize calls between calling
       //   this function and using displayValue(); user must ensure locking if multithreaded
       size_t cStringLength_(size_t wrap_at, size_t indent) const { DELEGATE(cStringLength(wrap_at,indent)) ; }
-
-#if 0
-      virtual ostream& printValue(ostream &output) const { DELEGATE(printValue(output)) ; }
       virtual char* displayValue(char *buffer) const { DELEGATE(displayValue(buffer)) ; }
-      virtual bool expand(size_t incr)
-	 {
-	    if (incr < FrHASHTABLE_MIN_INCREMENT)
-	       incr = FrHASHTABLE_MIN_INCREMENT ;
-	    resizeTo(maxSize() + incr) ;
-	    return true ;
-	 }
-      virtual bool expandTo(size_t newsize)
-	 {
-	    if (newsize > maxSize())
-	       resizeTo(newsize) ;
-	    return true ;
-	 }
-#endif
-      
+
       //  =========== Debugging Support ============
       [[gnu::cold]] bool verify() const { DELEGATE(verify()) }
 
@@ -1355,7 +1322,7 @@ typename HashTable<KeyT,ValT>::const_iterator HashTable<KeyT,ValT>::cend() const
 // these need to be defined *after* the members of HashTableLocalIter due to the
 //  circular dependendy between the types
 
-#if 0
+#if 1
 template <typename KeyT, typename ValT>
 typename HashTable<KeyT,ValT>::local_iterator HashTable<KeyT,ValT>::begin(int bucket) const
 {
