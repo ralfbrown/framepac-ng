@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-09-18					*/
+/* Version 0.01, last edit 2018-03-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -76,7 +76,6 @@ namespace Fr {
 	 /*   successor table, then add the key to that table	*/	\
          if (!copyChain(bucketnum))					\
 	    {								\
-	    resizeCopySegments(1) ;					\
 	    waitUntilCopied(bucketnum) ;				\
 	    }								\
 	 /* help out with the copying in general */			\
@@ -103,7 +102,6 @@ namespace Fr {
 	 /*   successor table, so look for the key in that	*/	\
 	 /*   table instead of the current one			*/ 	\
 	 INCR_COUNT(counter) ;						\
-	 resizeCopySegments(1) ;					\
 	 waitUntilCopied(bucketnum) ;					\
 	 Table* nexttab = next() ;					\
 	 nexttab->announceTable() ;					\
@@ -293,7 +291,9 @@ void HashTable<KeyT,ValT>::Table::waitUntilCopied(size_t bucketnum)
    size_t loops = 0 ;
    while (!chainCopied(bucketnum))
       {
-      thread_backoff(loops) ;
+      // help out with the copying while waiting for the given bucket to be copied
+      if (!resizeCopySegments(1))
+	 thread_backoff(loops) ;
       }
    INCR_COUNT_if(loops,resize_wait) ;
    return  ;
@@ -453,11 +453,11 @@ void HashTable<KeyT,ValT>::Table::resizeCopySegment(size_t segnum)
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-void HashTable<KeyT,ValT>::Table::resizeCopySegments(size_t max_segs)
+bool HashTable<KeyT,ValT>::Table::resizeCopySegments(size_t max_segs)
 {
    // is there any work available to be stolen?
    if (!m_resizelock.load() || m_resizedone.load())
-      return ;
+      return false ;
    size_t total_segs = m_segments_total.load() ;
    // grab the current segment number and increment it so the next
    //   thread gets a different number; stop once all segments have
@@ -482,7 +482,7 @@ void HashTable<KeyT,ValT>::Table::resizeCopySegments(size_t max_segs)
 	 resizeCleanup() ;
 	 }
       }
-   return ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
