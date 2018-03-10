@@ -121,9 +121,11 @@ template <typename KeyT, typename ValT>
 inline void HashTable<KeyT,ValT>::Table::init(size_t size)
 {
    m_size = size ;
-   if (size < searchrange)
+   if (size < searchrange/2)
       m_fullsize = 2*size ;
-   else if (size < 16*searchrange)
+   else if (size < 2*searchrange)
+      m_fullsize = size + searchrange/4 ;
+   else if (size < 8*searchrange)
       m_fullsize = size + searchrange/2 ;
    else
       m_fullsize = size + searchrange ;
