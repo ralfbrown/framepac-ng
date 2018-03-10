@@ -135,17 +135,17 @@ inline void HashTable<KeyT,ValT>::Table::init(size_t size)
    m_resizedone.store(false) ;
    m_resizestarted.clear() ;
    m_resizepending.clear() ;
-   size_t num_segs = (m_fullsize + FrHASHTABLE_SEGMENT_SIZE - 1) / FrHASHTABLE_SEGMENT_SIZE ;
+   size_t num_segs = (capacity() + FrHASHTABLE_SEGMENT_SIZE - 1) / FrHASHTABLE_SEGMENT_SIZE ;
    m_resizepending.init(num_segs) ;
    m_segments_assigned.store((size_t)0) ;
    m_segments_total.store(num_segs) ;
    m_first_incomplete.store(size) ;
    m_last_incomplete.store(0) ;
    remove_fn = nullptr ;
-   if (m_fullsize > 0)
+   if (capacity() > 0)
       {
-      m_entries = new Entry[m_fullsize] ;
-      ifnot_INTERLEAVED(m_ptrs = new HashPtr[m_fullsize]) ;
+      m_entries = new Entry[capacity()] ;
+      ifnot_INTERLEAVED(m_ptrs = new HashPtr[capacity()]) ;
       if (!m_entries
 	  ifnot_INTERLEAVED(|| !m_ptrs)
 	 )
@@ -373,8 +373,8 @@ FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, Li
 {
    if (hint == FramepaC::NULLPTR) hint = 0 ;
    size_t max = searchrange ;
-   if (bucketnum + max > m_fullsize)
-      max = m_fullsize - bucketnum ;
+   if (bucketnum + max > capacity())
+      max = capacity() - bucketnum ;
    for (size_t i = hint ; i < max ; ++i)
       {
       HashPtr* hp = bucketPtr(bucketnum + i) ;
@@ -442,8 +442,8 @@ void HashTable<KeyT,ValT>::Table::resizeCopySegment(size_t segnum)
 {
    size_t bucketnum = segnum * FrHASHTABLE_SEGMENT_SIZE ;
    size_t endpos = (segnum + 1) * FrHASHTABLE_SEGMENT_SIZE ;
-   if (endpos > m_fullsize)
-      endpos = m_fullsize ;
+   if (endpos > capacity())
+      endpos = capacity() ;
    copyChains(bucketnum,endpos-1) ;
    // record the fact that we copied a segment
    m_resizepending.consume() ;
@@ -582,9 +582,9 @@ void HashTable<KeyT,ValT>::Table::resizeCleanup()
       {
       INCR_COUNT(resize_cleanup) ;
       bool complete = true ;
-      size_t first = m_fullsize ;
+      size_t first = capacity() ;
       size_t last = 0 ;
-      for (size_t i = first_incomplete ; i < last_incomplete && i < m_fullsize ; ++i)
+      for (size_t i = first_incomplete ; i < last_incomplete && i < capacity() ; ++i)
 	 {
 	 if (!chainCopied(i) && !copyChain(i))
 	    {
@@ -1028,10 +1028,9 @@ bool HashTable<KeyT,ValT>::Table::reclaimDeletions(size_t totalfrags, size_t fra
    return false ;
 #else
    if (totalfrags == 0) totalfrags = 1 ;
-   size_t per_fragment = (m_fullsize / totalfrags) + 1 ;
+   size_t per_fragment = (capacity() / totalfrags) + 1 ;
    size_t start_bucket = fragnum * per_fragment ;
-   size_t end_bucket = start_bucket + per_fragment ;
-   if (end_bucket > m_fullsize) end_bucket = m_fullsize ;
+   size_t end_bucket = std::min(start_bucket + per_fragment,capacity()) ;
    INCR_COUNT(reclaim) ;
    debug_msg("reclaimDeletions (thr %ld)\n",FramepaC::my_job_id) ;
    bool have_reclaimed = false ;
@@ -1177,7 +1176,7 @@ size_t HashTable<KeyT,ValT>::Table::countItems() const
    if (next())
       return next()->countItems() ;
    size_t count = 0 ;
-   for (size_t i = 0 ; i < m_fullsize ; ++i)
+   for (size_t i = 0 ; i < capacity() ; ++i)
       {
       if (activeEntry(i))
 	 count++ ;
@@ -1195,7 +1194,7 @@ size_t HashTable<KeyT,ValT>::Table::countItems(bool remove_dups)
       return next()->countItems(remove_dups) ;
    if (remove_dups)
       {
-      for (size_t i = 0 ; i < m_fullsize ; ++i)
+      for (size_t i = 0 ; i < capacity() ; ++i)
 	 {
 	 clearDuplicates(i) ;
 	 }
@@ -1212,7 +1211,7 @@ size_t HashTable<KeyT,ValT>::Table::countDeletedItems() const
    if (next())
       return next()->countDeletedItems() ;
    size_t count = 0 ;
-   for (size_t i = 0 ; i < m_fullsize ; ++i)
+   for (size_t i = 0 ; i < capacity() ; ++i)
       {
       if (bucketPtr(i)->inUse() && getKey(i) == Entry::DELETED())
 	 count++ ;
@@ -1252,7 +1251,7 @@ size_t* HashTable<KeyT,ValT>::Table::chainLengths(size_t &max_length) const
       lengths[i] = 0 ;
       }
    max_length = 0 ;
-   for (size_t i = 0 ; i < m_fullsize ; ++i)
+   for (size_t i = 0 ; i < capacity() ; ++i)
       {
       size_t len = bucket_size(i) ;
       if (len > max_length)
@@ -1277,17 +1276,17 @@ size_t* HashTable<KeyT,ValT>::Table::neighborhoodDensities(size_t &num_densities
       }
    // count up the active neighbors of the left-most entry in the hash array
    size_t density = 0 ;
-   for (size_t i = 0 ; i <= (size_t)searchrange && i < m_fullsize ; ++i)
+   for (size_t i = 0 ; i <= (size_t)searchrange && i < capacity() ; ++i)
       {
       if (activeEntry(i))
 	 ++density ;
       }
    ++densities[density] ;
-   for (size_t i = 1 ; i < m_fullsize ; ++i)
+   for (size_t i = 1 ; i < capacity() ; ++i)
       {
       // keep a rolling count of the active neighbors around the current point
       // did an active entry come into range on the right?
-      if (i + searchrange < m_fullsize && activeEntry(i+searchrange))
+      if (i + searchrange < capacity() && activeEntry(i+searchrange))
 	 ++density ;
       // did an active entry go out of range on the left?
       if (activeEntry(i-1))
@@ -1303,7 +1302,7 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::iterateVA(HashKeyValueFunc* func, std::va_list args) const
 {
    bool success = true ;
-   for (size_t i = 0 ; i < m_fullsize && success ; ++i)
+   for (size_t i = 0 ; i < capacity() && success ; ++i)
       {
       if (!activeEntry(i))
 	 continue ;
@@ -1335,7 +1334,7 @@ template <typename KeyT, typename ValT>
 List* HashTable<KeyT,ValT>::Table::allKeys() const
 {
    List* keys = nullptr ;
-   for (size_t i = 0 ; i < m_fullsize ; ++i)
+   for (size_t i = 0 ; i < capacity() ; ++i)
       {
       if (activeEntry(i))
 	 {
@@ -1352,7 +1351,7 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::verify() const
 {
    bool success = true ;
-   for (size_t i = 0 ; i < m_fullsize ; ++i)
+   for (size_t i = 0 ; i < capacity() ; ++i)
       {
       KeyT key = getKey(i) ;
       if (key != Entry::DELETED() && !contains(m_container->hashVal(key),key))
@@ -1414,7 +1413,7 @@ ostream &HashTable<KeyT,ValT>::Table::printValue(ostream &output) const
    FramepaC::initial_indent += 3 ; //strlen("#H(")
    size_t loc = FramepaC::initial_indent ;
    bool first = true ;
-   for (size_t i = 0 ; i < m_fullsize ; ++i)
+   for (size_t i = 0 ; i < capacity() ; ++i)
       {
       KeyT key = getKey(i) ;
       if (key == Entry::DELETED())
@@ -1441,7 +1440,7 @@ char* HashTable<KeyT,ValT>::Table::displayValue(char* buffer) const
 {
    strcpy(buffer,"#H(") ;
    buffer += 3 ;
-   for (size_t i = 0 ; i < m_fullsize ; ++i)
+   for (size_t i = 0 ; i < capacity() ; ++i)
       {
       KeyT key = getKey(i) ;
       if (key == Entry::DELETED())
@@ -1465,7 +1464,7 @@ size_t HashTable<KeyT,ValT>::Table::cStringLength(size_t wrap_at, size_t indent)
    if (wrap_at == 0) wrap_at = (size_t)~0 ;
    size_t dlength = indent + 4 ; // "#H(" prefix plus ")" trailer
    size_t currline = dlength ;
-   for (size_t i = 0 ; i < m_fullsize ; i++)
+   for (size_t i = 0 ; i < capacity() ; i++)
       {
       KeyT key = getKey(i) ;
       if (key == Entry::DELETED())
@@ -1499,7 +1498,7 @@ HashTable<KeyT,ValT>::HashTable(const HashTable &ht)
    init(ht.maxSize()) ;
    Table *table = m_table.load() ;
    Table *othertab = ht.m_table.load() ;
-   for (size_t i = 0 ; i < table->m_fullsize ; i++)
+   for (size_t i = 0 ; i < table->capacity() ; i++)
       {
       table->copyEntry(i,othertab) ;
       }
@@ -1551,7 +1550,7 @@ HashTable<KeyT,ValT>::~HashTable()
       {
       if (cleanup_fn)
 	 {
-	 for (size_t i = 0 ; i < table->m_fullsize ; ++i)
+	 for (size_t i = 0 ; i < table->capacity() ; ++i)
 	    {
 	    if (table->activeEntry(i))
 	       {
@@ -1562,7 +1561,7 @@ HashTable<KeyT,ValT>::~HashTable()
 	 }
       if (remove_fn)
 	 {
-	 for (size_t i = 0 ; i < table->m_fullsize ; ++i)
+	 for (size_t i = 0 ; i < table->capacity() ; ++i)
 	    {
 	    if (table->activeEntry(i))
 	       {
