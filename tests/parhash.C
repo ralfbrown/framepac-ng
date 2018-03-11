@@ -382,15 +382,18 @@ class HopscotchAllocator
 
 static int first_msb_bit_indx(INTEGER_TYPE val)
 {
-   return val ? __builtin_ffs(val) : -1 ;
+   return val ? __builtin_clz(val)-1 : -1 ;
 }
-      
+
+static int g_Hopscotch_Concurrency = 32 ;
+
 class HopscotchMap
    {
    public:
       HopscotchHashMap<INTEGER_TYPE,short,HopscotchHASH,HopscotchLock,HopscotchAllocator> ht ;
    public:
-      HopscotchMap(size_t init_size) : ht(init_size,64)
+      HopscotchMap(size_t init_size, size_t concur = g_Hopscotch_Concurrency)
+	 : ht(init_size,concur,64,false) //capacity,concurrency,cacheline,opt_cl
 	 {
 	 }
       ~HopscotchMap() = default ;
@@ -1463,7 +1466,8 @@ void stlset_command(ostream &out, int threads, bool terse, uint32_t* randnums, s
 void hopscotch_command(ostream &out, int threads, bool terse, uint32_t* randnums, size_t startsize,
 		       size_t maxsize, size_t cycles, size_t order, size_t stride, int throughput)
 {
-   out << "Parallel Hopscotch integer map operations" << endl << endl ;
+   out << "Parallel Hopscotch integer map operations (concurrency=" << g_Hopscotch_Concurrency << ")\n"
+       << endl ;
    INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride) ;
    run_tests<HopscotchMap>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse,throughput,time_limit) ;
    delete[] keys ;
@@ -1508,6 +1512,7 @@ int main(int argc, char** argv)
       .add(use_STL_unorderedset,"I","stl","use STL unordered_set with integer keys, not FramepaC hashtable")
 #ifdef TEST_HOPSCOTCH
       .add(use_hopscotch,"H","hopscotch","use Herlihy et al (2008) Hopscotch hash map with integer keys")
+      .add(g_Hopscotch_Concurrency,"C","concur","set concurrency of Hopscotch hash map",8,16384)
 #endif /* TEST_HOPSCOTCH */
 //      .add(operation,"f","function","")
       .add(grow_size,"g","","")

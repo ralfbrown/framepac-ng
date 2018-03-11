@@ -36,6 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // INCLUDE DIRECTIVES
 ////////////////////////////////////////////////////////////////////////////////
+#include <atomic>
 #include <cassert>
 #include <stdio.h>
 #include <limits.h>
@@ -59,7 +60,7 @@ private:
 	struct Bucket {
 		short				volatile _first_delta;
 		short				volatile _next_delta;
-		unsigned int	volatile _hash;
+	   	std::atomic<unsigned int> 	_hash;
 		_tKey				volatile _key;
 		_tData			volatile _data;
 
@@ -73,7 +74,7 @@ private:
 	};
 
 	struct Segment {
-		_u32 volatile	_timestamp;
+	   	_u32 volatile	_timestamp;
 		_tLock	      _lock;
 
 		void init() {
@@ -109,10 +110,6 @@ private:
 			Bucket* const		prev_key_bucket, 
 	   		const unsigned int 	/*hash*/) 
 	{
-		key_bucket->_hash  = _tHash::_EMPTY_HASH;
-		key_bucket->_key   = _tHash::_EMPTY_KEY;
-		key_bucket->_data  = _tHash::_EMPTY_DATA;
-
 		if(nullptr == prev_key_bucket) {
 			if (_NULL_DELTA == key_bucket->_next_delta)
 				from_bucket->_first_delta = _NULL_DELTA;
@@ -124,19 +121,23 @@ private:
 			else 
 				prev_key_bucket->_next_delta = (prev_key_bucket->_next_delta + key_bucket->_next_delta);
 		}
+		key_bucket->_key   = _tHash::_EMPTY_KEY;
+		key_bucket->_data  = _tHash::_EMPTY_DATA;
 
 		++(segment._timestamp);
 		key_bucket->_next_delta = _NULL_DELTA;
+		atomic_thread_fence(std::memory_order_seq_cst);
+		key_bucket->_hash  = _tHash::_EMPTY_HASH;
 	}
 	void add_key_to_begining_of_list(Bucket*	const     keys_bucket, 
-										      Bucket*	const		 free_bucket,
-												const unsigned int hash,
+					 Bucket*	const		 free_bucket,
+					 const unsigned int /*hash*/,
                                     const _tKey&		 key, 
                                     const _tData& 		 data) 
 	{
 		free_bucket->_data = data;
 		free_bucket->_key  = key;
-		free_bucket->_hash = hash;
+		//!!free_bucket->_hash = hash;
 
 		if(0 == keys_bucket->_first_delta) {
 			if(_NULL_DELTA == keys_bucket->_next_delta)
@@ -144,25 +145,22 @@ private:
 			else
 				free_bucket->_next_delta = (short)((keys_bucket +  keys_bucket->_next_delta) -  free_bucket);
 			keys_bucket->_next_delta = (short)(free_bucket - keys_bucket);
-			assert(keys_bucket->_next_delta != 0);
 		} else {
 			if(_NULL_DELTA ==  keys_bucket->_first_delta)
 				free_bucket->_next_delta = _NULL_DELTA;
 			else
 				free_bucket->_next_delta = (short)((keys_bucket +  keys_bucket->_first_delta) -  free_bucket);
 			keys_bucket->_first_delta = (short)(free_bucket - keys_bucket);
-			assert(keys_bucket->_next_delta != 0);
 		}
 	}
 
 	void add_key_to_end_of_list(Bucket* const      keys_bucket, 
                                Bucket* const		  free_bucket,
-                               const unsigned int hash,
+	   		       const unsigned int hash,
                                const _tKey&		  key, 
 										 const _tData&		  data,
                                Bucket* const		  last_bucket)
 	{
-	   assert(free_bucket != keys_bucket);
 		free_bucket->_data		 = data;
 		free_bucket->_key			 = key;
 		free_bucket->_hash		 = hash;
@@ -173,7 +171,6 @@ private:
 		else
 		   {
 			last_bucket->_next_delta = (short)(free_bucket - last_bucket);
-			assert(last_bucket->_next_delta != 0);
 		   }
 	}
 
@@ -191,13 +188,12 @@ private:
 					if( curr_delta < 0 || curr_delta > _cache_mask ) {
 						_tHash::relocate_data_reference(free_bucket->_data, relocate_key->_data);
 						_tHash::relocate_key_reference(free_bucket->_key, relocate_key->_key);
-						free_bucket->_hash  = relocate_key->_hash;
+						free_bucket->_hash.store(relocate_key->_hash) ;
 
 						if(_NULL_DELTA == relocate_key->_next_delta)
 							free_bucket->_next_delta = _NULL_DELTA;
 						else
 							free_bucket->_next_delta = (short)( (relocate_key + relocate_key->_next_delta) - free_bucket );
-						assert(free_bucket->_next_delta != 0);
 
 						if(nullptr == relocate_key_last)
 							opt_bucket->_first_delta = (short)( free_bucket - opt_bucket );
@@ -205,10 +201,11 @@ private:
 							relocate_key_last->_next_delta = (short)( free_bucket - relocate_key_last );
 
 						++(segment._timestamp);
-						relocate_key->_hash			= _tHash::_EMPTY_HASH;
 						_tHash::relocate_key_reference(relocate_key->_key, _tHash::_EMPTY_KEY);
 						_tHash::relocate_data_reference(relocate_key->_data, _tHash::_EMPTY_DATA);
 						relocate_key->_next_delta	= _NULL_DELTA;
+						atomic_thread_fence(std::memory_order_seq_cst);
+						relocate_key->_hash			= _tHash::_EMPTY_HASH;
 						return;
 					}
 
@@ -229,8 +226,7 @@ public:// Ctors ................................................................
 				_u32 concurrencyLevel	   = 16,			//num of updating threads
 				_u32 cache_line_size       = 64,			//Cache-line size of machine
 				bool is_optimize_cacheline = true)		
-	   :	_segmentShift ( CalcDivideShift(NearestPowerOfTwo(concurrencyLevel/(NearestPowerOfTwo(concurrencyLevel)))-1) ),
-		_segmentMask  ( NearestPowerOfTwo(concurrencyLevel) - 1),
+	   :	_segmentMask  ( NearestPowerOfTwo(concurrencyLevel) - 1),
 		_cache_mask					( (cache_line_size / sizeof(Bucket)) - 1 ),
 		_is_cacheline_alignment	( is_optimize_cacheline )
 	{
@@ -272,21 +268,21 @@ public:// Ctors ................................................................
 
      //go over the list and look for key
 		unsigned int start_timestamp;
-      do {
-			start_timestamp = segment._timestamp;
-			const Bucket* curr_bucket( &(_table[hash & _bucketMask]) );
-			short next_delta( curr_bucket->_first_delta );
-         while( _NULL_DELTA != next_delta ) {
-				curr_bucket += next_delta;
-				if(hash == curr_bucket->_hash && _tHash::IsEqual(key, curr_bucket->_key))
-					return true;
-				next_delta = curr_bucket->_next_delta;
-				assert(next_delta != 0);
-			}
-		} while(start_timestamp != segment._timestamp);
+		do {
+		   start_timestamp = segment._timestamp;
+		   const Bucket* curr_bucket( &(_table[hash & _bucketMask]) );
+		   short next_delta( curr_bucket->_first_delta );
+		   while (_NULL_DELTA != next_delta)
+		      {
+		      curr_bucket += next_delta;
+		      if(hash == curr_bucket->_hash && _tHash::IsEqual(key, curr_bucket->_key))
+			 return true;
+		      next_delta = curr_bucket->_next_delta;
+		      }
+		   } while(start_timestamp != segment._timestamp);
 
 		return false;
-	}
+	   }
 
 	//modification Operations ...................................................
 	inline_ _tData putIfAbsent(const _tKey& key, const _tData& data) {
@@ -311,20 +307,37 @@ public:// Ctors ................................................................
 			next_delta = compare_bucket->_next_delta;
 		}
 
+		//RDB: There is a serious data race in the original
+		//       code, because the search for a free bucket
+		//       extends up to SHRT_MAX-1 entries into the
+		//       adjacent segments.  As a result, another
+		//       thread may be modifying the first and last
+		//       SHRT_MAX-1 entries of the current segment,
+		//       even though we hold the lock on it!
+		//    The easier solution is to make _hash atomic
+		//       and CAS it from EMPTY to the hash value;
+		//       a more efficient solution is to do so only
+		//       for the boundary buckets, and use simple
+		//       relaxed loads and stores otherwise.
+
 		//try to place the key in the same cache-line
 		if(_is_cacheline_alignment) {
 			Bucket*	free_bucket( start_bucket );
 			Bucket*	start_cacheline_bucket(get_start_cacheline_bucket(start_bucket));
 			Bucket*	end_cacheline_bucket(start_cacheline_bucket + _cache_mask);
 			do {
-				if( _tHash::_EMPTY_HASH == free_bucket->_hash ) {
-					add_key_to_begining_of_list(start_bucket, free_bucket, hash, key, data);
-					segment._lock.unlock();
-					return _tHash::_EMPTY_DATA;
-				}
-				++free_bucket;
-				if(free_bucket > end_cacheline_bucket)
-					free_bucket = start_cacheline_bucket;
+			   //!!if( _tHash::_EMPTY_HASH == free_bucket->_hash )
+			   unsigned int expected = _tHash::_EMPTY_HASH ;
+			   if (/*free_bucket->_hash.load(std::memory_order_relaxed) == expected &&*/
+			      free_bucket->_hash.compare_exchange_strong(expected,hash) )
+			      {
+			      add_key_to_begining_of_list(start_bucket, free_bucket, hash, key, data);
+			      segment._lock.unlock();
+			      return _tHash::_EMPTY_DATA;
+			      }
+			   ++free_bucket;
+			   if(free_bucket > end_cacheline_bucket)
+			      free_bucket = start_cacheline_bucket;
 			} while(start_bucket != free_bucket);
 		}
 
@@ -334,28 +347,38 @@ public:// Ctors ................................................................
 		if(max_bucket > last_table_bucket)
 			max_bucket = last_table_bucket;
 		Bucket* free_max_bucket( start_bucket + (_cache_mask + 1) );
-		while (free_max_bucket <= max_bucket) {
-			if( _tHash::_EMPTY_HASH == free_max_bucket->_hash ) {
-				add_key_to_end_of_list(start_bucket, free_max_bucket, hash, key, data, last_bucket);
-				segment._lock.unlock();
-				return _tHash::_EMPTY_DATA;
-			}
-			++free_max_bucket;
-		}
+		while (free_max_bucket <= max_bucket)
+		   {
+		   //!!if( _tHash::_EMPTY_HASH == free_max_bucket->_hash )
+		   unsigned int expected = _tHash::_EMPTY_HASH ;
+		   if (/*free_max_bucket->_hash.load(std::memory_order_relaxed) == expected &&*/
+		      free_max_bucket->_hash.compare_exchange_strong(expected,hash) )
+		      {
+		      add_key_to_end_of_list(start_bucket, free_max_bucket, hash, key, data, last_bucket);
+		      segment._lock.unlock();
+		      return _tHash::_EMPTY_DATA;
+		      }
+		   ++free_max_bucket;
+		   }
 
 		//place key in arbitrary free backward bucket
 		Bucket* min_bucket( start_bucket - (SHRT_MAX-1) );
 		if(min_bucket < _table)
 			min_bucket = _table;
 		Bucket* free_min_bucket( start_bucket - (_cache_mask + 1) );
-		while (free_min_bucket >= min_bucket) {
-			if( _tHash::_EMPTY_HASH == free_min_bucket->_hash ) {
-				add_key_to_end_of_list(start_bucket, free_min_bucket, hash, key, data, last_bucket);
-				segment._lock.unlock();
-				return _tHash::_EMPTY_DATA;
-			}
-			--free_min_bucket;
-		}
+		while (free_min_bucket >= min_bucket)
+		   {
+		   //if( _tHash::_EMPTY_HASH == free_min_bucket->_hash )
+		   unsigned int expected = _tHash::_EMPTY_HASH ;
+		   if (/*free_min_bucket->_hash.load(std::memory_order_relaxed) == expected &&*/
+		      free_min_bucket->_hash.compare_exchange_strong(expected,hash) )
+		      {
+		      add_key_to_end_of_list(start_bucket, free_min_bucket, hash, key, data, last_bucket);
+		      segment._lock.unlock();
+		      return _tHash::_EMPTY_DATA;
+		      }
+		   --free_min_bucket;
+		   }
 
 		//NEED TO RESIZE ..........................
 		fprintf(stderr, "ERROR - RESIZE is not implemented - size %u\n", size());
@@ -379,6 +402,9 @@ public:// Ctors ................................................................
 				segment._lock.unlock();
 				return _tHash::_EMPTY_DATA;
 			}
+			// the data race manifests itself as a node that links to itself
+			assert(next_delta != 0);
+
 			curr_bucket += next_delta;
 
 			if( hash == curr_bucket->_hash && _tHash::IsEqual(key, curr_bucket->_key) ) {
