@@ -859,11 +859,61 @@ static void reclaim_deletions(HashT* ht, ThreadPool* tpool, HashRequestOrder* ha
 
 //----------------------------------------------------------------------
 
-template <class HashT, typename KeyT>
-static void hash_test(ThreadPool* user_pool, ostream& out, size_t threads, size_t cycles, HashT* ht,
-		      size_t maxsize, KeyT* syms, enum Operation op, bool terse, double overhead = 0.0,
-		      bool strict = true, uint32_t* randnums = nullptr)
+static void announce(ostream& out, bool terse, const char *msg, const char* type,
+		     size_t threads, size_t concur)
 {
+   if (terse)
+      {
+      out << type << ',' << threads << ',' << concur << ',' << msg << ',' << flush ;
+      }
+   else
+      out << msg << ' ' << endl ;
+   return ;
+}
+
+//----------------------------------------------------------------------
+
+void announce(ostream& out, bool terse, const char *msg, size_t threads, HashSet_U32*)
+{
+   announce(out,terse,msg,"int",threads,0) ;
+   return ;
+}
+
+//----------------------------------------------------------------------
+
+void announce(ostream& out, bool terse, const char *msg, size_t threads, ObjHashTable*)
+{
+   announce(out,terse,msg,"obj",threads,0) ;
+   return ;
+}
+
+//----------------------------------------------------------------------
+
+void announce(ostream& out, bool terse, const char *msg, size_t threads, STLset*)
+{
+   announce(out,terse,msg,"STL",threads,0) ;
+   return ;
+}
+
+//----------------------------------------------------------------------
+
+#ifdef TEST_HOPSCOTCH
+void announce(ostream& out, bool terse, const char *msg, size_t threads, HopscotchMap*)
+{
+   announce(out,terse,msg,"Hopsc",threads,g_Hopscotch_Concurrency) ;
+   return ;
+}
+#endif /* TEST_HOPSCOTCH */
+
+//----------------------------------------------------------------------
+
+template <class HashT, typename KeyT>
+static void hash_test(ThreadPool* user_pool, ostream& out, const char* heading, size_t threads,
+   		      size_t cycles, HashT* ht, size_t maxsize, KeyT* syms, enum Operation op,
+		      bool terse, double overhead = 0.0, bool strict = true, uint32_t* randnums = nullptr)
+{
+   if (heading && *heading)
+      announce(out,terse,heading,threads,ht) ;
    // if we are not protecting STL unordered_set from concurrent writes, we may
    //   get a value for 'threads' that is less than the number of threads in the
    //   given thread pool; in that case, instantiate a private pool with just the
@@ -995,10 +1045,15 @@ static void hash_test(ThreadPool* user_pool, ostream& out, size_t threads, size_
       }
    if (time <= 0.0) time = 0.00001 ;
    if (walltime <= 0.0) walltime = 0.00001 ;
-   out << "  Time: " << timer << ", " ;
-   pretty_print((size_t)(ops / walltime),out) ;
-   out << " ops/sec" << endl ;
-   if (op == Op_REMOVE)
+   if (terse)
+      out << (size_t)(ops / walltime) << endl ;
+   else
+      {
+      out << "  Time: " << timer << ", " ;
+      pretty_print((size_t)(ops / walltime),out) ;
+      out << " ops/sec" << endl ;
+      }
+   if (!terse && op == Op_REMOVE)
       {
       out << "  RwTm: " << walltime_noreclaim << "s without reclamation (" ;
       pretty_print((size_t)(ops / walltime_noreclaim),out) ;
@@ -1247,93 +1302,76 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
 
    HashT* ht = new HashT(startsize) ;
    ThreadPool tpool(threads) ;
-   out << "Checking overhead (NOP) " << endl ;
+   if (!terse)
+      out << "Checking overhead (NOP) " << endl ;
    Timer timer  ;
-   hash_test(&tpool,out,threads,1,ht,maxsize,keys,Op_NONE,true) ;
+   hash_test(&tpool,out,"",threads,1,ht,maxsize,keys,Op_NONE,true) ;
    double overhead = timer.elapsedSeconds() ;
-   out << "   overhead = " << 1000.0*overhead << "ms" << endl ;
-   out << "Filling hash table      " << endl ;
-   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_ADD,terse,overhead) ;
+   if (!terse)
+      out << "   overhead = " << 1000.0*overhead << "ms" << endl ;
+   hash_test(&tpool,out,"Filling hash table",writethreads,1,ht,maxsize,keys,Op_ADD,terse,overhead) ;
    if_SHOW_CHAINS(chains[0] = ht->chainLengths(max_chain[0]));
    if (show_neighbors)
       neighborhoods[0] = ht->neighborhoodDensities(max_neighbors[0]) ;
-   out << "Lookups (100% present)  " << endl ;
-   hash_test(&tpool,out,threads,cycles,ht,maxsize,keys,Op_CHECK,terse,overhead) ;
-   out << "Lookups (50% present)   " << endl ;
+   hash_test(&tpool,out,"Lookups (100% present)",threads,cycles,ht,maxsize,keys,Op_CHECK,terse,overhead) ;
    size_t half_cycles = (cycles + 1) / 2 ;
    swap_segments(keys,2*maxsize,threads) ;
-   hash_test(&tpool,out,threads,half_cycles,ht,2*maxsize,keys,Op_CHECK,terse,overhead,false) ;
+   hash_test(&tpool,out,"Lookups (50% present)",threads,half_cycles,ht,2*maxsize,keys,Op_CHECK,terse,overhead,false) ;
    swap_segments(keys,2*maxsize,threads) ;
-   out << "Lookups (0% present)    " << endl ;
-   hash_test(&tpool,out,threads,cycles,ht,maxsize,keys+maxsize,Op_CHECKMISS,terse,overhead) ;
+   hash_test(&tpool,out,"Lookups (0% present)",threads,cycles,ht,maxsize,keys+maxsize,Op_CHECKMISS,terse,overhead) ;
    if (throughput >= 0)
       {
-      out << "Timed throughput test (10%) " << endl;
-      hash_test(&tpool,out,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,10,false,randnums) ;
-      out << "Timed throughput test (30%) " << endl;
-      hash_test(&tpool,out,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,30,false,randnums) ;
-      out << "Timed throughput test (50%) " << endl;
-      hash_test(&tpool,out,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,50,false,randnums) ;
-      out << "Timed throughput test (70%) " << endl;
-      hash_test(&tpool,out,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,70,false,randnums) ;
-      out << "Timed throughput test (90%) " << endl;
-      hash_test(&tpool,out,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,90,false,randnums) ;
+      hash_test(&tpool,out,"Timed throughput test (10%)",threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,10,false,randnums) ;
+      hash_test(&tpool,out,"Timed throughput test (30%)",threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,30,false,randnums) ;
+      hash_test(&tpool,out,"Timed throughput test (50%)",threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,50,false,randnums) ;
+      hash_test(&tpool,out,"Timed throughput test (70%)",threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,70,false,randnums) ;
+      hash_test(&tpool,out,"Timed throughput test (90%)",threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,90,false,randnums) ;
       if (throughput != 10 && throughput != 30 && throughput != 50 && throughput != 70 && throughput != 90)
 	 {
-	 out << "Timed throughput test (" << throughput << "%) " << endl;
-	 hash_test(&tpool,out,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,throughput,false,randnums) ;
+	 char *heading = Fr::aprintf("Timed throughput test (%d%%)",throughput) ;
+	 hash_test(&tpool,out,heading,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,throughput,false,randnums) ;
+	 delete[] heading ;
 	 }
       for (size_t i = 0 ; i < maxsize ; i++)
 	 {
 	 (void)ht->remove(keys[maxsize+i]) ;
 	 }
       }
-   out << "Emptying hash table     " << endl ;
-   hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,throughput < 0) ;
+   hash_test(&tpool,out,"Emptying hash table",writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,throughput < 0) ;
    if (throughput < 0)
       {
-      out << "Lookups in empty table  " << endl ;
-      hash_test(&tpool,out,threads,cycles,ht,maxsize,keys,Op_CHECKMISS,terse,overhead) ;
+      hash_test(&tpool,out,"Lookups in empty table",threads,cycles,ht,maxsize,keys,Op_CHECKMISS,terse,overhead) ;
       delete ht ;
       ht = new HashT(startsize) ;
-      out << "Random additions        " << endl ;
-      hash_test(&tpool,out,writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_ADDONLY,terse,overhead,true,
+      hash_test(&tpool,out,"Random additions",writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_ADDONLY,terse,overhead,true,
 	 randnums) ;
       if_SHOW_CHAINS(chains[1] = ht->chainLengths(max_chain[1])) ;
-      out << "Emptying hash table     " << endl ;
-      hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+      hash_test(&tpool,out,"Emptying has table",writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
       delete ht ;
       ht = new HashT(startsize) ;
-      out << "Random ops (del=1)      " << endl ;
-      hash_test(&tpool,out,writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
+      hash_test(&tpool,out,"Random ops (del=1)",writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
 	 randnums + maxsize/2 - 1) ;
       if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
-      out << "Random ops (del=1,full) " << endl ;
-      hash_test(&tpool,out,writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
+      hash_test(&tpool,out,"Random ops (del=1,full)",writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
 	 	randnums + maxsize/2 - 1) ;
       if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
-      out << "Emptying hash table     " << endl ;
-      hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+      hash_test(&tpool,out,"Emptying hash table",writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
       delete ht ;
       ht = new HashT(startsize) ;
-      out << "Random ops (del=3)      " << endl ;
-      hash_test(&tpool,out,writethreads,cycles,ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
+      hash_test(&tpool,out,"Random ops (del=3)",writethreads,cycles,ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
 	 randnums + maxsize - 1) ;
       if_SHOW_CHAINS(chains[3] = ht->chainLengths(max_chain[3])) ;
       if (show_neighbors)
 	 neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1]) ;
-      out << "Emptying hash table     " << endl ;
-      hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+      hash_test(&tpool,out,"Emptying hash table",writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
       delete ht  ;
       ht = new HashT(startsize) ;
-      out << "Random ops (del=7)      " << endl ;
-      hash_test(&tpool,out,writethreads,cycles,ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
+      hash_test(&tpool,out,"Random ops (del=7)",writethreads,cycles,ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
 	 randnums + maxsize - 1) ;
       if_SHOW_CHAINS(chains[4] = ht->chainLengths(max_chain[4])) ;
       if (show_neighbors)
 	 neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1]) ;
-      out << "Emptying hash table     " << endl ;
-      hash_test(&tpool,out,writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+      hash_test(&tpool,out,"Emptying hash table",writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
       if_SHOW_CHAINS(chains[5] = ht->chainLengths(max_chain[5])) ;
       }
 #ifdef SHOW_CHAINS
@@ -1372,10 +1410,8 @@ void hash_command(ostream &out, int threads, bool terse, uint32_t* randnums,
    size_t needed = (size_t)(2.5*maxsize) ;
    SymbolTable* symtab = SymbolTable::create(needed) ;
    symtab->select() ;
-   out << "Preparing symbols       " << endl ;
-   hash_test(nullptr,out,threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_GENSYM,terse) ;
-   out << "Checking symbols        " << endl ;
-   hash_test(nullptr,out,threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_CHECKSYMS,terse) ;
+   hash_test(nullptr,out,"Preparing symbols",threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_GENSYM,terse) ;
+   hash_test(nullptr,out,"Checking symbols",threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_CHECKSYMS,terse) ;
    run_tests<ObjHashTable>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse,throughput,time_limit) ;
    symtab->free() ;
    delete[] keys ;
@@ -1384,19 +1420,21 @@ void hash_command(ostream &out, int threads, bool terse, uint32_t* randnums,
 
 //----------------------------------------------------------------------
 
-static INTEGER_TYPE* gen_keys(ostream& out, size_t maxsize, size_t order, size_t stride)
+static INTEGER_TYPE* gen_keys(ostream& out, size_t maxsize, size_t order, size_t stride, bool terse)
 {
    INTEGER_TYPE* keys = new INTEGER_TYPE[2*maxsize] ;
    if (order == 0)
       {
-      out << "Generating sequential keys" << endl ;
+      if (!terse)
+	 out << "Generating sequential keys" << endl ;
       for (size_t i = 0 ; i < 2*maxsize ; i++)
 	 keys[i] = (uint32_t)i ;
       }
    else if (order == 1 || order == 2)
       {
       // generate a randomly-distributed set of 32-bit integers, less the reserved values
-      out << "Generating random keys" << endl ;
+      if (!terse)
+	 out << "Generating random keys" << endl ;
 #if 0
       RandomInteger rand(0xFFFFFFFE) ;
       if (order == 2)
@@ -1421,7 +1459,8 @@ static INTEGER_TYPE* gen_keys(ostream& out, size_t maxsize, size_t order, size_t
       }
    else if (order == 3)
       {
-      out << "Generating keys spaced by " << stride << endl ;
+      if (!terse)
+	 out << "Generating keys spaced by " << stride << endl ;
       size_t val = 0 ;
       size_t adj = 1 ;
       for (size_t i = 0 ; i < 2*maxsize ; i++)
@@ -1439,7 +1478,8 @@ static INTEGER_TYPE* gen_keys(ostream& out, size_t maxsize, size_t order, size_t
       }
    else if (order == 4)
       {
-      out << "Generating keys by applying FastHash64 to sequence" << endl ;
+      if (!terse)
+	 out << "Generating keys by applying FastHash64 to sequence" << endl ;
       for (size_t i = 0 ; i < 2*maxsize ; i++)
 	 {
 	 keys[i] = FramepaC::fasthash64_int(i) ;
@@ -1454,7 +1494,7 @@ void stlset_command(ostream &out, int threads, bool terse, uint32_t* randnums, s
 		    size_t maxsize, size_t cycles, size_t order, size_t stride, int throughput)
 {
    out << "Parallel (threaded) STL integer unordered_set operations" << endl << endl ;
-   INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride) ;
+   INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride,terse) ;
    run_tests<STLset>(threads,STL_WRITE_THREADS,startsize,maxsize,cycles,keys,randnums,out,terse,throughput,time_limit) ;
    delete[] keys ;
    return ;
@@ -1468,7 +1508,7 @@ void hopscotch_command(ostream &out, int threads, bool terse, uint32_t* randnums
 {
    out << "Parallel Hopscotch integer map operations (concurrency=" << g_Hopscotch_Concurrency << ")\n"
        << endl ;
-   INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride) ;
+   INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride,terse) ;
    run_tests<HopscotchMap>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse,throughput,time_limit) ;
    delete[] keys ;
    return ;
@@ -1481,7 +1521,7 @@ void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, si
    		   size_t maxsize, size_t cycles, size_t order, size_t stride, int throughput)
 {
    out << "Parallel (threaded) Integer Hash Table operations" << endl << endl ;
-   INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride) ;
+   INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride,terse) ;
    run_tests<HashSet_U32>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse,throughput,time_limit) ;
    delete[] keys ;
    return ;
@@ -1549,7 +1589,8 @@ int main(int argc, char** argv)
       }
    else
       {
-      cout << "Generating random numbers for randomized tests" << endl ;
+      if (!terse)
+	 cout << "Generating random numbers for randomized tests" << endl ;
       uint32_t* randnums = new uint32_t[2*grow_size] ;
       RandomInteger rand(grow_size) ;
       for (size_t i = 0 ; i < 2*grow_size ; i++)
