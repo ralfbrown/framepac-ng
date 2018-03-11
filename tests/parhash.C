@@ -1402,7 +1402,8 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
 void hash_command(ostream &out, int threads, bool terse, uint32_t* randnums,
 		  size_t startsize, size_t maxsize, size_t cycles, int throughput)
 {
-   out << "Parallel (threaded) Object Hash Table operations" << endl << endl ;
+   if (!terse)
+      out << "Parallel (threaded) Object Hash Table operations\n" << endl ;
    Symbol** keys = new Symbol*[2*maxsize] ;
    // speed up symbol creation and avoid memory fragmentation by
    //  expanding the symbol table to hold all the symbols we will
@@ -1493,7 +1494,8 @@ static INTEGER_TYPE* gen_keys(ostream& out, size_t maxsize, size_t order, size_t
 void stlset_command(ostream &out, int threads, bool terse, uint32_t* randnums, size_t startsize,
 		    size_t maxsize, size_t cycles, size_t order, size_t stride, int throughput)
 {
-   out << "Parallel (threaded) STL integer unordered_set operations" << endl << endl ;
+   if (!terse)
+      out << "Parallel (threaded) STL integer unordered_set operations\n" << endl ;
    INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride,terse) ;
    run_tests<STLset>(threads,STL_WRITE_THREADS,startsize,maxsize,cycles,keys,randnums,out,terse,throughput,time_limit) ;
    delete[] keys ;
@@ -1506,8 +1508,9 @@ void stlset_command(ostream &out, int threads, bool terse, uint32_t* randnums, s
 void hopscotch_command(ostream &out, int threads, bool terse, uint32_t* randnums, size_t startsize,
 		       size_t maxsize, size_t cycles, size_t order, size_t stride, int throughput)
 {
-   out << "Parallel Hopscotch integer map operations (concurrency=" << g_Hopscotch_Concurrency << ")\n"
-       << endl ;
+   if (!terse)
+      out << "Parallel Hopscotch integer map operations (concurrency=" << g_Hopscotch_Concurrency << ")\n"
+	  << endl ;
    INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride,terse) ;
    run_tests<HopscotchMap>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse,throughput,time_limit) ;
    delete[] keys ;
@@ -1520,7 +1523,8 @@ void hopscotch_command(ostream &out, int threads, bool terse, uint32_t* randnums
 void ihash_command(ostream &out, int threads, bool terse, uint32_t* randnums, size_t startsize,
    		   size_t maxsize, size_t cycles, size_t order, size_t stride, int throughput)
 {
-   out << "Parallel (threaded) Integer Hash Table operations" << endl << endl ;
+   if (!terse)
+      out << "Parallel (threaded) Integer Hash Table operations\n" << endl ;
    INTEGER_TYPE* keys = gen_keys(out,maxsize,order,stride,terse) ;
    run_tests<HashSet_U32>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse,throughput,time_limit) ;
    delete[] keys ;
