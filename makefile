@@ -281,7 +281,7 @@ TESTS = bin/argparser$(EXE)
 HEADERS = 
 
 # the files to be included in the source distribution archive
-DISTFILES= LICENSE COPYING makefile .gitignore *.C *.h framepac/*.h template/*.cc
+DISTFILES= LICENSE COPYING makefile .gitignore *.C *.h framepac/*.h template/*.cc tests/*.C tests/*.h tests/*.sh
 
 # the library archive file for this module
 LIBRARY = $(PACKAGE)$(LIB)
