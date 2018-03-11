@@ -334,7 +334,11 @@ class HopscotchHASH
       static const INTEGER_TYPE _EMPTY_KEY ;
       static const short _EMPTY_DATA ;
 
-      static unsigned int Calc(INTEGER_TYPE key) { return (unsigned int)(key) ; }
+      static unsigned int Calc(INTEGER_TYPE key)
+	 {
+	    unsigned int hash = (unsigned int)(key) ;
+	    return hash == _EMPTY_HASH ? 0 : hash ;
+	 }
       static bool IsEqual(INTEGER_TYPE key1, INTEGER_TYPE key2) { return key1 == key2 ; }
       static void relocate_key_reference(INTEGER_TYPE volatile& key1, const INTEGER_TYPE volatile& key2)
 	 { key1 = key2 ; }
@@ -351,7 +355,8 @@ const unsigned int HopscotchHASH::_EMPTY_HASH = ~0U ;
 const unsigned int HopscotchHASH::_BUSY_HASH = ~1U ;
 
 // adapter to API HopscotchHashMap expects its locks to use
-class HopscotchLock : public Fr::CriticalSection
+//class HopscotchLock : public Fr::CriticalSection
+class HopscotchLock : public std::mutex
    {
    public:
       HopscotchLock() {}
@@ -360,7 +365,7 @@ class HopscotchLock : public Fr::CriticalSection
       //inherited: void lock();
       //inherited: void unlock();
       bool tryLock() { return try_lock() ; }
-      bool isLocked() const { return locked() ; }
+//      bool isLocked() const { return locked() ; }
    } ;
 
 // adapter to API HopscotchMap expects its memory allocator to use
@@ -380,12 +385,12 @@ static int first_msb_bit_indx(INTEGER_TYPE val)
    return val ? __builtin_ffs(val) : -1 ;
 }
       
-class HopscotchMap : public unordered_set<INTEGER_TYPE>
+class HopscotchMap
    {
    public:
       HopscotchHashMap<INTEGER_TYPE,short,HopscotchHASH,HopscotchLock,HopscotchAllocator> ht ;
    public:
-      HopscotchMap(size_t init_size) : ht(init_size)
+      HopscotchMap(size_t init_size) : ht(init_size,64)
 	 {
 	 }
       ~HopscotchMap() = default ;
@@ -393,6 +398,7 @@ class HopscotchMap : public unordered_set<INTEGER_TYPE>
       bool add(INTEGER_TYPE key) { (void)ht.putIfAbsent(key,0) ; return false; }
       bool contains(INTEGER_TYPE key) { return ht.containsKey(key) ; }
       bool remove(INTEGER_TYPE key) { (void)ht.remove(key) ; return false; }
+      size_t size() const { return ht.size() ; }
       size_t* chainLengths(size_t& max_length) const { max_length = 0 ; return nullptr ; }
       size_t* neighborhoodDensities(size_t& num_densities) const { num_densities = 0 ; return nullptr ; }
       static void threadInit() {}
@@ -1007,7 +1013,7 @@ static void hash_test(ThreadPool* user_pool, ostream& out, size_t threads, size_
       {
       if (size > maxsize)
 	 out << "   " << (size-maxsize) <<  " spurious additions to hash table!" << endl ;
-      else if (size< maxsize)
+      else if (size < maxsize)
 	 out << "   Failed to add " << (maxsize-size) << " items to hash table!" << endl ;
       }
    if (op == Op_RANDOM)

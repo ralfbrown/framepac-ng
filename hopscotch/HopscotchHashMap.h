@@ -36,6 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // INCLUDE DIRECTIVES
 ////////////////////////////////////////////////////////////////////////////////
+#include <cassert>
 #include <stdio.h>
 #include <limits.h>
 #include "math.h"
@@ -143,12 +144,14 @@ private:
 			else
 				free_bucket->_next_delta = (short)((keys_bucket +  keys_bucket->_next_delta) -  free_bucket);
 			keys_bucket->_next_delta = (short)(free_bucket - keys_bucket);
+			assert(keys_bucket->_next_delta != 0);
 		} else {
 			if(_NULL_DELTA ==  keys_bucket->_first_delta)
 				free_bucket->_next_delta = _NULL_DELTA;
 			else
 				free_bucket->_next_delta = (short)((keys_bucket +  keys_bucket->_first_delta) -  free_bucket);
 			keys_bucket->_first_delta = (short)(free_bucket - keys_bucket);
+			assert(keys_bucket->_next_delta != 0);
 		}
 	}
 
@@ -159,6 +162,7 @@ private:
 										 const _tData&		  data,
                                Bucket* const		  last_bucket)
 	{
+	   assert(free_bucket != keys_bucket);
 		free_bucket->_data		 = data;
 		free_bucket->_key			 = key;
 		free_bucket->_hash		 = hash;
@@ -166,8 +170,11 @@ private:
 
 		if(nullptr == last_bucket)
 			keys_bucket->_first_delta = (short)(free_bucket - keys_bucket);
-		else 
+		else
+		   {
 			last_bucket->_next_delta = (short)(free_bucket - last_bucket);
+			assert(last_bucket->_next_delta != 0);
+		   }
 	}
 
 	void optimize_cacheline_use(Segment& segment, Bucket* const free_bucket) {
@@ -190,6 +197,7 @@ private:
 							free_bucket->_next_delta = _NULL_DELTA;
 						else
 							free_bucket->_next_delta = (short)( (relocate_key + relocate_key->_next_delta) - free_bucket );
+						assert(free_bucket->_next_delta != 0);
 
 						if(nullptr == relocate_key_last)
 							opt_bucket->_first_delta = (short)( free_bucket - opt_bucket );
@@ -273,6 +281,7 @@ public:// Ctors ................................................................
 				if(hash == curr_bucket->_hash && _tHash::IsEqual(key, curr_bucket->_key))
 					return true;
 				next_delta = curr_bucket->_next_delta;
+				assert(next_delta != 0);
 			}
 		} while(start_timestamp != segment._timestamp);
 
@@ -387,7 +396,7 @@ public:// Ctors ................................................................
 	}
 
 	//status Operations .........................................................
-	unsigned int size() {
+	unsigned int size() const {
 		_u32 counter = 0;
 		const _u32 num_elm( _bucketMask + _INSERT_RANGE );
 		for(_u32 iElm=0; iElm < num_elm; ++iElm) {
