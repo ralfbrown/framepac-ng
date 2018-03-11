@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2018-03-10					*/
+/* Version 0.02, last edit 2018-03-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2015,2017,2018 Carnegie Mellon University		*/
@@ -770,7 +770,6 @@ static void hash_throughput(HashRequestOrder* order)
 	    modify_offset = 0 ;
 	    }
 	 }
-      modify_offset += modify_frac ;
       for (size_t i = 0 ; i < lookup_frac ; ++i)
 	 {
 	 if (lookup_offset-- == 0)
