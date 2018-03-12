@@ -603,7 +603,7 @@ framepac/semaphore.h:	framepac/config.h
 framepac/set.h:	framepac/hashtable.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/spelling.h:	framepac/hashtable.h
+framepac/spelling.h:	framepac/hashtable.h framepac/texttransforms.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/string.h:	framepac/object.h

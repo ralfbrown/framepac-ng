@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-27					*/
+/* Version 0.03, last edit 2018-03-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -132,11 +132,37 @@ size_t CognateData::cognateLetters(const char* str1, const char* str2, size_t& l
 
 //----------------------------------------------------------------------------
 
+static double** alloc_score_buffer(size_t rows, size_t columns)
+{
+   double** buffer = new double*[rows] ;
+   if (!buffer)
+      return buffer ;
+   for (size_t i = 0 ; i < rows ; ++i)
+      buffer[i] = new double[columns] ;
+   return buffer ;
+}
+
+//----------------------------------------------------------------------------
+
+static void free_score_buffer(double** buffer, size_t rows)
+{
+   if (!buffer)
+      return;
+   for (size_t i = 0 ; i < rows ; ++i)
+      delete[] buffer[i] ;
+   delete buffer ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 double CognateData::score(const char* word1, const char* word2, bool exact_letter_match_only,
    CognateAlignment** align) const
 {
+   double** score_buf = alloc_score_buffer(longestSource()+1,strlen(word2)+1) ;
    (void)word1; (void)word2; (void)exact_letter_match_only; (void)align;
 
+   free_score_buffer(score_buf,longestSource()+1) ;
    return 0.0 ; //FIXME
 }
 

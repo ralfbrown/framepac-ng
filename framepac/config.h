@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2018-03-09					*/
+/* Version 0.03, last edit 2018-03-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -31,7 +31,7 @@ using namespace std ;
 /************************************************************************/
 /************************************************************************/
 
-#define FramepaC_VERSION "0.02"
+#define FramepaC_VERSION "0.03"
 
 // uncomment the following to remove thread-local storage and synchronization
 //   primitives; FramepaC will no longer have any thread safety

@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-27					*/
+/* Version 0.03, last edit 2018-03-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -23,9 +23,59 @@
 #define __Fr_SPELLING_H_INCLUDED
 
 #include "framepac/hashtable.h"
+#include "framepac/texttransforms.h"
 
 namespace Fr
 {
+
+//----------------------------------------------------------------------------
+
+class CognateCorrespondence
+   {
+   public:
+      CognateCorrespondence(const char* src, const char* trg, uint8_t sc)
+	 {
+	    m_srclen = 0 ;
+	    m_trglen = 0 ;
+	    init(src,trg,sc) ;
+	 }
+      ~CognateCorrespondence() { freeStrings() ; }
+
+      void init(const char* src, const char* trg, uint8_t sc)
+	 {
+	    freeStrings() ;
+	    if (!src) src = "" ;
+	    if (!trg) trg = "" ;
+	    m_score = sc ;
+	    m_srclen = strlen(src) ;
+	    m_trglen = strlen(trg) ;
+	    if (m_srclen < sizeof(m_source))
+	       strcpy((char*)&m_source,src) ;
+	    else
+	       m_source = dup_string(src) ;
+	    if (m_trglen < sizeof(m_target))
+	       strcpy((char*)&m_target,trg) ;
+	    else
+	       m_target = dup_string(trg) ;
+	    return ;
+	 }
+      void freeStrings()
+	 {
+	    if (m_srclen >= sizeof(m_source))
+	       delete[] m_source ;
+	    if (m_trglen >= sizeof(m_target))
+	       delete[] m_target ;
+	 }
+
+      const char* source() const { return m_srclen < sizeof(m_source) ? (char*)&m_source : m_source ; }
+      const char* target() const { return m_trglen < sizeof(m_target) ? (char*)&m_target : m_target ; }
+   protected:
+      uint8_t m_score ;
+      uint8_t m_srclen ;
+      uint8_t m_trglen ;
+      char*   m_source ;
+      char*   m_target ;
+   } ;
 
 //----------------------------------------------------------------------------
 
@@ -75,6 +125,9 @@ class CognateData
       double score(const Object* word1, const Object* word2, bool exact_letter_match_only = false,
 	 CognateAlignment** align = nullptr) const ;
 
+      // access to internal state
+      size_t longestSource() const { return m_longest_source ; }
+      
    protected:
       uint8_t m_one2one[256][256] ;	// similarity scores for all single-char X->Y mappings
       char* m_one2many[256] ;		// pointers to X->YY mappings for each X
