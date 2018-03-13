@@ -21,7 +21,9 @@
 
 #include <iomanip>
 #include <pthread.h>
+#include <signal.h>
 #include <sstream>
+#include <unistd.h>
 #include <unordered_set>
 #include "framepac/argparser.h"
 #include "framepac/fasthash64.h"
@@ -32,11 +34,6 @@
 #include "framepac/texttransforms.h"
 #include "framepac/threadpool.h"
 #include "framepac/timer.h"
-
-#ifdef FrSINGLE_THREADED
-# include <signal.h>
-# include <unistd.h>
-#endif
 
 using namespace Fr ;
 
@@ -1038,7 +1035,7 @@ static void hash_test(ThreadPool* user_pool, ostream& out, const char* heading, 
    if (!terse)
       out << "  Waiting for thread completion" << endl ;
 #ifndef FrSINGLE_THREADED
-   if (op == Op_THROUGHPUT)
+   if (op == Op_THROUGHPUT && threads > 0)
       {
       overhead = 0 ;			// we re-used this parm to set the fraction of lookups
       std::this_thread::sleep_for(std::chrono::seconds(cycles)) ;
@@ -1616,13 +1613,6 @@ int main(int argc, char** argv)
       terse = true ;
       threads = -threads ;
       }
-#if 0
-   if (throughput >= 0 && threads == 0)
-      {
-      cout << "Unable to perform throughput test single-threaded" << endl  ;
-      throughput = -1 ;
-      }
-#endif
    if (grow_size == 0)
       {
       cout << "Entered test size of zero, skipping test" << endl ;
