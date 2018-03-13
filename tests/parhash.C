@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2018-03-11					*/
+/* Version 0.03, last edit 2018-03-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2015,2017,2018 Carnegie Mellon University		*/
@@ -1345,7 +1345,7 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
       hash_test(&tpool,out,"Random additions",writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_ADDONLY,terse,overhead,true,
 	 randnums) ;
       if_SHOW_CHAINS(chains[1] = ht->chainLengths(max_chain[1])) ;
-      hash_test(&tpool,out,"Emptying has table",writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+      hash_test(&tpool,out,"Emptying hash table",writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
       delete ht ;
       ht = new HashT(startsize) ;
       hash_test(&tpool,out,"Random ops (del=1)",writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,

@@ -1,12 +1,12 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-03-28					*/
+/*  Version 0.03, last edit 2018-03-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File critsect.C		short-duration critical section mutex	*/
 /*									*/
-/*  (c) Copyright 2015,2016,2017 Carnegie Mellon University		*/
+/*  (c) Copyright 2015,2016,2017,2018 Carnegie Mellon University	*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -27,7 +27,9 @@
 namespace Fr
 {
 
+#ifndef FrSINGLE_THREADED
 Atomic<size_t> CriticalSection::s_collisions ;
+#endif /* !FrSINGLE_THREADED */
 
 /************************************************************************/
 /************************************************************************/

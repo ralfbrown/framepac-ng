@@ -1,12 +1,12 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-03-31					*/
+/*  Version 0.03, last edit 2018-03-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File synchevent.h		synchronization events			*/
 /*									*/
-/*  (c) Copyright 2015,2016,2017 Carnegie Mellon University		*/
+/*  (c) Copyright 2015,2016,2017,2018 Carnegie Mellon University	*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -45,13 +45,17 @@ class SynchEvent
       SynchEvent() { clear() ; }
       ~SynchEvent() {}
 
-      bool isSet() const [[gnu::always_inline]]
+      [[gnu::always_inline]]
+      bool isSet() const
          { return m_set ; }
-      void clear() [[gnu::always_inline]]
+      [[gnu::always_inline]]
+      void clear()
          { m_set = false ; }
-      void set() [[gnu::always_inline]]
+      [[gnu::always_inline]]
+      void set()
          { m_set = true ; }
-      void wait() [[gnu::always_inline]]
+      [[gnu::always_inline]]
+      void wait()
          {}
    } ;
 #else // multi-threaded version
@@ -113,8 +117,10 @@ class SynchEventCounted
       void clear() { m_set = false ; }
       void clearAll() { clear() ; }
       void set() { m_set = true ; }
-      void wait() [[gnu::always_inline]] {}
-      void waitForWaiters() [[gnu::always_inline]] {}
+      [[gnu::always_inline]]
+      void wait() {}
+      [[gnu::always_inline]]
+      void waitForWaiters() {}
    } ;
 #else
 // multi-threaded version
@@ -165,7 +171,8 @@ class SynchEventCountdown
       void consume() { m_counter -= 2 ; }
       void consumeAll() { m_counter = 0 ; }
       bool haveWaiters() const { return (m_counter & 1) != 0 ; }
-      void wait() [[gnu::always_inline]] {}
+      [[gnu::always_inline]]
+      void wait() {}
    } ;
 #else
 class SynchEventCountdown

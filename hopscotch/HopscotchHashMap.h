@@ -126,7 +126,7 @@ private:
 
 		++(segment._timestamp);
 		key_bucket->_next_delta = _NULL_DELTA;
-		atomic_thread_fence(std::memory_order_seq_cst);
+		std::atomic_thread_fence(std::memory_order_release);
 		key_bucket->_hash  = _tHash::_EMPTY_HASH;
 	}
 	void add_key_to_begining_of_list(Bucket*	const     keys_bucket, 
@@ -204,7 +204,7 @@ private:
 						_tHash::relocate_key_reference(relocate_key->_key, _tHash::_EMPTY_KEY);
 						_tHash::relocate_data_reference(relocate_key->_data, _tHash::_EMPTY_DATA);
 						relocate_key->_next_delta	= _NULL_DELTA;
-						atomic_thread_fence(std::memory_order_seq_cst);
+						std::atomic_thread_fence(std::memory_order_release);
 						relocate_key->_hash			= _tHash::_EMPTY_HASH;
 						return;
 					}

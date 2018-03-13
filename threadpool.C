@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.03, last edit 2018-03-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -48,7 +48,9 @@ namespace Fr
 
 // some addresses to pass to get specific actions from the worker thread
 static bool request_ack ;
+#ifndef FrSINGLE_THREADED
 static bool request_exit ;
+#endif /* !FrSINGLE_THREADED */
 
 /************************************************************************/
 /************************************************************************/
@@ -177,6 +179,7 @@ ThreadPool* ThreadPool::s_defaultpool = nullptr ;
 /************************************************************************/
 /************************************************************************/
 
+#ifndef FrSINGLE_THREADED
 static void work_function(ThreadPool* pool, unsigned thread_index)
 {
    if (!pool)
@@ -204,6 +207,7 @@ static void work_function(ThreadPool* pool, unsigned thread_index)
       }
    return ;
 }
+#endif /* !FrSINGLE_THREADED */
 
 /************************************************************************/
 /*	Methods for class WorkQueue					*/

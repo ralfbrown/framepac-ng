@@ -23,10 +23,10 @@ reps=5
 seconds=4
 
 # the hash array size
-size=16700000
+size=16720000
 
 # the number of items to put in the hash table
-count=12000000
+count=12400000
 
 run_hash()
 {

@@ -180,6 +180,10 @@ class HashPtr
       ~HashPtr() {}
       // accessors
       Link first() const { return m_first.load() & link_mask ; }
+#ifdef FrSINGLE_THREADED
+      Link* firstPtr() { return reinterpret_cast<Link*>(&m_first) ; }
+      Link* nextPtr() { return reinterpret_cast<Link*>(&m_next) ; }
+#endif /* FrSINGLE_THREADED */
       Link firstAndStatus(Link& stat) const
 	 {
 	 Link val = m_first.load() ;
@@ -510,6 +514,10 @@ class HashTable : public HashTableBase
 	 Link chainHead(size_t N) const { return bucketPtr(N)->first() ; }
 	 Link chainHead(size_t N, Link& status) const { return bucketPtr(N)->firstAndStatus(status) ; }
 	 Link chainNext(size_t N) const { return bucketPtr(N)->next() ; }
+#ifdef FrSINGLE_THREADED
+	 Link* chainHeadPtr(size_t N) const { return bucketPtr(N)->firstPtr() ; }
+	 Link* chainNextPtr(size_t N) const { return bucketPtr(N)->nextPtr() ; }
+#endif /* FrSINGLE_THREADED */
 	 void setChainNext(size_t N, Link nxt) { bucketPtr(N)->next(nxt) ; }
 	 void markCopyDone(size_t N) { bucketPtr(N)->markCopyDone() ; }
 	 void autoResize() ;
@@ -706,8 +714,8 @@ class HashTable : public HashTableBase
       HashTableCleanupFunc* cleanup_fn ;		// invoke on destruction of obj
       HashKVFunc*           remove_fn ; 		// invoke on removal of entry/value
       void*                 m_userdata ;		// available for use by isEqual, hashValue, hashValueFull
-#ifndef FrSINGLE_THREADED
       static Fr::ThreadInitializer<HashTable> initializer ;
+#ifndef FrSINGLE_THREADED
       static TablePtr*    s_thread_entries ;
       static thread_local TablePtr* s_thread_record ;
       static thread_local Table*    s_table ; // thread's announcement which hash table it's using
@@ -1056,8 +1064,10 @@ class HashTable : public HashTableBase
 
    } ;
 
+#ifndef FrSINGLE_THREADED
 template <typename KeyT, typename ValT>
 Fr::ThreadInitializer<HashTable<KeyT,ValT> > HashTable<KeyT,ValT>::initializer ;
+#endif /* FrSINGLE_THREADED */
 
 //----------------------------------------------------------------------
 // specializations: integer keys

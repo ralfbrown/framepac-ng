@@ -253,8 +253,8 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::copyChain(size_t bucketnum)
 {
    Link offset ;
-#ifndef FrSINGLE_THREADED
    HashPtr* bucket = bucketPtr(bucketnum) ;
+#ifndef FrSINGLE_THREADED
    // atomically set the 'stale' bit and get the current status
    Link status = bucket->markStaleGetStatus() ;
    if (HashPtr::stale(status))
@@ -717,7 +717,7 @@ bool HashTable<KeyT,ValT>::Table::add(size_t hashval, KeyT key, ValT value)
 	 // we managed to grab the entry for reclamation
 	 // fill in the value, then the key
 	 setValue(deleted,value) ;
-	 atomic_thread_fence(std::memory_order_release) ;
+	 Fr::atomic_thread_fence(std::memory_order_release) ;
 	 setKey(deleted,key) ;
 	 bucketPtr(deleted)->markReclaimed() ;
 	 INCR_COUNT(insert_attempt) ;
@@ -783,7 +783,7 @@ ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr
 	 // we managed to grab the entry for reclamation
 	 // fill in the value, then the key
 	 setValue(deleted,nullVal()+incr) ;
-	 atomic_thread_fence(std::memory_order_release) ;
+	 Fr::atomic_thread_fence(std::memory_order_release) ;
 	 setKey(deleted,key) ;
 	 bucketPtr(deleted)->markReclaimed() ;
 	 INCR_COUNT(insert_attempt) ;
@@ -956,26 +956,45 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
    //   just chop out the desired item and don't need to bother with marking entries as
    //   deleted and reclaiming them later
    INCR_COUNT(remove) ;
-   Link* prevptr = chainHeadPtr(bucketnum) ;
-   Link offset = Atomic<Link>::ref(*prevptr).load() ;
+   Link offset = chainHead(bucketnum) ;
+   if (FramepaC::NULLPTR == offset)
+      return false ;			// empty chain, so item is definitely not found
+   // check first item in chain
+   size_t pos = bucketnum  + offset ;
+   KeyT key_at_pos = getKey(pos) ;
+   HashPtr* bucket = bucketPtr(bucketnum) ;
+   if (m_container->isEqual(key,key_at_pos))
+      {
+      // remove the item from the head of the list
+      offset = chainNext(pos) ;
+      bucket->first(offset) ;
+      // delete the item proper
+      setKey(pos,Entry::DELETED()) ;
+      bucketPtr(pos)->markFree() ;
+      INCR_COUNT(remove_found) ;
+      return true ;
+      }
+   // check the remaining items in the chain
+   offset = chainNext(pos) ;
    while (FramepaC::NULLPTR != offset)
       {
-      size_t pos = bucketnum + offset ;
-      KeyT key_at_pos = getKey(pos) ;
-      if (isEqual(key,key_at_pos))
+      pos = bucketnum + offset ;
+      key_at_pos = getKey(pos) ;
+      if (m_container->isEqual(key,key_at_pos))
 	 {
 	 // we found it!
 	 // chop entry out of hash chain
-	 *prevptr = chainNext(pos) ; //FIXME
+	 offset = chainNext(pos) ;
+	 bucket->next(offset) ;
 	 // delete the item proper
+	 setKey(pos,Entry::DELETED()) ;
 	 bucketPtr(pos)->markFree() ;
-	 replaceValue(pos,0) ;
 	 INCR_COUNT(remove_found) ;
 	 return true ;
 	 }
       // advance to next item in chain
-      prevptr = chainNextPtr(pos) ;
-      offset = Atomic<Link>::ref(*prevptr).load() ;
+      bucket = bucketPtr(pos) ;
+      offset = chainNext(pos) ;
       }
    // item not found
    return false ;
@@ -1572,7 +1591,7 @@ HashTable<KeyT,ValT>::~HashTable()
 	       }
 	    }
 	 }
-      atomic_thread_fence(std::memory_order_seq_cst) ; 
+      Fr::atomic_thread_fence(std::memory_order_seq_cst) ; 
       debug_msg("HashTable dtor\n") ;
       }
    table->clear() ;
@@ -1720,12 +1739,12 @@ void HashTable<KeyT,ValT>::updateTable()
 template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::threadInit()
 {
-#ifndef FrSINGLE_THREADED
    // check whether we've initialized the thread-local data yet
 #ifdef FrHASHTABLE_STATS
    if (!s_stats) s_stats = new HashTable_Stats ;
    s_stats->clear() ;
 #endif /* FrHASHTABLE_STATS */
+#ifndef FrSINGLE_THREADED
    if (!s_thread_record) s_thread_record = new TablePtr ;
    if (!s_thread_record->initialized())
       {
@@ -1770,11 +1789,11 @@ void HashTable<KeyT,ValT>::threadCleanup()
       }
    delete s_thread_record ;
    s_thread_record = nullptr ;
+#endif /* !FrSINGLE_THREADED */
 #ifdef FrHASHTABLE_STATS
    delete s_stats ;
    s_stats = nullptr ;
 #endif /* FrHASHTABLE_STATS */
-#endif /* !FrSINGLE_THREADED */
    return ;
 }
 

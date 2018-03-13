@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-07					*/
+/* Version 0.03, last edit 2018-03-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -40,9 +40,11 @@ void HashTableHelper::initialize()
 {
    if (!s_initialized.test_and_set())
       {
+#ifndef FrSINGLE_THREADED
       std::thread* thr = new thread(helperFunction) ;
       thr->detach() ;
       delete thr ;
+#endif /* !FrSINGLE_THREADED */
       }
    return ;
 }
@@ -52,8 +54,6 @@ void HashTableHelper::initialize()
 void HashTableHelper::helperFunction()
 {
    ThreadInit() ;
-   //FIXME FIXME: need auto thread registration ASAP
-//   HashTable<uint32_t,NullObject>::threadInit();
    for ( ; ; )
       {
       s_semaphore.wait() ;

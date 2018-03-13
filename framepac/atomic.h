@@ -1,12 +1,12 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-05-07					*/
+/*  Version 0.03, last edit 2018-03-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File atomic.h		atomic operations on simple variables	*/
 /*									*/
-/*  (c) Copyright 2015,2016,2017 Carnegie Mellon University		*/
+/*  (c) Copyright 2015,2016,2017,2018 Carnegie Mellon University	*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -70,7 +70,7 @@ class Atomic
       const T& operator= (const T& newval) noexcept { v = newval ; return newval ; }
       const T& operator= (const T& newval) volatile noexcept { v = newval ; return newval ; }
 
-      static bool is_lock_free() const noexcept { return true ; }
+      static bool is_lock_free() noexcept { return true ; }
       static constexpr bool is_always_lock_free = true ;
 
       void store(const T& desired, std::memory_order = std::memory_order_seq_cst ) noexcept { v = desired ; }
@@ -280,16 +280,51 @@ class Atomic
       T operator-- (int) noexcept { return v-- ; }
       T operator-- (int) volatile noexcept { return v-- ; }
 
-      T operator+= ( T incr ) noexcept { v += incr ; return v ; }
-      T operator+= ( T incr ) volatile noexcept { v += incr ; return v ; }
-      T operator-= ( T incr ) noexcept { v -= incr ; return v ; }
-      T operator-= ( T incr ) volatile noexcept { v -= incr ; return v ; }
-      T operator&= ( T incr ) noexcept { v &= incr ; return v ; }
-      T operator&= ( T incr ) volatile noexcept { v &= incr ; return v ; }
-      T operator|= ( T incr ) noexcept { v |= incr ; return v ; }
-      T operator|= ( T incr ) volatile noexcept { v |= incr ; return v ; }
-      T operator^= ( T incr ) noexcept { v ^= incr ; return v ; }
-      T operator^= ( T incr ) volatile noexcept { v ^= incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      operator+= ( T incr ) noexcept { v += incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      operator+= ( ssize_t incr ) noexcept { v += incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      operator+= ( T incr ) volatile noexcept { v += incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      operator+= ( ssize_t incr ) volatile noexcept { v += incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      operator-= ( T incr ) noexcept { v -= incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      operator-= ( ssize_t incr ) noexcept { v -= incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      operator-= ( T incr ) volatile noexcept { v -= incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      operator-= ( ssize_t incr ) volatile noexcept { v -= incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      operator&= ( T incr ) noexcept { v &= incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_pointer<T>::value,RetT>::type
+      operator&= ( ssize_t incr ) noexcept { v &= incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      operator&= ( T incr ) volatile noexcept { v &= incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      operator|= ( T incr ) noexcept { v |= incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      operator|= ( T incr ) volatile noexcept { v |= incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      operator^= ( T incr ) noexcept { v ^= incr ; return v ; }
+      template <typename RetT = T>
+      typename std::enable_if<std::is_integral<T>::value,RetT>::type
+      operator^= ( T incr ) volatile noexcept { v ^= incr ; return v ; }
 
       // additional operations not in C++ standard library
       bool test_and_set_bit( unsigned bitnum ) noexcept
@@ -352,7 +387,7 @@ class Atomic
 	       oldval = load() ;
 	       if (oldval <= desired)
 		  break ;
-	       } while (!compare_exchange_weak(oldval,desired) ;
+	       } while (!compare_exchange_weak(oldval,desired)) ;
 	 }
       void increaseTo(T desired)
 	 {
@@ -361,7 +396,7 @@ class Atomic
 	       oldval = load() ;
 	       if (oldval >= desired)
 		  break ;
-	       } while (!compare_exchange_weak(oldval,desired) ;
+	       } while (!compare_exchange_weak(oldval,desired)) ;
 	 }
 
       // generic functionality built on top of the atomic primitives
@@ -369,7 +404,7 @@ class Atomic
       template <typename RetT = T>
       void push(typename std::enable_if<std::is_pointer<T>::value,RetT>::type node)
 	 {
-	    node->next(var.load(std::memory_order_acquire)) ;
+	    node->next(v.load(std::memory_order_acquire)) ;
 	    store(node) ;
 	 }
 
@@ -385,12 +420,12 @@ class Atomic
       pop()
 	 {
 	    T node = load(std::memory_order_acquire) ;
-	    aif (node)
+	    if (node)
 	       store(node->next()) ;
 	    return node ;
 	 }
 
-      static Atomic<T> ref(T& obj) { return reinterpret_cast<Atomic<T> >(obj) ; }
+      static Atomic<T> ref(T& obj) { return *reinterpret_cast<Atomic<T>* >(&obj) ; }
 
    private:
       T v ;
@@ -398,11 +433,12 @@ class Atomic
 
 
 template <>
-inline NullObject Atomic<NullObject>::exchange(class NullObject v,
-					       std::memory_order) { return *this; }
+inline NullObject Atomic<NullObject>::exchange(class NullObject,
+					       std::memory_order) noexcept { return *this; }
 
 #else // multi-threaded version
 
+using std::atomic_thread_fence ;
 typedef std::atomic_flag atom_flag ;
 
 //----------------------------------------------------------------------------

@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-01					*/
+/* Version 0.03, last edit 2018-03-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -40,6 +40,7 @@ void (*null_function)(const void*,void*) = &null_work ;
 
 //----------------------------------------------------------------------------
 
+#ifndef FrSINGLE_THREADED
 static void variable_work(const void* data, void* returnval)
 {
    size_t count = *((size_t*)data) ;
@@ -52,18 +53,22 @@ static void variable_work(const void* data, void* returnval)
    *((size_t*)returnval) = value ;
    return ;
 }
+#endif /* !FrSINGLE_THREADED */
 
 //----------------------------------------------------------------------------
 
+#ifndef FrSINGLE_THREADED
 static void variable_sleep(const void* data, void*)
 {
    size_t delay = *((size_t*)data) ;
    this_thread::sleep_for(chrono::milliseconds(delay)) ;
    return ;
 }
+#endif /* !FrSINGLE_THREADED */
 
 //----------------------------------------------------------------------------
 
+#ifndef FrSINGLE_THREADED
 static void run_null(size_t numthreads, size_t task_count, bool batch_mode)
 {
    ThreadPool tp(numthreads) ;
@@ -90,9 +95,11 @@ static void run_null(size_t numthreads, size_t task_count, bool batch_mode)
    cout << "Thread pool: " << timer2 << endl ;
    return ;
 }
+#endif /* !FrSINGLE_THREADED */
 
 //----------------------------------------------------------------------------
 
+#ifndef FrSINGLE_THREADED
 static void run_work(size_t numthreads, size_t task_count, size_t max_count, bool batch_mode)
 {
    ThreadPool tp(numthreads) ;
@@ -126,9 +133,11 @@ static void run_work(size_t numthreads, size_t task_count, size_t max_count, boo
    cout << "Thread pool: " << timer2 << endl ;
    return ;
 }
+#endif /* !FrSINGLE_THREADED */
 
 //----------------------------------------------------------------------------
 
+#ifndef FrSINGLE_THREADED
 static void run_sleep(size_t numthreads, size_t task_count, size_t max_sleep, bool batch_mode)
 {
    ThreadPool tp(numthreads) ;
@@ -162,6 +171,7 @@ static void run_sleep(size_t numthreads, size_t task_count, size_t max_sleep, bo
    cout << "Thread pool: " << timer2 << endl ;
    return ;
 }
+#endif /* !FrSINGLE_THREADED */
 
 /************************************************************************/
 /************************************************************************/

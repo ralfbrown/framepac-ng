@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-14					*/
+/* Version 0.03, last edit 2018-03-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -36,7 +36,7 @@ namespace Fr
 
 static bool initialized = false ;
 
-#ifndef FrSINGLE_THREADED
+//#ifndef FrSINGLE_THREADED
 static InitializerBase* static_init_funcs ;
 static InitializerBase* static_cleanup_funcs ;
 
@@ -44,7 +44,7 @@ static ThreadInitializerBase* registered_init_funcs ;
 static ThreadInitializerBase* registered_cleanup_funcs ;
 
 static std::mutex registry_lock ;
-#endif /* !FrSINGLE_THREADED */
+//#endif /* !FrSINGLE_THREADED */
 
 /************************************************************************/
 /************************************************************************/
@@ -109,15 +109,10 @@ void RegisterStaticCleanup(InitializerBase *ti)
 
 //----------------------------------------------------------------------------
 
-#ifndef FrSINGLE_THREADED
 static thread_local bool thread_registered = false ;
-#endif /* !FrSINGLE_THREADED */
 
 bool ThreadInit()
 {
-#ifdef FrSINGLE_THREADED
-   return true ;
-#else
    if (!thread_registered)
       {
       // call any registered thread-initialization functions
@@ -127,7 +122,6 @@ bool ThreadInit()
 	 }
       thread_registered = true ;
       }
-#endif /* FrSINGLE_THREADED */
    return true ;
 }
 
