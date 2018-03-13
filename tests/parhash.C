@@ -33,6 +33,11 @@
 #include "framepac/threadpool.h"
 #include "framepac/timer.h"
 
+#ifdef FrSINGLE_THREADED
+# include <signal.h>
+# include <unistd.h>
+#endif
+
 using namespace Fr ;
 
 /************************************************************************/
@@ -906,6 +911,14 @@ void announce(ostream& out, bool terse, const char *msg, size_t threads, Hopscot
 
 //----------------------------------------------------------------------
 
+static void timeout_handler(int)
+{
+   stop_run = true ;
+   return ;
+}
+
+//----------------------------------------------------------------------
+
 template <class HashT, typename KeyT>
 static void hash_test(ThreadPool* user_pool, ostream& out, const char* heading, size_t threads,
    		      size_t cycles, HashT* ht, size_t maxsize, KeyT* syms, enum Operation op,
@@ -919,12 +932,17 @@ static void hash_test(ThreadPool* user_pool, ostream& out, const char* heading, 
    //   requested number of threads
    if (threads <= 1) user_pool = nullptr ;
    ThreadPool* tpool = user_pool ? user_pool : new ThreadPool(threads) ;
-   size_t slices = (threads == 0) ? 1 : threads ;
-   // use somewhat finer slices if each segment would be really large,
-   //   to avoid the case where one slice takes much longer than others
-   for (size_t loop = 1 ; loop <= 2 ; ++loop)
+   size_t slices = threads ;
+   if (threads == 0)
+      slices = 1 ;			// only a single slice when running single-threaded
+   else
       {
-      if (maxsize > 2000000 * slices && slices < 512) slices *= 2 ;
+      // use somewhat finer slices if each segment would be really large,
+      //   to avoid the case where one slice takes much longer than others
+      for (size_t loop = 1 ; loop <= 2 ; ++loop)
+	 {
+	 if (maxsize > 2000000 * slices && slices < 512) slices *= 2 ;
+	 }
       }
    HashRequestOrder* hashorders = new HashRequestOrder[slices] ;
    size_t slice_size = (maxsize + slices/2) / slices ;
@@ -935,6 +953,17 @@ static void hash_test(ThreadPool* user_pool, ostream& out, const char* heading, 
       }
    stop_run = false ;
    Timer timer ;
+   struct sigaction oldsig ;
+   if (op == Op_THROUGHPUT && threads == 0)
+      {
+      // when running single-threaded, set up an alarm for N seconds from now; the handler will set stop_run
+      struct sigaction action ;
+      action.sa_handler = timeout_handler ;
+      sigemptyset(&action.sa_mask) ;
+      action.sa_flags = 0 ;
+      sigaction(SIGALRM,&action,&oldsig) ;
+      alarm(cycles) ;
+      }
    for (size_t i = 0 ; i < slices ; ++i)
       {
       hashorders[i].op = op ;
@@ -1008,13 +1037,19 @@ static void hash_test(ThreadPool* user_pool, ostream& out, const char* heading, 
       }
    if (!terse)
       out << "  Waiting for thread completion" << endl ;
+#ifndef FrSINGLE_THREADED
    if (op == Op_THROUGHPUT)
       {
       overhead = 0 ;			// we re-used this parm to set the fraction of lookups
       std::this_thread::sleep_for(std::chrono::seconds(cycles)) ;
       stop_run = true ;
       }
+#endif /* !FrSINGLE_THREADED */
    tpool->waitUntilIdle() ;
+   if (op == Op_THROUGHPUT && threads == 0)
+      {
+      sigaction(SIGALRM,&oldsig,nullptr) ;
+      }
    if (op == Op_NONE)
       {
       delete[] hashorders ;
@@ -1581,11 +1616,13 @@ int main(int argc, char** argv)
       terse = true ;
       threads = -threads ;
       }
+#if 0
    if (throughput >= 0 && threads == 0)
       {
       cout << "Unable to perform throughput test single-threaded" << endl  ;
       throughput = -1 ;
       }
+#endif
    if (grow_size == 0)
       {
       cout << "Entered test size of zero, skipping test" << endl ;

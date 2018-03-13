@@ -963,38 +963,51 @@ bool HashTable<KeyT,ValT>::Table::remove(size_t hashval, KeyT key)
    size_t pos = bucketnum  + offset ;
    KeyT key_at_pos = getKey(pos) ;
    HashPtr* bucket = bucketPtr(bucketnum) ;
+   offset = chainNext(pos) ;
    if (m_container->isEqual(key,key_at_pos))
       {
       // remove the item from the head of the list
-      offset = chainNext(pos) ;
       bucket->first(offset) ;
       // delete the item proper
+      ValT value = getValue(pos) ;
       setKey(pos,Entry::DELETED()) ;
       bucketPtr(pos)->markFree() ;
       INCR_COUNT(remove_found) ;
+      // free the item's value at our leisure by running
+      //   the removal hook if present
+      if (remove_fn && value)
+	 {
+	 remove_fn(key_at_pos,value) ;
+	 }
       return true ;
       }
    // check the remaining items in the chain
-   offset = chainNext(pos) ;
+   bucket = bucketPtr(pos) ;
    while (FramepaC::NULLPTR != offset)
       {
       pos = bucketnum + offset ;
       key_at_pos = getKey(pos) ;
+      offset = chainNext(pos) ;
       if (m_container->isEqual(key,key_at_pos))
 	 {
 	 // we found it!
 	 // chop entry out of hash chain
-	 offset = chainNext(pos) ;
 	 bucket->next(offset) ;
 	 // delete the item proper
+	 ValT value = getValue(pos) ;
 	 setKey(pos,Entry::DELETED()) ;
 	 bucketPtr(pos)->markFree() ;
 	 INCR_COUNT(remove_found) ;
+	 // free the item's value at our leisure by running
+	 //   the removal hook if present
+	 if (remove_fn && value)
+	    {
+	    remove_fn(key_at_pos,value) ;
+	    }
 	 return true ;
 	 }
       // advance to next item in chain
       bucket = bucketPtr(pos) ;
-      offset = chainNext(pos) ;
       }
    // item not found
    return false ;
