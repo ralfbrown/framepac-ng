@@ -364,21 +364,27 @@ $(LIBINSTDIR)/$(LIBRARY): $(LIBRARY)
 ## the dependencies for each module of the full package
 
 $(BINDIR)/argparser$(EXE):	tests/argparser$(OBJ) $(LIBRARY)
+		@ mkdir -p $(BINDIR)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
 $(BINDIR)/membench$(EXE):	tests/membench$(OBJ) $(LIBRARY)
+		@ mkdir -p $(BINDIR)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
 $(BINDIR)/objtest$(EXE):	tests/objtest$(OBJ) $(LIBRARY)
+		@ mkdir -p $(BINDIR)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
 $(BINDIR)/parhash$(EXE):	tests/parhash$(OBJ) $(LIBRARY)
+		@ mkdir -p $(BINDIR)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
 $(BINDIR)/stringtest$(EXE):	tests/stringtest$(OBJ) $(LIBRARY)
+		@ mkdir -p $(BINDIR)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
 $(BINDIR)/tpool$(EXE):		tests/tpool$(OBJ) $(LIBRARY)
+		@ mkdir -p $(BINDIR)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
 allocator$(OBJ):		allocator$(C) framepac/atomic.h framepac/memory.h
