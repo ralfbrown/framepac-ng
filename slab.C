@@ -112,6 +112,30 @@ void Slab::clearOwner()
 
 //----------------------------------------------------------------------------
 
+#if defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ < 9
+// GCC 4.8 doesn't have std::align !
+} // end namespace FramepaC
+
+namespace std {
+void* align( std::size_t alignment, std::size_t size, void*& ptr, std::size_t& space)
+{
+   if (alignment == 0 || (alignment & (alignment-1)) != 0) return nullptr ; // not a power of two
+   if (space < size) return nullptr;
+   std::intptr_t p = (((std::intptr_t)ptr) + (alignment-1)) & ~(alignment-1) ;
+   std::intptr_t adj = p - (std::intptr_t)ptr ;
+   if (size + adj > space) return nullptr ;
+   space -= adj ;
+   ptr = (void*)p ;
+   return (void*)p ;
+}
+
+} // end namespace std
+
+namespace FramepaC {
+#endif /* GCC 4.8 */
+
+//----------------------------------------------------------------------------
+
 alloc_size_t Slab::makeFreeList(unsigned objsize, unsigned align)
 {
    // round up the object size to the next higher multiple of 'align'
