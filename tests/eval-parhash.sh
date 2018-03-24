@@ -4,14 +4,16 @@
 hashtest=bin/parhash
 
 # which hash tables to run
-#   '' = FramepaC (object)
 #   -i = FramepaC (integer)
-#   -I = STL (integer)
 #   -H = Hopscotch (integer)
-tables="'' -i -I -H"
+#   -I = STL (integer)
+#   '' = FramepaC (object)
+#tables="-i -H -I ''"
+tables="-i -H -I"
 
 # the number of threads to use
-threads="1 2 3 4 6 9 12 24 48 96 192 384"
+threads="1 2 3 4 6 9 12 24 48 96 192 384"	# hex-core w/ HT
+#threads="1 2 4 8 14 28 42 56 112 224 448"	# dual 14-core w/ HT
 
 # the concurrency for Hopscotch
 concurrency="16 32 64 128 256"
@@ -20,10 +22,19 @@ concurrency="16 32 64 128 256"
 reps=5
 
 # how long to run each throughput test
-seconds=4
+seconds=5
+
+# maximum seconds to allow the test program to run (auto-kill on hang)
+timelimit=600
+
+# the generation of key values
+keys="-k 1"	# default (pseudo-random sequence)
+#keys="-k 0"	# sequential (maximizes cache hits and possible fill factor)
+#keys="-k 4"	# apply Fasthash64 to sequential integers
 
 # the hash array size
-size=16720000
+size=67100000  # ~2^26
+size=16720000  # ~2^24
 
 # the number of items to put in the hash table
 count=12400000
@@ -34,19 +45,19 @@ run_hash()
     concur=$2
     [ -n "$concur" ] && concur=-C$concur
     for thr in $threads; do
-	for rep in $(seq $reps); do
-	    $hashtest -T100 --time $seconds -j-$thr -s$size -g$count $concur $algo
-	done
+	timeout -k5 $timelimit $hashtest -T100 --time $seconds -j-$thr -s$size -g$count $concur $keys $algo
     done
     return
 }
 
-for algo in $tables; do
-    if [ "x$algo" = "x-H" ]; then
-	for concur in $concurrency; do
-	    run_hash $algo $concur
-	done
-    else
-	run_hash $algo
-    fi
+for rep in $(seq $reps); do
+    for algo in $tables; do
+	if [ "x$algo" = "x-H" ]; then
+	    for concur in $concurrency; do
+		run_hash $algo $concur
+	    done
+	else
+	    run_hash $algo
+	fi
+    done
 done
