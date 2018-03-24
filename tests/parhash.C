@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-12					*/
+/* Version 0.03, last edit 2018-03-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2015,2017,2018 Carnegie Mellon University		*/
@@ -861,11 +861,11 @@ static void reclaim_deletions(HashT* ht, ThreadPool* tpool, HashRequestOrder* ha
 //----------------------------------------------------------------------
 
 static void announce(ostream& out, bool terse, const char *msg, const char* type,
-		     size_t threads, size_t concur)
+		     size_t threads)
 {
    if (terse)
       {
-      out << type << ',' << threads << ',' << concur << ',' << msg << ',' << flush ;
+      out << type << ',' << threads << ',' << msg << ',' << flush ;
       }
    else
       out << msg << ' ' << endl ;
@@ -876,7 +876,7 @@ static void announce(ostream& out, bool terse, const char *msg, const char* type
 
 void announce(ostream& out, bool terse, const char *msg, size_t threads, HashSet_U32*)
 {
-   announce(out,terse,msg,"int",threads,0) ;
+   announce(out,terse,msg,"int",threads) ;
    return ;
 }
 
@@ -884,7 +884,7 @@ void announce(ostream& out, bool terse, const char *msg, size_t threads, HashSet
 
 void announce(ostream& out, bool terse, const char *msg, size_t threads, ObjHashTable*)
 {
-   announce(out,terse,msg,"obj",threads,0) ;
+   announce(out,terse,msg,"obj",threads) ;
    return ;
 }
 
@@ -892,7 +892,7 @@ void announce(ostream& out, bool terse, const char *msg, size_t threads, ObjHash
 
 void announce(ostream& out, bool terse, const char *msg, size_t threads, STLset*)
 {
-   announce(out,terse,msg,"STL",threads,0) ;
+   announce(out,terse,msg,"STL",threads) ;
    return ;
 }
 
@@ -901,7 +901,9 @@ void announce(ostream& out, bool terse, const char *msg, size_t threads, STLset*
 #ifdef TEST_HOPSCOTCH
 void announce(ostream& out, bool terse, const char *msg, size_t threads, HopscotchMap*)
 {
-   announce(out,terse,msg,"Hopsc",threads,g_Hopscotch_Concurrency) ;
+   char* type = Fr::aprintf("Hopsc%03d",g_Hopscotch_Concurrency) ;
+   announce(out,terse,msg,type,threads) ;
+   delete[] type ;
    return ;
 }
 #endif /* TEST_HOPSCOTCH */
