@@ -235,7 +235,7 @@ $(C)$(OBJ): ; $(CC) $(CFLAGS) -c -o $@ $<
 # define the package info and files to be used
 
 PACKAGE=framepacng
-RELEASE=0.01
+RELEASE=0.03
 
 # the object modules to be included in the library file
 OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
@@ -281,7 +281,8 @@ TESTS = bin/argparser$(EXE)
 HEADERS = 
 
 # the files to be included in the source distribution archive
-DISTFILES= LICENSE COPYING makefile .gitignore *.C *.h framepac/*.h template/*.cc tests/*.C tests/*.h tests/*.sh
+DISTFILES= LICENSE COPYING makefile .gitignore *.C *.h framepac/*.h template/*.cc tests/*.C tests/*.h tests/*.sh \
+	hopscotch/*.h
 
 # the library archive file for this module
 LIBRARY = $(PACKAGE)$(LIB)

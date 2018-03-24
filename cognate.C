@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-11					*/
+/* Version 0.03, last edit 2018-03-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -111,9 +111,9 @@ bool CognateData::setMany2OneScore(const char* /*sources*/, char /*target*/)
 
 //----------------------------------------------------------------------------
 
-bool CognateData::areCognate(char letter1, char letter2, bool casefold) const
+bool CognateData::areCognate(char letter1, char letter2, bool case_fold) const
 {
-   if (casefold)
+   if (case_fold)
       {
       letter1 = tolower(letter1) ;
       letter2 = tolower(letter2) ;

@@ -50,7 +50,7 @@ using namespace std ;
 #define FrHASHTABLE_VERBOSITY 0
 
 // uncomment the following line to collect operational statistics (slightly slower)
-#define FrHASHTABLE_STATS
+//#define FrHASHTABLE_STATS
 
 // uncomment the following line to interleave bucket headers and
 //   bucket contents rather than using separate arrays (fewer cache

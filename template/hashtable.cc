@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2018-03-09					*/
+/* Version 0.03, last edit 2018-03-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -253,10 +253,10 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::Table::copyChain(size_t bucketnum)
 {
    Link offset ;
-   HashPtr* bucket = bucketPtr(bucketnum) ;
+   HashPtr* bcket = bucketPtr(bucketnum) ;
 #ifndef FrSINGLE_THREADED
    // atomically set the 'stale' bit and get the current status
-   Link status = bucket->markStaleGetStatus() ;
+   Link status = bcket->markStaleGetStatus() ;
    if (HashPtr::stale(status))
       {
       // someone else has already worked on this bucket, or a
@@ -268,7 +268,7 @@ bool HashTable<KeyT,ValT>::Table::copyChain(size_t bucketnum)
    //   start by making any deleted entries in the chain unusable by
    //   add(), so that it doesn't re-use them after we've skipped them
    //   during the copy loop
-   offset = bucket->first() ;
+   offset = bcket->first() ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;
@@ -279,7 +279,7 @@ bool HashTable<KeyT,ValT>::Table::copyChain(size_t bucketnum)
    //   re-use anything on the chain
 #endif /* !FrSINGLE_THREADED */
    // insert all elements of the current hash bucket into the next table
-   offset = bucket->first() ;
+   offset = bcket->first() ;
    while (FramepaC::NULLPTR != offset)
       {
       size_t pos = bucketnum + offset ;

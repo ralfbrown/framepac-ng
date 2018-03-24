@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2018-03-09					*/
+/* Version 0.03, last edit 2018-03-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -832,7 +832,7 @@ class HashTable : public HashTableBase
       [[gnu::hot]] ValT lookup(KeyT key) const { DELEGATE_HASH(lookup(hashval,key)) }
       [[gnu::hot]] bool lookup(KeyT key, ValT *value) const { DELEGATE_HASH(lookup(hashval,key,value)) }
       // NOTE: this lookup() is not entirely thread-safe if clear==true
-      [[gnu::hot]] bool lookup(KeyT key, ValT *value, bool clear) { DELEGATE_HASH(lookup(hashval,key,value,clear)) }
+      [[gnu::hot]] bool lookup(KeyT key, ValT *value, bool clr) { DELEGATE_HASH(lookup(hashval,key,value,clr)) }
       // NOTE: lookupValuePtr is not safe in the presence of parallel
       //   add() and remove() calls!  Use global synchronization if
       //   you will be using both this function and add()/remove()
@@ -918,8 +918,8 @@ class HashTable : public HashTableBase
       size_t bucket(KeyT key) const
 	 { DELEGATE(bucket(key)) }
 
-      void rehash(size_t count) { if (count) resizeTo(count) ; else reserve(countItems()) ; }
-      void reserve(size_t count) { rehash((size_t)(1 + count / 0.9f)) ; }
+      void rehash(size_t cnt) { if (cnt) resizeTo(cnt) ; else reserve(countItems()) ; }
+      void reserve(size_t cnt) { rehash((size_t)(1 + cnt / 0.9f)) ; }
       float load_factor() const
 	 { DELEGATE(load_factor()) }
 
@@ -1340,25 +1340,25 @@ typename HashTable<KeyT,ValT>::local_iterator HashTable<KeyT,ValT>::begin(int bu
 }
 
 template <typename KeyT, typename ValT>
-typename HashTable<KeyT,ValT>::const_local_iterator HashTable<KeyT,ValT>::cbegin(int bucket) const
+typename HashTable<KeyT,ValT>::const_local_iterator HashTable<KeyT,ValT>::cbegin(int bcket) const
 {
-   return const_local_iterator(m_table.load(),bucket,0) ;
+   return const_local_iterator(m_table.load(),bcket,0) ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-typename HashTable<KeyT,ValT>::local_iterator HashTable<KeyT,ValT>::end(int bucket) const
+typename HashTable<KeyT,ValT>::local_iterator HashTable<KeyT,ValT>::end(int bcket) const
 {
    Table* table = m_table.load() ;
-   return local_iterator(table,bucket,FramepaC::NULLPTR) ;
+   return local_iterator(table,bcket,FramepaC::NULLPTR) ;
 }
 
 template <typename KeyT, typename ValT>
-typename HashTable<KeyT,ValT>::const_local_iterator HashTable<KeyT,ValT>::cend(int bucket) const
+typename HashTable<KeyT,ValT>::const_local_iterator HashTable<KeyT,ValT>::cend(int bcket) const
 {
    Table* table = m_table.load() ;
-   return const_local_iterator(table,bucket,FramepaC::NULLPTR) ;
+   return const_local_iterator(table,bcket,FramepaC::NULLPTR) ;
 }
 #endif
 
