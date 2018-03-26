@@ -146,6 +146,7 @@ enum VectorSimilarityMeasure
       squared_chord,
       squared_euclidean,
       taneja,
+      topsoe,			// twice the Jensen-Shannon distance
       tripartite,
       tversky,			//TODO: https://en.wikipedia.org/wiki/Tversky_index
       wave_hedges,

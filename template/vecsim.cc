@@ -2827,6 +2827,7 @@ double jensen_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOption
 //============================================================================
 //      JS(a,b) == (KL(a|avg(a,b)) + KL(b|avg(a,b))) / 2
 //      KL(a|b) == sum_y( a(y)(log a(y) - log b(y)) )
+// JS == 1/2 * Topsoe distance
 
 template <typename ValT>
 ValT KL_term(ValT a, ValT b)
