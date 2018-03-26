@@ -2284,20 +2284,20 @@ double soergel_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptio
       auto elt2(v2->elementIndex(pos2)) ;
       if (elt1 < elt2)
 	 {
-	 auto val1 = v1->elementValue(pos1++) ;
+	 auto val1 = v1->elementValue(pos1++) / wt1 ;
 	 total_diff += std::abs(val1) ;
 	 total_max += val1 ;
 	 }
       else if (elt1 > elt2)
 	 {
-	 auto val2 = v2->elementValue(pos2++) ;
+	 auto val2 = v2->elementValue(pos2++) / wt2 ;
 	 total_diff += std::abs(val2) ;
 	 total_max += val2 ;
 	 }
       else // if (elt1 == elt2)
 	 {
-	 auto val1 = v1->elementValue(pos1++) ;
-	 auto val2 = v2->elementValue(pos2++) ;
+	 auto val1 = v1->elementValue(pos1++) / wt1 ;
+	 auto val2 = v2->elementValue(pos2++) / wt2 ;
 	 total_diff += std::abs(val1 - val2) ;
 	 total_max += std::max(val1 + val2) ;
 	 }
@@ -2325,16 +2325,16 @@ double lorentzian_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOp
       auto elt2(v2->elementIndex(pos2)) ;
       if (elt1 < elt2)
 	 {
-	 sum += std::log(1.0 + std::abs(v1->elementValue(pos1++))) ;
+	 sum += std::log(1.0 + std::abs(v1->elementValue(pos1++)/wt1)) ;
 	 }
       else if (elt1 > elt2)
 	 {
-	 sum += std::log(1.0 + std::abs(v2->elementValue(pos2++))) ;
+	 sum += std::log(1.0 + std::abs(v2->elementValue(pos2++)/wt2)) ;
 	 }
       else // if (elt1 == elt2)
 	 {
-	 auto val1 = v1->elementValue(pos1++) ;
-	 auto val2 = v2->elementValue(pos2++) ;
+	 auto val1 = v1->elementValue(pos1++) / wt1 ;
+	 auto val2 = v2->elementValue(pos2++) / wt2 ;
 	 sum += std::log(1.0 + std::abs(val1 - val2)) ;
 	 }
       }
@@ -2679,16 +2679,16 @@ double jensen_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOption
       double val2(0) ;
       if (elt1 < elt2)
 	 {
-	 val1 = v1->elementValue(pos1++) ;
+	 val1 = v1->elementValue(pos1++) / totalwt1 ;
 	 }
       else if (elt1 > elt2)
 	 {
-	 val2 = v2->elementValue(pos2++) ;
+	 val2 = v2->elementValue(pos2++) / totalwt2 ;
 	 }
       else // if (elt1 == elt2)
 	 {
-	 val1 = v1->elementValue(pos1++) ;
-	 val2 = v2->elementValue(pos2++) ;
+	 val1 = v1->elementValue(pos1++) / totalwt1 ;
+	 val2 = v2->elementValue(pos2++) / totalwt2 ;
 	 }
       double ent1 = p_log_p(val1) ;
       double ent2 = p_log_p(val2) ;
