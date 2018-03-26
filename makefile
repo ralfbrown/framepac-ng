@@ -243,10 +243,11 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	bidindex_cstr$(OBJ) bitvector$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) canonsent$(OBJ) \
 	charget$(OBJ) cfile$(OBJ) cognate$(OBJ) confmatrix$(OBJ) \
-	cluster$(OBJ) \
+	cluster$(OBJ) clusterinfo$(OBJ) \
 	cluster_agglom$(OBJ) cluster_anneal$(OBJ) cluster_brown$(OBJ) \
 	cluster_dbscan$(OBJ) cluster_growseed$(OBJ) cluster_incr$(OBJ) \
-	cluster_kmeans$(OBJ) cluster_kmediods$(OBJ) cluster_tight$(OBJ) \
+	cluster_kmeans$(OBJ) cluster_kmediods$(OBJ) cluster_optics$(OBJ) \
+	cluster_tight$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
 	fasthash64$(OBJ) \
 	float$(OBJ) frame$(OBJ) hazardptr$(OBJ) \
@@ -405,6 +406,7 @@ canonsent$(OBJ):		canonsent$(C) framepac/stringbuilder.h framepac/texttransforms
 charget$(OBJ):		charget$(C) framepac/charget.h
 cfile$(OBJ):			cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
 cluster$(OBJ):		cluster$(C) framepac/cluster.h
+clusterinfo$(OBJ):	clusterinfo$(C) framepac/cluster.h
 cluster_agglom$(OBJ):	cluster_agglom$(C) framepac/cluster.h
 cluster_anneal$(OBJ):	cluster_anneal$(C) framepac/cluster.h
 cluster_brown$(OBJ):	cluster_brown$(C) framepac/cluster.h
