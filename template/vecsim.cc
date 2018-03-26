@@ -2369,8 +2369,8 @@ double fidelity_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOpti
 	 }
       else // if (elt1 == elt2)
 	 {
-	 auto val1 = v1->elementValue(pos1++) ;
-	 auto val2 = v2->elementValue(pos2++) ;
+	 auto val1 = v1->elementValue(pos1++) / wt1 ;
+	 auto val2 = v2->elementValue(pos2++) / wt2 ;
 	 sum += std::sqrt(val1 * val2) ;
 	 }
       }
@@ -2434,18 +2434,18 @@ double squared_chord_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarit
       auto elt2(v2->elementIndex(pos2)) ;
       if (elt1 < elt2)
 	 {
-	 auto val1 = v1->elementValue(pos1++) ;
+	 auto val1 = v1->elementValue(pos1++) / wt1 ;
 	 sum += std::abs(val1) ;
 	 }
       else if (elt1 > elt2)
 	 {
-	 auto val2 = v2->elementValue(pos2++) ;
+	 auto val2 = v2->elementValue(pos2++) / wt2 ;
 	 sum += std::abs(val2) ;
 	 }
       else // if (elt1 == elt2)
 	 {
-	 auto val1 = v1->elementValue(pos1++) ;
-	 auto val2 = v2->elementValue(pos2++) ;
+	 auto val1 = v1->elementValue(pos1++) / wt1 ;
+	 auto val2 = v2->elementValue(pos2++) / wt2 ;
 	 double value = std::sqrt(val1) - std::sqrt(val2) ;
 	 sum += (value * value) ;
 	 }
