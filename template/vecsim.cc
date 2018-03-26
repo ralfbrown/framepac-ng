@@ -2342,6 +2342,64 @@ double lorentzian_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOp
 }
 
 //============================================================================
+// Fidelity
+//     sum(sqrt(P*Q))
+
+template <typename VecT1, typename VecT2>
+double fidelity_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
+{
+   size_t pos1(0) ;
+   size_t pos2(0) ;
+   size_t elts1(v1->numElements()) ;
+   size_t elts2(v2->numElements()) ;
+   double sum(0) ;
+   typename VecT1::value_type wt1, wt2 ;
+   normalization_weights(v1,v2,opt.normalize,wt1,wt2) ;
+   for ( ; pos1 < elts1 && pos2 < elts2 ; )
+      {
+      auto elt1(v1->elementIndex(pos1)) ;
+      auto elt2(v2->elementIndex(pos2)) ;
+      if (elt1 < elt2)
+	 {
+	 ++pos1 ;
+	 }
+      else if (elt1 > elt2)
+	 {
+	 ++pos2 ;
+	 }
+      else // if (elt1 == elt2)
+	 {
+	 auto val1 = v1->elementValue(pos1++) ;
+	 auto val2 = v2->elementValue(pos2++) ;
+	 sum += std::sqrt(val1 * val2) ;
+	 }
+      }
+   return sum ;
+}
+
+//============================================================================
+// Bhattacharyya distance
+//    -ln(fidelity)
+
+template <typename VecT1, typename VecT2>
+double bhattacharyya_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
+{
+   double fidelity = fidelity_sim(v1,v2,opt) ;
+   return fidelity > 0 ? -std::log(fidelity) : HUGE_VAL ;
+}
+
+//============================================================================
+// Hellinger distance
+//    2*sqrt(1-fidelity)
+
+template <typename VecT1, typename VecT2>
+double hellinger_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
+{
+   double fidelity = fidelity_sim(v1,v2,opt) ;
+   return 2 * std::sqrt(1 - fidelity) ;
+}
+
+//============================================================================
 // squared-chord distance
 //	sum((sqrt(P_i) - sqrt(Q_i))^2)
 // note: required non-negative elements!
@@ -2377,7 +2435,7 @@ double squared_chord_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarit
 	 {
 	 auto val1 = v1->elementValue(pos1++) ;
 	 auto val2 = v2->elementValue(pos2++) ;
-	 double value = sqrt(val1) - sqrt(val2) ;
+	 double value = std::sqrt(val1) - std::sqrt(val2) ;
 	 sum += (value * value) ;
 	 }
       }
