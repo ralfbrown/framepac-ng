@@ -2276,11 +2276,15 @@ double soergel_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptio
       auto elt2(v2->elementIndex(pos2)) ;
       if (elt1 < elt2)
 	 {
-	 ++pos1 ;
+	 auto val1 = v1->elementValue(pos1++) ;
+	 total_diff += std::abs(val1) ;
+	 total_max += val1 ;
 	 }
       else if (elt1 > elt2)
 	 {
-	 ++pos2 ;
+	 auto val2 = v2->elementValue(pos2++) ;
+	 total_diff += std::abs(val2) ;
+	 total_max += val2 ;
 	 }
       else // if (elt1 == elt2)
 	 {
@@ -2313,11 +2317,11 @@ double lorentzian_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOp
       auto elt2(v2->elementIndex(pos2)) ;
       if (elt1 < elt2)
 	 {
-	 ++pos1 ;
+	 sum += std::log(1.0 + std::abs(v1->elementValue(pos1++))) ;
 	 }
       else if (elt1 > elt2)
 	 {
-	 ++pos2 ;
+	 sum += std::log(1.0 + std::abs(v2->elementValue(pos2++))) ;
 	 }
       else // if (elt1 == elt2)
 	 {
@@ -2353,11 +2357,13 @@ double squared_chord_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarit
       auto elt2(v2->elementIndex(pos2)) ;
       if (elt1 < elt2)
 	 {
-	 ++pos1 ;
+	 auto val1 = v1->elementValue(pos1++) ;
+	 sum += std::abs(val1) ;
 	 }
       else if (elt1 > elt2)
 	 {
-	 ++pos2 ;
+	 auto val2 = v2->elementValue(pos2++) ;
+	 sum += std::abs(val2) ;
 	 }
       else // if (elt1 == elt2)
 	 {
@@ -2402,6 +2408,46 @@ double circle_product_dis(const VecT1* v1, const VecT2* v2, const VectorSimilari
       }
    size_t total(v1->numElements() + v2->numElements()) ;
    return total ? sum / total : 0.0 ;
+}
+
+//============================================================================
+// Clark
+//     sqrt(sum((absdiff/sum)**2))
+// from: Deza E. and Deza M.M., Dictionary of Distances, Elsevier, 2006
+
+template <typename VecT1, typename VecT2>
+double clark_product_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
+{
+   size_t pos1(0) ;
+   size_t pos2(0) ;
+   size_t elts1(v1->numElements()) ;
+   size_t elts2(v2->numElements()) ;
+   double sum(0) ;
+   typename VecT1::value_type wt1, wt2 ;
+   normalization_weights(v1,v2,opt.normalize,wt1,wt2) ;
+   for ( ; pos1 < elts1 && pos2 < elts2 ; )
+      {
+      auto elt1(v1->elementIndex(pos1)) ;
+      auto elt2(v2->elementIndex(pos2)) ;
+      if (elt1 < elt2)
+	 {
+	 ++pos1 ;
+	 sum += 1.0 ;
+	 }
+      else if (elt1 > elt2)
+	 {
+	 ++pos2 ;
+	 sum += 1.0 ;
+	 }
+      else // if (elt1 == elt2)
+	 {
+	 auto val1 = v1->elementValue(pos1++) ;
+	 auto val2 = v1->elementValue(pos2++) ;
+	 double value = std::abs(val1-val2) / (val1 + val2) ;
+	 sum += (value * value) ;
+	 }
+      }
+   return std::sqrt(sum) ;
 }
 
 //----------------------------------------------------------------------------
