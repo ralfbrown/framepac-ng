@@ -2342,7 +2342,7 @@ double lorentzian_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOp
 }
 
 //============================================================================
-// Fidelity
+// Fidelity, aka Bhattacharyya coefficient or Hellinger affinity
 //     sum(sqrt(P*Q))
 
 template <typename VecT1, typename VecT2>
@@ -2400,6 +2400,17 @@ double hellinger_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOpt
 }
 
 //============================================================================
+// Matusita distance
+//    sqrt(2 - 2*fidelity)
+
+template <typename VecT1, typename VecT2>
+double matusita_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
+{
+   double fidelity = fidelity_sim(v1,v2,opt) ;
+   return std::sqrt(2 - 2 * fidelity) ;
+}
+
+//============================================================================
 // squared-chord distance
 //	sum((sqrt(P_i) - sqrt(Q_i))^2)
 // note: required non-negative elements!
@@ -2440,6 +2451,15 @@ double squared_chord_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarit
 	 }
       }
    return sum ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename VecT1, typename VecT2>
+double squared_chord_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
+{
+   return 1 - squared_chord_dis(v1,v2,opt) ;
+   // equivalent to 2*fidelity_sim() - 1
 }
 
 //============================================================================
