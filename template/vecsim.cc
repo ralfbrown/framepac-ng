@@ -34,6 +34,14 @@ namespace vecsim
 using Fr::VectorSimilarityOptions ;
 using Fr::DenseVector ;
 
+template <typename ValT>
+ValT p_log_p(ValT p)
+{
+   return p ? p * std::log(p) : 0 ;
+}
+
+//----------------------------------------------------------------------------
+
 template <typename VecT>
 typename VecT::value_type sum_of_weights(const VecT* v)
 {
@@ -1768,7 +1776,7 @@ double routledge2_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOp
    typename VecT1::value_type total1(both+v1_only) ;
    typename VecT1::value_type total2(both+v2_only) ;
    double num1(2 * both * log(2)) ;
-   double num2(total1 * log(total1) + total2 * log(total2)) ;
+   double num2(p_log_p(total1) + p_log_p(total2)) ;
    return log(denom) - (num1 + num2) / denom ;
 }
 
@@ -1795,7 +1803,7 @@ double binary_routledge2_dis(const VecT1* v1, const VecT2* v2, const VectorSimil
    size_t total1(both+v1_only) ;
    size_t total2(both+v2_only) ;
    double num1(2 * both * log(2)) ;
-   double num2(total1 * log(total1) + total2 * log(total2)) ;
+   double num2(p_log_p(total1) + p_log_p(total2)) ;
    return log(denom) - (num1 + num2) / denom ;
 }
 
@@ -2570,6 +2578,46 @@ double jaro_winkler_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarity
    // scale_factor <= 0.25; standard value 0.1
    // see: http://web.archive.org/web/20100227020019/http://www.census.gov/geo/msb/stand/strcmp.c
    return 0.0 ; //FIXME
+}
+
+//============================================================================
+// Jensen difference: sum of average of entropies less entropy of average
+
+template <typename VecT1, typename VecT2>
+double jensen_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
+{
+   typename VecT1::value_type totalwt1, totalwt2 ;
+   normalization_weights(v1,v2,1,totalwt1,totalwt2) ;
+   size_t pos1(0) ;
+   size_t pos2(0) ;
+   size_t elts1(v1->numElements()) ;
+   size_t elts2(v2->numElements()) ;
+   double sum(0.0) ;
+   for ( ; pos1 < elts1 && pos2 < elts2 ; )
+      {
+      auto elt1(v1->elementIndex(pos1)) ;
+      auto elt2(v2->elementIndex(pos2)) ;
+      double val1(0) ;
+      double val2(0) ;
+      if (elt1 < elt2)
+	 {
+	 val1 = v1->elementValue(pos1++) ;
+	 }
+      else if (elt1 > elt2)
+	 {
+	 val2 = v2->elementValue(pos2++) ;
+	 }
+      else // if (elt1 == elt2)
+	 {
+	 val1 = v1->elementValue(pos1++) ;
+	 val2 = v2->elementValue(pos2++) ;
+	 }
+      double ent1 = p_log_p(val1) ;
+      double ent2 = p_log_p(val2) ;
+      double ent_avg = p_log_p((val1+val2)/2) ;
+      sum += (ent1+ent2)/2 - ent_avg ;
+      }
+   return sum ;
 }
 
 //============================================================================
