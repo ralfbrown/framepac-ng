@@ -243,7 +243,10 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	bidindex_cstr$(OBJ) bitvector$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) canonsent$(OBJ) \
 	charget$(OBJ) cfile$(OBJ) cognate$(OBJ) confmatrix$(OBJ) \
-	cluster$(OBJ) cluster_growseed$(OBJ) cluster_kmeans$(OBJ) \
+	cluster$(OBJ) \
+	cluster_agglom$(OBJ) cluster_anneal$(OBJ) cluster_brown$(OBJ) \
+	cluster_dbscan$(OBJ) cluster_growseed$(OBJ) cluster_incr$(OBJ) \
+	cluster_kmeans$(OBJ) cluster_kmediods$(OBJ) cluster_tight$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
 	fasthash64$(OBJ) \
 	float$(OBJ) frame$(OBJ) hazardptr$(OBJ) \
@@ -403,9 +406,14 @@ charget$(OBJ):		charget$(C) framepac/charget.h
 cfile$(OBJ):			cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
 cluster$(OBJ):		cluster$(C) framepac/cluster.h
 cluster_agglom$(OBJ):	cluster_agglom$(C) framepac/cluster.h
+cluster_anneal$(OBJ):	cluster_anneal$(C) framepac/cluster.h
+cluster_brown$(OBJ):	cluster_brown$(C) framepac/cluster.h
+cluster_dbscan$(OBJ):	cluster_dbscan$(C) framepac/cluster.h
 cluster_growseed$(OBJ):	cluster_growseed$(C) framepac/cluster.h
 cluster_incr$(OBJ):		cluster_incr$(C) framepac/cluster.h
 cluster_kmeans$(OBJ):	cluster_kmeans$(C) framepac/cluster.h
+cluster_kmediods$(OBJ):	cluster_kmediods$(C) framepac/cluster.h
+cluster_tight$(OBJ):	cluster_tight$(C) framepac/cluster.h
 cognate$(OBJ):		cognate$(C) framepac/spelling.h
 complex$(OBJ):		complex$(C) framepac/complex.h framepac/fasthash64.h
 confmatrix$(OBJ):		confmatrix$(C) framepac/spelling.h

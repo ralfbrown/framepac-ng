@@ -28,10 +28,10 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-class ClusteringAlgoGrowseed : public ClusteringAlgo
+class ClusteringAlgoKMediods : public ClusteringAlgo
    {
    public:
-      virtual ~ClusteringAlgoGrowseed() { delete this ; }
+      virtual ~ClusteringAlgoKMediods() { delete this ; }
 
    protected:
 
@@ -42,4 +42,4 @@ class ClusteringAlgoGrowseed : public ClusteringAlgo
 
 } // end of namespace Fr
 
-// end of file cluster_growseed.C //
+// end of file cluster_kmeans.C //

@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.03, last edit 2018-03-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -22,8 +22,34 @@
 #ifndef __FrCLUSTER_H_INCLUDED
 #define __FrCLUSTER_H_INCLUDED
 
+#include "framepac/list.h"
+
 namespace Fr {
 
+class ClusterInfo : public Object
+   {
+   public:
+      ClusterInfo() {}
+      ~ClusterInfo() {}
+      
+   protected:
+      List* m_members ;
+      List* m_subclusters ;
+
+   } ;
+
+//----------------------------------------------------------------------
+
+class ClusteringAlgo
+   {
+   public:
+      static ClusteringAlgo* instantiate(const char* algo_name, ...) ;
+      virtual ~ClusteringAlgo() {}
+
+   protected:
+      ClusteringAlgo() {}
+
+   } ;
 
 } ; // end of namespace Fr
 

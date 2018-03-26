@@ -4,7 +4,7 @@
 /* Version 0.03, last edit 2018-03-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
+/* (c) Copyright 2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -28,10 +28,10 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-class ClusteringAlgoGrowseed : public ClusteringAlgo
+class ClusteringAlgoDBScan : public ClusteringAlgo
    {
    public:
-      virtual ~ClusteringAlgoGrowseed() { delete this ; }
+      virtual ~ClusteringAlgoDBScan() { delete this ; }
 
    protected:
 
@@ -42,4 +42,4 @@ class ClusteringAlgoGrowseed : public ClusteringAlgo
 
 } // end of namespace Fr
 
-// end of file cluster_growseed.C //
+// end of file cluster_dbscan.C //

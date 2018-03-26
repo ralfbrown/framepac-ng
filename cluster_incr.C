@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.03, last edit 2018-03-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -22,5 +22,24 @@
 #include "framepac/cluster.h"
 using namespace Fr ;
 
+namespace Fr
+{
+
+/************************************************************************/
+/************************************************************************/
+
+class ClusteringAlgoIncr : public ClusteringAlgo
+   {
+   public:
+      virtual ~ClusteringAlgoIncr() { delete this ; }
+
+   protected:
+
+   } ;
+
+/************************************************************************/
+/************************************************************************/
+
+} // end of namespace Fr
 
 // end of file cluster_incr.C //
