@@ -2493,8 +2493,8 @@ double clark_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions
 	 }
       else // if (elt1 == elt2)
 	 {
-	 auto val1 = v1->elementValue(pos1++) ;
-	 auto val2 = v2->elementValue(pos2++) ;
+	 auto val1 = v1->elementValue(pos1++) / wt1 ;
+	 auto val2 = v2->elementValue(pos2++) / wt2 ;
 	 double value = std::abs(val1-val2) / (val1 + val2) ;
 	 sum += (value * value) ;
 	 }
@@ -2523,16 +2523,16 @@ double sangvi_chisquared_dis(const VecT1* v1, const VecT2* v2, const VectorSimil
       auto elt2(v2->elementIndex(pos2)) ;
       if (elt1 < elt2)
 	 {
-	 sum += std::abs(v1->elementValue(pos1++)) ;
+	 sum += std::abs(v1->elementValue(pos1++)) / wt1 ;
 	 }
       else if (elt1 > elt2)
 	 {
-	 sum += std::abs(v2->elementValue(pos2++)) ;
+	 sum += std::abs(v2->elementValue(pos2++)) / wt2 ;
 	 }
       else // if (elt1 == elt2)
 	 {
-	 auto val1 = v1->elementValue(pos1++) ;
-	 auto val2 = v2->elementValue(pos2++) ;
+	 auto val1 = v1->elementValue(pos1++) / wt1 ;
+	 auto val2 = v2->elementValue(pos2++) / wt2 ;
 	 double diff = val1 - val2 ;
 	 double elt_sum = val1 + val2 ;
 	 if (elt_sum) sum += (diff * diff / elt_sum) ;
@@ -2568,7 +2568,7 @@ double circle_product_dis(const VecT1* v1, const VecT2* v2, const VectorSimilari
 	 }
       else // if (elt1 == elt2)
 	 {
-	 sum += std::min(v1->elementValue(pos1++),v2->elementValue(pos2++)) ;
+	 sum += std::min(v1->elementValue(pos1++) / wt1,v2->elementValue(pos2++) / wt2) ;
 	 }
       }
    size_t total(v1->numElements() + v2->numElements()) ;
