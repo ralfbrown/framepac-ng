@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-08-02					*/
+/* Version 0.03, last edit 2018-03-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -32,14 +32,16 @@ namespace Fr {
 class VectorSimilarityOptions
    {
    public:
+      VectorSimilarityOptions() ;
+      bool parseOptions(const char* options) ;
+
+   public:
       double power ;
       double alpha ;
       double beta ;
+      double smoothing ;
       int    normalize ;
       bool   use_similarity ;
-   public:
-      bool parseOptions(const char *options) ;
-
    } ;
 
 //----------------------------------------------------------------------------
@@ -91,23 +93,27 @@ enum VectorSimilarityMeasure
       bray_curtis,		// https://en.wikipedia.org/wiki/Bray%E2%80%93Curtis_dissimilarity 
       canberra,
       circle_product,
+      clark,
       cocogaston,
       cody,
       cosine,
       dice,			// aka Sorenson, Sorenson-Dice, Czekanowski
       euclidean,
       fager_mcgowan,
+      fidelity,
       fisher_info_metric,	//TODO
       gamma,
       gilbert,
       gini,
       harrison,
-      hellinger,		//TODO: https://en.wikipedia.org/wiki/Hellinger_distance 
+      hellinger,
       jaccard,
+      jensen,
       jensen_shannon,
       kulczynski1,
       kulczynski2,
       kullback_leibler,		// https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+      kumar_johnson,
       l0,
       lance_williams,
       lande,
@@ -115,11 +121,13 @@ enum VectorSimilarityMeasure
       lennon2,
       legendre2,
       linf,
+      lorentzian,
       l_norm,			// requires passing additional data to similarity function
       maarel,
       magurran,
       mahalanobis,		// requires passing additional data to similarity function
       manhattan,
+      matusita,
       mcconnagh,
       modified_gini,
       morisita,			//TODO: https://en.wikipedia.org/wiki/Morisita%27s_overlap_index
@@ -128,14 +136,19 @@ enum VectorSimilarityMeasure
       robinson,
       routledge1,
       routledge2,
+      sangvi,
       similarity_ratio,
       simpson,
+      soergel,
       sokal_sneath,
       soft_cosine,		//TODO
       sorgenfrei,
+      squared_chord,
       squared_euclidean,
+      taneja,
       tripartite,
       tversky,			//TODO: https://en.wikipedia.org/wiki/Tversky_index
+      wave_hedges,
       whittaker,
       williams,
       williams2,

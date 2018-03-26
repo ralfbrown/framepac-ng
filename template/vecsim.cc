@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-09-18					*/
+/* Version 0.03, last edit 2018-03-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -38,6 +38,13 @@ template <typename ValT>
 ValT p_log_p(ValT p)
 {
    return p ? p * std::log(p) : 0 ;
+}
+
+//----------------------------------------------------------------------------
+
+double safe_div(double num, double denom)
+{
+   return denom ? num / denom : (num ? HUGE_VAL : 0) ;
 }
 
 //----------------------------------------------------------------------------
@@ -2299,7 +2306,7 @@ double soergel_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptio
 	 auto val1 = v1->elementValue(pos1++) / wt1 ;
 	 auto val2 = v2->elementValue(pos2++) / wt2 ;
 	 total_diff += std::abs(val1 - val2) ;
-	 total_max += std::max(val1 + val2) ;
+	 total_max += std::max(val1 + val2, opt.smoothing) ;
 	 }
       }   
    return total_max ? total_diff / total_max : -1.0 ;
@@ -2503,6 +2510,46 @@ double clark_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions
 }
 
 //============================================================================
+// Wave Hedges
+//     sum(1 - (min/max)) == sum(absdiff / max)
+
+template <typename VecT1, typename VecT2>
+double wave_hedges_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
+{
+   size_t pos1(0) ;
+   size_t pos2(0) ;
+   size_t elts1(v1->numElements()) ;
+   size_t elts2(v2->numElements()) ;
+   double sum(0) ;
+   typename VecT1::value_type wt1, wt2 ;
+   normalization_weights(v1,v2,opt.normalize,wt1,wt2) ;
+   for ( ; pos1 < elts1 && pos2 < elts2 ; )
+      {
+      auto elt1(v1->elementIndex(pos1)) ;
+      auto elt2(v2->elementIndex(pos2)) ;
+      double val1(0) ;
+      double val2(0) ;
+      if (elt1 < elt2)
+	 {
+	 val1 = v1->elementValue(pos1++) / wt1 ;
+	 }
+      else if (elt1 > elt2)
+	 {
+	 val2 = v2->elementValue(pos2++) / wt2 ;
+	 }
+      else // if (elt1 == elt2)
+	 {
+	 val1 = v1->elementValue(pos1++) / wt1 ;
+	 val2 = v2->elementValue(pos2++) / wt2 ;
+	 }
+      double diff = std::abs(val1 - val2) ;
+      double maxval = std::max(val1,val2,opt.smoothing) ;
+      sum += safe_div(diff,maxval) ;
+      }
+   return sum ;
+}
+
+//============================================================================
 // probabilistic symmetric chi-squared / Sangvi chi-squared between populations
 //     2*sum((diff**2)/(sum))
 // from: Deza E. and Deza M.M., Dictionary of Distances, Elsevier, 2006
@@ -2534,11 +2581,90 @@ double sangvi_chisquared_dis(const VecT1* v1, const VecT2* v2, const VectorSimil
 	 auto val1 = v1->elementValue(pos1++) / wt1 ;
 	 auto val2 = v2->elementValue(pos2++) / wt2 ;
 	 double diff = val1 - val2 ;
-	 double elt_sum = val1 + val2 ;
-	 if (elt_sum) sum += (diff * diff / elt_sum) ;
+	 double elt_sum = std::max(val1 + val2, opt.smoothing) ;
+	 sum += safe_div(diff * diff, elt_sum) ;
 	 }
       }
    return std::sqrt(sum) ;
+}
+
+//============================================================================
+// Taneja: hybrid of arithmetic and geometric mean divergence
+
+template <typename VecT1, typename VecT2>
+double taneja_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
+{
+   size_t pos1(0) ;
+   size_t pos2(0) ;
+   size_t elts1(v1->numElements()) ;
+   size_t elts2(v2->numElements()) ;
+   double sum(0) ;
+   typename VecT1::value_type wt1, wt2 ;
+   normalization_weights(v1,v2,opt.normalize,wt1,wt2) ;
+   for ( ; pos1 < elts1 && pos2 < elts2 ; )
+      {
+      auto elt1(v1->elementIndex(pos1)) ;
+      auto elt2(v2->elementIndex(pos2)) ;
+      double val1(0) ;
+      double val2(0) ;
+      if (elt1 < elt2)
+	 {
+	 val1 = v1->elementValue(pos1++)/ wt1 ;
+	 }
+      else if (elt1 > elt2)
+	 {
+	 val2 = v2->elementValue(pos2++)/ wt2 ;
+	 }
+      else // if (elt1 == elt2)
+	 {
+	 val1 = v1->elementValue(pos1++)/ wt1 ;
+	 val2 = v2->elementValue(pos2++)/ wt2 ;
+	 }
+      double mean = (val1 + val2) / 2 ;
+      double denom = std::max(2*std::sqrt(val1*val2), opt.smoothing) ;
+      double geom = safe_div(val1 + val2, denom) ;
+      sum += mean * std::log(geom) ;
+      }
+   return sum ;
+}
+
+//============================================================================
+// Kumar-Johnson: hybrid of symmetric chi-squared, arithmetic and geometric mean divergence
+
+template <typename VecT1, typename VecT2>
+double kumar_johnson_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
+{
+   size_t pos1(0) ;
+   size_t pos2(0) ;
+   size_t elts1(v1->numElements()) ;
+   size_t elts2(v2->numElements()) ;
+   double sum(0) ;
+   typename VecT1::value_type wt1, wt2 ;
+   normalization_weights(v1,v2,opt.normalize,wt1,wt2) ;
+   for ( ; pos1 < elts1 && pos2 < elts2 ; )
+      {
+      auto elt1(v1->elementIndex(pos1)) ;
+      auto elt2(v2->elementIndex(pos2)) ;
+      double val1(0) ;
+      double val2(0) ;
+      if (elt1 < elt2)
+	 {
+	 val1 = v1->elementValue(pos1++)/ wt1 ;
+	 }
+      else if (elt1 > elt2)
+	 {
+	 val2 = v2->elementValue(pos2++)/ wt2 ;
+	 }
+      else // if (elt1 == elt2)
+	 {
+	 val1 = v1->elementValue(pos1++)/ wt1 ;
+	 val2 = v2->elementValue(pos2++)/ wt2 ;
+	 }
+      double num = (val1 * val1 - val2 * val2) ;
+      double denom = std::max(2 * std::pow(val1 * val2, 1.5), opt.smoothing) ;
+      sum += safe_div(num,denom) ;
+      }
+   return sum ;
 }
 
 //============================================================================
