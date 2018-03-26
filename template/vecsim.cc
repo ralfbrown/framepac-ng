@@ -2254,6 +2254,82 @@ double canberra_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOpti
 }
 
 //============================================================================
+// Soergel: sum of element-wise difference over element-wise maximum
+//     sum(abs(P_i-Q_i)) / sum(max(P_i,Q_i))
+// from: Monev V., Introduction to Similarity Searching in Chemistry,
+//   MATCH Commun. Math. Comput. Chem. 51 pp. 7-38 , 2004
+
+template <typename VecT1, typename VecT2>
+double soergel_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
+{
+   size_t pos1(0) ;
+   size_t pos2(0) ;
+   size_t elts1(v1->numElements()) ;
+   size_t elts2(v2->numElements()) ;
+   double total_diff(0) ;
+   double total_max(0) ;
+   typename VecT1::value_type wt1, wt2 ;
+   normalization_weights(v1,v2,opt.normalize,wt1,wt2) ;
+   for ( ; pos1 < elts1 && pos2 < elts2 ; )
+      {
+      auto elt1(v1->elementIndex(pos1)) ;
+      auto elt2(v2->elementIndex(pos2)) ;
+      if (elt1 < elt2)
+	 {
+	 ++pos1 ;
+	 }
+      else if (elt1 > elt2)
+	 {
+	 ++pos2 ;
+	 }
+      else // if (elt1 == elt2)
+	 {
+	 auto val1 = v1->elementValue(pos1++) ;
+	 auto val2 = v2->elementValue(pos2++) ;
+	 total_diff += std::abs(val1 - val2) ;
+	 total_max += std::max(val1 + val2) ;
+	 }
+      }   
+   return total_max ? total_diff / total_max : -1.0 ;
+}
+
+//============================================================================
+// sum of logarithmic differences
+// from: Deza E. and Deza M.M., Dictionary of Distances, Elsevier, 2006
+
+template <typename VecT1, typename VecT2>
+double lorentzian_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
+{
+   size_t pos1(0) ;
+   size_t pos2(0) ;
+   size_t elts1(v1->numElements()) ;
+   size_t elts2(v2->numElements()) ;
+   double sum(0) ;
+   typename VecT1::value_type wt1, wt2 ;
+   normalization_weights(v1,v2,opt.normalize,wt1,wt2) ;
+   for ( ; pos1 < elts1 && pos2 < elts2 ; )
+      {
+      auto elt1(v1->elementIndex(pos1)) ;
+      auto elt2(v2->elementIndex(pos2)) ;
+      if (elt1 < elt2)
+	 {
+	 ++pos1 ;
+	 }
+      else if (elt1 > elt2)
+	 {
+	 ++pos2 ;
+	 }
+      else // if (elt1 == elt2)
+	 {
+	 auto val1 = v1->elementValue(pos1++) ;
+	 auto val2 = v2->elementValue(pos2++) ;
+	 sum += std::log(1.0 + std::abs(val1 - val2)) ;
+	 }
+      }
+   return sum ;
+}
+
+//============================================================================
 // normalized sum of element-wise minimums
 
 template <typename VecT1, typename VecT2>
