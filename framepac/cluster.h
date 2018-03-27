@@ -46,7 +46,7 @@ class ClusterInfoIter
       ~ClusterInfoIter() = default ;
 
       inline Object* operator* () const ;
-//!!!      List* operator-> () const { return  m_list ; }
+      const List* operator-> () const { return  m_members ; }
       inline ClusterInfoIter& operator++ () ;
       bool operator== (const ClusterInfoIter& other) const { return m_members == other.m_members ; }
       bool operator!= (const ClusterInfoIter& other) const { return m_members != other.m_members ; }
@@ -126,7 +126,7 @@ class ClusterInfo : public Object
 				size_t indent) ;
 
       // *** standard info functions ***
-      static size_t size_(const Object*) ;
+      static size_t size_(const Object* obj) { return reinterpret_cast<const ClusterInfo*>(obj)->m_size ; }
       static bool empty_(const Object* obj) { return size_(obj) == 0 ; }
 
       // *** standard access functions ***
@@ -148,7 +148,7 @@ class ClusterInfo : public Object
 //----------------------------------------------------------------------------
 // deferred definitions of functions subject to circular dependencies
 
-ClusterInfoIter::ClusterInfoIter(ClusterInfo* inf)
+inline ClusterInfoIter::ClusterInfoIter(ClusterInfo* inf)
    : m_members(const_cast<List*>(inf->members()))
 {
    return  ;
@@ -156,7 +156,7 @@ ClusterInfoIter::ClusterInfoIter(ClusterInfo* inf)
 
 //----------------------------------------------------------------------------
 
-ClusterInfoIter::ClusterInfoIter(const ClusterInfo* inf)
+inline ClusterInfoIter::ClusterInfoIter(const ClusterInfo* inf)
    : m_members(const_cast<List*>(inf->members()))
 {
    return ;

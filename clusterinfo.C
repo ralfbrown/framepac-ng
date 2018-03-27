@@ -31,7 +31,7 @@ namespace Fr
 
 // define the static members of ClusterInfo
 Allocator ClusterInfo::s_allocator(FramepaC::Object_VMT<ClusterInfo>::instance(),sizeof(ClusterInfo)) ;
-//FIXME? ClusterInfo::Initializer ClusterInfo::s_init ;
+ClusterInfo::Initializer ClusterInfo::s_init ;
 
 // register initialization and cleanup functions for the ClusterInfo class as a whole
 // these will be called by Fr::Initialize() and Fr::Shutdown()
@@ -80,24 +80,28 @@ bool ClusterInfo::toJSONString_(const Object* obj, char* buffer, size_t buflen,
 
 //----------------------------------------------------------------------------
 
-size_t ClusterInfo::size_(const Object *obj)
+Object *ClusterInfo::front_(Object* obj)
 {
-   (void)obj;
-   return 0; //TODO
-}
-
-//----------------------------------------------------------------------------
-
-Object *ClusterInfo::front_(Object *obj)
-{
-   return obj ;
+   ClusterInfo* inf = reinterpret_cast<ClusterInfo*>(obj) ;
+   if (inf->m_members)
+      return inf->m_members->front() ;
+   else if (inf->m_subclusters)
+      return inf->m_subclusters->front() ;
+   else
+      return nullptr ;
 }
 
 //----------------------------------------------------------------------------
 
 const Object *ClusterInfo::front_(const Object *obj)
 {
-   return obj ;
+   const ClusterInfo* inf = reinterpret_cast<const ClusterInfo*>(obj) ;
+   if (inf->m_members)
+      return inf->m_members->front() ;
+   else if (inf->m_subclusters)
+      return inf->m_subclusters->front() ;
+   else
+      return nullptr ;
 }
 
 //----------------------------------------------------------------------------
@@ -115,6 +119,8 @@ bool ClusterInfo::equal_(const Object *obj, const Object *other)
 {
    if (obj == other)
       return true ;
+   if (ClusterInfo::size_(obj) != ClusterInfo::size_(other))
+      return false ;
 
    return false ; //FIXME
 }
