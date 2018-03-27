@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-15					*/
+/* Version 0.03, last edit 2018-03-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -123,6 +123,7 @@ class Object
       FrVIRTFUNC0(bool,isArray,isArray_,const) ;
       FrVIRTFUNC0(bool,isBigNum,isBigNum_,const) ;
       FrVIRTFUNC0(bool,isBitVector,isBitVector_,const) ;
+      FrVIRTFUNC0(bool,isCluster,isCluster_,const) ;
       FrVIRTFUNC0(bool,isComplex,isComplex_,const) ;
       FrVIRTFUNC0(bool,isFloat,isFloat_,const) ;
       FrVIRTFUNC0(bool,isInteger,isInteger_,const) ;
@@ -206,6 +207,7 @@ inline const char* Object::typeName_(const Object*) { return "Object" ; }
 inline bool Object::isArray_(const Object*) { return false ; }
 inline bool Object::isBigNum_(const Object*) { return false ; }
 inline bool Object::isBitVector_(const Object*) { return false ; }
+inline bool Object::isCluster_(const Object*) { return false ; }
 inline bool Object::isComplex_(const Object*) { return false ; }
 inline bool Object::isFloat_(const Object*) { return false ; }
 inline bool Object::isInteger_(const Object*) { return false ; }

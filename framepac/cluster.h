@@ -23,6 +23,7 @@
 #define __FrCLUSTER_H_INCLUDED
 
 #include "framepac/list.h"
+#include "framepac/symbol.h"
 
 namespace Fr {
 
@@ -36,8 +37,9 @@ class ClusterInfo : public Object
       static ClusterInfo* create() ;
       
    protected:
-      List* m_members ;
-      List* m_subclusters ;
+      List* m_members ;		// individual vectors in this cluster
+      List* m_subclusters ;	// sub-clusters (if any) of this cluster
+      Symbol* m_label ;		// cluster label
 
    private: // static members
       static Allocator s_allocator ;
@@ -54,19 +56,19 @@ class ClusterInfo : public Object
       friend class FramepaC::Object_VMT<ClusterInfo> ;
       
       // type determination predicates
-      //TODO: static bool isCluster_(const Object*) { return true ; }
+      static bool isCluster_(const Object*) { return true ; }
       static const char* typeName_(const Object*) { return "ClusterInfo" ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object*) ;
-      static Object* shallowCopy_(const Object*) ;
+      static Object* shallowCopy_(const Object*obj) { return clone_(obj) ; }
       static ObjectPtr subseq_int(const Object*, size_t start, size_t stop) ;
       static ObjectPtr subseq_iter(const Object*, ObjectIter start, ObjectIter stop) ;
 
       // *** destroying ***
       static void free_(Object* obj) ;
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object*) ;
+      static void shallowFree_(Object* obj) { return free_(obj) ; }
 
       // *** I/O ***
       // generate printed representation into a buffer
