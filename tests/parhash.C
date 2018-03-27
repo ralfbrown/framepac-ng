@@ -1481,6 +1481,11 @@ static INTEGER_TYPE* gen_keys(ostream& out, size_t maxsize, size_t order, size_t
       // generate a randomly-distributed set of 31-bit integers
       //   (Park-Miller Lehmer RNG, aka MINSTD)
       uint32_t seed = 1 ;
+      if (order == 1)
+	 {
+	 std::chrono::system_clock::time_point now = std::chrono::system_clock::now() ;
+	 seed = (uint32_t)(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count()) ;
+	 }
       for (size_t i = 0 ; i < 2*maxsize ; i++)
 	 {
 	 keys[i] = seed ;
