@@ -560,7 +560,7 @@ framepac/bwt.h:	framepac/config.h
 framepac/charget.h:	framepac/file.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/cluster.h:	framepac/list.h framepac/symbol.h
+framepac/cluster.h:	framepac/array.h framepac/list.h framepac/symbol.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/complex.h:	framepac/number.h

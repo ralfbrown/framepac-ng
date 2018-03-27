@@ -333,6 +333,10 @@ class OneHotVector : public Vector<ValT>
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<OneHotVector> ;
 
+      // type determination predicates
+      static bool isSparseVector_(const Object *) { return true ; }
+      static const char* typeName_(const Object*) { return "OneHotVector" ; }
+
       // *** copying ***
       static ObjectPtr clone_(const Object *) ;
       static Object *shallowCopy_(const Object *obj) { return clone_(obj) ; }

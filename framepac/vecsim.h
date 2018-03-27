@@ -22,6 +22,7 @@
 #ifndef __FrVECSIM_H_INCLUDED
 #define __FrVECSIM_H_INCLUDED
 
+#include <cmath>
 #include "framepac/vector.h"
 
 namespace Fr {
@@ -205,10 +206,119 @@ enum VectorSimilarityMeasure
 */
 
 //----------------------------------------------------------------------------
+//  base class for all of the vector similarity and distance measures
+
+template <typename IdxT, typename ValT>
+class VectorMeasure
+   {
+   public:
+      typedef double SimFunc(const Vector<ValT>*, const Vector<ValT>*) ;
+
+   public:
+      static const char* canonicalName() { return "Identity" ; }
+
+      // dispatch to either the general implementation that can take any vector type, or the
+      //   more efficient specialization for two dense vectors
+      static double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2)
+	 {
+	    if (!v1 || !v2) return -1 ;
+	    if (v1->isSparseVector() || v2->isSparseVector())
+	       return sparseSimilarity(reinterpret_cast<SparseVector<IdxT, ValT>>(v1),
+		  reinterpret_cast<SparseVector<IdxT, ValT>>(v2)) ;
+	    else
+	       return denseSimilarity(v1,v2) ;
+	 }
+      static double distance(const Vector<ValT>* v1, const Vector<ValT>* v2)
+	 {
+	    if (!v1 || !v2) return -1 ;
+	    if (v1->isSparseVector() || v2->isSparseVector())
+	       return sparseDistance(reinterpret_cast<SparseVector<IdxT, ValT>>(v1),
+		  reinterpret_cast<SparseVector<IdxT, ValT>>(v2)) ;
+	    else
+	       return denseDistance(v1,v2) ;
+	 }
+
+      // base version is just an identity comparison
+      static double sparseSimilarity(const SparseVector<IdxT, ValT>* v1, const SparseVector<IdxT, ValT>* v2)
+	 { return v1 == v2 ? 1 : 0 ; }
+      static double sparseDistance(const SparseVector<IdxT, ValT>* v1, const SparseVector<IdxT, ValT>* v2)
+	 { return v1 != v2 ? 1 : 0 ; }
+
+      // by default, we don't have a specialization for dense vectors
+      static double denseSimilarity(const Vector<ValT>* v1, const Vector<ValT>* v2)
+	 {
+	 return sparseSimilarity(v1,v2) ;
+	 }
+      static double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2)
+	 {
+	 return sparseDistance(v1,v2) ;
+	 }
+   } ;
+
+//----------------------------------------------------------------------------
+// a vector measure which has a similarity metric and computes the distance as 1-sim
+
+template <typename IdxT, typename ValT>
+class SimilarityMeasure : public VectorMeasure<IdxT, ValT>
+   {
+   public:
+      static double distance(const Vector<ValT>* v1, const Vector<ValT>* v2)
+	 {
+	    return 1.0 - similarity(v1,v2) ;
+	 }
+   } ;
+
+//----------------------------------------------------------------------------
+// a vector measure which has a similarity metric and computes the distance as 1/sim
+
+template <typename IdxT, typename ValT>
+class SimilarityMeasureReciprocal : public VectorMeasure<IdxT, ValT>
+   {
+   public:
+      static double distance(const Vector<ValT>* v1, const Vector<ValT>* v2)
+	 {
+	    double sim = similarity(v1,v2) ;
+	    return sim ? 1.0 / sim : HUGE_VAL ;
+	 }
+   } ;
+
+//----------------------------------------------------------------------------
+// a vector measure which has a distance metric and computes the similarity as 1-dist
+
+template <typename IdxT, typename ValT>
+class DistanceMeasure : public VectorMeasure<IdxT, ValT>
+   {
+   public:
+      static double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2)
+	 {
+	    return 1.0 - similarity(v1,v2) ;
+	 }
+
+   } ;
+
+//----------------------------------------------------------------------------
+// a vector measure which has a distance metric and computes the similarity as 1/dist
+
+template <typename IdxT, typename ValT>
+class DistanceMeasureReciprocal : public VectorMeasure<IdxT, ValT>
+   {
+   public:
+      static double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2)
+	 {
+	    double dist = distance(v1,v2) ;
+	    return dist ? 1.0 / dist : HUGE_VAL ;
+	 }
+
+   } ;
+
+//----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
 class VectorSimilarity : public VectorSimilarityOptions
    {
+   public:
+      typedef typename VectorMeasure<IdxT, ValT>::SimFunc SimFunc ;
+      
    public:
       VectorSimilarity(const char *simtype) ;
       VectorSimilarity(const VectorSimilarity&) = default ;
@@ -219,45 +329,13 @@ class VectorSimilarity : public VectorSimilarityOptions
 
       double score(const Object *v1, const Object *v2) const ;
 
-      double similarity(Vector<ValT>* v1,Vector<ValT>* v2) const { return m_sim_d_d(v1,v2) ; }
-      double similarity(Vector<ValT>* v1,SparseVector<IdxT,ValT>* v2) const { return m_sim_d_s(v1,v2) ; }
-      double similarity(SparseVector<IdxT,ValT>* v1,Vector<ValT>* v2) const { return m_sim_s_d(v1,v2) ; }
-      double similarity(SparseVector<IdxT,ValT>* v1,SparseVector<IdxT,ValT>* v2) const { return m_sim_s_s(v1,v2) ; }
-
-      double distance(Vector<ValT>* v1,Vector<ValT>* v2) const { return m_dist_d_d(v1,v2) ; }
-      double distance(Vector<ValT>* v1,SparseVector<IdxT,ValT>* v2) const { return m_dist_d_s(v1,v2) ; }
-      double distance(SparseVector<IdxT,ValT>* v1,Vector<ValT>* v2) const { return m_dist_s_d(v1,v2) ; }
-      double distance(SparseVector<IdxT,ValT>* v1,SparseVector<IdxT,ValT>* v2) const { return m_dist_s_s(v1,v2) ; }
+      double similarity(Vector<ValT>* v1,Vector<ValT>* v2) const { return m_sim(v1,v2) ; }
+      double distance(Vector<ValT>* v1,Vector<ValT>* v2) const { return m_dist(v1,v2) ; }
 
    protected:
-      typedef double Sim_Dense_Dense_Fn(const Vector<ValT>*, const Vector<ValT>*) ;
-      typedef double Sim_Dense_Sparse_Fn(const Vector<ValT>*, const SparseVector<IdxT,ValT>*) ;
-      typedef double Sim_Sparse_Dense_Fn(const SparseVector<IdxT,ValT>*, const Vector<ValT>*) ;
-      typedef double Sim_Sparse_Sparse_Fn(const SparseVector<IdxT,ValT>*, const SparseVector<IdxT,ValT>*) ;
-
-      struct FuncPtrs {
-	 VectorSimilarityMeasure measure ;
-	 Sim_Dense_Dense_Fn*     sim_d_d ;
-	 Sim_Dense_Sparse_Fn*    sim_d_s ;
-	 Sim_Sparse_Dense_Fn*    sim_s_d ;
-	 Sim_Sparse_Sparse_Fn*   sim_s_s ;
-	 Sim_Dense_Dense_Fn*     dist_d_d ;
-	 Sim_Dense_Sparse_Fn*    dist_d_s ;
-	 Sim_Sparse_Dense_Fn*    dist_s_d ;
-	 Sim_Sparse_Sparse_Fn*   dist_s_s ;
-         } ;
-
-      static const FuncPtrs *m_funcptrs ;
-
-      Sim_Dense_Dense_Fn*   m_sim_d_d ;
-      Sim_Dense_Sparse_Fn*  m_sim_d_s ;
-      Sim_Sparse_Dense_Fn*  m_sim_s_d ;
-      Sim_Sparse_Sparse_Fn* m_sim_s_s ;
-
-      Sim_Dense_Dense_Fn*   m_dist_d_d ;
-      Sim_Dense_Sparse_Fn*  m_dist_d_s ;
-      Sim_Sparse_Dense_Fn*  m_dist_s_d ;
-      Sim_Sparse_Sparse_Fn* m_dist_s_s ;
+      VectorSimilarityMeasure	m_measure ;
+      SimFunc*			m_sim ;
+      SimFunc*			m_dist ;
    } ;
 
 

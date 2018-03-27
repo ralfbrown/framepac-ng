@@ -28,10 +28,12 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-ClusteringAlgo* ClusteringAlgo::instantiate(const char* algo_name, ...)
+ClusteringAlgo* ClusteringAlgo::instantiate(const char* algo_name, const char* options)
 {
    if (!algo_name || !*algo_name)
       return nullptr ;
+   if (!options)
+      options = "" ;
    //TODO
 
    return nullptr ;

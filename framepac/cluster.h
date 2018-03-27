@@ -22,31 +22,33 @@
 #ifndef __FrCLUSTER_H_INCLUDED
 #define __FrCLUSTER_H_INCLUDED
 
+#include "framepac/array.h"
 #include "framepac/list.h"
 #include "framepac/symbol.h"
 
 namespace Fr {
 
 //----------------------------------------------------------------------------
-// due to the circular dependencies, we can't actually define many of the functions
-//   inline in the iterator class definition; they will be defined after the underlying
-//   class has been declared
+//   due to the circular dependencies, we can't actually define all of
+//   the functions inline in the iterator class definition; the rest
+//   will be defined after the underlying class has been declared
 
 class ClusterInfo ;
 
 class ClusterInfoIter
    {
    private:
-      List	*m_members ;
+      Array*	 m_members ;
+      size_t	 m_index ;
    public:
-      ClusterInfoIter() : m_members(reinterpret_cast<List*>(*List::end())) {}
+      ClusterInfoIter() : m_members(nullptr), m_index(~0U) {}
       ClusterInfoIter(ClusterInfo* inf) ;
       ClusterInfoIter(const ClusterInfo* inf) ;
-      ClusterInfoIter(const ClusterInfoIter &it) : m_members(const_cast<List*>(it.m_members)) {}
+      ClusterInfoIter(const ClusterInfoIter &it) = default ;
       ~ClusterInfoIter() = default ;
 
       inline Object* operator* () const ;
-      const List* operator-> () const { return  m_members ; }
+      const Array* operator-> () const { return m_members ; }
       inline ClusterInfoIter& operator++ () ;
       bool operator== (const ClusterInfoIter& other) const { return m_members == other.m_members ; }
       bool operator!= (const ClusterInfoIter& other) const { return m_members != other.m_members ; }
@@ -60,12 +62,21 @@ class ClusterInfo : public Object
       typedef Fr::Initializer<ClusterInfo> Initializer ;
 
    public:
+      enum Flags
+	 {
+	 flat,				// no subclusters
+	 group				// no direct members, subclusters only
+	 } ;
+
+   public:
       // *** object factories ***
       static ClusterInfo* create() ;
-      
+      static ClusterInfo* create(List* members) ;
+      static ClusterInfo* create(List* members, List* subclusters) ;
+
       // *** standard info functions ***
-      //size_t size() const ;
-      //bool empty() const { return size() == 0 ; }
+      //inherited: size_t size() const ;
+      //inherited: bool empty() const ;
       operator bool () const { return !this->empty() ; }
 
       // *** iterator support ***
@@ -78,11 +89,20 @@ class ClusterInfo : public Object
       bool contains(const Object*) const ; // is Object a member of the cluster?
 
       // *** access to internal state ***
-      const List* members() const { return m_members ; }
+      const Array* members() const { return m_members ; }
+      const Array* subclusters() const { return m_subclusters ; }
+      size_t numSubclusters() const { return m_subclusters->size() ; }
+      uint32_t flags() const { return m_flags ; }
+      bool hasFlag(Flags f) const ;
 
+      // *** modifiers ***
+      void setFlag(Flags f) ;
+      void clearFlag(Flags f) ;
+      
    protected:
-      List* m_members ;		// individual vectors in this cluster
-      List* m_subclusters ;	// sub-clusters (if any) of this cluster
+      Array* m_members ;	// individual vectors in this cluster
+      Array* m_subclusters ;	// sub-clusters (if any) of this cluster
+      Object* m_rep ;		// representative element: centroid/mediod/etc.
       Symbol* m_label ;		// cluster label
       uint32_t m_size ;		// number of elements in this cluster
       uint32_t m_flags ;
@@ -149,7 +169,7 @@ class ClusterInfo : public Object
 // deferred definitions of functions subject to circular dependencies
 
 inline ClusterInfoIter::ClusterInfoIter(ClusterInfo* inf)
-   : m_members(const_cast<List*>(inf->members()))
+   : m_members(const_cast<Array*>(inf->members())), m_index(0)
 {
    return  ;
 }
@@ -157,7 +177,7 @@ inline ClusterInfoIter::ClusterInfoIter(ClusterInfo* inf)
 //----------------------------------------------------------------------------
 
 inline ClusterInfoIter::ClusterInfoIter(const ClusterInfo* inf)
-   : m_members(const_cast<List*>(inf->members()))
+   : m_members(const_cast<Array*>(inf->members())), m_index(0)
 {
    return ;
 }
@@ -168,7 +188,7 @@ inline ClusterInfoIter::ClusterInfoIter(const ClusterInfo* inf)
 class ClusteringAlgo
    {
    public:
-      static ClusteringAlgo* instantiate(const char* algo_name, ...) ;
+      static ClusteringAlgo* instantiate(const char* algo_name, const char* options) ;
       virtual ~ClusteringAlgo() {}
 
    protected:
