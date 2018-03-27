@@ -215,11 +215,11 @@ class VectorMeasure
       typedef double SimFunc(const Vector<ValT>*, const Vector<ValT>*) ;
 
    public:
-      static const char* canonicalName() { return "Identity" ; }
-
+      virtual const char* canonicalName() const { return "Identity" ; }
+      
       // dispatch to either the general implementation that can take any vector type, or the
       //   more efficient specialization for two dense vectors
-      static double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2)
+      double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    if (!v1 || !v2) return -1 ;
 	    if (v1->isSparseVector() || v2->isSparseVector())
@@ -228,7 +228,7 @@ class VectorMeasure
 	    else
 	       return denseSimilarity(v1,v2) ;
 	 }
-      static double distance(const Vector<ValT>* v1, const Vector<ValT>* v2)
+      double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    if (!v1 || !v2) return -1 ;
 	    if (v1->isSparseVector() || v2->isSparseVector())
@@ -239,20 +239,23 @@ class VectorMeasure
 	 }
 
       // base version is just an identity comparison
-      static double sparseSimilarity(const SparseVector<IdxT, ValT>* v1, const SparseVector<IdxT, ValT>* v2)
+      virtual double sparseSimilarity(const SparseVector<IdxT, ValT>* v1, const SparseVector<IdxT, ValT>* v2) const
 	 { return v1 == v2 ? 1 : 0 ; }
-      static double sparseDistance(const SparseVector<IdxT, ValT>* v1, const SparseVector<IdxT, ValT>* v2)
+      virtual double sparseDistance(const SparseVector<IdxT, ValT>* v1, const SparseVector<IdxT, ValT>* v2) const
 	 { return v1 != v2 ? 1 : 0 ; }
 
       // by default, we don't have a specialization for dense vectors
-      static double denseSimilarity(const Vector<ValT>* v1, const Vector<ValT>* v2)
+      virtual double denseSimilarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	 return sparseSimilarity(v1,v2) ;
 	 }
-      static double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2)
+      virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	 return sparseDistance(v1,v2) ;
 	 }
+
+   protected:
+      VectorSimilarityOptions m_opt ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -262,7 +265,7 @@ template <typename IdxT, typename ValT>
 class SimilarityMeasure : public VectorMeasure<IdxT, ValT>
    {
    public:
-      static double distance(const Vector<ValT>* v1, const Vector<ValT>* v2)
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    return 1.0 - similarity(v1,v2) ;
 	 }
@@ -275,7 +278,7 @@ template <typename IdxT, typename ValT>
 class SimilarityMeasureReciprocal : public VectorMeasure<IdxT, ValT>
    {
    public:
-      static double distance(const Vector<ValT>* v1, const Vector<ValT>* v2)
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    double sim = similarity(v1,v2) ;
 	    return sim ? 1.0 / sim : HUGE_VAL ;
@@ -289,7 +292,7 @@ template <typename IdxT, typename ValT>
 class DistanceMeasure : public VectorMeasure<IdxT, ValT>
    {
    public:
-      static double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2)
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    return 1.0 - similarity(v1,v2) ;
 	 }
@@ -303,7 +306,7 @@ template <typename IdxT, typename ValT>
 class DistanceMeasureReciprocal : public VectorMeasure<IdxT, ValT>
    {
    public:
-      static double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2)
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    double dist = distance(v1,v2) ;
 	    return dist ? 1.0 / dist : HUGE_VAL ;
