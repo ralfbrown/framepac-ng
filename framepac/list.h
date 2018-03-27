@@ -89,8 +89,8 @@ class List : public Object
 
       // *** standard info functions ***
       size_t size() const ;
-      size_t empty() const { return this == empty_list ; }
-      operator bool () const { return this != empty_list && this != nullptr ; }
+      bool empty() const { return this == empty_list ; }
+      operator bool () const { return this != nullptr && !this->empty() ; }
 
       // *** standard access functions ***
       Object* front() const { return m_item ; }
@@ -235,6 +235,7 @@ class ListBuilder
    } ;
 
 //----------------------------------------------------------------------------
+// deferred definitions of functions subject to circular dependencies
 
 inline Object* ListIter::operator* () const { return m_list->front() ; }
 inline ListIter& ListIter::operator++ () { if (m_list != List::empty_list) m_list = m_list->next() ; return *this ; }

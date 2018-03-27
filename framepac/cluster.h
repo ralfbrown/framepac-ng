@@ -27,6 +27,33 @@
 
 namespace Fr {
 
+//----------------------------------------------------------------------------
+// due to the circular dependencies, we can't actually define many of the functions
+//   inline in the iterator class definition; they will be defined after the underlying
+//   class has been declared
+
+class ClusterInfo ;
+
+class ClusterInfoIter
+   {
+   private:
+      List	*m_members ;
+   public:
+      ClusterInfoIter() : m_members(reinterpret_cast<List*>(*List::end())) {}
+      ClusterInfoIter(ClusterInfo* inf) ;
+      ClusterInfoIter(const ClusterInfo* inf) ;
+      ClusterInfoIter(const ClusterInfoIter &it) : m_members(const_cast<List*>(it.m_members)) {}
+      ~ClusterInfoIter() = default ;
+
+      inline Object* operator* () const ;
+//!!!      List* operator-> () const { return  m_list ; }
+      inline ClusterInfoIter& operator++ () ;
+      bool operator== (const ClusterInfoIter& other) const { return m_members == other.m_members ; }
+      bool operator!= (const ClusterInfoIter& other) const { return m_members != other.m_members ; }
+   } ;
+
+//----------------------------------------------------------------------------
+
 class ClusterInfo : public Object
    {
    protected:
@@ -36,10 +63,29 @@ class ClusterInfo : public Object
       // *** object factories ***
       static ClusterInfo* create() ;
       
+      // *** standard info functions ***
+      //size_t size() const ;
+      //bool empty() const { return size() == 0 ; }
+      operator bool () const { return !this->empty() ; }
+
+      // *** iterator support ***
+      ClusterInfoIter begin() const { return ClusterInfoIter(this) ; }
+      ClusterInfoIter cbegin() const { return ClusterInfoIter(this) ; }
+      static ClusterInfoIter end() { return ClusterInfoIter() ; }
+      static ClusterInfoIter cend() { return ClusterInfoIter() ; }
+
+      // *** utility functions ***
+      bool contains(const Object*) const ; // is Object a member of the cluster?
+
+      // *** access to internal state ***
+      const List* members() const { return m_members ; }
+
    protected:
       List* m_members ;		// individual vectors in this cluster
       List* m_subclusters ;	// sub-clusters (if any) of this cluster
       Symbol* m_label ;		// cluster label
+      uint32_t m_size ;		// number of elements in this cluster
+      uint32_t m_flags ;
 
    private: // static members
       static Allocator s_allocator ;
@@ -99,7 +145,25 @@ class ClusterInfo : public Object
       static void StaticCleanup() ;
    } ;
 
-//----------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// deferred definitions of functions subject to circular dependencies
+
+ClusterInfoIter::ClusterInfoIter(ClusterInfo* inf)
+   : m_members(const_cast<List*>(inf->members()))
+{
+   return  ;
+}
+
+//----------------------------------------------------------------------------
+
+ClusterInfoIter::ClusterInfoIter(const ClusterInfo* inf)
+   : m_members(const_cast<List*>(inf->members()))
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 
 class ClusteringAlgo
    {

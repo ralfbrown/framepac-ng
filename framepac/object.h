@@ -169,6 +169,7 @@ class Object
       // *** standard info functions ***
       FrVIRTFUNC0(size_t,size,size_,const) ;
       FrVIRTFUNC0(bool,empty,empty_,const) ;
+      operator bool () const { return this != nullptr && !this->empty() ; }
 
       // *** standard access functions ***
       FrVIRTFUNC0(Object*,front,front_,) ;
