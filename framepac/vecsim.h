@@ -215,7 +215,7 @@ class VectorMeasure
       typedef double SimFunc(const Vector<ValT>*, const Vector<ValT>*) ;
 
    public:
-      virtual const char* canonicalName() const { return "Identity" ; }
+      const char* canonicalName() const { return myCanonicalName() ; }
       
       // dispatch to either the general implementation that can take any vector type, or the
       //   more efficient specialization for two dense vectors
@@ -240,6 +240,8 @@ class VectorMeasure
 
    protected:
       VectorMeasure(const VectorSimilarityOptions& opt) : m_opt(opt) {}
+
+      virtual const char* myCanonicalName() const { return "Identity" ; }
 
       // binary contingency table
       void contingencyTable(const Vector<ValT>* v1, const Vector<ValT>* v2, size_t& both, size_t& v1_only,
