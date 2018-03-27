@@ -255,6 +255,9 @@ class VectorMeasure
 	 }
 
    protected:
+      VectorMeasure(const VectorSimilarityOptions& opt) : m_opt(opt) {}
+
+   protected:
       VectorSimilarityOptions m_opt ;
    } ;
 
@@ -269,6 +272,9 @@ class SimilarityMeasure : public VectorMeasure<IdxT, ValT>
 	 {
 	    return 1.0 - similarity(v1,v2) ;
 	 }
+
+   protected:
+      SimilarityMeasure(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
 //----------------------------------------------------------------------------
@@ -283,6 +289,9 @@ class SimilarityMeasureReciprocal : public VectorMeasure<IdxT, ValT>
 	    double sim = similarity(v1,v2) ;
 	    return sim ? 1.0 / sim : HUGE_VAL ;
 	 }
+
+   protected:
+      SimilarityMeasureReciprocal(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
 //----------------------------------------------------------------------------
@@ -297,6 +306,8 @@ class DistanceMeasure : public VectorMeasure<IdxT, ValT>
 	    return 1.0 - similarity(v1,v2) ;
 	 }
 
+   protected:
+      DistanceMeasure(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
 //----------------------------------------------------------------------------
@@ -312,6 +323,8 @@ class DistanceMeasureReciprocal : public VectorMeasure<IdxT, ValT>
 	    return dist ? 1.0 / dist : HUGE_VAL ;
 	 }
 
+   protected:
+      DistanceMeasureReciprocal(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
 //----------------------------------------------------------------------------
