@@ -260,7 +260,9 @@ class VectorMeasure
 	 { return both / (both + v1_only + v2_only) ; }
       virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t neither) const
 	 { return both / (both + v1_only + v2_only + neither) ; }
-      
+      virtual double scoreBinaryAgreement(size_t both, size_t disagree, size_t neither) const
+	 { return both / (both + disagree + neither) ; }
+
       // by default, we don't have a specialization for dense vectors
       virtual double denseSimilarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
@@ -312,6 +314,52 @@ class SimilarityMeasureCT : public VectorMeasure<IdxT, ValT>
 
    protected:
       SimilarityMeasureCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
+   } ;
+
+//----------------------------------------------------------------------------
+// a vector measure which has a similarity metric based on a binary 2x2
+// contingency table and computes the distance as 1-sim
+
+template <typename IdxT, typename ValT>
+class SimilarityMeasureBCT : public VectorMeasure<IdxT, ValT>
+   {
+   public:
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 {
+	    size_t both, v1_only, v2_only, neither ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only,neither) ;
+	    return this->scoreContingencyTable(both,v1_only,v2_only,neither) ;
+	 }
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 {
+	    return 1.0 - similarity(v1,v2) ;
+	 }
+
+   protected:
+      SimilarityMeasureBCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
+   } ;
+
+//----------------------------------------------------------------------------
+// a vector measure which has a similarity metric based on binary (dis)agreement
+// and computes the distance as 1-sim
+
+template <typename IdxT, typename ValT>
+class SimilarityMeasureBA : public VectorMeasure<IdxT, ValT>
+   {
+   public:
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 {
+	    size_t both, disagree, neither ;
+	    binaryAgreement(v1,v2,&this->m_opt,both,disagree,neither) ;
+	    return this->scoreBinaryAgreement(both,disagree,neither) ;
+	 }
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 {
+	    return 1.0 - similarity(v1,v2) ;
+	 }
+
+   protected:
+      SimilarityMeasureBA(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
 //----------------------------------------------------------------------------
@@ -368,6 +416,52 @@ class DistanceMeasureCT : public VectorMeasure<IdxT, ValT>
 
    protected:
       DistanceMeasureCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
+   } ;
+
+//----------------------------------------------------------------------------
+// a vector measure which has a distance metric based on a binary 2x2
+// contingency table and computes the similarity as 1-dist
+
+template <typename IdxT, typename ValT>
+class DistanceMeasureBCT : public VectorMeasure<IdxT, ValT>
+   {
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 {
+	    size_t both, v1_only, v2_only, neither ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only,neither) ;
+	    return this->scoreContingencyTable(both,v1_only,v2_only,neither) ;
+	 }
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 {
+	    return 1.0 - similarity(v1,v2) ;
+	 }
+
+   protected:
+      DistanceMeasureBCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
+   } ;
+
+//----------------------------------------------------------------------------
+// a vector measure which has a distance metric based on binary (dis)agreement
+// contingency table and computes the similarity as 1-dist
+
+template <typename IdxT, typename ValT>
+class DistanceMeasureBA : public VectorMeasure<IdxT, ValT>
+   {
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 {
+	    size_t both, disagree, neither ;
+	    binaryAgreement(v1,v2,&this->m_opt,both,disagree,neither) ;
+	    return this->scoreBinaryAgreement(both,disagree,neither) ;
+	 }
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 {
+	    return 1.0 - similarity(v1,v2) ;
+	 }
+
+   protected:
+      DistanceMeasureBA(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
 //----------------------------------------------------------------------------
