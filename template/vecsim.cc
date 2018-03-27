@@ -417,18 +417,15 @@ class VectorMeasureCosine : public Fr::SimilarityMeasure<IdxT, ValT>
 //============================================================================
 
 template <typename IdxT, typename ValT>
-class VectorMeasureAntiDice : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureAntiDice : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Anti-Dice" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT denom(both + 2.0*(v1_only + v2_only)) ;
 	    return (denom > 0) ? both / (double)denom : 1.0 ;
 	 }
-      //virtual double denseSimilarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -464,14 +461,12 @@ class VectorMeasureBinaryAntiDice : public Fr::SimilarityMeasure<IdxT, ValT>
 //      Firenzi: G. Barbera
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBenini : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBenini : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Benini" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT N(both + v1_only + v2_only) ;
 	    both /= N ;
 	    v1_only /= N ;
@@ -479,7 +474,6 @@ class VectorMeasureBenini : public Fr::SimilarityMeasure<IdxT, ValT>
 	    ValT prod((both+v1_only)*(both+v2_only)) ;
 	    return (both - prod) / (both + std::min(v1_only,v2_only) - prod) ;
 	 }
-      //virtual double denseSimilarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -490,14 +484,12 @@ class VectorMeasureBenini : public Fr::SimilarityMeasure<IdxT, ValT>
 //      Firenzi: G. Barbera
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryBenini : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinaryBenini : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Benini" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t neither) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double N(both + v1_only + v2_only + neither) ;
 	    double total1((both+v1_only)/N) ;
 	    double total2((both+v2_only)/N) ;
@@ -505,41 +497,34 @@ class VectorMeasureBinaryBenini : public Fr::SimilarityMeasure<IdxT, ValT>
 	    double match(both/N) ;
 	    return (match - prod) / (match + std::min(v1_only,v2_only)/N - prod) ;
 	 }
-      //virtual double denseSimilarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBraunBlanquet : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBraunBlanquet : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Braun-Blanquet" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT larger(std::max(both+v1_only,both+v2_only)) ;
 	    return larger > 0 ? both / larger : 1.0 ;
 	 }
-      //virtual double denseSimilarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryBraunBlanquet : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinaryBraunBlanquet : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Braun-Blanquet" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t neither) const
 	 {
-	    size_t both, v1_only, v2_only, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double larger(std::max(both+v1_only,both+v2_only)) ;
 	    return larger > 0 ? both / larger : 1.0 ;
 	 }
-      //virtual double denseSimilarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -550,18 +535,15 @@ class VectorMeasureBinaryBraunBlanquet : public Fr::SimilarityMeasure<IdxT, ValT
 // aka Czekanowski's quantitative index: sum_i(min(x_i,y_i))/sum_i(x_i+y_i)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBrayCurtis : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureBrayCurtis : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Bray-Curtis" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT sum(2.0 * both + v1_only + v2_only) ;
 	    return sum ? (v1_only + v2_only) / sum : 1.0 ;
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -592,20 +574,17 @@ class VectorMeasureBinaryBrayCurtis : public Fr::DistanceMeasure<IdxT, ValT>
 // (b+c)/(2a + b + c)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureCocogaston : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureCocogaston : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Cocogaston" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT common, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,common,v1_only,v2_only) ;
 	    ValT dif(v1_only + v2_only) ;
-	    if (common + dif == 0)
+	    if (both + dif == 0)
 	       return 1.0 ;			// all-zero vectors are defined to be identical
-	    return dif / (2.0 * common + dif) ;
+	    return dif / (2.0 * both + dif) ;
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -634,14 +613,12 @@ class VectorMeasureBinaryCocogaston : public Fr::DistanceMeasure<IdxT, ValT>
 //  published in Cody (1993)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureCody : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureCody : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Cody" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT total1(both + v1_only) ;
 	    ValT total2(both + v2_only) ;
 	    if (total1 * total2 <= 0)
@@ -655,14 +632,12 @@ class VectorMeasureCody : public Fr::SimilarityMeasure<IdxT, ValT>
 //  published in Cody (1993)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryCody : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinaryCody : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Cody" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t /*neither*/) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double total1(both + v1_only) ;
 	    double total2(both + v2_only) ;
 	    double denom(2.0 * total1 * total2) ;
@@ -681,14 +656,12 @@ class VectorMeasureBinaryCody : public Fr::SimilarityMeasure<IdxT, ValT>
 //      food web patterns". Oikos 80.
 
 template <typename IdxT, typename ValT>
-class VectorMeasureDice : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureDice : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Dice" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    if (both + v1_only + v2_only <= 0.0)
 	       return 1.0 ;			// all-zero vectors are defined to be identical
 	    return 2.0 * both / (2.0 * both + v1_only + v2_only) ;
@@ -724,14 +697,12 @@ class VectorMeasureBinaryDice : public Fr::SimilarityMeasure<IdxT, ValT>
 //  a / (sqrt(a+b)(a+c)) - 0.5*max(b,c)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureFagerMcGowan : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureFagerMcGowan : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Fager-McGowan" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT prod((both+v1_only)*(both+v2_only)) ;
 	    double denom(std::sqrt(prod) - std::max(v1_only,v2_only)/2) ;
 	    return denom ? both / denom : 1.0 ;
@@ -741,14 +712,12 @@ class VectorMeasureFagerMcGowan : public Fr::SimilarityMeasure<IdxT, ValT>
 //============================================================================
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryFagerMcGowan : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinaryFagerMcGowan : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Fager-McGowan" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t /*neither*/) const
 	 {
-	    size_t both, v1_only, v2_only, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double prod((both+v1_only)*(both+v2_only)) ;
 	    double denom(std::sqrt(prod) - std::max(v1_only,v2_only)/2) ;
 	    return denom ? both / denom : 1.0 ;
@@ -758,17 +727,15 @@ class VectorMeasureBinaryFagerMcGowan : public Fr::SimilarityMeasure<IdxT, ValT>
 //============================================================================
 
 template <typename IdxT, typename ValT>
-class VectorMeasureGamma : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureGamma : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Gamma" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT common, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,common,v1_only,v2_only) ;
-	    ValT N(common + v1_only + v2_only) ;
+	    ValT N(both + v1_only + v2_only) ;
 	    ValT neither(0) ; //FIXME
-	    double concordance(common / N * neither / N) ;
+	    double concordance(both / N * neither / N) ;
 	    double discordance(v1_only / N * v2_only / N) ;
 	    return (concordance + discordance > 0) ? (concordance - discordance) / (concordance + discordance) : 1.0 ;
 	 }
@@ -802,14 +769,12 @@ class VectorMeasureBinaryGamma : public Fr::SimilarityMeasure<IdxT, ValT>
 // see https://en.wikipedia.org/wiki/Qualitative_variation
 
 template <typename IdxT, typename ValT>
-class VectorMeasureGilbert : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureGilbert : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Gilbert" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT N(both + v1_only + v2_only) ;
 	    both /= N ;
 	    v1_only /= N ;
@@ -823,14 +788,12 @@ class VectorMeasureGilbert : public Fr::SimilarityMeasure<IdxT, ValT>
 // see https://en.wikipedia.org/wiki/Qualitative_variation
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryGilbert : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinaryGilbert : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Gilbert" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t neither) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double N(both + v1_only + v2_only + neither) ;
 	    double total1((both+v1_only)/N) ;
 	    double total2((both+v2_only)/N) ;
@@ -844,14 +807,12 @@ class VectorMeasureBinaryGilbert : public Fr::SimilarityMeasure<IdxT, ValT>
 // see https://en.wikipedia.org/wiki/Qualitative_variation
 
 template <typename IdxT, typename ValT>
-class VectorMeasureGini : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureGini : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Gini" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT N(both + v1_only + v2_only) ;
 	    both /= N ;
 	    v1_only /= N ;
@@ -866,14 +827,12 @@ class VectorMeasureGini : public Fr::SimilarityMeasure<IdxT, ValT>
 // see https://en.wikipedia.org/wiki/Qualitative_variation
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryGini : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinaryGini : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Gini" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t neither) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double N(both + v1_only + v2_only + neither) ;
 	    double total1((both+v1_only)/N) ;
 	    double total2((both+v2_only)/N) ;
@@ -888,19 +847,16 @@ class VectorMeasureBinaryGini : public Fr::SimilarityMeasure<IdxT, ValT>
 //  range: 0 ... 1
 
 template <typename IdxT, typename ValT>
-class VectorMeasureHarrison : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureHarrison : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Harrison" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(both + std::max(v1_only,v2_only)) ;
 	    // all-zero vectors are defined to be identical
 	    return denom ? std::min(v1_only,v2_only) / denom : 1.0 ;
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -909,19 +865,16 @@ class VectorMeasureHarrison : public Fr::DistanceMeasure<IdxT, ValT>
 //  range: 0 ... 1
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryHarrison : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureBinaryHarrison : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Harrison" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t neither) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double denom(both + std::max(v1_only,v2_only)) ;
 	    // all-zero vectors are defined to be identical
 	    return denom ? std::min(v1_only,v2_only) / denom : 1.0 ;
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -931,14 +884,12 @@ class VectorMeasureBinaryHarrison : public Fr::DistanceMeasure<IdxT, ValT>
 //  range: 0 ... 1
 
 template <typename IdxT, typename ValT>
-class VectorMeasureJaccard : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureJaccard : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Jaccard" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double either(both + v1_only + v2_only) ;
 	    return either ? both / either : 1.0 ; // all-zero vectors are defined to be identical
 	 }
@@ -971,14 +922,12 @@ class VectorMeasureBinaryJaccard : public Fr::SimilarityMeasure<IdxT, ValT>
 // same as Tanimoto from old FramepaC
 
 template <typename IdxT, typename ValT>
-class VectorMeasureKulczyinski1 : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureKulczyinski1 : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Kulczynski1" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double only_1(v1_only+v2_only) ;
 	    return only_1 ? both / only_1 : HUGE_VAL ;
 	 }
@@ -1018,14 +967,12 @@ class VectorMeasureBinaryKulczyinski1 : public Fr::SimilarityMeasure<IdxT, ValT>
 // range: 0 ... 1
 
 template <typename IdxT, typename ValT>
-class VectorMeasureKulczyinski2 : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureKulczyinski2 : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Kulczynski2" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    if (both + v1_only + v2_only == 0)
 	       return 1.0 ; // both all-zero vectors are defined to be identical
 	    double total1(both + v1_only) ;
@@ -1046,14 +993,12 @@ class VectorMeasureKulczyinski2 : public Fr::SimilarityMeasure<IdxT, ValT>
 // range: 0 ... 1
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryKulczyinski2 : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinaryKulczyinski2 : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Kulczynski2" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t neither) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    if (both + v1_only + v2_only == 0)
 	       return 1.0 ; // both all-zero vectors are defined to be identical
 	    double total1(both + v1_only) ;
@@ -1068,14 +1013,12 @@ class VectorMeasureBinaryKulczyinski2 : public Fr::SimilarityMeasure<IdxT, ValT>
 //  (b+c) / (2a + b + c)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureLanceWilliams : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureLanceWilliams : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Lance-Williams" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(2.0*both + v1_only + v2_only) ;
 	    return denom ? (v1_only + v2_only) / denom : 1.0 ;
 	 }
@@ -1104,17 +1047,14 @@ class VectorMeasureBinaryLanceWilliams : public Fr::SimilarityMeasure<IdxT, ValT
 // (b+c)/2
 
 template <typename IdxT, typename ValT>
-class VectorMeasureLande : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureLande : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Lande" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT /*both*/, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    return (v1_only + v2_only) / 2.0 ;
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -1146,21 +1086,18 @@ class VectorMeasureBinaryLande : public Fr::DistanceMeasure<IdxT, ValT>
 //  lennon = 2|b-c| / (2a + b + c)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureLennon : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureLennon : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Lennon" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT total1(both + v1_only) ;
 	    ValT total2(both + v2_only) ;
 	    double denom(total1 + total2) ;
 	    // all-zero vectors are defined to be identical
 	    return denom ? (2.0 * std::abs(v1_only - v2_only) / denom) : 0.0 ;
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -1172,14 +1109,12 @@ class VectorMeasureLennon : public Fr::DistanceMeasure<IdxT, ValT>
 //  range: 0 ... 2
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryLennon : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureBinaryLennon : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Lennon" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t neither) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double total1(both + v1_only) ;
 	    double total2(both + v2_only) ;
 	    double denom(total1 + total2) ;
@@ -1197,14 +1132,12 @@ class VectorMeasureBinaryLennon : public Fr::DistanceMeasure<IdxT, ValT>
 //  range: 0 ... 1
 
 template <typename IdxT, typename ValT>
-class VectorMeasureLennon2 : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureLennon2 : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Lennon2" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double sum(both + v1_only + v2_only) ;
 	    return sum ? std::log2((both+sum)/sum) : 1.0 ;
 	 }
@@ -1239,14 +1172,12 @@ class VectorMeasureBinaryLennon2 : public Fr::SimilarityMeasure<IdxT, ValT>
 //  range: 0 ... 1
 
 template <typename IdxT, typename ValT>
-class VectorMeasureLegendre : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureLegendre : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Legendre" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    both *= 3 ;
 	    double denom(both + v1_only + v2_only) ;
 	    return denom ? both / denom : 1.0 ;
@@ -1282,14 +1213,12 @@ class VectorMeasureBinaryLegendre : public Fr::SimilarityMeasure<IdxT, ValT>
 // maarel = (2a - b - c) / (2a + b + c)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureMaarel : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureMaarel : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Maarel" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    both *= 2 ;
 	    double denom(both + v1_only + v2_only) ;
 	    return denom ? ((both - v1_only - v2_only) / denom) : 1.0 ;
@@ -1325,19 +1254,16 @@ class VectorMeasureBinaryMaarel : public Fr::SimilarityMeasure<IdxT, ValT>
 //     = N * (1 - Jaccard)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureMagurran : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureMagurran : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Magurran" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double sum(both + v1_only + v2_only) ;
 	    // all-zero vectors are defined to be identical
 	    return sum ? ((both + sum) * (1.0 - (both / sum))) : 1.0 ;
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -1367,14 +1293,12 @@ class VectorMeasureBinaryMagurran : public Fr::DistanceMeasure<IdxT, ValT>
 // range: 0 ... 1
 
 template <typename IdxT, typename ValT>
-class VectorMeasureMcConnagh : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureMcConnagh : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "McConnagh" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT total1(both + v1_only) ;
 	    ValT total2(both + v2_only) ;
 	    double denom(total1 * total2) ;
@@ -1391,14 +1315,12 @@ class VectorMeasureMcConnagh : public Fr::SimilarityMeasure<IdxT, ValT>
 // aka McConnaughey
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryMcConnagh : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinaryMcConnagh : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary McConnagh" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t neither) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double total1(both + v1_only) ;
 	    double total2(both + v2_only) ;
 	    double denom(total1 * total2) ;
@@ -1410,14 +1332,12 @@ class VectorMeasureBinaryMcConnagh : public Fr::SimilarityMeasure<IdxT, ValT>
 // see https://en.wikipedia.org/wiki/Qualitative_variation
 
 template <typename IdxT, typename ValT>
-class VectorMeasureModGini : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureModGini : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "ModGini" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT N(both + v1_only + v2_only) ;
 	    both /= N ;
 	    v1_only /= N ;
@@ -1432,14 +1352,12 @@ class VectorMeasureModGini : public Fr::SimilarityMeasure<IdxT, ValT>
 // see https://en.wikipedia.org/wiki/Qualitative_variation
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryModGini : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinaryModGini : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary ModGini" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t neither) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double N(both + v1_only + v2_only + neither) ;
 	    double prod((both+v1_only)/N*(both+v2_only)/N) ;
 	    return (both/N - prod) / (1.0 - std::abs((ssize_t)(v1_only-v2_only))/(2.0*N) - prod) ;
@@ -1450,14 +1368,12 @@ class VectorMeasureBinaryModGini : public Fr::SimilarityMeasure<IdxT, ValT>
 //  see documentation for R-project "simba" package
 
 template <typename IdxT, typename ValT>
-class VectorMeasureMountford : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureMountford : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Mountford" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    if (v1_only + v2_only == 0)
 	       return 1.0 ; // vectors with no disagreements are defined to be identical
 	    return 2.0 * both / (double)(both*(v1_only + v2_only) + 2.0 * v1_only * v2_only) ;
@@ -1468,14 +1384,12 @@ class VectorMeasureMountford : public Fr::SimilarityMeasure<IdxT, ValT>
 //  see documentation for R-project "simba" package
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryMountford : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinaryMountford : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Mountford" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t /*neither*/) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    if (v1_only + v2_only == 0)
 	       return 1.0 ; // vectors with no disagreements are defined to be identical
 	    return 2.0 * both / (double)(both*(v1_only + v2_only) + 2.0 * v1_only * v2_only) ;
@@ -1490,14 +1404,12 @@ class VectorMeasureBinaryMountford : public Fr::SimilarityMeasure<IdxT, ValT>
 //    article with English summary.
 
 template <typename IdxT, typename ValT>
-class VectorMeasureOchiai : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureOchiai : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Ochiai" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    if (both + v1_only + v2_only == 0)
 	       return 1.0 ; // both all-zero vectors are defined to be identical
 	    else if (both + v1_only == 0 || both + v2_only == 0)
@@ -1514,14 +1426,12 @@ class VectorMeasureOchiai : public Fr::SimilarityMeasure<IdxT, ValT>
 //    article with English summary.
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryOchiai : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinaryOchiai : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Ochiai" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t /*neither*/) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    if (both + v1_only + v2_only == 0)
 	       return 1.0 ; // both all-zero vectors are defined to be identical
 	    else if (both + v1_only == 0 || both + v2_only == 0)
@@ -1535,20 +1445,17 @@ class VectorMeasureBinaryOchiai : public Fr::SimilarityMeasure<IdxT, ValT>
 //  published in Routledge (1977)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureRoutledge1 : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureRoutledge1 : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Routledge1" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT sum(both + v1_only + v2_only) ;
 	    sum *= sum ;
 	    double denom(sum - 2.0 * v1_only * v2_only) ;
 	    return denom ? (sum / denom - 1.0) : 1.0 ;// all-zero vectors are defined to be identical
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -1556,20 +1463,17 @@ class VectorMeasureRoutledge1 : public Fr::DistanceMeasure<IdxT, ValT>
 //  published in Routledge (1977)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryRoutledge1 : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureBinaryRoutledge1 : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Routledge1" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t /*neither*/) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double sum(both + v1_only + v2_only) ;
 	    sum *= sum ;
 	    double denom(sum - 2.0 * v1_only * v2_only) ;
 	    return denom ? (sum / denom - 1.0) : 1.0 ;// all-zero vectors are defined to be identical
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -1577,14 +1481,12 @@ class VectorMeasureBinaryRoutledge1 : public Fr::DistanceMeasure<IdxT, ValT>
 //  published in Routledge (1977)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureRoutledge2 : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureRoutledge2 : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Routledge2" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(2.0 * both + v1_only + v2_only) ;
 	    if (!denom)
 	       return 0.0 ;			// two all-zero vectors are identical
@@ -1594,7 +1496,6 @@ class VectorMeasureRoutledge2 : public Fr::DistanceMeasure<IdxT, ValT>
 	    double num2(p_log_p(total1) + p_log_p(total2)) ;
 	    return log(denom) - (num1 + num2) / denom ;
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -1602,14 +1503,12 @@ class VectorMeasureRoutledge2 : public Fr::DistanceMeasure<IdxT, ValT>
 //  published in Routledge (1977)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryRoutledge2 : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureBinaryRoutledge2 : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Routledge2" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t /*neither*/) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double denom(2.0 * both + v1_only + v2_only) ;
 	    if (!denom)
 	       return 0.0 ;			// two all-zero vectors are identical
@@ -1619,7 +1518,6 @@ class VectorMeasureBinaryRoutledge2 : public Fr::DistanceMeasure<IdxT, ValT>
 	    double num2(p_log_p(total1) + p_log_p(total2)) ;
 	    return log(denom) - (num1 + num2) / denom ;
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -1627,14 +1525,12 @@ class VectorMeasureBinaryRoutledge2 : public Fr::DistanceMeasure<IdxT, ValT>
 //  a / min(a+b,a+c) == a / (a + min(b,c))
 
 template <typename IdxT, typename ValT>
-class VectorMeasureSimpson : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureSimpson : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Simpson" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(both + std::min(v1_only,v2_only)) ;
 	    return denom ? both/denom : 1.0 ;
 	 }
@@ -1644,14 +1540,12 @@ class VectorMeasureSimpson : public Fr::SimilarityMeasure<IdxT, ValT>
 // see https://en.wikipedia.org/wiki/Qualitative_variation
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinarySimpson : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinarySimpson : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Simpson" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t /*neither*/) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double denom(both + std::min(v1_only,v2_only)) ;
 	    return denom ? both/denom : 1.0 ;
 	 }
@@ -1662,14 +1556,12 @@ class VectorMeasureBinarySimpson : public Fr::SimilarityMeasure<IdxT, ValT>
 //  2(a+d) / (2(a+d) + b + c)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureSokalSneath : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureSokalSneath : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Sokal-Sneath" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(2*both + v1_only + v2_only) ;
 	    return denom ? 2*both / denom : 1.0 ; 	// all-zero vectors are defined to be identical
 	 }
@@ -1702,14 +1594,12 @@ class VectorMeasureBinarySokalSneath : public Fr::SimilarityMeasure<IdxT, ValT>
 // range: 0 ... 1
 
 template <typename IdxT, typename ValT>
-class VectorMeasureSorgenfrei : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureSorgenfrei : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Sorgenfrei" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT total1(both + v1_only) ;
 	    ValT total2(both + v2_only) ;
 	    double denom(total1 * total2) ;
@@ -1724,14 +1614,12 @@ class VectorMeasureSorgenfrei : public Fr::SimilarityMeasure<IdxT, ValT>
 // range: 0 ... 1
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinarySorgenfrei : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinarySorgenfrei : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Sorgenfrei" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t /*neither*/) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double total1(both + v1_only) ;
 	    double total2(both + v2_only) ;
 	    double denom(total1 * total2) ;
@@ -1742,14 +1630,12 @@ class VectorMeasureBinarySorgenfrei : public Fr::SimilarityMeasure<IdxT, ValT>
 //============================================================================
 
 template <typename IdxT, typename ValT>
-class VectorMeasureTripartite : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureTripartite : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Tripartite" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double min1 = std::min(v1_only,v2_only) ;
 	    double max1 = std::max(v1_only,v2_only) ;
 	    double U = (both+max1) ? std::log2(1.0 + (both+min1) / (both+max1)) : 1.0 ;
@@ -1764,14 +1650,12 @@ class VectorMeasureTripartite : public Fr::SimilarityMeasure<IdxT, ValT>
 //============================================================================
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryTripartite : public Fr::SimilarityMeasure<IdxT, ValT>
+class VectorMeasureBinaryTripartite : public Fr::SimilarityMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Tripartite" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t neither) const
 	 {
-	    size_t both, v1_only, v2_only, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double min1 = std::min(v1_only,v2_only) ;
 	    double max1 = std::max(v1_only,v2_only) ;
 	    double U = (both+max1) ? std::log2(1.0 + (both+min1) / (both+max1)) : 1.0 ;
@@ -1789,18 +1673,15 @@ class VectorMeasureBinaryTripartite : public Fr::SimilarityMeasure<IdxT, ValT>
 //  range: 0 ... 1
 
 template <typename IdxT, typename ValT>
-class VectorMeasureWhittaker : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureWhittaker : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Whittaker" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double sum(both + v1_only + v2_only) ;
 	    return sum ? (2.0 * sum / (both + sum)) - 1.0 : 1.0 ;
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -1829,18 +1710,15 @@ class VectorMeasureBinaryWhittaker : public Fr::DistanceMeasure<IdxT, ValT>
 //  published in Williams (1996), Koleff et al (20030
 
 template <typename IdxT, typename ValT>
-class VectorMeasureWilliams : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureWilliams : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Williams" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(both + v1_only + v2_only) ;
 	    return denom ? std::min(v1_only,v2_only) / denom : 1.0 ;
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -1848,18 +1726,15 @@ class VectorMeasureWilliams : public Fr::DistanceMeasure<IdxT, ValT>
 //  published in Williams (1996), Koleff et al (20030
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryWilliams : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureBinaryWilliams : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Williams" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t /*neither*/) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double denom(both + v1_only + v2_only) ;
 	    return denom ? std::min(v1_only,v2_only) / denom : 1.0 ;
 	 }
-      //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
    } ;
 
 //============================================================================
@@ -1867,14 +1742,12 @@ class VectorMeasureBinaryWilliams : public Fr::DistanceMeasure<IdxT, ValT>
 //  published in Williams (1996), Koleff et al (20030
 
 template <typename IdxT, typename ValT>
-class VectorMeasureWilliams2 : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureWilliams2 : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Williams2" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT sum(both + v1_only + v2_only) ;
 	    double denom(sum*sum - sum) ;
 	    return denom ? (2.0 * v1_only * v2_only + 1.0) / denom : 1.0 ;
@@ -1886,14 +1759,12 @@ class VectorMeasureWilliams2 : public Fr::DistanceMeasure<IdxT, ValT>
 //  published in Williams (1996), Koleff et al (20030
 
 template <typename IdxT, typename ValT>
-class VectorMeasureBinaryWilliams2 : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureBinaryWilliams2 : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Binary Williams2" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t /*neither*/) const
 	 {
-	    size_t v1_only, v2_only, both, neither ;
-	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double sum(both + v1_only + v2_only) ;
 	    double denom(sum*sum - sum) ;
 	    return denom ? (2.0 * v1_only * v2_only + 1.0) / denom : 1.0 ;
@@ -1905,14 +1776,12 @@ class VectorMeasureBinaryWilliams2 : public Fr::DistanceMeasure<IdxT, ValT>
 //  published in Wilson & Shmida (1984)
 
 template <typename IdxT, typename ValT>
-class VectorMeasureWilsonShmida : public Fr::DistanceMeasure<IdxT, ValT>
+class VectorMeasureWilsonShmida : public Fr::DistanceMeasureCT<IdxT, ValT>
    {
    public:
       virtual const char* canonicalName() const { return "Wilson-Shmida" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 {
-	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(2.0 * both + v1_only + v2_only) ;
 	    return denom ? (v1_only + v2_only) / denom : 1.0 ; // all-zero vectors are defined to be identical
 	 }

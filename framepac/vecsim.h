@@ -255,6 +255,12 @@ class VectorMeasure
       virtual double sparseDistance(const SparseVector<IdxT, ValT>* v1, const SparseVector<IdxT, ValT>* v2) const
 	 { return v1 != v2 ? 1 : 0 ; }
 
+      // support for subclass hierarchy of measures based on scoring a 2x2 contingency table
+      virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
+	 { return both / (both + v1_only + v2_only) ; }
+      virtual double scoreContingencyTable(size_t both, size_t v1_only, size_t v2_only, size_t neither) const
+	 { return both / (both + v1_only + v2_only + neither) ; }
+      
       // by default, we don't have a specialization for dense vectors
       virtual double denseSimilarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
@@ -283,6 +289,29 @@ class SimilarityMeasure : public VectorMeasure<IdxT, ValT>
 
    protected:
       SimilarityMeasure(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
+   } ;
+
+//----------------------------------------------------------------------------
+// a vector measure which has a similarity metric based on a 2x2
+// contingency table and computes the distance as 1-sim
+
+template <typename IdxT, typename ValT>
+class SimilarityMeasureCT : public VectorMeasure<IdxT, ValT>
+   {
+   public:
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    return scoreContingencyTable(both,v1_only,v2_only) ;
+	 }
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 {
+	    return 1.0 - similarity(v1,v2) ;
+	 }
+
+   protected:
+      SimilarityMeasureCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
 //----------------------------------------------------------------------------
@@ -316,6 +345,29 @@ class DistanceMeasure : public VectorMeasure<IdxT, ValT>
 
    protected:
       DistanceMeasure(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
+   } ;
+
+//----------------------------------------------------------------------------
+// a vector measure which has a distance metric based on a 2x2
+// contingency table and computes the similarity as 1-dist
+
+template <typename IdxT, typename ValT>
+class DistanceMeasureCT : public VectorMeasure<IdxT, ValT>
+   {
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    return scoreContingencyTable(both,v1_only,v2_only) ;
+	 }
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 {
+	    return 1.0 - similarity(v1,v2) ;
+	 }
+
+   protected:
+      DistanceMeasureCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
 //----------------------------------------------------------------------------
