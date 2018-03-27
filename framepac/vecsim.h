@@ -219,7 +219,7 @@ class VectorMeasure
       
       // dispatch to either the general implementation that can take any vector type, or the
       //   more efficient specialization for two dense vectors
-      double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    if (!v1 || !v2) return -1 ;
 	    if (v1->isSparseVector() || v2->isSparseVector())
@@ -228,7 +228,7 @@ class VectorMeasure
 	    else
 	       return denseSimilarity(v1,v2) ;
 	 }
-      double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    if (!v1 || !v2) return -1 ;
 	    if (v1->isSparseVector() || v2->isSparseVector())

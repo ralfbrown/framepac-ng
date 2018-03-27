@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-25					*/
+/* Version 0.03, last edit 2018-03-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -450,21 +450,6 @@ class VectorMeasureCosine : public Fr::SimilarityMeasure<IdxT, ValT>
 
 //============================================================================
 
-#if 0
-template <typename IdxT, typename ValT>
-class VectorMeasureX : public Fr::SimilarityMeasure<IdxT, ValT>
-   {
-   public:
-      virtual const char* canonicalName() const { return "" ; }
-      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
-	 {
-	 }
-      virtual double denseSimilarity(const Fr::Vector<ValT>* v1, const Fr::Vector<ValT>* v2) const
-	 {
-	 }
-   } ;
-#endif
-
 template <typename IdxT, typename ValT>
 class VectorMeasureAntiDice : public Fr::SimilarityMeasure<IdxT, ValT>
    {
@@ -850,102 +835,86 @@ class VectorMeasureBinaryGamma : public Fr::SimilarityMeasure<IdxT, ValT>
 //============================================================================
 // see https://en.wikipedia.org/wiki/Qualitative_variation
 
-template <typename VecT1, typename VecT2>
-double gilbert_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   typename VecT1::value_type both, v1_only, v2_only ;
-   contingency_table(v1,v2,opt,both,v1_only,v2_only) ;
-   typename VecT1::value_type N(both + v1_only + v2_only) ;
-   both /= N ;
-   v1_only /= N ;
-   v2_only /= N ;
-   typename VecT1::value_type prod((both+v1_only)*(both+v2_only)) ;
-   return (both - prod) / (both + v1_only + v2_only - prod) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureGilbert : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Gilbert" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    ValT N(both + v1_only + v2_only) ;
+	    both /= N ;
+	    v1_only /= N ;
+	    v2_only /= N ;
+	    ValT prod((both+v1_only)*(both+v2_only)) ;
+	    return (both - prod) / (both + v1_only + v2_only - prod) ;
+	 }
+   } ;
 
 //============================================================================
 // see https://en.wikipedia.org/wiki/Qualitative_variation
 
-template <typename VecT1, typename VecT2>
-double gilbert_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - gilbert_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureBinaryGilbert : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Binary Gilbert" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    size_t v1_only, v2_only, both, neither ;
+	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    double N(both + v1_only + v2_only + neither) ;
+	    double total1((both+v1_only)/N) ;
+	    double total2((both+v2_only)/N) ;
+	    double prod(total1*total2) ;
+	    double match(both/N) ;
+	    return (match - prod) / (total1 + total2 - match - prod) ;
+	 }
+   } ;
 
 //============================================================================
 // see https://en.wikipedia.org/wiki/Qualitative_variation
 
-template <typename VecT1, typename VecT2>
-double binary_gilbert_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions&)
-{
-   size_t v1_only, v2_only, both, neither ;
-   binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
-   double N(both + v1_only + v2_only + neither) ;
-   double total1((both+v1_only)/N) ;
-   double total2((both+v2_only)/N) ;
-   double prod(total1*total2) ;
-   double match(both/N) ;
-   return (match - prod) / (total1 + total2 - match - prod) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureGini : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Gini" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    ValT N(both + v1_only + v2_only) ;
+	    both /= N ;
+	    v1_only /= N ;
+	    v2_only /= N ;
+	    ValT total1(both+v1_only) ;
+	    ValT total2(both+v2_only) ;
+	    return (both - total1*total2) / std::sqrt((1.0 - total1*total1)*(1.0 - total2*total2)) ;
+	 }
+   } ;
 
 //============================================================================
 // see https://en.wikipedia.org/wiki/Qualitative_variation
 
-template <typename VecT1, typename VecT2>
-double binary_gilbert_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - binary_gilbert_sim(v1,v2,opt) ;
-}
-
-//============================================================================
-// see https://en.wikipedia.org/wiki/Qualitative_variation
-
-template <typename VecT1, typename VecT2>
-double gini_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   typename VecT1::value_type both, v1_only, v2_only ;
-   contingency_table(v1,v2,opt,both,v1_only,v2_only) ;
-   typename VecT1::value_type N(both + v1_only + v2_only) ;
-   both /= N ;
-   v1_only /= N ;
-   v2_only /= N ;
-   typename VecT1::value_type total1(both+v1_only) ;
-   typename VecT1::value_type total2(both+v2_only) ;
-   return (both - total1*total2) / std::sqrt((1.0 - total1*total1)*(1.0 - total2*total2)) ;
-}
-
-//============================================================================
-// see https://en.wikipedia.org/wiki/Qualitative_variation
-
-template <typename VecT1, typename VecT2>
-double gini_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - gini_sim(v1,v2,opt) ;
-}
-
-//============================================================================
-// see https://en.wikipedia.org/wiki/Qualitative_variation
-
-template <typename VecT1, typename VecT2>
-double binary_gini_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions&)
-{
-   size_t v1_only, v2_only, both, neither ;
-   binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
-   double N(both + v1_only + v2_only + neither) ;
-   double total1((both+v1_only)/N) ;
-   double total2((both+v2_only)/N) ;
-   double prod(total1*total2) ;
-   return (both/N - prod) / std::sqrt((1.0 - total1*total1)*(1.0 - (total2*total2))) ;
-}
-
-//============================================================================
-// see https://en.wikipedia.org/wiki/Qualitative_variation
-
-template <typename VecT1, typename VecT2>
-double binary_gini_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - binary_gini_dis(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureBinaryGini : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Binary Gini" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    size_t v1_only, v2_only, both, neither ;
+	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    double N(both + v1_only + v2_only + neither) ;
+	    double total1((both+v1_only)/N) ;
+	    double total2((both+v2_only)/N) ;
+	    double prod(total1*total2) ;
+	    return (both/N - prod) / std::sqrt((1.0 - total1*total1)*(1.0 - (total2*total2))) ;
+	 }
+   } ;
 
 //============================================================================
 //  see documentation for R-project "simba" package
@@ -1001,23 +970,19 @@ double binary_harrison_sim(const VecT1* v1, const VecT2* v2, const VectorSimilar
 //      zone". New Phytologist 11:37-50.
 //  range: 0 ... 1
 
-template <typename VecT1, typename VecT2>
-double jaccard_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   typename VecT1::value_type both, v1_only, v2_only ;
-   contingency_table(v1,v2,opt,both,v1_only,v2_only) ;
-   double either(both + v1_only + v2_only) ;
-   return either ? both / either : 1.0 ; // all-zero vectors are defined to be identical
-}
-
-//----------------------------------------------------------------------------
-//  range: 0 ... 1
-
-template <typename VecT1, typename VecT2>
-double jaccard_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - jaccard_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureJaccard : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Jaccard" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    double either(both + v1_only + v2_only) ;
+	    return either ? both / either : 1.0 ; // all-zero vectors are defined to be identical
+	 }
+   } ;
 
 //============================================================================
 //  first published in 
@@ -1026,96 +991,62 @@ double jaccard_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptio
 //  range: 0 ... 1
 //  a / (a + b + c)
 
-template <typename VecT1, typename VecT2>
-double binary_jaccard_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions&)
-{
-   size_t both, only_1, neither ;
-   binary_agreement(v1,v2,both,only_1,neither) ;
-   double either(both + only_1) ;
-   return either ? both / either : 1.0 ; // all-zero vectors are defined to be identical
-}
-
-//----------------------------------------------------------------------------
-//  range: 0 ... 1
-
-template <typename VecT1, typename VecT2>
-double binary_jaccard_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - binary_jaccard_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureBinaryJaccard : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Binary Jaccard" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    size_t both, only_1, neither ;
+	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    double either(both + only_1) ;
+	    return either ? both / either : 1.0 ; // all-zero vectors are defined to be identical
+	 }
+   } ;
 
 //============================================================================
 //  a/(b+c)
 // "simba" package calls (a+d)/(b+c) sokal4 from Sokal&Sneath(1963)
 // same as Tanimoto from old FramepaC
 
-template <typename VecT1, typename VecT2>
-double kulczynski1_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   typename VecT1::value_type both, v1_only, v2_only ;
-   contingency_table(v1,v2,opt,both,v1_only,v2_only) ;
-   double only_1(v1_only+v2_only) ;
-   return only_1 ? both / only_1 : HUGE_VAL ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename VecT1, typename VecT2>
-double kulczynski1_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 / (1.0 + kulczynski1_sim(v1,v2,opt)) ;
-}
-
-//============================================================================
-
-template <typename VecT1, typename VecT2>
-double binary_kulczynski1_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions&)
-{
-   size_t both, only_1, neither ;
-   binary_agreement(v1,v2,both,only_1,neither) ;
-   // both += neither ;   // "simba"s sokal4
-   return only_1 ? both / only_1 : HUGE_VAL ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename VecT1, typename VecT2>
-double binary_kulczynski1_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 / (1.0 + binary_kulczynski1_sim(v1,v2,opt)) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureKulczyinski1 : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Kulczynski1" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    double only_1(v1_only+v2_only) ;
+	    return only_1 ? both / only_1 : HUGE_VAL ;
+	 }
+      virtual double distance(const Fr::Vector<ValT>* v1, const Fr::Vector<ValT>* v2) const
+	 {
+	    return 1.0 / (1.0 + similarity(v1,v2)) ;
+	 }
+   } ;
 
 //============================================================================
-// measure first published in
-//    Kulczynski, S. (1927) "Die Planzenassoziationen der Pieninen",
-//    Bulletin International de l'Academie Poloaise des Sciences et
-//    des Letters, Classe des Sciences Mathematiques et Naturells, B
-//    (Sciences Naturelles), Suppl. II: 57-203.  Polish article with
-//    German summary.
-// range: 0 ... 1
 
-template <typename VecT1, typename VecT2>
-double kulczynski2_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   typename VecT1::value_type both, v1_only, v2_only ;
-   contingency_table(v1,v2,opt,both,v1_only,v2_only) ;
-   if (both + v1_only + v2_only == 0)
-      return 1.0 ; // both all-zero vectors are defined to be identical
-   double total1(both + v1_only) ;
-   double total2(both + v2_only) ;
-   if (total1 == 0 || total2 == 0)
-      return 0.0 ; // single all-zero vector is defined to be maximally DISsimilar
-   return (both / total1 + both / total2) / 2.0 ;
-}
-
-//============================================================================
-// range: 0 ... 1
-
-template <typename VecT1, typename VecT2>
-double kulczynski2_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - kulczynski2_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureBinaryKulczyinski1 : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Binary Kulczynski1" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    size_t both, only_1, neither ;
+	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    // both += neither ;   // "simba"s sokal4
+	    return only_1 ? both / only_1 : HUGE_VAL ;
+	 }
+      virtual double distance(const Fr::Vector<ValT>* v1, const Fr::Vector<ValT>* v2) const
+	 {
+	    return 1.0 / (1.0 + similarity(v1,v2)) ;
+	 }
+   } ;
 
 //============================================================================
 // measure first published in
@@ -1126,68 +1057,86 @@ double kulczynski2_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityO
 //    German summary.
 // range: 0 ... 1
 
-template <typename VecT1, typename VecT2>
-double binary_kulczynski2_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions&)
-{
-   size_t v1_only, v2_only, both, neither ;
-   binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
-   if (both + v1_only + v2_only == 0)
-      return 1.0 ; // both all-zero vectors are defined to be identical
-   double total1(both + v1_only) ;
-   double total2(both + v2_only) ;
-   if (total1 == 0 || total2 == 0)
-      return 0.0 ; // single all-zero vector is defined to be maximally DISsimilar
-   return (both / total1 + both / total2) / 2.0 ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureKulczyinski2 : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Kulczynski2" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    if (both + v1_only + v2_only == 0)
+	       return 1.0 ; // both all-zero vectors are defined to be identical
+	    double total1(both + v1_only) ;
+	    double total2(both + v2_only) ;
+	    if (total1 == 0 || total2 == 0)
+	       return 0.0 ; // single all-zero vector is defined to be maximally DISsimilar
+	    return (both / total1 + both / total2) / 2.0 ;
+	 }
+   } ;
 
 //============================================================================
+// measure first published in
+//    Kulczynski, S. (1927) "Die Planzenassoziationen der Pieninen",
+//    Bulletin International de l'Academie Poloaise des Sciences et
+//    des Letters, Classe des Sciences Mathematiques et Naturells, B
+//    (Sciences Naturelles), Suppl. II: 57-203.  Polish article with
+//    German summary.
 // range: 0 ... 1
 
-template <typename VecT1, typename VecT2>
-double binary_kulczynski2_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - binary_kulczynski2_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureBinaryKulczyinski2 : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Binary Kulczynski2" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    size_t v1_only, v2_only, both, neither ;
+	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    if (both + v1_only + v2_only == 0)
+	       return 1.0 ; // both all-zero vectors are defined to be identical
+	    double total1(both + v1_only) ;
+	    double total2(both + v2_only) ;
+	    if (total1 == 0 || total2 == 0)
+	       return 0.0 ; // single all-zero vector is defined to be maximally DISsimilar
+	    return (both / total1 + both / total2) / 2.0 ;
+	 }
+   } ;
 
 //============================================================================
 //  (b+c) / (2a + b + c)
 
-template <typename VecT1, typename VecT2>
-double lance_williams_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   typename VecT1::value_type both, v1_only, v2_only ;
-   contingency_table(v1,v2,opt,both,v1_only,v2_only) ;
-   double denom(2.0*both + v1_only + v2_only) ;
-   return denom ? (v1_only + v2_only) / denom : 1.0 ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename VecT1, typename VecT2>
-double lance_williams_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - lance_williams_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureLanceWilliams : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Lance-Williams" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    double denom(2.0*both + v1_only + v2_only) ;
+	    return denom ? (v1_only + v2_only) / denom : 1.0 ;
+	 }
+   } ;
 
 //============================================================================
 // (b+c) / (2a + b + c)
 
-template <typename VecT1, typename VecT2>
-double binary_lance_williams_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   size_t both, only_1, neither ;
-   binary_agreement(v1,v2,both,only_1,neither) ;
-   double denom(2.0*both + only_1) ;
-   return denom ? only_1 / denom : 1.0 ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename VecT1, typename VecT2>
-double binary_lance_williams_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - binary_lance_williams_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureBinaryLanceWilliams : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Binary Lance-Williams" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    size_t both, only_1, neither ;
+	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    double denom(2.0*both + only_1) ;
+	    return denom ? only_1 / denom : 1.0 ;
+	 }
+   } ;
 
 //============================================================================
 //  see documentation for R-project "simba" package
@@ -1298,23 +1247,19 @@ double binary_lennon_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarit
 //    Ecology 70:966-979.
 //  range: 0 ... 1
 
-template <typename VecT1, typename VecT2>
-double lennon2_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   typename VecT1::value_type both, v1_only, v2_only ;
-   contingency_table(v1,v2,opt,both,v1_only,v2_only) ;
-   double sum(both + v1_only + v2_only) ;
-   return sum ? std::log2((both+sum)/sum) : 1.0 ;
-}
-
-//----------------------------------------------------------------------------
-//  range: 0 ... 1
-
-template <typename VecT1, typename VecT2>
-double lennon2_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - lennon2_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureLennon2 : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Lennon2" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    double sum(both + v1_only + v2_only) ;
+	    return sum ? std::log2((both+sum)/sum) : 1.0 ;
+	 }
+   } ;
 
 //============================================================================
 //  see documentation for R-project "simba" package
@@ -1325,47 +1270,39 @@ double lennon2_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptio
 //  range: 0 ... 1
 // log2((2a+b+c)/(a+b+c))
 
-template <typename VecT1, typename VecT2>
-double binary_lennon2_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions&)
-{
-   size_t both, only_1, neither ;
-   binary_agreement(v1,v2,both,only_1,neither) ;
-   double sum(both + only_1) ;
-   return sum ? std::log2((both+sum)/sum) : 1.0 ;
-}
-
-//----------------------------------------------------------------------------
-//  range: 0 ... 1
-
-template <typename VecT1, typename VecT2>
-double binary_lennon2_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - binary_lennon2_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureBinaryLennon2 : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Binary Lennon2" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    size_t both, only_1, neither ;
+	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    double sum(both + only_1) ;
+	    return sum ? std::log2((both+sum)/sum) : 1.0 ;
+	 }
+   } ;
 
 //============================================================================
 //  see documentation for R-project "simba" package
 //  published in Legendre & Legendre (1998)
 //  range: 0 ... 1
 
-template <typename VecT1, typename VecT2>
-double legendre2_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   typename VecT1::value_type both, v1_only, v2_only ;
-   contingency_table(v1,v2,opt,both,v1_only,v2_only) ;
-   both *= 3 ;
-   double denom(both + v1_only + v2_only) ;
-   return denom ? both / denom : 1.0 ;
-}
-
-//----------------------------------------------------------------------------
-//  range: 0 ... 1
-
-template <typename VecT1, typename VecT2>
-double legendre2_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - legendre2_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureLegendre : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Legendre" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    both *= 3 ;
+	    double denom(both + v1_only + v2_only) ;
+	    return denom ? both / denom : 1.0 ;
+	 }
+   } ;
 
 //============================================================================
 //  see documentation for R-project "simba" package
@@ -1373,24 +1310,20 @@ double legendre2_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOpt
 //  range: 0 ... 1
 // leg2 = 3a / (3a + b + c)
 
-template <typename VecT1, typename VecT2>
-double binary_legendre2_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions&)
-{
-   size_t both, only_1, neither ;
-   binary_agreement(v1,v2,both,only_1,neither) ;
-   both *= 3 ;
-   double denom(both + only_1) ;
-   return denom ? both / denom : 1.0 ;
-}
-
-//----------------------------------------------------------------------------
-//  range: 0 ... 1
-
-template <typename VecT1, typename VecT2>
-double binary_legendre2_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - binary_legendre2_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureBinaryLegendre : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Binary Legendre" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    size_t both, only_1, neither ;
+	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    both *= 3 ;
+	    double denom(both + only_1) ;
+	    return denom ? both / denom : 1.0 ;
+	 }
+   } ;
 
 //============================================================================
 //  see documentation for R-project "simba" package
@@ -1399,24 +1332,20 @@ double binary_legendre2_dis(const VecT1* v1, const VecT2* v2, const VectorSimila
 // range: -1 ... 1
 // maarel = (2a - b - c) / (2a + b + c)
 
-template <typename VecT1, typename VecT2>
-double maarel_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   typename VecT1::value_type both, v1_only, v2_only ;
-   contingency_table(v1,v2,opt,both,v1_only,v2_only) ;
-   both *= 2 ;
-   double denom(both + v1_only + v2_only) ;
-   return denom ? ((both - v1_only - v2_only) / denom) : 1.0 ;
-}
-
-//============================================================================
-// range: -1 ... 1
-
-template <typename VecT1, typename VecT2>
-double maarel_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - maarel_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureMaarel : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Maarel" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    both *= 2 ;
+	    double denom(both + v1_only + v2_only) ;
+	    return denom ? ((both - v1_only - v2_only) / denom) : 1.0 ;
+	 }
+   } ;
 
 //============================================================================
 //  see documentation for R-project "simba" package
@@ -1425,24 +1354,20 @@ double maarel_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOption
 // range: -1 ... 1
 // maarel = (2a - b - c) / (2a + b + c)
 
-template <typename VecT1, typename VecT2>
-double binary_maarel_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions&)
-{
-   size_t both, only_1, neither ;
-   binary_agreement(v1,v2,both,only_1,neither) ;
-   both *= 2 ;
-   double denom(both + only_1) ;
-   return denom ? ((both - only_1) / denom) : 1.0 ;
-}
-
-//============================================================================
-// range: -1 ... 1
-
-template <typename VecT1, typename VecT2>
-double binary_maarel_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - binary_maarel_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureBinaryMaarel : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Binary Maarel" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    size_t both, only_1, neither ;
+	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    both *= 2 ;
+	    double denom(both + only_1) ;
+	    return denom ? ((both - only_1) / denom) : 1.0 ;
+	 }
+   } ;
 
 //============================================================================
 //  see documentation for R-project "simba" package
@@ -1496,25 +1421,21 @@ double binary_magurran_sim(const VecT1* v1, const VecT2* v2, const VectorSimilar
 //     Hubalek (1982)
 // range: 0 ... 1
 
-template <typename VecT1, typename VecT2>
-double mcconnagh_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   typename VecT1::value_type both, v1_only, v2_only ;
-   contingency_table(v1,v2,opt,both,v1_only,v2_only) ;
-   typename VecT1::value_type total1(both + v1_only) ;
-   typename VecT1::value_type total2(both + v2_only) ;
-   double denom(total1 * total2) ;
-   return denom ? (both * both - v1_only * v2_only) / denom : 1.0 ;
-}
-
-//============================================================================
-// range: 0 ... 1
-
-template <typename VecT1, typename VecT2>
-double mcconnagh_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - mcconagh_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureMcConnagh : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "McConnagh" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    ValT total1(both + v1_only) ;
+	    ValT total2(both + v2_only) ;
+	    double denom(total1 * total2) ;
+	    return denom ? (both * both - v1_only * v2_only) / denom : 1.0 ;
+	 }
+   } ;
 
 //============================================================================
 //  see documentation for R-project "simba" package
@@ -1524,113 +1445,97 @@ double mcconnagh_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOpt
 // mcc = (aa - bc) / ((a+b)(a+c))
 // aka McConnaughey
 
-template <typename VecT1, typename VecT2>
-double binary_mcconnagh_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions&)
-{
-   size_t v1_only, v2_only, both, neither ;
-   binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
-   double total1(both + v1_only) ;
-   double total2(both + v2_only) ;
-   double denom(total1 * total2) ;
-   return denom ? (both * both - v1_only * v2_only) / denom : 1.0 ;
-}
-
-//============================================================================
-// range: 0 ... 1
-
-template <typename VecT1, typename VecT2>
-double binary_mcconnagh_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - binary_mcconagh_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureBinaryMcConnagh : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Binary McConnagh" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    size_t v1_only, v2_only, both, neither ;
+	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    double total1(both + v1_only) ;
+	    double total2(both + v2_only) ;
+	    double denom(total1 * total2) ;
+	    return denom ? (both * both - v1_only * v2_only) / denom : 1.0 ;
+	 }
+   } ;
 
 //============================================================================
 // see https://en.wikipedia.org/wiki/Qualitative_variation
 
-template <typename VecT1, typename VecT2>
-double modgini_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   typename VecT1::value_type both, v1_only, v2_only ;
-   contingency_table(v1,v2,opt,both,v1_only,v2_only) ;
-   typename VecT1::value_type N(both + v1_only + v2_only) ;
-   both /= N ;
-   v1_only /= N ;
-   v2_only /= N ;
-   typename VecT1::value_type total1(both+v1_only) ;
-   typename VecT1::value_type total2(both+v2_only) ;
-   return (both - total1*total2) / (1.0 - std::abs(v1_only-v2_only)/2 - total1*total2) ;
-}
-
-//============================================================================
-
-template <typename VecT1, typename VecT2>
-double modgini_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - modgini_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureModGini : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "ModGini" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    ValT N(both + v1_only + v2_only) ;
+	    both /= N ;
+	    v1_only /= N ;
+	    v2_only /= N ;
+	    ValT total1(both+v1_only) ;
+	    ValT total2(both+v2_only) ;
+	    return (both - total1*total2) / (1.0 - std::abs(v1_only-v2_only)/2 - total1*total2) ;
+	 }
+   } ;
 
 //============================================================================
 // see https://en.wikipedia.org/wiki/Qualitative_variation
 
-template <typename VecT1, typename VecT2>
-double binary_modgini_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions&)
-{
-   size_t v1_only, v2_only, both, neither ;
-   binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
-   double N(both + v1_only + v2_only + neither) ;
-   double prod((both+v1_only)/N*(both+v2_only)/N) ;
-   return (both/N - prod) / (1.0 - std::abs((ssize_t)(v1_only-v2_only))/(2.0*N) - prod) ;
-}
-
-//============================================================================
-
-template <typename VecT1, typename VecT2>
-double binary_modgini_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - binary_modgini_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureBinaryModGini : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Binary ModGini" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    size_t v1_only, v2_only, both, neither ;
+	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    double N(both + v1_only + v2_only + neither) ;
+	    double prod((both+v1_only)/N*(both+v2_only)/N) ;
+	    return (both/N - prod) / (1.0 - std::abs((ssize_t)(v1_only-v2_only))/(2.0*N) - prod) ;
+	 }
+   } ;
 
 //============================================================================
 //  see documentation for R-project "simba" package
 
-template <typename VecT1, typename VecT2>
-double mountford_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   typename VecT1::value_type both, v1_only, v2_only ;
-   contingency_table(v1,v2,opt,both,v1_only,v2_only) ;
-   if (v1_only + v2_only == 0)
-      return 1.0 ; // vectors with no disagreements are defined to be identical
-   return 2.0 * both / (double)(both*(v1_only + v2_only) + 2.0 * v1_only * v2_only) ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename VecT1, typename VecT2>
-double mountford_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - mountford_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureMountford : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Mountford" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    if (v1_only + v2_only == 0)
+	       return 1.0 ; // vectors with no disagreements are defined to be identical
+	    return 2.0 * both / (double)(both*(v1_only + v2_only) + 2.0 * v1_only * v2_only) ;
+	 }
+   } ;
 
 //============================================================================
 //  see documentation for R-project "simba" package
 
-template <typename VecT1, typename VecT2>
-double binary_mountford_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions&)
-{
-   size_t v1_only, v2_only, both, neither ;
-   binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
-   if (v1_only + v2_only == 0)
-      return 1.0 ; // vectors with no disagreements are defined to be identical
-   return 2.0 * both / (double)(both*(v1_only + v2_only) + 2.0 * v1_only * v2_only) ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename VecT1, typename VecT2>
-double binary_mountford_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - binary_mountford_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureBinaryMountford : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Binary Mountford" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    size_t v1_only, v2_only, both, neither ;
+	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    if (v1_only + v2_only == 0)
+	       return 1.0 ; // vectors with no disagreements are defined to be identical
+	    return 2.0 * both / (double)(both*(v1_only + v2_only) + 2.0 * v1_only * v2_only) ;
+	 }
+   } ;
 
 //============================================================================
 // measure first published in
@@ -1639,25 +1544,22 @@ double binary_mountford_dis(const VecT1* v1, const VecT2* v2, const VectorSimila
 //    Japanese Society of Scientific Fisheries 22:526-530.  Japanese
 //    article with English summary.
 
-template <typename VecT1, typename VecT2>
-double ochiai_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   typename VecT1::value_type both, v1_only, v2_only ;
-   contingency_table(v1,v2,opt,both,v1_only,v2_only) ;
-   if (both + v1_only + v2_only == 0)
-      return 1.0 ; // both all-zero vectors are defined to be identical
-   else if (both + v1_only == 0 || both + v2_only == 0)
-      return 0.0 ; // single all-zero vector is defined to be maximally DISsimilar
-   return both / std::sqrt((both + v1_only) * (both + v2_only)) ;
-}
-
-//============================================================================
-
-template <typename VecT1, typename VecT2>
-double ochiai_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - ochiai_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureOchiai : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Ochiai" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    ValT both, v1_only, v2_only ;
+	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    if (both + v1_only + v2_only == 0)
+	       return 1.0 ; // both all-zero vectors are defined to be identical
+	    else if (both + v1_only == 0 || both + v2_only == 0)
+	       return 0.0 ; // single all-zero vector is defined to be maximally DISsimilar
+	    return both / std::sqrt((both + v1_only) * (both + v2_only)) ;
+	 }
+   } ;
 
 //============================================================================
 // measure first published in
@@ -1666,25 +1568,22 @@ double ochiai_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOption
 //    Japanese Society of Scientific Fisheries 22:526-530.  Japanese
 //    article with English summary.
 
-template <typename VecT1, typename VecT2>
-double binary_ochiai_sim(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions&)
-{
-   size_t v1_only, v2_only, both, neither ;
-   binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
-   if (both + v1_only + v2_only == 0)
-      return 1.0 ; // both all-zero vectors are defined to be identical
-   else if (both + v1_only == 0 || both + v2_only == 0)
-      return 0.0 ; // single all-zero vector is defined to be maximally DISsimilar
-   return both / std::sqrt((both + v1_only) * (both + v2_only)) ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename VecT1, typename VecT2>
-double binary_ochiai_dis(const VecT1* v1, const VecT2* v2, const VectorSimilarityOptions& opt)
-{
-   return 1.0 - binary_ochiai_sim(v1,v2,opt) ;
-}
+template <typename IdxT, typename ValT>
+class VectorMeasureBinaryOchiai : public Fr::SimilarityMeasure<IdxT, ValT>
+   {
+   public:
+      virtual const char* canonicalName() const { return "Binary Ochiai" ; }
+      virtual double sparseSimilarity(const Fr::SparseVector<IdxT,ValT>* v1, const Fr::SparseVector<IdxT,ValT>* v2) const
+	 {
+	    size_t v1_only, v2_only, both, neither ;
+	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    if (both + v1_only + v2_only == 0)
+	       return 1.0 ; // both all-zero vectors are defined to be identical
+	    else if (both + v1_only == 0 || both + v2_only == 0)
+	       return 0.0 ; // single all-zero vector is defined to be maximally DISsimilar
+	    return both / std::sqrt((both + v1_only) * (both + v2_only)) ;
+	 }
+   } ;
 
 //============================================================================
 //  see documentation for R-project "simba" package
