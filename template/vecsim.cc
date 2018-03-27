@@ -26,6 +26,251 @@
 /************************************************************************/
 /************************************************************************/
 
+namespace Fr
+{
+
+template <typename IdxT, typename ValT>
+void VectorMeasure<IdxT,ValT>::contingencyTable(const Vector<ValT>* v1, const Vector<ValT>* v2,
+   ValT& a, ValT& b, ValT& c) const
+{
+   a = b = c = 0 ;
+   if (!v1 || !v2)
+      {
+      return ;
+      }
+   ValT wt1, wt2 ;
+   normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
+   size_t pos1(0) ;
+   size_t pos2(0) ;
+   size_t elts1(v1->numElements()) ;
+   size_t elts2(v2->numElements()) ;
+   if (!v1->isSparseVector() && !v2->isSparseVector())
+      {
+      const DenseVector<ValT>* dv1 = static_cast<const DenseVector<ValT>*>(v1) ;
+      const DenseVector<ValT>* dv2 = static_cast<const DenseVector<ValT>*>(v2) ;
+      // figure out how many elements to process in both vectors
+      size_t minlen = std::min(elts1,elts2) ;
+      // if either vector is all zeros, we don't need to treat it in
+      //   common with the other one
+      if (wt1 == 0.0 || wt2 == 0.0) minlen = 0 ;
+      for ( ; pos1 < minlen ; ++pos1)
+	 {
+	 ValT val1(dv1->elementValue(pos1)) ;
+	 ValT val2(dv2->elementValue(pos1)) ;
+	 ValT com(std::min(val1/wt1,val2/wt2)) ;
+	 a += com ;
+	 b += (val1 - wt1*com) ;
+	 c += (val2 - wt2*com) ;
+	 }
+      pos2 = pos1 ;
+      }
+   else
+      {
+      for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	 {
+	 auto elt1 = v1->elementIndex(pos1) ;
+	 auto elt2 = v2->elementIndex(pos2) ;
+	 if (elt1 < elt2)
+	    {
+	    b += v1->elementValue(pos1++) ;
+	    }
+	 else if (elt1 > elt2)
+	    {
+	    c += v2->elementValue(pos2++) ;
+	    }
+	 else // if (elt1 == elt2)
+	    {
+	    auto val1(v1->elementValue(pos1++)) ;
+	    auto val2(v2->elementValue(pos2++)) ;
+	    auto com(std::min(val1/wt1,val2/wt2)) ;
+	    a += com ;
+	    b += (val1 - wt1*com) ;
+	    c += (val2 - wt2*com) ;
+	    }
+	 }
+      }
+   // handle any leftovers from the first vector (if the second is shorter or zero)
+   while (pos1 < elts1)
+      {
+      b += v1->elementValue(pos1++) ;
+      }
+   // handle any leftovers from the second vector (if the first is shorter or zero)
+   while (pos2 < elts2)
+      {
+      c += v2->elementValue(pos2++) ;
+      }
+   b /= wt1 ;
+   c /= wt2 ;
+   return;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+void VectorMeasure<IdxT,ValT>::contingencyTable(const Vector<ValT>* v1, const Vector<ValT>* v2,
+   size_t& both, size_t& v1_only, size_t& v2_only, size_t& neither) const
+{
+   both = v1_only = v2_only = neither = 0 ;
+   if (!v1 || !v2)
+      {
+      return ;
+      }
+   size_t pos1(0) ;
+   size_t pos2(0) ;
+   size_t elts1(v1->numElements()) ;
+   size_t elts2(v2->numElements()) ;
+   if (!v1->isSparseVector() && !v2->isSparseVector())
+      {
+      const DenseVector<ValT>* dv1 = static_cast<const DenseVector<ValT>*>(v1) ;
+      const DenseVector<ValT>* dv2 = static_cast<const DenseVector<ValT>*>(v2) ;
+      // figure out how many elements to process in both vectors
+      size_t minlen = std::min(elts1,elts2) ;
+      for ( ; pos1 < minlen ; ++pos1)
+	 {
+	 ValT val1 = dv1->elementValue(pos1) ;
+	 ValT val2 = dv2->elementValue(pos1) ;
+	 if (val1 && val2)
+	    both++ ;
+	 else if (val1)
+	    v1_only++ ;
+	 else if (val2)
+	    v2_only++ ;
+	 else
+	    neither++ ;
+	 }
+      pos2 = pos1 ;
+      }
+   else
+      {
+      for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	 {
+	 auto elt1 = v1->elementIndex(pos1) ;
+	 auto elt2 = v2->elementIndex(pos2) ;
+	 if (elt1 < elt2)
+	    {
+	    if (v1->elementValue(pos1++))
+	       v1_only++ ;
+	    else
+	       neither++ ;
+	    }
+	 else if (elt1 > elt2)
+	    {
+	    if (v2->elementValue(pos2++))
+	       v2_only++ ;
+	    else
+	       neither++ ;
+	    }
+	 else // if (elt1 == elt2)
+	    {
+	    auto val1 = v1->elementValue(pos1++) ;
+	    auto val2 = v2->elementValue(pos2++) ;
+	    if (val1 && val2)
+	       both++ ;
+	    else if (val1)
+	       v1_only++ ;
+	    else if (val2)
+	       v2_only++ ;
+	    else
+	       neither++ ;
+	    }
+	 }
+      }
+   // handle any leftovers from the first vector (if the second is shorter)
+   for ( ; pos1 < elts1 ; )
+      {
+      if (v1->elementValue(pos1++))
+	 v1_only++ ;
+      else
+	 neither++ ;
+      }
+   // handle any leftovers from the second vector (if the first is shorter)
+   for ( ; pos2 < elts2 ; )
+      {
+      if (v2->elementValue(pos2++))
+	 v2_only++ ;
+      else
+	 neither++ ;
+      }
+   return;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+void VectorMeasure<IdxT,ValT>::binaryAgreement(const Vector<ValT>* v1, const Vector<ValT>* v2,
+   size_t& both, size_t& disagree, size_t& neither) const
+{
+   if (!v1 || !v2)
+      {
+      neither = disagree = both = 0 ;
+      return ;
+      }
+   size_t pos1(0) ;
+   size_t pos2(0) ;
+   size_t elts1(v1->numElements()) ;
+   size_t elts2(v2->numElements()) ;
+   size_t stats[3] { 0, 0, 0 } ;
+   if (!v1->isSparseVector() && !v2->isSparseVector())
+      {
+      // dense vectors
+      // figure out how many elements to process in both vectors
+      size_t minlen = std::min(elts1,elts2) ;
+      for ( ; pos1 < minlen ; ++pos1)
+	 {
+	 bool val1(v1->elementValue(pos1)) ;
+	 bool val2(v2->elementValue(pos1)) ;
+	 stats[val1+val2]++ ;
+	 }
+      pos2 = pos1 ;
+      }
+   else
+      {
+      for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	 {
+	 auto elt1 = v1->elementIndex(pos1) ;
+	 auto elt2 = v2->elementIndex(pos2) ;
+	 if (elt1 < elt2)
+	    {
+	    bool val(v1->elementValue(pos1++)) ;
+	    stats[val]++ ;
+	    }
+	 else if (elt1 > elt2)
+	    {
+	    bool val(v2->elementValue(pos2++)) ;
+	    stats[val]++ ;
+	    }
+	 else // if (elt1 == elt2)
+	    {
+	    bool val1(v1->elementValue(pos1++)) ;
+	    bool val2(v2->elementValue(pos2++)) ;
+	    stats[val1+val2]++ ;
+	    }
+	 }
+      }
+   // handle any leftovers from the first vector (if the second is shorter)
+   while (pos1 < elts1)
+      {
+      bool val(v1->elementValue(pos1++)) ;
+      stats[val]++ ;
+      }
+   // handle any leftovers from the second vector (if the first is shorter)
+   while (pos2 < elts2)
+      {
+      bool val(v2->elementValue(pos2++)) ;
+      stats[val]++ ;
+      }
+   neither = stats[0] ;
+   disagree = stats[1] ;
+   both = stats[2] ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+} // end namespace Fr
+
+//============================================================================
+
 namespace FramepaC
 {
 namespace vecsim
@@ -113,287 +358,6 @@ void normalization_weights(const VecT1* v1, const VecT2* v2, int normalization,
    return ;
 }
 
-//----------------------------------------------------------------------------
-
-template <typename VecT1, typename VecT2>
-void contingency_table(const VecT1* v1, const VecT2* v2,
-		       const VectorSimilarityOptions& opt,
-		       typename VecT1::value_type& a,
-		       typename VecT1::value_type& b,
-		       typename VecT1::value_type& c)
-{
-   a = b = c = 0 ;
-   typename VecT1::value_type wt1, wt2 ;
-   normalization_weights(v1,v2,opt.normalize,wt1,wt2) ;
-   size_t pos1(0) ;
-   size_t pos2(0) ;
-   size_t elts1(v1->numElements()) ;
-   size_t elts2(v2->numElements()) ;
-   for ( ; pos1 < elts1 && pos2 < elts2 ; )
-      {
-      auto elt1 = v1->elementIndex(pos1) ;
-      auto elt2 = v2->elementIndex(pos2) ;
-      if (elt1 < elt2)
-	 {
-	 b += v1->elementValue(pos1++) ;
-	 }
-      else if (elt1 > elt2)
-	 {
-	 c += v2->elementValue(pos2++) ;
-	 }
-      else // if (elt1 == elt2)
-	 {
-	 typename VecT1::value_type val1(v1->elementValue(pos1++)) ;
-	 typename VecT1::value_type val2(v2->elementValue(pos2++)) ;
-	 typename VecT1::value_type com(std::min(val1/wt1,val2/wt2)) ;
-	 a += com ;
-	 b += (val1 - com) ;
-	 c += (val2 - com) ;
-	 }
-      }
-   // handle any leftovers from the first vector (if the second is shorter or zero)
-   for ( ; pos1 < elts1 ; )
-      {
-      b += v1->elementValue(pos1++) ;
-      }
-   // handle any leftovers from the second vector (if the first is shorter or zero)
-   for ( ; pos2 < elts2 ; )
-      {
-      c += v2->elementValue(pos2++) ;
-      }
-   b /= wt1 ;
-   c /= wt2 ;
-   return;
-}
-
-//----------------------------------------------------------------------------
-// a more efficient specialization for two dense vectors
-
-template <typename ValT>
-void contingency_table(const DenseVector<ValT>* v1, const DenseVector<ValT>* v2,
-		       const VectorSimilarityOptions& opt,
-		       ValT &a, ValT &b, ValT &c)
-{
-   a = b = c = 0 ;
-   ValT wt1, wt2 ;
-   normalization_weights(v1,v2,opt.normalize,wt1,wt2) ;
-   // figure out how many elements to process in both vectors
-   size_t minlen = std::min(v1->numElements(),v2->numElements()) ;
-   // if either vector is all zeros, we don't need to treat it in
-   //   common with the other one
-   if (wt1 == 0.0 || wt2 == 0.0) minlen = 0 ;
-   for (size_t i = 0 ; i < minlen ; ++i)
-      {
-      ValT val1(v1->elementValue(i)) ;
-      ValT val2(v2->elementValue(i)) ;
-      ValT com(std::min(val1/wt1,val2/wt2)) ;
-      a += com ;
-      b += (val1 - com) ;
-      c += (val2 - com) ;
-      }
-   // handle any leftovers from the first vector (if the second is shorter or zero)
-   for (size_t i = minlen ; i < v1->numElements() ; ++i)
-      {
-      b += v1->elementValue(i) ;
-      }
-   // handle any leftovers from the second vector (if the first is shorter or zero)
-   for (size_t i = minlen ; i < v2->numElements() ; ++i)
-      {
-      c += v2->elementValue(i) ;
-      }
-   b /= wt1 ;
-   c /= wt2 ;
-   return;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename VecT1, typename VecT2>
-void binary_contingency_table(const VecT1* v1, const VecT2* v2,
-			      size_t& both, size_t& v1_only, size_t& v2_only, size_t& neither)
-{
-   both = v1_only = v2_only = neither = 0 ;
-   size_t pos1(0) ;
-   size_t pos2(0) ;
-   size_t elts1(v1->numElements()) ;
-   size_t elts2(v2->numElements()) ;
-   for ( ; pos1 < elts1 && pos2 < elts2 ; )
-      {
-      auto elt1 = v1->elementIndex(pos1) ;
-      auto elt2 = v2->elementIndex(pos2) ;
-      if (elt1 < elt2)
-	 {
-	 if (v1->elementValue(pos1++))
-	    v1_only++ ;
-	 else
-	    neither++ ;
-	 }
-      else if (elt1 > elt2)
-	 {
-	 if (v2->elementValue(pos2++))
-	    v2_only++ ;
-	 else
-	    neither++ ;
-	 }
-      else // if (elt1 == elt2)
-	 {
-	 auto val1 = v1->elementValue(pos1++) ;
-	 auto val2 = v2->elementValue(pos2++) ;
-	 if (val1 && val2)
-	    both++ ;
-	 else if (val1)
-	    v1_only++ ;
-	 else if (val2)
-	    v2_only++ ;
-	 else
-	    neither++ ;
-	 }
-      }
-   // handle any leftovers from the first vector (if the second is shorter)
-   for ( ; pos1 < elts1 ; )
-      {
-      if (v1->elementValue(pos1++))
-	 v1_only++ ;
-      else
-	 neither++ ;
-      }
-   // handle any leftovers from the second vector (if the first is shorter)
-   for ( ; pos2 < elts2 ; )
-      {
-      if (v2->elementValue(pos2++))
-	 v2_only++ ;
-      else
-	 neither++ ;
-      }
-   return;
-}
-
-//----------------------------------------------------------------------------
-// a more efficient specialization for matching two dense vectors
-
-template <typename ValT>
-void binary_contingency_table(const DenseVector<ValT>* v1, const DenseVector<ValT>* v2,
-			      size_t& both, size_t& v1_only, size_t& v2_only, size_t& neither)
-{
-   both = v1_only = v2_only = neither = 0 ;
-   // figure out how many elements to process in both vectors
-   size_t minlen = std::min(v1->numElements(),v2->numElements()) ;
-   for (size_t i = 0 ; i < minlen ; ++i)
-      {
-      ValT val1 = v1->elementValue(i) ;
-      ValT val2 = v2->elementValue(i) ;
-      if (val1 && val2)
-	 both++ ;
-      else if (val1)
-	 v1_only++ ;
-      else if (val2)
-	 v2_only++ ;
-      else
-	 neither++ ;
-      }
-   // handle any leftovers from the first vector (if the second is shorter)
-   for (size_t i = minlen ; i < v1->numElements() ; ++i)
-      {
-      if (v1->elementValue(i))
-	 v1_only++ ;
-      else
-	 neither++ ;
-      }
-   // handle any leftovers from the second vector (if the first is shorter)
-   for (size_t i = minlen ; i < v2->numElements() ; ++i)
-      {
-      if (v2->elementValue(i))
-	 v2_only++ ;
-      else
-	 neither++ ;
-      }
-   return;
-}
-
-//----------------------------------------------------------------------------
-//  return a as 'both', (b+c) as 'disagree', and d as 'neither'
-
-template <typename VecT1, typename VecT2>
-void binary_agreement(const VecT1* v1, const VecT2* v2, size_t& both, size_t& disagree, size_t& neither)
-{
-   size_t pos1(0) ;
-   size_t pos2(0) ;
-   size_t elts1(v1->numElements()) ;
-   size_t elts2(v2->numElements()) ;
-   size_t stats[3] { 0, 0, 0 } ;
-   for ( ; pos1 < elts1 && pos2 < elts2 ; )
-      {
-      auto elt1 = v1->elementIndex(pos1) ;
-      auto elt2 = v2->elementIndex(pos2) ;
-      if (elt1 < elt2)
-	 {
-	 bool val(v1->elementValue(pos1++)) ;
-	 stats[val]++ ;
-	 }
-      else if (elt1 > elt2)
-	 {
-	 bool val(v2->elementValue(pos2++)) ;
-	 stats[val]++ ;
-	 }
-      else // if (elt1 == elt2)
-	 {
-	 bool val1(v1->elementValue(pos1++)) ;
-	 bool val2(v2->elementValue(pos2++)) ;
-	 stats[val1+val2]++ ;
-	 }
-      }
-   // handle any leftovers from the first vector (if the second is shorter)
-   for ( ; pos1 < elts1 ; )
-      {
-      bool val(v1->elementValue(pos1++)) ;
-      stats[val]++ ;
-      }
-   // handle any leftovers from the second vector (if the first is shorter)
-   for ( ; pos2 < elts2 ; )
-      {
-      bool val(v2->elementValue(pos2++)) ;
-      stats[val]++ ;
-      }
-   neither = stats[0] ;
-   disagree = stats[1] ;
-   both = stats[2] ;
-   return;
-}
-
-//----------------------------------------------------------------------------
-// a more efficient specialization for matching two dense vectors
-
-template <typename ValT>
-void binary_agreement(const DenseVector<ValT>* v1, const DenseVector<ValT>* v2,
-		      size_t& both, size_t& disagree, size_t& neither)
-{
-   size_t stats[3] { 0, 0, 0 } ;
-   // figure out how many elements to process in both vectors
-   size_t minlen = std::min(v1->numElements(),v2->numElements()) ;
-   for (size_t i = 0 ; i < minlen ; ++i)
-      {
-      bool val1(v1->elementValue(i)) ;
-      bool val2(v2->elementValue(i)) ;
-      stats[val1+val2]++ ;
-      }
-   // handle any leftovers from the first vector (if the second is shorter)
-   for (size_t i = minlen ; i < v1->numElements() ; ++i)
-      {
-      bool val(v1->elementValue(i)) ;
-      stats[val]++ ;
-      }
-   // handle any leftovers from the second vector (if the first is shorter)
-   for (size_t i = minlen ; i < v2->numElements() ; ++i)
-      {
-      bool val(v2->elementValue(i)) ;
-      stats[val]++ ;
-      }
-   neither = stats[0] ;
-   disagree = stats[1] ;
-   both = stats[2] ;
-   return;
-}
-
 //============================================================================
 //============================================================================
 
@@ -460,7 +424,7 @@ class VectorMeasureAntiDice : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT denom(both + 2.0*(v1_only + v2_only)) ;
 	    return (denom > 0) ? both / (double)denom : 1.0 ;
 	 }
@@ -485,7 +449,7 @@ class VectorMeasureBinaryAntiDice : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    double denom(both + 2.0 * only_1) ;
 	    return (denom > 0.0) ? both / denom : 1.0 ; // (all-zero vectors are defined to be identical)
 	 }
@@ -507,7 +471,7 @@ class VectorMeasureBenini : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT N(both + v1_only + v2_only) ;
 	    both /= N ;
 	    v1_only /= N ;
@@ -533,7 +497,7 @@ class VectorMeasureBinaryBenini : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double N(both + v1_only + v2_only + neither) ;
 	    double total1((both+v1_only)/N) ;
 	    double total2((both+v2_only)/N) ;
@@ -554,7 +518,7 @@ class VectorMeasureBraunBlanquet : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT larger(std::max(both+v1_only,both+v2_only)) ;
 	    return larger > 0 ? both / larger : 1.0 ;
 	 }
@@ -571,7 +535,7 @@ class VectorMeasureBinaryBraunBlanquet : public Fr::SimilarityMeasure<IdxT, ValT
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, v1_only, v2_only, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double larger(std::max(both+v1_only,both+v2_only)) ;
 	    return larger > 0 ? both / larger : 1.0 ;
 	 }
@@ -593,7 +557,7 @@ class VectorMeasureBrayCurtis : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT sum(2.0 * both + v1_only + v2_only) ;
 	    return sum ? (v1_only + v2_only) / sum : 1.0 ;
 	 }
@@ -615,7 +579,7 @@ class VectorMeasureBinaryBrayCurtis : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    size_t sum(2.0 * both + only_1) ;
 	    return sum ? only_1 / sum : 1.0 ;
 	 }
@@ -635,7 +599,7 @@ class VectorMeasureCocogaston : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT common, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,common,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,common,v1_only,v2_only) ;
 	    ValT dif(v1_only + v2_only) ;
 	    if (common + dif == 0)
 	       return 1.0 ;			// all-zero vectors are defined to be identical
@@ -657,7 +621,7 @@ class VectorMeasureBinaryCocogaston : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    if (both + only_1 == 0)
 	       return 1.0 ; // all-zero vectors are defined to be identical
 	    return only_1 / (2.0 * both + only_1) ;
@@ -677,7 +641,7 @@ class VectorMeasureCody : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT total1(both + v1_only) ;
 	    ValT total2(both + v2_only) ;
 	    if (total1 * total2 <= 0)
@@ -698,7 +662,7 @@ class VectorMeasureBinaryCody : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double total1(both + v1_only) ;
 	    double total2(both + v2_only) ;
 	    double denom(2.0 * total1 * total2) ;
@@ -724,7 +688,7 @@ class VectorMeasureDice : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    if (both + v1_only + v2_only <= 0.0)
 	       return 1.0 ;			// all-zero vectors are defined to be identical
 	    return 2.0 * both / (2.0 * both + v1_only + v2_only) ;
@@ -749,7 +713,7 @@ class VectorMeasureBinaryDice : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    both *= 2 ;
 	    double denom(both + only_1) ;
 	    return denom ? both / denom : 1.0 ;// all-zero vectors are defined to be identical
@@ -767,7 +731,7 @@ class VectorMeasureFagerMcGowan : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT prod((both+v1_only)*(both+v2_only)) ;
 	    double denom(std::sqrt(prod) - std::max(v1_only,v2_only)/2) ;
 	    return denom ? both / denom : 1.0 ;
@@ -784,7 +748,7 @@ class VectorMeasureBinaryFagerMcGowan : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, v1_only, v2_only, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double prod((both+v1_only)*(both+v2_only)) ;
 	    double denom(std::sqrt(prod) - std::max(v1_only,v2_only)/2) ;
 	    return denom ? both / denom : 1.0 ;
@@ -801,7 +765,7 @@ class VectorMeasureGamma : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT common, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,common,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,common,v1_only,v2_only) ;
 	    ValT N(common + v1_only + v2_only) ;
 	    ValT neither(0) ; //FIXME
 	    double concordance(common / N * neither / N) ;
@@ -826,7 +790,7 @@ class VectorMeasureBinaryGamma : public Fr::SimilarityMeasure<IdxT, ValT>
 	    else if (!elts1 || !elts2)
 	       return -1.0 ;			// maximal difference if only one vector zero-length
 	    size_t both, v1_only, v2_only, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double N(both + v1_only + v2_only + neither) ;
 	    double concordance(both / N * neither / N) ;
 	    double discordance(v1_only / N * v2_only / N) ;
@@ -845,7 +809,7 @@ class VectorMeasureGilbert : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT N(both + v1_only + v2_only) ;
 	    both /= N ;
 	    v1_only /= N ;
@@ -866,7 +830,7 @@ class VectorMeasureBinaryGilbert : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double N(both + v1_only + v2_only + neither) ;
 	    double total1((both+v1_only)/N) ;
 	    double total2((both+v2_only)/N) ;
@@ -887,7 +851,7 @@ class VectorMeasureGini : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT N(both + v1_only + v2_only) ;
 	    both /= N ;
 	    v1_only /= N ;
@@ -909,7 +873,7 @@ class VectorMeasureBinaryGini : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double N(both + v1_only + v2_only + neither) ;
 	    double total1((both+v1_only)/N) ;
 	    double total2((both+v2_only)/N) ;
@@ -931,7 +895,7 @@ class VectorMeasureHarrison : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(both + std::max(v1_only,v2_only)) ;
 	    // all-zero vectors are defined to be identical
 	    return denom ? std::min(v1_only,v2_only) / denom : 1.0 ;
@@ -952,7 +916,7 @@ class VectorMeasureBinaryHarrison : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double denom(both + std::max(v1_only,v2_only)) ;
 	    // all-zero vectors are defined to be identical
 	    return denom ? std::min(v1_only,v2_only) / denom : 1.0 ;
@@ -974,7 +938,7 @@ class VectorMeasureJaccard : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double either(both + v1_only + v2_only) ;
 	    return either ? both / either : 1.0 ; // all-zero vectors are defined to be identical
 	 }
@@ -995,7 +959,7 @@ class VectorMeasureBinaryJaccard : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    double either(both + only_1) ;
 	    return either ? both / either : 1.0 ; // all-zero vectors are defined to be identical
 	 }
@@ -1014,7 +978,7 @@ class VectorMeasureKulczyinski1 : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double only_1(v1_only+v2_only) ;
 	    return only_1 ? both / only_1 : HUGE_VAL ;
 	 }
@@ -1034,7 +998,7 @@ class VectorMeasureBinaryKulczyinski1 : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    // both += neither ;   // "simba"s sokal4
 	    return only_1 ? both / only_1 : HUGE_VAL ;
 	 }
@@ -1061,7 +1025,7 @@ class VectorMeasureKulczyinski2 : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    if (both + v1_only + v2_only == 0)
 	       return 1.0 ; // both all-zero vectors are defined to be identical
 	    double total1(both + v1_only) ;
@@ -1089,7 +1053,7 @@ class VectorMeasureBinaryKulczyinski2 : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    if (both + v1_only + v2_only == 0)
 	       return 1.0 ; // both all-zero vectors are defined to be identical
 	    double total1(both + v1_only) ;
@@ -1111,7 +1075,7 @@ class VectorMeasureLanceWilliams : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(2.0*both + v1_only + v2_only) ;
 	    return denom ? (v1_only + v2_only) / denom : 1.0 ;
 	 }
@@ -1128,7 +1092,7 @@ class VectorMeasureBinaryLanceWilliams : public Fr::SimilarityMeasure<IdxT, ValT
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    double denom(2.0*both + only_1) ;
 	    return denom ? only_1 / denom : 1.0 ;
 	 }
@@ -1147,7 +1111,7 @@ class VectorMeasureLande : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    return (v1_only + v2_only) / 2.0 ;
 	 }
       //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
@@ -1166,7 +1130,7 @@ class VectorMeasureBinaryLande : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    return only_1 / 2.0 ;
 	 }
       //virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
@@ -1189,7 +1153,7 @@ class VectorMeasureLennon : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT total1(both + v1_only) ;
 	    ValT total2(both + v2_only) ;
 	    double denom(total1 + total2) ;
@@ -1215,7 +1179,7 @@ class VectorMeasureBinaryLennon : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double total1(both + v1_only) ;
 	    double total2(both + v2_only) ;
 	    double denom(total1 + total2) ;
@@ -1240,7 +1204,7 @@ class VectorMeasureLennon2 : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double sum(both + v1_only + v2_only) ;
 	    return sum ? std::log2((both+sum)/sum) : 1.0 ;
 	 }
@@ -1263,7 +1227,7 @@ class VectorMeasureBinaryLennon2 : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    double sum(both + only_1) ;
 	    return sum ? std::log2((both+sum)/sum) : 1.0 ;
 	 }
@@ -1282,7 +1246,7 @@ class VectorMeasureLegendre : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    both *= 3 ;
 	    double denom(both + v1_only + v2_only) ;
 	    return denom ? both / denom : 1.0 ;
@@ -1303,7 +1267,7 @@ class VectorMeasureBinaryLegendre : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    both *= 3 ;
 	    double denom(both + only_1) ;
 	    return denom ? both / denom : 1.0 ;
@@ -1325,7 +1289,7 @@ class VectorMeasureMaarel : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    both *= 2 ;
 	    double denom(both + v1_only + v2_only) ;
 	    return denom ? ((both - v1_only - v2_only) / denom) : 1.0 ;
@@ -1347,7 +1311,7 @@ class VectorMeasureBinaryMaarel : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    both *= 2 ;
 	    double denom(both + only_1) ;
 	    return denom ? ((both - only_1) / denom) : 1.0 ;
@@ -1368,7 +1332,7 @@ class VectorMeasureMagurran : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double sum(both + v1_only + v2_only) ;
 	    // all-zero vectors are defined to be identical
 	    return sum ? ((both + sum) * (1.0 - (both / sum))) : 1.0 ;
@@ -1388,7 +1352,7 @@ class VectorMeasureBinaryMagurran : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    double sum(both + only_1) ;
 	    // all-zero vectors are defined to be identical
 	    return sum ? ((both + sum) * (1.0 - (both / sum))) : 1.0 ;
@@ -1410,7 +1374,7 @@ class VectorMeasureMcConnagh : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT total1(both + v1_only) ;
 	    ValT total2(both + v2_only) ;
 	    double denom(total1 * total2) ;
@@ -1434,7 +1398,7 @@ class VectorMeasureBinaryMcConnagh : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double total1(both + v1_only) ;
 	    double total2(both + v2_only) ;
 	    double denom(total1 * total2) ;
@@ -1453,7 +1417,7 @@ class VectorMeasureModGini : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT N(both + v1_only + v2_only) ;
 	    both /= N ;
 	    v1_only /= N ;
@@ -1475,7 +1439,7 @@ class VectorMeasureBinaryModGini : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double N(both + v1_only + v2_only + neither) ;
 	    double prod((both+v1_only)/N*(both+v2_only)/N) ;
 	    return (both/N - prod) / (1.0 - std::abs((ssize_t)(v1_only-v2_only))/(2.0*N) - prod) ;
@@ -1493,7 +1457,7 @@ class VectorMeasureMountford : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    if (v1_only + v2_only == 0)
 	       return 1.0 ; // vectors with no disagreements are defined to be identical
 	    return 2.0 * both / (double)(both*(v1_only + v2_only) + 2.0 * v1_only * v2_only) ;
@@ -1511,7 +1475,7 @@ class VectorMeasureBinaryMountford : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    if (v1_only + v2_only == 0)
 	       return 1.0 ; // vectors with no disagreements are defined to be identical
 	    return 2.0 * both / (double)(both*(v1_only + v2_only) + 2.0 * v1_only * v2_only) ;
@@ -1533,7 +1497,7 @@ class VectorMeasureOchiai : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    if (both + v1_only + v2_only == 0)
 	       return 1.0 ; // both all-zero vectors are defined to be identical
 	    else if (both + v1_only == 0 || both + v2_only == 0)
@@ -1557,7 +1521,7 @@ class VectorMeasureBinaryOchiai : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    if (both + v1_only + v2_only == 0)
 	       return 1.0 ; // both all-zero vectors are defined to be identical
 	    else if (both + v1_only == 0 || both + v2_only == 0)
@@ -1578,7 +1542,7 @@ class VectorMeasureRoutledge1 : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT sum(both + v1_only + v2_only) ;
 	    sum *= sum ;
 	    double denom(sum - 2.0 * v1_only * v2_only) ;
@@ -1599,7 +1563,7 @@ class VectorMeasureBinaryRoutledge1 : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double sum(both + v1_only + v2_only) ;
 	    sum *= sum ;
 	    double denom(sum - 2.0 * v1_only * v2_only) ;
@@ -1620,7 +1584,7 @@ class VectorMeasureRoutledge2 : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(2.0 * both + v1_only + v2_only) ;
 	    if (!denom)
 	       return 0.0 ;			// two all-zero vectors are identical
@@ -1645,7 +1609,7 @@ class VectorMeasureBinaryRoutledge2 : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double denom(2.0 * both + v1_only + v2_only) ;
 	    if (!denom)
 	       return 0.0 ;			// two all-zero vectors are identical
@@ -1670,7 +1634,7 @@ class VectorMeasureSimpson : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(both + std::min(v1_only,v2_only)) ;
 	    return denom ? both/denom : 1.0 ;
 	 }
@@ -1687,7 +1651,7 @@ class VectorMeasureBinarySimpson : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double denom(both + std::min(v1_only,v2_only)) ;
 	    return denom ? both/denom : 1.0 ;
 	 }
@@ -1705,7 +1669,7 @@ class VectorMeasureSokalSneath : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(2*both + v1_only + v2_only) ;
 	    return denom ? 2*both / denom : 1.0 ; 	// all-zero vectors are defined to be identical
 	 }
@@ -1723,7 +1687,7 @@ class VectorMeasureBinarySokalSneath : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    both += neither ;
 	    both *= 2 ;
 	    double denom(both + only_1) ;
@@ -1745,7 +1709,7 @@ class VectorMeasureSorgenfrei : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT total1(both + v1_only) ;
 	    ValT total2(both + v2_only) ;
 	    double denom(total1 * total2) ;
@@ -1767,7 +1731,7 @@ class VectorMeasureBinarySorgenfrei : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double total1(both + v1_only) ;
 	    double total2(both + v2_only) ;
 	    double denom(total1 * total2) ;
@@ -1785,7 +1749,7 @@ class VectorMeasureTripartite : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double min1 = std::min(v1_only,v2_only) ;
 	    double max1 = std::max(v1_only,v2_only) ;
 	    double U = (both+max1) ? std::log2(1.0 + (both+min1) / (both+max1)) : 1.0 ;
@@ -1807,7 +1771,7 @@ class VectorMeasureBinaryTripartite : public Fr::SimilarityMeasure<IdxT, ValT>
       virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, v1_only, v2_only, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double min1 = std::min(v1_only,v2_only) ;
 	    double max1 = std::max(v1_only,v2_only) ;
 	    double U = (both+max1) ? std::log2(1.0 + (both+min1) / (both+max1)) : 1.0 ;
@@ -1832,7 +1796,7 @@ class VectorMeasureWhittaker : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double sum(both + v1_only + v2_only) ;
 	    return sum ? (2.0 * sum / (both + sum)) - 1.0 : 1.0 ;
 	 }
@@ -1853,7 +1817,7 @@ class VectorMeasureBinaryWhittaker : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    size_t sum(both + only_1) ;
 	    return sum ? (2.0 * sum / (both + sum)) - 1.0 : 1.0 ;
 	 }
@@ -1872,7 +1836,7 @@ class VectorMeasureWilliams : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(both + v1_only + v2_only) ;
 	    return denom ? std::min(v1_only,v2_only) / denom : 1.0 ;
 	 }
@@ -1891,7 +1855,7 @@ class VectorMeasureBinaryWilliams : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double denom(both + v1_only + v2_only) ;
 	    return denom ? std::min(v1_only,v2_only) / denom : 1.0 ;
 	 }
@@ -1910,7 +1874,7 @@ class VectorMeasureWilliams2 : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    ValT sum(both + v1_only + v2_only) ;
 	    double denom(sum*sum - sum) ;
 	    return denom ? (2.0 * v1_only * v2_only + 1.0) / denom : 1.0 ;
@@ -1929,7 +1893,7 @@ class VectorMeasureBinaryWilliams2 : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t v1_only, v2_only, both, neither ;
-	    binary_contingency_table(v1,v2,both,v1_only,v2_only,neither) ;
+	    contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    double sum(both + v1_only + v2_only) ;
 	    double denom(sum*sum - sum) ;
 	    return denom ? (2.0 * v1_only * v2_only + 1.0) / denom : 1.0 ;
@@ -1948,7 +1912,7 @@ class VectorMeasureWilsonShmida : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingency_table(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
+	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
 	    double denom(2.0 * both + v1_only + v2_only) ;
 	    return denom ? (v1_only + v2_only) / denom : 1.0 ; // all-zero vectors are defined to be identical
 	 }
@@ -1967,7 +1931,7 @@ class VectorMeasureBinaryWilsonShmida : public Fr::DistanceMeasure<IdxT, ValT>
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, only_1, neither ;
-	    binary_agreement(v1,v2,both,only_1,neither) ;
+	    binaryAgreement(v1,v2,both,only_1,neither) ;
 	    double denom(2.0 * both + only_1) ;
 	    return denom ? only_1 / denom : 1.0 ; // all-zero vectors are defined to be identical
 	 }

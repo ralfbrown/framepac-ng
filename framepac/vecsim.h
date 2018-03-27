@@ -238,6 +238,17 @@ class VectorMeasure
 	       return denseDistance(v1,v2) ;
 	 }
 
+   protected:
+      VectorMeasure(const VectorSimilarityOptions& opt) : m_opt(opt) {}
+
+      // binary contingency table
+      void contingencyTable(const Vector<ValT>* v1, const Vector<ValT>* v2, size_t& both, size_t& v1_only,
+		   	    size_t& v2_only, size_t& neither) const ;
+      // real-valued contingency table
+      void contingencyTable(const Vector<ValT>* v1, const Vector<ValT>* v2, ValT& a, ValT& b, ValT& c) const ;
+      void binaryAgreement(const Vector<ValT>* v1, const Vector<ValT>* v2, size_t& both, size_t& disagree,
+		   	   size_t& neither) const ;
+      
       // base version is just an identity comparison
       virtual double sparseSimilarity(const SparseVector<IdxT, ValT>* v1, const SparseVector<IdxT, ValT>* v2) const
 	 { return v1 == v2 ? 1 : 0 ; }
@@ -253,9 +264,6 @@ class VectorMeasure
 	 {
 	 return sparseDistance(v1,v2) ;
 	 }
-
-   protected:
-      VectorMeasure(const VectorSimilarityOptions& opt) : m_opt(opt) {}
 
    protected:
       VectorSimilarityOptions m_opt ;
