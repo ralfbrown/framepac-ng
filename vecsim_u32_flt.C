@@ -25,7 +25,7 @@ namespace Fr
 {
 
 // request explicit instantiation
-template class VectorSimilarity<uint32_t,float> ;
+template class VectorMeasure<uint32_t,float> ;
 
 } // end namespace Fr
 

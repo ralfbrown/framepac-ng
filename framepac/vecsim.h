@@ -89,7 +89,7 @@ enum VectorSimilarityMeasure
       binary_whittaker,
       binary_williams,
       binary_williams2,
-      binary_wilsonsnmida,
+      binary_wilsonshmida,
       braun_blanquet,
       bray_curtis,		// https://en.wikipedia.org/wiki/Bray%E2%80%93Curtis_dissimilarity 
       canberra,
@@ -215,6 +215,9 @@ class VectorMeasure
       typedef double SimFunc(const Vector<ValT>*, const Vector<ValT>*) ;
 
    public:
+      static VectorMeasure<IdxT,ValT>* create(const char* simtype, const char* options = nullptr) ;
+      static VectorMeasure<IdxT,ValT>* create(VectorSimilarityMeasure simtype, const char* options = nullptr) ;
+
       const char* canonicalName() const { return myCanonicalName() ; }
       
       // base version is just an identity comparison
@@ -230,6 +233,7 @@ class VectorMeasure
 	 }
 
    protected:
+      VectorMeasure() : m_opt() {}
       VectorMeasure(const VectorSimilarityOptions& opt) : m_opt(opt) {}
 
       virtual const char* myCanonicalName() const { return "Identity" ; }
@@ -263,10 +267,11 @@ class SimilarityMeasure : public VectorMeasure<IdxT, ValT>
    public:
       virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
-	    return 1.0 - similarity(v1,v2) ;
+	    return 1.0 - this->similarity(v1,v2) ;
 	 }
 
    protected:
+      SimilarityMeasure() : VectorMeasure<IdxT,ValT>() {}
       SimilarityMeasure(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
@@ -281,8 +286,8 @@ class SimilarityMeasureCT : public VectorMeasure<IdxT, ValT>
       virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
-	    return scoreContingencyTable(both,v1_only,v2_only) ;
+	    this->contingencyTable(v1,v2,both,v1_only,v2_only) ;
+	    return this->scoreContingencyTable(both,v1_only,v2_only) ;
 	 }
       virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
@@ -290,6 +295,7 @@ class SimilarityMeasureCT : public VectorMeasure<IdxT, ValT>
 	 }
 
    protected:
+      SimilarityMeasureCT() : VectorMeasure<IdxT,ValT>() {}
       SimilarityMeasureCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
@@ -304,7 +310,7 @@ class SimilarityMeasureBCT : public VectorMeasure<IdxT, ValT>
       virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t both, v1_only, v2_only, neither ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only,neither) ;
+	    this->contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    return this->scoreContingencyTable(both,v1_only,v2_only,neither) ;
 	 }
       virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
@@ -313,6 +319,7 @@ class SimilarityMeasureBCT : public VectorMeasure<IdxT, ValT>
 	 }
 
    protected:
+      SimilarityMeasureBCT() : VectorMeasure<IdxT,ValT>() {}
       SimilarityMeasureBCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
@@ -327,7 +334,7 @@ class SimilarityMeasureBA : public VectorMeasure<IdxT, ValT>
       virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t both, disagree, neither ;
-	    binaryAgreement(v1,v2,&this->m_opt,both,disagree,neither) ;
+	    this->binaryAgreement(v1,v2,both,disagree,neither) ;
 	    return this->scoreBinaryAgreement(both,disagree,neither) ;
 	 }
       virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
@@ -336,6 +343,7 @@ class SimilarityMeasureBA : public VectorMeasure<IdxT, ValT>
 	 }
 
    protected:
+      SimilarityMeasureBA() : VectorMeasure<IdxT,ValT>() {}
       SimilarityMeasureBA(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
@@ -353,6 +361,7 @@ class SimilarityMeasureReciprocal : public VectorMeasure<IdxT, ValT>
 	 }
 
    protected:
+      SimilarityMeasureReciprocal() : VectorMeasure<IdxT,ValT>() {}
       SimilarityMeasureReciprocal(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
@@ -369,6 +378,7 @@ class DistanceMeasure : public VectorMeasure<IdxT, ValT>
 	 }
 
    protected:
+      DistanceMeasure() : VectorMeasure<IdxT,ValT>() {}
       DistanceMeasure(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
@@ -383,8 +393,8 @@ class DistanceMeasureCT : public VectorMeasure<IdxT, ValT>
       virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only) ;
-	    return scoreContingencyTable(both,v1_only,v2_only) ;
+	    this->contingencyTable(v1,v2,both,v1_only,v2_only) ;
+	    return this->scoreContingencyTable(both,v1_only,v2_only) ;
 	 }
       virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
@@ -392,6 +402,7 @@ class DistanceMeasureCT : public VectorMeasure<IdxT, ValT>
 	 }
 
    protected:
+      DistanceMeasureCT() : VectorMeasure<IdxT,ValT>() {}
       DistanceMeasureCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
@@ -406,7 +417,7 @@ class DistanceMeasureBCT : public VectorMeasure<IdxT, ValT>
       virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t both, v1_only, v2_only, neither ;
-	    contingencyTable(v1,v2,&this->m_opt,both,v1_only,v2_only,neither) ;
+	    this->contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    return this->scoreContingencyTable(both,v1_only,v2_only,neither) ;
 	 }
       virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
@@ -415,6 +426,7 @@ class DistanceMeasureBCT : public VectorMeasure<IdxT, ValT>
 	 }
 
    protected:
+      DistanceMeasureBCT() : VectorMeasure<IdxT,ValT>() {}
       DistanceMeasureBCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
@@ -429,7 +441,7 @@ class DistanceMeasureBA : public VectorMeasure<IdxT, ValT>
       virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t both, disagree, neither ;
-	    binaryAgreement(v1,v2,&this->m_opt,both,disagree,neither) ;
+	    this->binaryAgreement(v1,v2,both,disagree,neither) ;
 	    return this->scoreBinaryAgreement(both,disagree,neither) ;
 	 }
       virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
@@ -438,6 +450,7 @@ class DistanceMeasureBA : public VectorMeasure<IdxT, ValT>
 	 }
 
    protected:
+      DistanceMeasureBA() : VectorMeasure<IdxT,ValT>() {}
       DistanceMeasureBA(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
@@ -455,36 +468,9 @@ class DistanceMeasureReciprocal : public VectorMeasure<IdxT, ValT>
 	 }
 
    protected:
+      DistanceMeasureReciprocal() : VectorMeasure<IdxT,ValT>() {}
       DistanceMeasureReciprocal(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
-
-//----------------------------------------------------------------------------
-
-template <typename IdxT, typename ValT>
-class VectorSimilarity : public VectorSimilarityOptions
-   {
-   public:
-      typedef typename VectorMeasure<IdxT, ValT>::SimFunc SimFunc ;
-      
-   public:
-      VectorSimilarity(const char *simtype) ;
-      VectorSimilarity(const VectorSimilarity&) = default ;
-      ~VectorSimilarity() {}
-      VectorSimilarity& operator= (const VectorSimilarity&) = default ;
-
-      bool parseConfig(const char* options) ;
-
-      double score(const Object *v1, const Object *v2) const ;
-
-      double similarity(Vector<ValT>* v1,Vector<ValT>* v2) const { return m_sim(v1,v2) ; }
-      double distance(Vector<ValT>* v1,Vector<ValT>* v2) const { return m_dist(v1,v2) ; }
-
-   protected:
-      VectorSimilarityMeasure	m_measure ;
-      SimFunc*			m_sim ;
-      SimFunc*			m_dist ;
-   } ;
-
 
 /*
     Other algos to check:
