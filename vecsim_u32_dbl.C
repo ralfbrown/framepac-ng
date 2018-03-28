@@ -19,7 +19,7 @@
 /*									*/
 /************************************************************************/
 
-#include "template/vecsim.cc"
+#include "template/vecsim_factory.cc"
 
 namespace Fr
 {

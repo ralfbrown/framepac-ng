@@ -254,6 +254,8 @@ class VectorMeasure
       virtual double scoreBinaryAgreement(size_t both, size_t disagree, size_t neither) const
 	 { return both / (both + disagree + neither) ; }
 
+      inline static ValT p_log_p(ValT p) { return p ? p * std::log(p) : 0 ; }
+
    protected:
       VectorSimilarityOptions m_opt ;
    } ;
@@ -278,78 +280,6 @@ class SimilarityMeasure : public VectorMeasure<IdxT, ValT>
    protected:
       SimilarityMeasure() : VectorMeasure<IdxT,ValT>() {}
       SimilarityMeasure(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
-   } ;
-
-//----------------------------------------------------------------------------
-// a vector measure which has a similarity metric based on a 2x2
-// contingency table and computes the distance as 1-sim
-
-template <typename IdxT, typename ValT>
-class SimilarityMeasureCT : public VectorMeasure<IdxT, ValT>
-   {
-   public:
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    ValT both, v1_only, v2_only ;
-	    this->contingencyTable(v1,v2,both,v1_only,v2_only) ;
-	    return this->scoreContingencyTable(both,v1_only,v2_only) ;
-	 }
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    return 1.0 - similarity(v1,v2) ;
-	 }
-
-   protected:
-      SimilarityMeasureCT() : VectorMeasure<IdxT,ValT>() {}
-      SimilarityMeasureCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
-   } ;
-
-//----------------------------------------------------------------------------
-// a vector measure which has a similarity metric based on a binary 2x2
-// contingency table and computes the distance as 1-sim
-
-template <typename IdxT, typename ValT>
-class SimilarityMeasureBCT : public VectorMeasure<IdxT, ValT>
-   {
-   public:
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    size_t both, v1_only, v2_only, neither ;
-	    this->contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
-	    return this->scoreContingencyTable(both,v1_only,v2_only,neither) ;
-	 }
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    return 1.0 - similarity(v1,v2) ;
-	 }
-
-   protected:
-      SimilarityMeasureBCT() : VectorMeasure<IdxT,ValT>() {}
-      SimilarityMeasureBCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
-   } ;
-
-//----------------------------------------------------------------------------
-// a vector measure which has a similarity metric based on binary (dis)agreement
-// and computes the distance as 1-sim
-
-template <typename IdxT, typename ValT>
-class SimilarityMeasureBA : public VectorMeasure<IdxT, ValT>
-   {
-   public:
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    size_t both, disagree, neither ;
-	    this->binaryAgreement(v1,v2,both,disagree,neither) ;
-	    return this->scoreBinaryAgreement(both,disagree,neither) ;
-	 }
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    return 1.0 - similarity(v1,v2) ;
-	 }
-
-   protected:
-      SimilarityMeasureBA() : VectorMeasure<IdxT,ValT>() {}
-      SimilarityMeasureBA(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
    } ;
 
 //----------------------------------------------------------------------------
@@ -388,78 +318,6 @@ class DistanceMeasure : public VectorMeasure<IdxT, ValT>
    } ;
 
 //----------------------------------------------------------------------------
-// a vector measure which has a distance metric based on a 2x2
-// contingency table and computes the similarity as 1-dist
-
-template <typename IdxT, typename ValT>
-class DistanceMeasureCT : public VectorMeasure<IdxT, ValT>
-   {
-   public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    ValT both, v1_only, v2_only ;
-	    this->contingencyTable(v1,v2,both,v1_only,v2_only) ;
-	    return this->scoreContingencyTable(both,v1_only,v2_only) ;
-	 }
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    return 1.0 - similarity(v1,v2) ;
-	 }
-
-   protected:
-      DistanceMeasureCT() : VectorMeasure<IdxT,ValT>() {}
-      DistanceMeasureCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
-   } ;
-
-//----------------------------------------------------------------------------
-// a vector measure which has a distance metric based on a binary 2x2
-// contingency table and computes the similarity as 1-dist
-
-template <typename IdxT, typename ValT>
-class DistanceMeasureBCT : public VectorMeasure<IdxT, ValT>
-   {
-   public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    size_t both, v1_only, v2_only, neither ;
-	    this->contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
-	    return this->scoreContingencyTable(both,v1_only,v2_only,neither) ;
-	 }
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    return 1.0 - similarity(v1,v2) ;
-	 }
-
-   protected:
-      DistanceMeasureBCT() : VectorMeasure<IdxT,ValT>() {}
-      DistanceMeasureBCT(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
-   } ;
-
-//----------------------------------------------------------------------------
-// a vector measure which has a distance metric based on binary (dis)agreement
-// contingency table and computes the similarity as 1-dist
-
-template <typename IdxT, typename ValT>
-class DistanceMeasureBA : public VectorMeasure<IdxT, ValT>
-   {
-   public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    size_t both, disagree, neither ;
-	    this->binaryAgreement(v1,v2,both,disagree,neither) ;
-	    return this->scoreBinaryAgreement(both,disagree,neither) ;
-	 }
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    return 1.0 - similarity(v1,v2) ;
-	 }
-
-   protected:
-      DistanceMeasureBA() : VectorMeasure<IdxT,ValT>() {}
-      DistanceMeasureBA(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
-   } ;
-
-//----------------------------------------------------------------------------
 // a vector measure which has a distance metric and computes the similarity as 1/dist
 
 template <typename IdxT, typename ValT>
@@ -489,6 +347,20 @@ class DistanceMeasureReciprocal : public VectorMeasure<IdxT, ValT>
 	https://en.wikipedia.org/wiki/Ward%27s_method#Lance.E2.80.93Williams_algorithms
 
 */
+
+//----------------------------------------------------------------------------
+// utility function used by subclasses of VectorMeasure
+
+template <typename ValT>
+inline ValT abs_value(ValT v)
+{
+   return std::abs(v) ;
+}
+
+inline uint32_t abs_value(uint32_t v)
+{
+   return v ;
+}
 
 //----------------------------------------------------------------------------
 
