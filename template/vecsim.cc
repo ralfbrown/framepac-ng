@@ -741,7 +741,7 @@ class VectorMeasureBinaryGamma : public Fr::SimilarityMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Binary Gamma" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t elts1(v1->numElements()) ;
 	    size_t elts2(v2->numElements()) ;
@@ -1867,7 +1867,7 @@ class VectorMeasureSoergel : public Fr::DistanceMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Soergel" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -1877,30 +1877,60 @@ class VectorMeasureSoergel : public Fr::DistanceMeasure<IdxT, ValT>
 	    double total_max(0) ;
 	    ValT wt1, wt2 ;
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  auto val1 = v1->elementValue(pos1++) / wt1 ;
-		  total_diff += std::abs(val1) ;
-		  total_max += val1 ;
-		  }
-	       else if (elt1 > elt2)
+		  auto elt1(sv1->elementIndex(pos1)) ;
+		  auto elt2(sv2->elementIndex(pos2)) ;
+		  if (elt1 < elt2)
+		     {
+		     auto val1 = v1->elementValue(pos1++) / wt1 ;
+		     total_diff += std::abs(val1) ;
+		     total_max += val1 ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     auto val2 = v2->elementValue(pos2++) / wt2 ;
+		     total_diff += std::abs(val2) ;
+		     total_max += val2 ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     auto val1 = v1->elementValue(pos1++) / wt1 ;
+		     auto val2 = v2->elementValue(pos2++) / wt2 ;
+		     total_diff += std::abs(val1 - val2) ;
+		     total_max += std::max(val1 + val2, this->m_opt.smoothing) ;
+		     }
+		  }   
+	       }
+	    else
+	       {
+	       size_t minlen(std::min(elts1,elts2)) ;
+	       for ( ; pos1 < minlen ; ++pos1)
 		  {
-		  auto val2 = v2->elementValue(pos2++) / wt2 ;
-		  total_diff += std::abs(val2) ;
-		  total_max += val2 ;
-		  }
-	       else // if (elt1 == elt2)
-		  {
-		  auto val1 = v1->elementValue(pos1++) / wt1 ;
-		  auto val2 = v2->elementValue(pos2++) / wt2 ;
+		  auto val1 = v1->elementValue(pos1) / wt1 ;
+		  auto val2 = v2->elementValue(pos1) / wt2 ;
 		  total_diff += std::abs(val1 - val2) ;
 		  total_max += std::max(val1 + val2, this->m_opt.smoothing) ;
 		  }
-	       }   
+	       }
+	    // handle any left-over elements of the first vector
+	    while (pos1 < elts1)
+	       {
+	       auto val1 = v1->elementValue(pos1++) / wt1 ;
+	       total_diff += std::abs(val1) ;
+	       total_max += val1 ;
+	       }
+	    // handle any left-over elements of the second vector
+	    while (pos2 < elts2)
+	       {
+	       auto val2 = v2->elementValue(pos2++) / wt2 ;
+	       total_diff += std::abs(val2) ;
+	       total_max += val2 ;
+	       }
 	    return total_max ? total_diff / total_max : -1.0 ;
 	 }
    } ;
@@ -1912,9 +1942,8 @@ class VectorMeasureSoergel : public Fr::DistanceMeasure<IdxT, ValT>
 template <typename IdxT, typename ValT>
 class VectorMeasureLorentzian : public Fr::DistanceMeasure<IdxT, ValT>
    {
-   protected:
-      virtual const char* myCanonicalName() const { return "Lorentzian" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -1923,27 +1952,56 @@ class VectorMeasureLorentzian : public Fr::DistanceMeasure<IdxT, ValT>
 	    double sum(0) ;
 	    ValT wt1, wt2 ;
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  sum += std::log(1.0 + std::abs(v1->elementValue(pos1++)/wt1)) ;
+		  auto elt1(sv1->elementIndex(pos1)) ;
+		  auto elt2(sv2->elementIndex(pos2)) ;
+		  if (elt1 < elt2)
+		     {
+		     sum += std::log(1.0 + std::abs(v1->elementValue(pos1++)/wt1)) ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     sum += std::log(1.0 + std::abs(v2->elementValue(pos2++)/wt2)) ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     auto val1 = v1->elementValue(pos1++) / wt1 ;
+		     auto val2 = v2->elementValue(pos2++) / wt2 ;
+		     sum += std::log(1.0 + std::abs(val1 - val2)) ;
+		     }
 		  }
-	       else if (elt1 > elt2)
+	       }
+	    else
+	       {
+	       size_t minlen(std::min(elts1,elts2)) ;
+	       for ( ; pos1 < minlen ; ++pos1)
 		  {
-		  sum += std::log(1.0 + std::abs(v2->elementValue(pos2++)/wt2)) ;
-		  }
-	       else // if (elt1 == elt2)
-		  {
-		  auto val1 = v1->elementValue(pos1++) / wt1 ;
-		  auto val2 = v2->elementValue(pos2++) / wt2 ;
+		  auto val1 = v1->elementValue(pos1) / wt1 ;
+		  auto val2 = v2->elementValue(pos1) / wt2 ;
 		  sum += std::log(1.0 + std::abs(val1 - val2)) ;
 		  }
+	       pos2 = pos1 ;
+	       }
+	    // handle left-over elements of the first vector
+	    while (pos1 < elts1)
+	       {
+	       sum += std::log(1.0 + std::abs(v1->elementValue(pos1++)/wt1)) ;
+	       }
+	    // handle left-over elements from the second vector
+	    while (pos2 < elts2)
+	       {
+	       sum += std::log(1.0 + std::abs(v2->elementValue(pos2++)/wt2)) ;
 	       }
 	    return sum ;
 	 }
+
+   protected:
+      virtual const char* myCanonicalName() const { return "Lorentzian" ; }
    } ;
 
 //============================================================================
@@ -1955,7 +2013,7 @@ class VectorMeasureFidelity : public Fr::SimilarityMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Fidelity" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -1964,25 +2022,42 @@ class VectorMeasureFidelity : public Fr::SimilarityMeasure<IdxT, ValT>
 	    double sum(0) ;
 	    ValT wt1, wt2 ;
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  ++pos1 ;
+		  auto elt1(sv1->elementIndex(pos1)) ;
+		  auto elt2(sv2->elementIndex(pos2)) ;
+		  if (elt1 < elt2)
+		     {
+		     ++pos1 ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     ++pos2 ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     auto val1 = v1->elementValue(pos1++) / wt1 ;
+		     auto val2 = v2->elementValue(pos2++) / wt2 ;
+		     sum += std::sqrt(val1 * val2) ;
+		     }
 		  }
-	       else if (elt1 > elt2)
-		  {
-		  ++pos2 ;
-		  }
-	       else // if (elt1 == elt2)
+	       }
+	    else
+	       {
+	       // two dense vectors allows us to be more efficient
+	       size_t minlen(std::min(elts1,elts2)) ;
+	       for ( ; pos1 < minlen ; ++pos1)
 		  {
 		  auto val1 = v1->elementValue(pos1++) / wt1 ;
-		  auto val2 = v2->elementValue(pos2++) / wt2 ;
+		  auto val2 = v2->elementValue(pos1++) / wt2 ;
 		  sum += std::sqrt(val1 * val2) ;
 		  }
 	       }
+	    // no need to handle left-over elements, because unmatched elements do not contribute to the score
 	    return sum ;
 	 }
    } ;
@@ -1994,13 +2069,15 @@ class VectorMeasureFidelity : public Fr::SimilarityMeasure<IdxT, ValT>
 template <typename IdxT, typename ValT>
 class VectorMeasureBhattacharyya : public VectorMeasureFidelity<IdxT,ValT>
    {
-   protected:
-      virtual const char* myCanonicalName() const { return "Bhattacharyya" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
-	    double fidelity = VectorMeasureFidelity<IdxT,ValT>::sparseDistance(v1,v2) ;
+	    double fidelity = VectorMeasureFidelity<IdxT,ValT>::distance(v1,v2) ;
 	    return fidelity > 0 ? -std::log(fidelity) : HUGE_VAL ;
 	 }
+
+   protected:
+      virtual const char* myCanonicalName() const { return "Bhattacharyya" ; }
    } ;
       
 //============================================================================
@@ -2010,13 +2087,15 @@ class VectorMeasureBhattacharyya : public VectorMeasureFidelity<IdxT,ValT>
 template <typename IdxT, typename ValT>
 class VectorMeasureHellinger : public VectorMeasureFidelity<IdxT,ValT>
    {
-   protected:
-      virtual const char* myCanonicalName() const { return "Hellinger" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
-	    double fidelity = VectorMeasureFidelity<IdxT,ValT>::sparseDistance(v1,v2) ;
+	    double fidelity = VectorMeasureFidelity<IdxT,ValT>::distance(v1,v2) ;
 	    return 2 * std::sqrt(1 - fidelity) ;
 	 }
+
+   protected:
+      virtual const char* myCanonicalName() const { return "Hellinger" ; }
    } ;
       
 //============================================================================
@@ -2026,13 +2105,15 @@ class VectorMeasureHellinger : public VectorMeasureFidelity<IdxT,ValT>
 template <typename IdxT, typename ValT>
 class VectorMeasureMatusita : public VectorMeasureFidelity<IdxT,ValT>
    {
-   protected:
-      virtual const char* myCanonicalName() const { return "Matusita" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
-	    double fidelity = VectorMeasureFidelity<IdxT,ValT>::sparseDistance(v1,v2) ;
+	    double fidelity = VectorMeasureFidelity<IdxT,ValT>::distance(v1,v2) ;
 	    return std::sqrt(2 - 2 * fidelity) ;
 	 }
+
+   protected:
+      virtual const char* myCanonicalName() const { return "Matusita" ; }
    } ;
 
 //============================================================================
@@ -2046,9 +2127,8 @@ class VectorMeasureMatusita : public VectorMeasureFidelity<IdxT,ValT>
 template <typename IdxT, typename ValT>
 class VectorMeasureSquaredChord : public Fr::DistanceMeasure<IdxT, ValT>
    {
-   protected:
-      virtual const char* myCanonicalName() const { return "Squared-Chord" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -2057,21 +2137,37 @@ class VectorMeasureSquaredChord : public Fr::DistanceMeasure<IdxT, ValT>
 	    double sum(0) ;
 	    ValT wt1, wt2 ;
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  auto val1 = v1->elementValue(pos1++) / wt1 ;
-		  sum += std::abs(val1) ;
+		  auto elt1(sv1->elementIndex(pos1)) ;
+		  auto elt2(sv2->elementIndex(pos2)) ;
+		  if (elt1 < elt2)
+		     {
+		     auto val1 = v1->elementValue(pos1++) / wt1 ;
+		     sum += std::abs(val1) ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     auto val2 = v2->elementValue(pos2++) / wt2 ;
+		     sum += std::abs(val2) ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     auto val1 = v1->elementValue(pos1++) / wt1 ;
+		     auto val2 = v2->elementValue(pos2++) / wt2 ;
+		     double value = std::sqrt(val1) - std::sqrt(val2) ;
+		     sum += (value * value) ;
+		     }
 		  }
-	       else if (elt1 > elt2)
-		  {
-		  auto val2 = v2->elementValue(pos2++) / wt2 ;
-		  sum += std::abs(val2) ;
-		  }
-	       else // if (elt1 == elt2)
+	       }
+	    else
+	       {
+	       size_t minlen(std::min(elts1,elts2)) ;
+	       for ( ; pos1 < minlen ; ++pos1)
 		  {
 		  auto val1 = v1->elementValue(pos1++) / wt1 ;
 		  auto val2 = v2->elementValue(pos2++) / wt2 ;
@@ -2079,8 +2175,23 @@ class VectorMeasureSquaredChord : public Fr::DistanceMeasure<IdxT, ValT>
 		  sum += (value * value) ;
 		  }
 	       }
+	    // handle any left-over elements from the first vector
+	    while (pos1 < elts1)
+	       {
+	       auto val1 = v1->elementValue(pos1++) / wt1 ;
+	       sum += std::abs(val1) ;
+	       }
+	    // handle any left-over elements from the second vector
+	    while (pos2 < elts2)
+	       {
+	       auto val2 = v2->elementValue(pos2++) / wt2 ;
+	       sum += std::abs(val2) ;
+	       }
 	    return sum ;
 	 }
+
+   protected:
+      virtual const char* myCanonicalName() const { return "Squared-Chord" ; }
    } ;
 
 //============================================================================
@@ -2091,9 +2202,8 @@ class VectorMeasureSquaredChord : public Fr::DistanceMeasure<IdxT, ValT>
 template <typename IdxT, typename ValT>
 class VectorMeasureClark : public Fr::DistanceMeasure<IdxT, ValT>
    {
-   protected:
-      virtual const char* myCanonicalName() const { return "Clark" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -2102,30 +2212,55 @@ class VectorMeasureClark : public Fr::DistanceMeasure<IdxT, ValT>
 	    double sum(0) ;
 	    ValT wt1, wt2 ;
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  ++pos1 ;
-		  sum += 1.0 ;
+		  auto elt1(sv1->elementIndex(pos1)) ;
+		  auto elt2(sv2->elementIndex(pos2)) ;
+		  if (elt1 < elt2)
+		     {
+		     ++pos1 ;
+		     sum += 1.0 ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     ++pos2 ;
+		     sum += 1.0 ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     auto val1 = v1->elementValue(pos1++) / wt1 ;
+		     auto val2 = v2->elementValue(pos2++) / wt2 ;
+		     double value = std::abs(val1-val2) / (val1 + val2) ;
+		     sum += (value * value) ;
+		     }
 		  }
-	       else if (elt1 > elt2)
+	       }
+	    else
+	       {
+	       size_t minlen(std::min(elts1,elts2)) ;
+	       for ( ; pos1 < minlen ; ++pos1)
 		  {
-		  ++pos2 ;
-		  sum += 1.0 ;
-		  }
-	       else // if (elt1 == elt2)
-		  {
-		  auto val1 = v1->elementValue(pos1++) / wt1 ;
-		  auto val2 = v2->elementValue(pos2++) / wt2 ;
+		  auto val1 = v1->elementValue(pos1) / wt1 ;
+		  auto val2 = v2->elementValue(pos1) / wt2 ;
 		  double value = std::abs(val1-val2) / (val1 + val2) ;
 		  sum += (value * value) ;
 		  }
+	       pos2 = pos1 ;
 	       }
+	    // handle remaining elements of first vector
+	    // since these add exactly 1.0 each, just add the number of remaining elements
+	    sum += (elts1 - pos1) ;
+	    // same for the second vector
+	    sum += (elts2 - pos2) ;
 	    return std::sqrt(sum) ;
 	 }
+
+   protected:
+      virtual const char* myCanonicalName() const { return "Clark" ; }
    } ;
 
 //============================================================================
@@ -2135,9 +2270,8 @@ class VectorMeasureClark : public Fr::DistanceMeasure<IdxT, ValT>
 template <typename IdxT, typename ValT>
 class VectorMeasureWaveHedges : public Fr::DistanceMeasure<IdxT, ValT>
    {
-   protected:
-      virtual const char* myCanonicalName() const { return "Wave-Hedges" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -2146,31 +2280,64 @@ class VectorMeasureWaveHedges : public Fr::DistanceMeasure<IdxT, ValT>
 	    double sum(0) ;
 	    ValT wt1, wt2 ;
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       double val1(0) ;
-	       double val2(0) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  val1 = v1->elementValue(pos1++) / wt1 ;
+		  auto elt1(sv1->elementIndex(pos1)) ;
+		  auto elt2(sv2->elementIndex(pos2)) ;
+		  double val1(0) ;
+		  double val2(0) ;
+		  if (elt1 < elt2)
+		     {
+		     val1 = v1->elementValue(pos1++) / wt1 ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     val2 = v2->elementValue(pos2++) / wt2 ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     val1 = v1->elementValue(pos1++) / wt1 ;
+		     val2 = v2->elementValue(pos2++) / wt2 ;
+		     }
+		  double diff = std::abs(val1 - val2) ;
+		  double maxval = std::max(val1,val2,this->m_opt.smoothing) ;
+		  sum += safe_div(diff,maxval) ;
 		  }
-	       else if (elt1 > elt2)
+	       }
+	    else
+	       {
+	       size_t minlen(std::min(elts1,elts2)) ;
+	       for ( ; pos1 < minlen ; ++pos1)
 		  {
-		  val2 = v2->elementValue(pos2++) / wt2 ;
+		  double val1 = v1->elementValue(pos1) / wt1 ;
+		  double val2 = v2->elementValue(pos1) / wt2 ;
 		  }
-	       else // if (elt1 == elt2)
-		  {
-		  val1 = v1->elementValue(pos1++) / wt1 ;
-		  val2 = v2->elementValue(pos2++) / wt2 ;
-		  }
-	       double diff = std::abs(val1 - val2) ;
-	       double maxval = std::max(val1,val2,this->m_opt.smoothing) ;
+	       }
+	    // handle left-over elements of the first vector
+	    while (pos1 < elts1)
+	       {
+	       double val1 = v1->elementValue(pos1++) / wt1 ;
+	       double diff = std::abs(val1) ;
+	       double maxval = std::max(val1,this->m_opt.smoothing) ;
+	       sum += safe_div(diff,maxval) ;
+	       }
+	    // handle left-over elements of the second vector
+	    while (pos2 < elts2)
+	       {
+	       double val2 = v2->elementValue(pos2++) / wt2 ;
+	       double diff = std::abs(val2) ;
+	       double maxval = std::max(val2,this->m_opt.smoothing) ;
 	       sum += safe_div(diff,maxval) ;
 	       }
 	    return sum ;
 	 }
+
+   protected:
+      virtual const char* myCanonicalName() const { return "Wave-Hedges" ; }
    } ;
 
 //============================================================================
@@ -2183,7 +2350,7 @@ class VectorMeasureSangvi : public Fr::DistanceMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Sangvi" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -2192,19 +2359,36 @@ class VectorMeasureSangvi : public Fr::DistanceMeasure<IdxT, ValT>
 	    double sum(0) ;
 	    ValT wt1, wt2 ;
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  sum += std::abs(v1->elementValue(pos1++)) / wt1 ;
+		  auto elt1(sv1->elementIndex(pos1)) ;
+		  auto elt2(sv2->elementIndex(pos2)) ;
+		  if (elt1 < elt2)
+		     {
+		     sum += std::abs(v1->elementValue(pos1++)) / wt1 ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     sum += std::abs(v2->elementValue(pos2++)) / wt2 ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     auto val1 = v1->elementValue(pos1++) / wt1 ;
+		     auto val2 = v2->elementValue(pos2++) / wt2 ;
+		     double diff = val1 - val2 ;
+		     double elt_sum = std::max(val1 + val2, this->m_opt.smoothing) ;
+		     sum += safe_div(diff * diff, elt_sum) ;
+		     }
 		  }
-	       else if (elt1 > elt2)
-		  {
-		  sum += std::abs(v2->elementValue(pos2++)) / wt2 ;
-		  }
-	       else // if (elt1 == elt2)
+	       }
+	    else
+	       {
+	       size_t minlen(std::min(elts1,elts2)) ;
+	       for ( ; pos1 < minlen ; ++pos1)
 		  {
 		  auto val1 = v1->elementValue(pos1++) / wt1 ;
 		  auto val2 = v2->elementValue(pos2++) / wt2 ;
@@ -2212,6 +2396,17 @@ class VectorMeasureSangvi : public Fr::DistanceMeasure<IdxT, ValT>
 		  double elt_sum = std::max(val1 + val2, this->m_opt.smoothing) ;
 		  sum += safe_div(diff * diff, elt_sum) ;
 		  }
+	       pos2 = pos1 ;
+	       }
+	    // handle any left-over elements of the first vector
+	    while (pos1 < elts1)
+	       {
+	       sum += std::abs(v1->elementValue(pos1++)) / wt1 ;
+	       }
+	    // handle any left-over elements of the second vector
+	    while (pos2 < elts2)
+	       {
+	       sum += std::abs(v2->elementValue(pos2++)) / wt2 ;
 	       }
 	    return std::sqrt(sum) ;
 	 }
@@ -2225,7 +2420,7 @@ class VectorMeasureTaneja : public Fr::DistanceMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Taneja" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -2234,28 +2429,65 @@ class VectorMeasureTaneja : public Fr::DistanceMeasure<IdxT, ValT>
 	    double sum(0) ;
 	    ValT wt1, wt2 ;
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       double val1(0) ;
-	       double val2(0) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  val1 = v1->elementValue(pos1++)/ wt1 ;
+		  auto elt1(v1->elementIndex(pos1)) ;
+		  auto elt2(v2->elementIndex(pos2)) ;
+		  double val1(0) ;
+		  double val2(0) ;
+		  if (elt1 < elt2)
+		     {
+		     val1 = v1->elementValue(pos1++)/ wt1 ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     val2 = v2->elementValue(pos2++)/ wt2 ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     val1 = v1->elementValue(pos1++)/ wt1 ;
+		     val2 = v2->elementValue(pos2++)/ wt2 ;
+		     }
+		  double mean = (val1 + val2) / 2 ;
+		  double denom = std::max(2*std::sqrt(val1*val2), this->m_opt.smoothing) ;
+		  double geom = safe_div(val1 + val2, denom) ;
+		  sum += mean * std::log(geom) ;
 		  }
-	       else if (elt1 > elt2)
+	       }
+	    else
+	       {
+	       size_t minlen(std::min(elts1,elts2)) ;
+	       for ( ; pos1 < minlen ; ++pos1)
 		  {
-		  val2 = v2->elementValue(pos2++)/ wt2 ;
+		  double val1 = v1->elementValue(pos1++)/ wt1 ;
+		  double val2 = v2->elementValue(pos2++)/ wt2 ;
+		  double mean = (val1 + val2) / 2 ;
+		  double denom = std::max(2*std::sqrt(val1*val2), this->m_opt.smoothing) ;
+		  double geom = safe_div(val1 + val2, denom) ;
+		  sum += mean * std::log(geom) ;
 		  }
-	       else // if (elt1 == elt2)
-		  {
-		  val1 = v1->elementValue(pos1++)/ wt1 ;
-		  val2 = v2->elementValue(pos2++)/ wt2 ;
-		  }
-	       double mean = (val1 + val2) / 2 ;
-	       double denom = std::max(2*std::sqrt(val1*val2), this->m_opt.smoothing) ;
-	       double geom = safe_div(val1 + val2, denom) ;
+	       pos2 = pos1 ;
+	       }
+	    // handle any left-over elements from the first vector
+	    while (pos1 < elts1)
+	       {
+	       double val1 = v1->elementValue(pos1++)/ wt1 ;
+	       double mean = (val1) / 2 ;
+	       double denom = std::max(0, this->m_opt.smoothing) ;
+	       double geom = safe_div(val1, denom) ;
+	       sum += mean * std::log(geom) ;
+	       }
+	    // handle any left-over elements from the second vector
+	    while (pos2 < elts2)
+	       {
+	       double val2 = v2->elementValue(pos2++)/ wt2 ;
+	       double mean = (val2) / 2 ;
+	       double denom = std::max(0, this->m_opt.smoothing) ;
+	       double geom = safe_div(val2, denom) ;
 	       sum += mean * std::log(geom) ;
 	       }
 	    return sum ;
@@ -2270,7 +2502,7 @@ class VectorMeasureKumarJohnson : public Fr::DistanceMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Kumar-Johnson" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -2279,27 +2511,61 @@ class VectorMeasureKumarJohnson : public Fr::DistanceMeasure<IdxT, ValT>
 	    double sum(0) ;
 	    ValT wt1, wt2 ;
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       double val1(0) ;
-	       double val2(0) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  val1 = v1->elementValue(pos1++)/ wt1 ;
+		  auto elt1(sv1->elementIndex(pos1)) ;
+		  auto elt2(sv2->elementIndex(pos2)) ;
+		  double val1(0) ;
+		  double val2(0) ;
+		  if (elt1 < elt2)
+		     {
+		     val1 = v1->elementValue(pos1++)/ wt1 ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     val2 = v2->elementValue(pos2++)/ wt2 ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     val1 = v1->elementValue(pos1++)/ wt1 ;
+		     val2 = v2->elementValue(pos2++)/ wt2 ;
+		     }
+		  double num = (val1 * val1 - val2 * val2) ;
+		  double denom = std::max(2 * std::pow(val1 * val2, 1.5), this->m_opt.smoothing) ;
+		  sum += safe_div(num,denom) ;
 		  }
-	       else if (elt1 > elt2)
+	       }
+	    else
+	       {
+	       size_t minlen(std::min(elts1,elts2)) ;
+	       for ( ; pos1 < minlen ; ++pos1)
 		  {
-		  val2 = v2->elementValue(pos2++)/ wt2 ;
+		  double val1 = v1->elementValue(pos1)/ wt1 ;
+		  double val2 = v2->elementValue(pos1)/ wt2 ;
+		  double num = (val1 * val1 - val2 * val2) ;
+		  double denom = std::max(2 * std::pow(val1 * val2, 1.5), this->m_opt.smoothing) ;
+		  sum += safe_div(num,denom) ;
 		  }
-	       else // if (elt1 == elt2)
-		  {
-		  val1 = v1->elementValue(pos1++)/ wt1 ;
-		  val2 = v2->elementValue(pos2++)/ wt2 ;
-		  }
-	       double num = (val1 * val1 - val2 * val2) ;
-	       double denom = std::max(2 * std::pow(val1 * val2, 1.5), this->m_opt.smoothing) ;
+	       pos2 = pos1 ;
+	       }
+	    // handle any left-over elements of the first vector
+	    while (pos1 < elts1)
+	       {
+	       double val1 = v1->elementValue(pos1++)/ wt1 ;
+	       double num = (val1 * val1) ;
+	       double denom = std::max(0, this->m_opt.smoothing) ;
+	       sum += safe_div(num,denom) ;
+	       }
+	    // handle any left-over elements of the second vector
+	    while (pos2 < elts2)
+	       {
+	       double val2 = v2->elementValue(pos2++)/ wt2 ;
+	       double num = ( - val2 * val2) ;
+	       double denom = std::max(0, this->m_opt.smoothing) ;
 	       sum += safe_div(num,denom) ;
 	       }
 	    return sum ;
@@ -2382,7 +2648,7 @@ class VectorMeasureJaro : public Fr::SimilarityMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Jaro" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    // string similarity measure between strings s1 and s2
 	    // for m=#matching_chars
@@ -2402,7 +2668,7 @@ class VectorMeasureJaroWinkler : public Fr::SimilarityMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Jaro-Winkler" ; }
-      virtual double sparseSimilarity(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    // for strings s1 and s2:
 	    // d = jaro_distance(s1,s2) + (prefixlen*scale_factor*(1 - jaro_distance(s1,s2))) ;
@@ -2629,8 +2895,8 @@ class VectorMeasureL0Norm : public Fr::DistanceMeasure<IdxT, ValT>
    {
    public:
       VectorMeasureL0Norm(const VectorSimilarityOptions &opt) : Fr::DistanceMeasure<IdxT,ValT>(opt) {}
-      virtual const char* myCanonicalName() const { return "L0-Norm" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    // count the non-zero elements of the difference between the two vectors
 	    size_t differences(0) ;
@@ -2638,47 +2904,57 @@ class VectorMeasureL0Norm : public Fr::DistanceMeasure<IdxT, ValT>
 	    size_t pos2(0) ;
 	    size_t elts1(v1->numElements()) ;
 	    size_t elts2(v2->numElements()) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  ++pos1 ;
+		  auto elt1(sv1->elementIndex(pos1)) ;
+		  auto elt2(sv2->elementIndex(pos2)) ;
+		  if (elt1 < elt2)
+		     {
+		     ++pos1 ;
+		     ++differences ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     ++pos2 ;
+		     ++differences ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     if (v1->elementValue(pos1++) != v2->elementValue(pos2++)) ++differences ;
+		     }
+		  }
+	       }
+	    else
+	       {
+	       size_t minlen = std::min(elts1,elts2) ;
+	       for (; pos1 < minlen ; ++pos1)
+		  {
+		  if (v1->elementValue(pos1) != v2->elementValue(pos1)) ++differences ;
+		  }
+	       pos2 = pos1 ;
+	       }
+	    // handle left-over elements of the first vector
+	    while (pos1 < elts1)
+	       {
+	       if (v1->elementValue(pos1++))
 		  ++differences ;
-		  }
-	       else if (elt1 > elt2)
-		  {
-		  ++pos2 ;
+	       }
+	    // handle left-over elements of the second vector
+	    while (pos2 < elts2)
+	       {
+	       if (v2->elementValue(pos2++))
 		  ++differences ;
-		  }
-	       else // if (elt1 == elt2)
-		  {
-		  if (v1->elementValue(pos1++) != v2->elementValue(pos2++)) ++differences ;
-		  }
 	       }
 	    size_t total(v1->numElements() + v2->numElements()) ;
 	    return total ? differences/total : 0.0 ;
 	 }
-      virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    size_t differences(0) ;
-	    size_t minlen = std::min(v1->numElements(),v2->numElements()) ;
-	    for (size_t i = 0 ; i < minlen ; ++i)
-	       {
-	       if (v1->elementValue(i) != v2->elementValue(i)) ++differences ;
-	       }
-	    for (size_t i = minlen ; i < v1->numElements() ; ++i)
-	       {
-	       if (v1->elementValue(i)) ++differences ;
-	       }
-	    for (size_t i = minlen ; i < v2->numElements() ; ++i)
-	       {
-	       if (v2->elementValue(i)) ++differences ;
-	       }
-	    size_t total(v1->numElements() + v2->numElements()) ;
-	    return total ? 2.0 * differences / total : 0.0 ;
-	 }
+
+   protected:
+      virtual const char* myCanonicalName() const { return "L0-Norm" ; }
    } ;
 
 //============================================================================
@@ -2688,60 +2964,66 @@ class VectorMeasureL0Norm : public Fr::DistanceMeasure<IdxT, ValT>
 template <typename IdxT, typename ValT>
 class VectorMeasureLinfNorm : public Fr::DistanceMeasure<IdxT, ValT>
    {
-   protected:
-      virtual const char* myCanonicalName() const { return "Linf-Norm" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
 	    size_t elts1(v1->numElements()) ;
 	    size_t elts2(v2->numElements()) ;
 	    ValT maxdiff(0) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  ValT val1(std::abs(v1->elementValue(pos1++))) ;
-		  if (val1 > maxdiff) maxdiff = val1 ;
-		  }
-	       else if (elt1 > elt2)
-		  {
-		  ValT val2(std::abs(v2->elementValue(pos2++))) ;
-		  if (val2 > maxdiff) maxdiff = val2 ;
-		  }
-	       else // if (elt1 == elt2)
-		  {
-		  ValT dif(std::abs(v1->elementValue(pos1++) - v2->elementValue(pos2++))) ;
-		  if (dif > maxdiff) maxdiff = dif ;
+		  auto elt1(sv1->elementIndex(pos1)) ;
+		  auto elt2(sv2->elementIndex(pos2)) ;
+		  if (elt1 < elt2)
+		     {
+		     ValT val1(std::abs(v1->elementValue(pos1++))) ;
+		     if (val1 > maxdiff) maxdiff = val1 ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     ValT val2(std::abs(v2->elementValue(pos2++))) ;
+		     if (val2 > maxdiff) maxdiff = val2 ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     ValT dif(std::abs(v1->elementValue(pos1++) - v2->elementValue(pos2++))) ;
+		     if (dif > maxdiff) maxdiff = dif ;
+		     }
 		  }
 	       }
-	    return maxdiff ;
-	 }
-      virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    ValT maxdiff(0) ;
-	    size_t minlen(std::min(v1->numElements(),v2->numElements())) ;
-	    for (size_t i = 0 ; i < minlen ; ++i)
+	    else
 	       {
-	       ValT diff = std::abs(v1->elementValue(i) - v2->elementValue(i)) ;
-	       if (diff > maxdiff) maxdiff = diff ;
+	       size_t minlen(std::min(elts1,elts2)) ;
+	       for ( ; pos1 < minlen ; ++pos1)
+		  {
+		  ValT diff = std::abs(v1->elementValue(pos1) - v2->elementValue(pos1)) ;
+		  if (diff > maxdiff) maxdiff = diff ;
+		  }
+	       pos2 = pos1 ;
 	       }
 	    // handle any leftovers from the first vector
-	    for (size_t i = minlen ; i < v1->numElements() ; ++i)
+	    while (pos1 < elts1)
 	       {
-	       ValT diff = std::abs(v1->elementValue(i)) ;
+	       ValT diff = std::abs(v1->elementValue(pos1++)) ;
 	       if (diff > maxdiff) maxdiff = diff ;
 	       }
 	    // handle any leftovers from the second vector
-	    for (size_t i = minlen ; i < v2->numElements() ; ++i)
+	    while (pos2 < elts2)
 	       {
-	       ValT diff = std::abs(v2->elementValue(i)) ;
+	       ValT diff = std::abs(v2->elementValue(pos2++)) ;
 	       if (diff > maxdiff) maxdiff = diff ;
 	       }
-	    return (double)maxdiff ;
+	    return maxdiff ;
 	 }
+
+   protected:
+      virtual const char* myCanonicalName() const { return "Linf-Norm" ; }
    } ;
 
 //============================================================================
@@ -2749,51 +3031,62 @@ class VectorMeasureLinfNorm : public Fr::DistanceMeasure<IdxT, ValT>
 template <typename IdxT, typename ValT>
 class VectorMeasureMahalanobis : public Fr::DistanceMeasure<IdxT, ValT>
    {
-   protected:
-      virtual const char* myCanonicalName() const { return "Mahalanobis" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
-	    //FIXME
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
 	    size_t elts1(v1->numElements()) ;
 	    size_t elts2(v2->numElements()) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  ++pos1 ;
+		  auto elt1(sv1->elementIndex(pos1)) ;
+		  auto elt2(sv2->elementIndex(pos2)) ;
+		  if (elt1 < elt2)
+		     {
+		     //FIXME
+		     ++pos1 ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     //FIXME
+		     ++pos2 ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     //FIXME
+		     ++pos1; ++pos2;
+		     }
 		  }
-	       else if (elt1 > elt2)
+	       }
+	    else
+	       {
+	       size_t minlen(std::min(elts1,elts2)) ;
+	       for ( ; pos1 < minlen ; ++pos1)
 		  {
-		  ++pos2 ;
+		  //FIXME
 		  }
-	       else // if (elt1 == elt2)
-		  {
-		  ++pos1; ++pos2;
-		  }
+	       }
+	    // handle any leftovers from the first vector
+	    while (pos1 < elts1)
+	       {
+	       //FIXME
+	       ++pos1 ;
+	       }
+	    // handle any leftovers from the second vector
+	    while (pos2 < elts2)
+	       {
+	       ++pos2 ;
 	       }
 	    return 0.0 ; //FIXME
 	 }
-      virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    //FIXME   
-	    size_t minlen(std::min(v1->numElements(),v2->numElements())) ;
-	    for (size_t i = 0 ; i < minlen ; ++i)
-	       {
-	       }
-	    // handle any leftovers from the first vector
-	    for (size_t i = minlen ; i < v1->numElements() ; ++i)
-	       {
-	       }
-	    // handle any leftovers from the second vector
-	    for (size_t i = minlen ; i < v2->numElements() ; ++i)
-	       {
-	       }
-	    return 1.0 ; //FIXME
-	 }
+
+   protected:
+      virtual const char* myCanonicalName() const { return "Mahalanobis" ; }
    } ;
 
 //============================================================================
@@ -2801,102 +3094,108 @@ class VectorMeasureMahalanobis : public Fr::DistanceMeasure<IdxT, ValT>
 template <typename IdxT, typename ValT>
 class VectorMeasureManhattan : public Fr::DistanceMeasureReciprocal<IdxT, ValT>
    {
-   protected:
-      virtual const char* myCanonicalName() const { return "Manhattan" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
+//!!!
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
 	    size_t elts1(v1->numElements()) ;
 	    size_t elts2(v2->numElements()) ;
 	    ValT sum(0) ;
-	    if (this->m_opt.normalize)
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       ValT wt1, wt2 ;
-	       normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
-	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       if (this->m_opt.normalize)
 		  {
-		  auto elt1(v1->elementIndex(pos1)) ;
-		  auto elt2(v2->elementIndex(pos2)) ;
-		  if (elt1 < elt2)
+		  ValT wt1, wt2 ;
+		  normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
+		  for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		     {
-		     sum += std::abs(v1->elementValue(pos1++)/wt1) ;
-		     }
-		  else if (elt1 > elt2)
-		     {
-		     sum += std::abs(v2->elementValue(pos2++)/wt2) ;
-		     }
-		  else // if (elt1 == elt2)
-		     {
-		     sum += std::abs(v1->elementValue(pos1++)/wt1 - v2->elementValue(pos2++)/wt2) ;
+		     auto elt1(v1->elementIndex(pos1)) ;
+		     auto elt2(v2->elementIndex(pos2)) ;
+		     if (elt1 < elt2)
+			{
+			sum += std::abs(v1->elementValue(pos1++)/wt1) ;
+			}
+		     else if (elt1 > elt2)
+			{
+			sum += std::abs(v2->elementValue(pos2++)/wt2) ;
+			}
+		     else // if (elt1 == elt2)
+			{
+			sum += std::abs(v1->elementValue(pos1++)/wt1 - v2->elementValue(pos2++)/wt2) ;
+			}
 		     }
 		  }
-	       }
-	    else // no normalization
-	       {
-	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	       else // no normalization
 		  {
-		  auto elt1(v1->elementIndex(pos1)) ;
-		  auto elt2(v2->elementIndex(pos2)) ;
-		  if (elt1 < elt2)
+		  for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		     {
-		     sum += std::abs(v1->elementValue(pos1++)) ;
+		     auto elt1(v1->elementIndex(pos1)) ;
+		     auto elt2(v2->elementIndex(pos2)) ;
+		     if (elt1 < elt2)
+			{
+			sum += std::abs(v1->elementValue(pos1++)) ;
+			}
+		     else if (elt1 > elt2)
+			{
+			sum += std::abs(v2->elementValue(pos2++)) ;
+			}
+		     else // if (elt1 == elt2)
+			{
+			sum += std::abs(v1->elementValue(pos1++) - v2->elementValue(pos2++)) ;
+			}
 		     }
-		  else if (elt1 > elt2)
-		     {
-		     sum += std::abs(v2->elementValue(pos2++)) ;
-		     }
-		  else // if (elt1 == elt2)
-		     {
-		     sum += std::abs(v1->elementValue(pos1++) - v2->elementValue(pos2++)) ;
-		     }
-		  }
-	       }
-	    return (double)sum ;
-	 }
-      virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    double sum(0.0) ;
-	    size_t minlen(std::min(v1->numElements(),v2->numElements())) ;
-	    if (this->m_opt.normalize)
-	       {
-	       ValT wt1, wt2 ;
-	       normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
-	       for (size_t i = 0 ; i < minlen ; ++i)
-		  {
-		  sum += std::abs(v1->elementValue(i)/wt1 - v2->elementValue(i)/wt2) ;
-		  }
-	       // handle any leftovers from the first vector
-	       for (size_t i = minlen ; i < v1->numElements() ; ++i)
-		  {
-		  sum += std::abs(v1->elementValue(i)/wt1) ;
-		  }
-	       // handle any leftovers from the second vector
-	       for (size_t i = minlen ; i < v2->numElements() ; ++i)
-		  {
-		  sum += std::abs(v2->elementValue(i)/wt2) ;
 		  }
 	       }
 	    else
 	       {
-	       // no normalization
-	       for (size_t i = 0 ; i < minlen ; ++i)
+	       size_t minlen(std::min(v1->numElements(),v2->numElements())) ;
+	       if (this->m_opt.normalize)
 		  {
-		  sum += std::abs(v1->elementValue(i) - v2->elementValue(i)) ;
+		  ValT wt1, wt2 ;
+		  normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
+		  for (size_t i = 0 ; i < minlen ; ++i)
+		     {
+		     sum += std::abs(v1->elementValue(i)/wt1 - v2->elementValue(i)/wt2) ;
+		     }
+		  // handle any leftovers from the first vector
+		  for (size_t i = minlen ; i < v1->numElements() ; ++i)
+		     {
+		     sum += std::abs(v1->elementValue(i)/wt1) ;
+		     }
+		  // handle any leftovers from the second vector
+		  for (size_t i = minlen ; i < v2->numElements() ; ++i)
+		     {
+		     sum += std::abs(v2->elementValue(i)/wt2) ;
+		     }
 		  }
-	       // handle any leftovers from the first vector
-	       for (size_t i = minlen ; i < v1->numElements() ; ++i)
+	       else
 		  {
-		  sum += std::abs(v1->elementValue(i)) ;
-		  }
-	       // handle any leftovers from the second vector
-	       for (size_t i = minlen ; i < v2->numElements() ; ++i)
-		  {
-		  sum += std::abs(v2->elementValue(i)) ;
+		  // no normalization
+		  for (size_t i = 0 ; i < minlen ; ++i)
+		     {
+		     sum += std::abs(v1->elementValue(i) - v2->elementValue(i)) ;
+		     }
+		  // handle any leftovers from the first vector
+		  for (size_t i = minlen ; i < v1->numElements() ; ++i)
+		     {
+		     sum += std::abs(v1->elementValue(i)) ;
+		     }
+		  // handle any leftovers from the second vector
+		  for (size_t i = minlen ; i < v2->numElements() ; ++i)
+		     {
+		     sum += std::abs(v2->elementValue(i)) ;
+		     }
 		  }
 	       }
 	    return (double)sum ;
 	 }
+
+   protected:
+      virtual const char* myCanonicalName() const { return "Manhattan" ; }
    } ;
 
 //============================================================================
@@ -2908,9 +3207,8 @@ class VectorMeasureManhattan : public Fr::DistanceMeasureReciprocal<IdxT, ValT>
 template <typename IdxT, typename ValT>
 class VectorMeasureRobinson : public Fr::DistanceMeasure<IdxT, ValT>
    {
-   protected:
-      virtual const char* myCanonicalName() const { return "Robinson" ; }
-      virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
+   public:
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    double sum(0) ;
 	    ValT totalwt1, totalwt2 ;
@@ -2919,55 +3217,60 @@ class VectorMeasureRobinson : public Fr::DistanceMeasure<IdxT, ValT>
 	    size_t pos2(0) ;
 	    size_t elts1(v1->numElements()) ;
 	    size_t elts2(v2->numElements()) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  double val1(v1->elementValue(pos1++) / totalwt1) ;
-		  sum += std::abs(val1) ;
+		  auto elt1(v1->elementIndex(pos1)) ;
+		  auto elt2(v2->elementIndex(pos2)) ;
+		  if (elt1 < elt2)
+		     {
+		     double val1(v1->elementValue(pos1++) / totalwt1) ;
+		     sum += std::abs(val1) ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     double val2(v2->elementValue(pos2++) / totalwt2) ;
+		     sum += std::abs(val2) ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     double val1(v1->elementValue(pos1++) / totalwt1) ;
+		     double val2(v2->elementValue(pos2++) / totalwt2) ;
+		     sum += std::abs(val1 - val2) ;
+		     }
 		  }
-	       else if (elt1 > elt2)
+	       }
+	    else
+	       {
+	       size_t minlen(std::min(elts1,elts2)) ;
+	       for ( ; pos1 < minlen ; ++pos1)
 		  {
-		  double val2(v2->elementValue(pos2++) / totalwt2) ;
-		  sum += std::abs(val2) ;
-		  }
-	       else // if (elt1 == elt2)
-		  {
-		  double val1(v1->elementValue(pos1++) / totalwt1) ;
-		  double val2(v2->elementValue(pos2++) / totalwt2) ;
+		  ValT val1(v1->elementValue(pos1) / totalwt1) ;
+		  ValT val2(v2->elementValue(pos1) / totalwt2) ;
 		  sum += std::abs(val1 - val2) ;
 		  }
-	       }
-	    return sum / 2.0 ;
-	 }
-      virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    ValT sum(0) ;
-	    ValT totalwt1, totalwt2 ;
-	    normalization_weights(v1,v2,1,totalwt1,totalwt2) ;
-	    size_t minlen(std::min(v1->numElements(),v2->numElements())) ;
-	    for (size_t i = 0 ; i < minlen ; ++i)
-	       {
-	       ValT val1(v1->elementValue(i) / totalwt1) ;
-	       ValT val2(v2->elementValue(i) / totalwt2) ;
-	       sum += std::abs(val1 - val2) ;
+	       pos2 = pos1 ;
 	       }
 	    // handle any leftovers from the first vector
-	    for (size_t i = minlen ; i < v1->numElements() ; ++i)
+	    while (pos1 < elts1)
 	       {
-	       ValT val1(v1->elementValue(i) / totalwt1) ;
+	       ValT val1(v1->elementValue(pos1++) / totalwt1) ;
 	       sum += std::abs(val1) ;
 	       }
 	    // handle any leftovers from the second vector
-	    for (size_t i = minlen ; i < v2->numElements() ; ++i)
+	    while (pos2 < elts2)
 	       {
-	       ValT val2(v2->elementValue(i) / totalwt2) ;
+	       ValT val2(v2->elementValue(pos2++) / totalwt2) ;
 	       sum += std::abs(val2) ;
 	       }
 	    return sum / 2.0 ;
 	 }
+
+   protected:
+      virtual const char* myCanonicalName() const { return "Robinson" ; }
    } ;
 
 //============================================================================
@@ -3082,8 +3385,7 @@ class VectorMeasureSimilarityRatio : public Fr::SimilarityMeasure<IdxT, ValT>
 template <typename IdxT, typename ValT>
 class VectorMeasureSquaredEuclidean : public Fr::DistanceMeasure<IdxT, ValT>
    {
-   protected:
-      virtual const char* myCanonicalName() const { return "SquaredEuclidean" ; }
+   public:
       virtual double sparseDistance(const SparseVector<IdxT,ValT>* v1, const SparseVector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
@@ -3091,51 +3393,57 @@ class VectorMeasureSquaredEuclidean : public Fr::DistanceMeasure<IdxT, ValT>
 	    size_t elts1(v1->numElements()) ;
 	    size_t elts2(v2->numElements()) ;
 	    double sum(0) ;
-	    for ( ; pos1 < elts1 && pos2 < elts2 ; )
+	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       auto elt1(v1->elementIndex(pos1)) ;
-	       auto elt2(v2->elementIndex(pos2)) ;
-	       if (elt1 < elt2)
+	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
-		  auto diff(v1->elementValue(pos1++)) ;
-		  sum += (diff * diff) ;
-		  }
-	       else if (elt1 > elt2)
-		  {
-		  auto diff(v2->elementValue(pos2++)) ;
-		  sum += (diff * diff) ;
-		  }
-	       else // if (elt1 == elt2)
-		  {
-		  auto diff(v1->elementValue(pos1++) - v2->elementValue(pos2++)) ;
-		  sum += (diff * diff) ;
+		  auto elt1(v1->elementIndex(pos1)) ;
+		  auto elt2(v2->elementIndex(pos2)) ;
+		  if (elt1 < elt2)
+		     {
+		     auto diff(v1->elementValue(pos1++)) ;
+		     sum += (diff * diff) ;
+		     }
+		  else if (elt1 > elt2)
+		     {
+		     auto diff(v2->elementValue(pos2++)) ;
+		     sum += (diff * diff) ;
+		     }
+		  else // if (elt1 == elt2)
+		     {
+		     auto diff(v1->elementValue(pos1++) - v2->elementValue(pos2++)) ;
+		     sum += (diff * diff) ;
+		     }
 		  }
 	       }
-	    return sum ;
-	 }
-      virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	    ValT sum(0) ;
-	    size_t minlen(std::min(v1->numElements(),v2->numElements())) ;
-	    for (size_t i = 0 ; i < minlen ; ++i)
+	    else
 	       {
-	       ValT diff = v1->elementValue(i) - v2->elementValue(i) ;
-	       sum += (diff * diff) ;
+	       size_t minlen(std::min(elts1,elts2)) ;
+	       for ( ; pos1 < minlen ; ++pos1)
+		  {
+		  ValT diff = v1->elementValue(pos1) - v2->elementValue(pos1) ;
+		  sum += (diff * diff) ;
+		  }
 	       }
 	    // handle any leftovers from the first vector
-	    for (size_t i = minlen ; i < v1->numElements() ; ++i)
+	    while (pos1 < elts1)
 	       {
-	       ValT diff = v1->elementValue(i) ;
+	       ValT diff = v1->elementValue(pos1++) ;
 	       sum += (diff * diff) ;
 	       }
 	    // handle any leftovers from the second vector
-	    for (size_t i = minlen ; i < v2->numElements() ; ++i)
+	    while (pos2 < elts2)
 	       {
-	       ValT diff = v2->elementValue(i) ;
+	       ValT diff = v2->elementValue(pos2++) ;
 	       sum += (diff * diff) ;
 	       }
-	    return (double)sum  ;
+	    return sum ;
 	 }
+
+   protected:
+      virtual const char* myCanonicalName() const { return "SquaredEuclidean" ; }
    } ;
 
 //============================================================================
