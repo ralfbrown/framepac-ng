@@ -271,7 +271,8 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	termvector$(OBJ) texttransforms$(OBJ) \
 	threadpool$(OBJ) threshold$(OBJ) timer$(OBJ) \
 	trie$(OBJ) trie_u32dbl$(OBJ) trie_u32u32$(OBJ) \
-	vecsimopt$(OBJ) vecsim_u32_dbl$(OBJ) vecsim_u32_flt$(OBJ) \
+	vecsimopt$(OBJ) \
+	vecsim_u32_dbl$(OBJ) vecsim_u32_flt$(OBJ) vecsim_u32_u32$(OBJ) \
 	vector_obj_dbl$(OBJ) vector_obj_flt$(OBJ) \
 	vector_u32_dbl$(OBJ) vector_u32_flt$(OBJ) vector_u32_u32$(OBJ) \
 	basisvector_u32$(OBJ) progress$(OBJ) \
@@ -488,6 +489,8 @@ trie_u32u32$(OBJ):		trie_u32u32$(C) template/trie.cc
 vecsimopt$(OBJ):	vecsimopt$(C) framepac/vecsim.h
 vecsim_u32_dbl$(OBJ):	vecsim_u32_dbl$(C) template/vecsim.cc
 vecsim_u32_flt$(OBJ):	vecsim_u32_flt$(C) template/vecsim.cc
+vecsim_u32_u32$(OBJ):	vecsim_u32_u32$(C) template/vecsim.cc
+vecsim_u32_u32$(OBJ):	vecsim_u32_u32$(C) template/vecsim.cc
 vector_obj_dbl$(OBJ):	vector_obj_dbl$(C) framepac/vector.h
 vector_obj_flt$(OBJ):	vector_obj_flt$(C) framepac/vector.h
 vector_u32_dbl$(OBJ):	vector_u32_dbl$(C) framepac/vector.h template/sparsevector.cc

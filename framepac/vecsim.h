@@ -258,6 +258,11 @@ class VectorMeasure
       VectorSimilarityOptions m_opt ;
    } ;
 
+// predefined instantiations for the standard vector types are provided in separate modules in the library
+extern template class VectorMeasure<uint32_t, uint32_t> ;
+extern template class VectorMeasure<uint32_t, float> ;
+extern template class VectorMeasure<uint32_t, double> ;
+
 //----------------------------------------------------------------------------
 // a vector measure which has a similarity metric and computes the distance as 1-sim
 

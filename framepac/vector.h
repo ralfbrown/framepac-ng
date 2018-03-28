@@ -146,6 +146,10 @@ class DenseVector : public Vector<ValT>
       static Allocator s_allocator ;
    } ;
 
+extern template class DenseVector<uint32_t> ;
+extern template class DenseVector<float> ;
+extern template class DenseVector<double> ;
+
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
@@ -313,6 +317,8 @@ class SparseVector : public Vector<ValT>
 extern template class SparseVector<uint32_t,uint32_t> ;
 extern template class SparseVector<uint32_t,float> ;
 extern template class SparseVector<uint32_t,double> ;
+extern template class SparseVector<Object*,float> ;
+extern template class SparseVector<Object*,double> ;
 
 //----------------------------------------------------------------------------
 

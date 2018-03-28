@@ -43,6 +43,19 @@ ValT p_log_p(ValT p)
 
 //----------------------------------------------------------------------------
 
+template <typename ValT>
+inline ValT abs_value(ValT v)
+{
+   return std::abs(v) ;
+}
+
+inline uint32_t abs_value(uint32_t v)
+{
+   return v ;
+}
+
+//----------------------------------------------------------------------------
+
 double safe_div(double num, double denom)
 {
    return denom ? num / denom : (num ? HUGE_VAL : 0) ;
@@ -50,12 +63,12 @@ double safe_div(double num, double denom)
 
 //----------------------------------------------------------------------------
 
-template <typename VecT>
-typename VecT::value_type sum_of_weights(const VecT* v)
+template <typename ValT>
+ValT sum_of_weights(const Vector<ValT>* v)
 {
-   typename VecT::value_type sum(0.0) ;
+   ValT sum(0) ;
    for (size_t i = 0 ; i < v->numElements() ; ++i)
-      sum += std::abs(v->elementValue(i)) ;
+      sum += abs_value(v->elementValue(i)) ;
    // since we use the returned value as a divisor, force it to be nonzero
    // a zero sum means we'll be dividing only zeros by the return
    //   value, so we can pick anything without changing the results; a
@@ -65,13 +78,13 @@ typename VecT::value_type sum_of_weights(const VecT* v)
 
 //----------------------------------------------------------------------------
 
-template <typename VecT>
-typename VecT::value_type max_weight(const VecT* v)
+template <typename ValT>
+ValT max_weight(const Vector<ValT>* v)
 {
-   typename VecT::value_type max(0.0) ;
+   ValT max(0) ;
    for (size_t i = 0 ; i < v->numElements() ; ++i)
       {
-      typename VecT::value_type val = std::abs(v->elementValue(i)) ;
+      ValT val = abs_value(v->elementValue(i)) ;
       if (val > max)
 	 max = val ;
       }
@@ -84,9 +97,9 @@ typename VecT::value_type max_weight(const VecT* v)
 
 //----------------------------------------------------------------------------
 
-template <typename VecT1, typename VecT2>
-void normalization_weights(const VecT1* v1, const VecT2* v2, int normalization,
-			   typename VecT1::value_type &wt1, typename VecT1::value_type &wt2)
+template <typename ValT>
+void normalization_weights(const Vector<ValT>* v1, const Vector<ValT>* v2, int normalization,
+			   ValT &wt1, ValT &wt2)
 {
    wt1 = wt2 = 1.0 ;
    if (normalization == 1)
@@ -837,7 +850,7 @@ class VectorMeasureLennon : public DistanceMeasureCT<IdxT, ValT>
 	    ValT total2(both + v2_only) ;
 	    double denom(total1 + total2) ;
 	    // all-zero vectors are defined to be identical
-	    return denom ? (2.0 * std::abs(v1_only - v2_only) / denom) : 0.0 ;
+	    return denom ? (2.0 * abs_value(v1_only - v2_only) / denom) : 0.0 ;
 	 }
    } ;
 
@@ -1076,7 +1089,7 @@ class VectorMeasureModGini : public SimilarityMeasureCT<IdxT, ValT>
 	    v2_only /= N ;
 	    ValT total1(both+v1_only) ;
 	    ValT total2(both+v2_only) ;
-	    return (both - total1*total2) / (1.0 - std::abs(v1_only-v2_only)/2 - total1*total2) ;
+	    return (both - total1*total2) / (1.0 - abs_value(v1_only-v2_only)/2 - total1*total2) ;
 	 }
    } ;
 
@@ -1560,13 +1573,13 @@ class VectorMeasureCanberra : public DistanceMeasure<IdxT, ValT>
 		  auto elt2(sv2->elementIndex(pos2)) ;
 		  if (elt1 < elt2)
 		     {
-		     ValT val1(std::abs(v1->elementValue(pos1++))) ;
+		     ValT val1(abs_value(v1->elementValue(pos1++))) ;
 		     absdiff += val1 ;
 		     sumabs += val1 ;
 		     }
 		  else if (elt1 > elt2)
 		     {
-		     ValT val2(std::abs(v2->elementValue(pos2++))) ;
+		     ValT val2(abs_value(v2->elementValue(pos2++))) ;
 		     absdiff += val2 ;
 		     sumabs += val2 ;
 		     }
@@ -1574,8 +1587,8 @@ class VectorMeasureCanberra : public DistanceMeasure<IdxT, ValT>
 		     {
 		     ValT val1(v1->elementValue(pos1++)) ;
 		     ValT val2(v2->elementValue(pos2++)) ;
-		     absdiff += std::abs(val1 - val2) ;
-		     sumabs += std::abs(val1) + std::abs(val2) ;
+		     absdiff += abs_value(val1 - val2) ;
+		     sumabs += abs_value(val1) + abs_value(val2) ;
 		     }
 		  }
 	       }
@@ -1587,20 +1600,20 @@ class VectorMeasureCanberra : public DistanceMeasure<IdxT, ValT>
 		  {
 		  ValT val1(v1->elementValue(pos1)) ;
 		  ValT val2(v2->elementValue(pos1)) ;
-		  absdiff += std::abs(val1 - val2) ;
-		  sumabs += std::abs(val1) + std::abs(val2) ;
+		  absdiff += abs_value(val1 - val2) ;
+		  sumabs += abs_value(val1) + abs_value(val2) ;
 		  }
 	       pos2 = pos1 ;
 	       }
 	    // handle any leftovers from the first vector
 	    while (pos1 < elts1)
 	       {
-	       absdiff += std::abs(v1->elementValue(pos1++)) ;
+	       absdiff += abs_value(v1->elementValue(pos1++)) ;
 	       }
 	    // handle any leftovers from the second vector
 	    while (pos2<  elts2)
 	       {
-	       absdiff += std::abs(v2->elementValue(pos2++)) ;
+	       absdiff += abs_value(v2->elementValue(pos2++)) ;
 	       }
 	    return sumabs > 0 ? absdiff / (double)sumabs : 0.0 ;
 	 }
@@ -1641,20 +1654,20 @@ class VectorMeasureSoergel : public DistanceMeasure<IdxT, ValT>
 		  if (elt1 < elt2)
 		     {
 		     auto val1 = v1->elementValue(pos1++) / wt1 ;
-		     total_diff += std::abs(val1) ;
+		     total_diff += abs_value(val1) ;
 		     total_max += val1 ;
 		     }
 		  else if (elt1 > elt2)
 		     {
 		     auto val2 = v2->elementValue(pos2++) / wt2 ;
-		     total_diff += std::abs(val2) ;
+		     total_diff += abs_value(val2) ;
 		     total_max += val2 ;
 		     }
 		  else // if (elt1 == elt2)
 		     {
 		     auto val1 = v1->elementValue(pos1++) / wt1 ;
 		     auto val2 = v2->elementValue(pos2++) / wt2 ;
-		     total_diff += std::abs(val1 - val2) ;
+		     total_diff += abs_value(val1 - val2) ;
 		     total_max += std::max((double)(val1 + val2), this->m_opt.smoothing) ;
 		     }
 		  }   
@@ -1666,7 +1679,7 @@ class VectorMeasureSoergel : public DistanceMeasure<IdxT, ValT>
 		  {
 		  auto val1 = v1->elementValue(pos1) / wt1 ;
 		  auto val2 = v2->elementValue(pos1) / wt2 ;
-		  total_diff += std::abs(val1 - val2) ;
+		  total_diff += abs_value(val1 - val2) ;
 		  total_max += std::max((double)(val1 + val2), this->m_opt.smoothing) ;
 		  }
 	       pos2 = pos1 ;
@@ -1675,14 +1688,14 @@ class VectorMeasureSoergel : public DistanceMeasure<IdxT, ValT>
 	    while (pos1 < elts1)
 	       {
 	       auto val1 = v1->elementValue(pos1++) / wt1 ;
-	       total_diff += std::abs(val1) ;
+	       total_diff += abs_value(val1) ;
 	       total_max += val1 ;
 	       }
 	    // handle any left-over elements of the second vector
 	    while (pos2 < elts2)
 	       {
 	       auto val2 = v2->elementValue(pos2++) / wt2 ;
-	       total_diff += std::abs(val2) ;
+	       total_diff += abs_value(val2) ;
 	       total_max += val2 ;
 	       }
 	    return total_max ? total_diff / total_max : -1.0 ;
@@ -1716,17 +1729,17 @@ class VectorMeasureLorentzian : public DistanceMeasure<IdxT, ValT>
 		  auto elt2(sv2->elementIndex(pos2)) ;
 		  if (elt1 < elt2)
 		     {
-		     sum += std::log(1.0 + std::abs(v1->elementValue(pos1++)/wt1)) ;
+		     sum += std::log(1.0 + abs_value(v1->elementValue(pos1++)/wt1)) ;
 		     }
 		  else if (elt1 > elt2)
 		     {
-		     sum += std::log(1.0 + std::abs(v2->elementValue(pos2++)/wt2)) ;
+		     sum += std::log(1.0 + abs_value(v2->elementValue(pos2++)/wt2)) ;
 		     }
 		  else // if (elt1 == elt2)
 		     {
 		     auto val1 = v1->elementValue(pos1++) / wt1 ;
 		     auto val2 = v2->elementValue(pos2++) / wt2 ;
-		     sum += std::log(1.0 + std::abs(val1 - val2)) ;
+		     sum += std::log(1.0 + abs_value(val1 - val2)) ;
 		     }
 		  }
 	       }
@@ -1737,19 +1750,19 @@ class VectorMeasureLorentzian : public DistanceMeasure<IdxT, ValT>
 		  {
 		  auto val1 = v1->elementValue(pos1) / wt1 ;
 		  auto val2 = v2->elementValue(pos1) / wt2 ;
-		  sum += std::log(1.0 + std::abs(val1 - val2)) ;
+		  sum += std::log(1.0 + abs_value(val1 - val2)) ;
 		  }
 	       pos2 = pos1 ;
 	       }
 	    // handle left-over elements of the first vector
 	    while (pos1 < elts1)
 	       {
-	       sum += std::log(1.0 + std::abs(v1->elementValue(pos1++)/wt1)) ;
+	       sum += std::log(1.0 + abs_value(v1->elementValue(pos1++)/wt1)) ;
 	       }
 	    // handle left-over elements from the second vector
 	    while (pos2 < elts2)
 	       {
-	       sum += std::log(1.0 + std::abs(v2->elementValue(pos2++)/wt2)) ;
+	       sum += std::log(1.0 + abs_value(v2->elementValue(pos2++)/wt2)) ;
 	       }
 	    return sum ;
 	 }
@@ -1901,13 +1914,11 @@ class VectorMeasureSquaredChord : public DistanceMeasure<IdxT, ValT>
 		  auto elt2(sv2->elementIndex(pos2)) ;
 		  if (elt1 < elt2)
 		     {
-		     auto val1 = v1->elementValue(pos1++) / wt1 ;
-		     sum += std::abs(val1) ;
+		     sum += v1->elementValue(pos1++) / wt1 ;
 		     }
 		  else if (elt1 > elt2)
 		     {
-		     auto val2 = v2->elementValue(pos2++) / wt2 ;
-		     sum += std::abs(val2) ;
+		     sum += v2->elementValue(pos2++) / wt2 ;
 		     }
 		  else // if (elt1 == elt2)
 		     {
@@ -1933,14 +1944,12 @@ class VectorMeasureSquaredChord : public DistanceMeasure<IdxT, ValT>
 	    // handle any left-over elements from the first vector
 	    while (pos1 < elts1)
 	       {
-	       auto val1 = v1->elementValue(pos1++) / wt1 ;
-	       sum += std::abs(val1) ;
+	       sum += v1->elementValue(pos1++) / wt1 ;
 	       }
 	    // handle any left-over elements from the second vector
 	    while (pos2 < elts2)
 	       {
-	       auto val2 = v2->elementValue(pos2++) / wt2 ;
-	       sum += std::abs(val2) ;
+	       sum += v2->elementValue(pos2++) / wt2 ;
 	       }
 	    return sum ;
 	 }
@@ -1989,7 +1998,7 @@ class VectorMeasureClark : public DistanceMeasure<IdxT, ValT>
 		     {
 		     auto val1 = v1->elementValue(pos1++) / wt1 ;
 		     auto val2 = v2->elementValue(pos2++) / wt2 ;
-		     double value = std::abs(val1-val2) / (val1 + val2) ;
+		     double value = abs_value(val1-val2) / (val1 + val2) ;
 		     sum += (value * value) ;
 		     }
 		  }
@@ -2001,7 +2010,7 @@ class VectorMeasureClark : public DistanceMeasure<IdxT, ValT>
 		  {
 		  auto val1 = v1->elementValue(pos1) / wt1 ;
 		  auto val2 = v2->elementValue(pos1) / wt2 ;
-		  double value = std::abs(val1-val2) / (val1 + val2) ;
+		  double value = abs_value(val1-val2) / (val1 + val2) ;
 		  sum += (value * value) ;
 		  }
 	       pos2 = pos1 ;
@@ -2058,7 +2067,7 @@ class VectorMeasureWaveHedges : public DistanceMeasure<IdxT, ValT>
 		     val1 = v1->elementValue(pos1++) / wt1 ;
 		     val2 = v2->elementValue(pos2++) / wt2 ;
 		     }
-		  double diff = std::abs(val1 - val2) ;
+		  double diff = abs_value(val1 - val2) ;
 		  double bigger = std::max(val1,val2) ;
 		  double maxval = std::max(bigger,this->m_opt.smoothing) ;
 		  sum += safe_div(diff,maxval) ;
@@ -2071,7 +2080,7 @@ class VectorMeasureWaveHedges : public DistanceMeasure<IdxT, ValT>
 		  {
 		  double val1 = v1->elementValue(pos1) / wt1 ;
 		  double val2 = v2->elementValue(pos1) / wt2 ;
-		  double diff = std::abs(val1 - val2) ;
+		  double diff = abs_value(val1 - val2) ;
 		  double bigger = std::max(val1,val2) ;
 		  double maxval = std::max(bigger,this->m_opt.smoothing) ;
 		  sum += safe_div(diff,maxval) ;
@@ -2082,7 +2091,7 @@ class VectorMeasureWaveHedges : public DistanceMeasure<IdxT, ValT>
 	    while (pos1 < elts1)
 	       {
 	       double val1 = v1->elementValue(pos1++) / wt1 ;
-	       double diff = std::abs(val1) ;
+	       double diff = abs_value(val1) ;
 	       double maxval = std::max(val1,this->m_opt.smoothing) ;
 	       sum += safe_div(diff,maxval) ;
 	       }
@@ -2090,7 +2099,7 @@ class VectorMeasureWaveHedges : public DistanceMeasure<IdxT, ValT>
 	    while (pos2 < elts2)
 	       {
 	       double val2 = v2->elementValue(pos2++) / wt2 ;
-	       double diff = std::abs(val2) ;
+	       double diff = abs_value(val2) ;
 	       double maxval = std::max(val2,this->m_opt.smoothing) ;
 	       sum += safe_div(diff,maxval) ;
 	       }
@@ -2130,11 +2139,11 @@ class VectorMeasureSangvi : public DistanceMeasure<IdxT, ValT>
 		  auto elt2(sv2->elementIndex(pos2)) ;
 		  if (elt1 < elt2)
 		     {
-		     sum += std::abs(v1->elementValue(pos1++)) / wt1 ;
+		     sum += abs_value(v1->elementValue(pos1++)) / wt1 ;
 		     }
 		  else if (elt1 > elt2)
 		     {
-		     sum += std::abs(v2->elementValue(pos2++)) / wt2 ;
+		     sum += abs_value(v2->elementValue(pos2++)) / wt2 ;
 		     }
 		  else // if (elt1 == elt2)
 		     {
@@ -2162,12 +2171,12 @@ class VectorMeasureSangvi : public DistanceMeasure<IdxT, ValT>
 	    // handle any left-over elements of the first vector
 	    while (pos1 < elts1)
 	       {
-	       sum += std::abs(v1->elementValue(pos1++)) / wt1 ;
+	       sum += abs_value(v1->elementValue(pos1++)) / wt1 ;
 	       }
 	    // handle any left-over elements of the second vector
 	    while (pos2 < elts2)
 	       {
-	       sum += std::abs(v2->elementValue(pos2++)) / wt2 ;
+	       sum += abs_value(v2->elementValue(pos2++)) / wt2 ;
 	       }
 	    return std::sqrt(sum) ;
 	 }
@@ -2780,17 +2789,17 @@ class VectorMeasureLinfNorm : public DistanceMeasure<IdxT, ValT>
 		  auto elt2(sv2->elementIndex(pos2)) ;
 		  if (elt1 < elt2)
 		     {
-		     ValT val1(std::abs(v1->elementValue(pos1++))) ;
+		     ValT val1(abs_value(v1->elementValue(pos1++))) ;
 		     if (val1 > maxdiff) maxdiff = val1 ;
 		     }
 		  else if (elt1 > elt2)
 		     {
-		     ValT val2(std::abs(v2->elementValue(pos2++))) ;
+		     ValT val2(abs_value(v2->elementValue(pos2++))) ;
 		     if (val2 > maxdiff) maxdiff = val2 ;
 		     }
 		  else // if (elt1 == elt2)
 		     {
-		     ValT dif(std::abs(v1->elementValue(pos1++) - v2->elementValue(pos2++))) ;
+		     ValT dif(abs_value(v1->elementValue(pos1++) - v2->elementValue(pos2++))) ;
 		     if (dif > maxdiff) maxdiff = dif ;
 		     }
 		  }
@@ -2800,7 +2809,7 @@ class VectorMeasureLinfNorm : public DistanceMeasure<IdxT, ValT>
 	       size_t minlen(std::min(elts1,elts2)) ;
 	       for ( ; pos1 < minlen ; ++pos1)
 		  {
-		  ValT diff = std::abs(v1->elementValue(pos1) - v2->elementValue(pos1)) ;
+		  ValT diff = abs_value(v1->elementValue(pos1) - v2->elementValue(pos1)) ;
 		  if (diff > maxdiff) maxdiff = diff ;
 		  }
 	       pos2 = pos1 ;
@@ -2808,13 +2817,13 @@ class VectorMeasureLinfNorm : public DistanceMeasure<IdxT, ValT>
 	    // handle any leftovers from the first vector
 	    while (pos1 < elts1)
 	       {
-	       ValT diff = std::abs(v1->elementValue(pos1++)) ;
+	       ValT diff = abs_value(v1->elementValue(pos1++)) ;
 	       if (diff > maxdiff) maxdiff = diff ;
 	       }
 	    // handle any leftovers from the second vector
 	    while (pos2 < elts2)
 	       {
-	       ValT diff = std::abs(v2->elementValue(pos2++)) ;
+	       ValT diff = abs_value(v2->elementValue(pos2++)) ;
 	       if (diff > maxdiff) maxdiff = diff ;
 	       }
 	    return maxdiff ;
@@ -2917,15 +2926,15 @@ class VectorMeasureManhattan : public DistanceMeasureReciprocal<IdxT, ValT>
 		     auto elt2(sv2->elementIndex(pos2)) ;
 		     if (elt1 < elt2)
 			{
-			sum += std::abs(v1->elementValue(pos1++)/wt1) ;
+			sum += abs_value(v1->elementValue(pos1++)/wt1) ;
 			}
 		     else if (elt1 > elt2)
 			{
-			sum += std::abs(v2->elementValue(pos2++)/wt2) ;
+			sum += abs_value(v2->elementValue(pos2++)/wt2) ;
 			}
 		     else // if (elt1 == elt2)
 			{
-			sum += std::abs(v1->elementValue(pos1++)/wt1 - v2->elementValue(pos2++)/wt2) ;
+			sum += abs_value(v1->elementValue(pos1++)/wt1 - v2->elementValue(pos2++)/wt2) ;
 			}
 		     }
 		  }
@@ -2937,15 +2946,15 @@ class VectorMeasureManhattan : public DistanceMeasureReciprocal<IdxT, ValT>
 		     auto elt2(v2->elementIndex(pos2)) ;
 		     if (elt1 < elt2)
 			{
-			sum += std::abs(v1->elementValue(pos1++)) ;
+			sum += abs_value(v1->elementValue(pos1++)) ;
 			}
 		     else if (elt1 > elt2)
 			{
-			sum += std::abs(v2->elementValue(pos2++)) ;
+			sum += abs_value(v2->elementValue(pos2++)) ;
 			}
 		     else // if (elt1 == elt2)
 			{
-			sum += std::abs(v1->elementValue(pos1++) - v2->elementValue(pos2++)) ;
+			sum += abs_value(v1->elementValue(pos1++) - v2->elementValue(pos2++)) ;
 			}
 		     }
 		  }
@@ -2959,17 +2968,17 @@ class VectorMeasureManhattan : public DistanceMeasureReciprocal<IdxT, ValT>
 		  normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
 		  for (size_t i = 0 ; i < minlen ; ++i)
 		     {
-		     sum += std::abs(v1->elementValue(i)/wt1 - v2->elementValue(i)/wt2) ;
+		     sum += abs_value(v1->elementValue(i)/wt1 - v2->elementValue(i)/wt2) ;
 		     }
 		  // handle any leftovers from the first vector
 		  for (size_t i = minlen ; i < v1->numElements() ; ++i)
 		     {
-		     sum += std::abs(v1->elementValue(i)/wt1) ;
+		     sum += abs_value(v1->elementValue(i)/wt1) ;
 		     }
 		  // handle any leftovers from the second vector
 		  for (size_t i = minlen ; i < v2->numElements() ; ++i)
 		     {
-		     sum += std::abs(v2->elementValue(i)/wt2) ;
+		     sum += abs_value(v2->elementValue(i)/wt2) ;
 		     }
 		  }
 	       else
@@ -2977,17 +2986,17 @@ class VectorMeasureManhattan : public DistanceMeasureReciprocal<IdxT, ValT>
 		  // no normalization
 		  for (size_t i = 0 ; i < minlen ; ++i)
 		     {
-		     sum += std::abs(v1->elementValue(i) - v2->elementValue(i)) ;
+		     sum += abs_value(v1->elementValue(i) - v2->elementValue(i)) ;
 		     }
 		  // handle any leftovers from the first vector
 		  for (size_t i = minlen ; i < v1->numElements() ; ++i)
 		     {
-		     sum += std::abs(v1->elementValue(i)) ;
+		     sum += abs_value(v1->elementValue(i)) ;
 		     }
 		  // handle any leftovers from the second vector
 		  for (size_t i = minlen ; i < v2->numElements() ; ++i)
 		     {
-		     sum += std::abs(v2->elementValue(i)) ;
+		     sum += abs_value(v2->elementValue(i)) ;
 		     }
 		  }
 	       }
@@ -3032,18 +3041,18 @@ class VectorMeasureRobinson : public DistanceMeasure<IdxT, ValT>
 		  if (elt1 < elt2)
 		     {
 		     double val1(v1->elementValue(pos1++) / totalwt1) ;
-		     sum += std::abs(val1) ;
+		     sum += abs_value(val1) ;
 		     }
 		  else if (elt1 > elt2)
 		     {
 		     double val2(v2->elementValue(pos2++) / totalwt2) ;
-		     sum += std::abs(val2) ;
+		     sum += abs_value(val2) ;
 		     }
 		  else // if (elt1 == elt2)
 		     {
 		     double val1(v1->elementValue(pos1++) / totalwt1) ;
 		     double val2(v2->elementValue(pos2++) / totalwt2) ;
-		     sum += std::abs(val1 - val2) ;
+		     sum += abs_value(val1 - val2) ;
 		     }
 		  }
 	       }
@@ -3054,7 +3063,7 @@ class VectorMeasureRobinson : public DistanceMeasure<IdxT, ValT>
 		  {
 		  ValT val1(v1->elementValue(pos1) / totalwt1) ;
 		  ValT val2(v2->elementValue(pos1) / totalwt2) ;
-		  sum += std::abs(val1 - val2) ;
+		  sum += abs_value(val1 - val2) ;
 		  }
 	       pos2 = pos1 ;
 	       }
@@ -3062,13 +3071,13 @@ class VectorMeasureRobinson : public DistanceMeasure<IdxT, ValT>
 	    while (pos1 < elts1)
 	       {
 	       ValT val1(v1->elementValue(pos1++) / totalwt1) ;
-	       sum += std::abs(val1) ;
+	       sum += abs_value(val1) ;
 	       }
 	    // handle any leftovers from the second vector
 	    while (pos2 < elts2)
 	       {
 	       ValT val2(v2->elementValue(pos2++) / totalwt2) ;
-	       sum += std::abs(val2) ;
+	       sum += abs_value(val2) ;
 	       }
 	    return sum / 2.0 ;
 	 }
@@ -3311,17 +3320,17 @@ class VectorMeasureLNorm : public DistanceMeasure<IdxT, ValT>
 		  auto elt2(sv2->elementIndex(pos2)) ;
 		  if (elt1 < elt2)
 		     {
-		     double diff(std::abs(v1->elementValue(pos1++))) ;
+		     double diff(abs_value(v1->elementValue(pos1++))) ;
 		     sum += std::pow(diff,power) ;
 		     }
 		  else if (elt1 > elt2)
 		     {
-		     double diff(std::abs(v2->elementValue(pos2++))) ;
+		     double diff(abs_value(v2->elementValue(pos2++))) ;
 		     sum += std::pow(diff,power) ;
 		     }
 		  else // if (elt1 == elt2)
 		     {
-		     double diff(std::abs(v1->elementValue(pos1++) - v2->elementValue(pos2++))) ;
+		     double diff(abs_value(v1->elementValue(pos1++) - v2->elementValue(pos2++))) ;
 		     sum += std::pow(diff,power) ;
 		     }
 		  }
@@ -3331,7 +3340,7 @@ class VectorMeasureLNorm : public DistanceMeasure<IdxT, ValT>
 	       size_t minlen(std::min(v1->numElements(),v2->numElements())) ;
 	       for ( ; pos1 < minlen ; ++pos1)
 		  {
-		  ValT diff = std::abs(v1->elementValue(pos1) - v2->elementValue(pos1)) ;
+		  ValT diff = abs_value(v1->elementValue(pos1) - v2->elementValue(pos1)) ;
 		  sum += std::pow(diff,power) ;
 		  }
 	       pos2 = pos1 ;
@@ -3339,13 +3348,13 @@ class VectorMeasureLNorm : public DistanceMeasure<IdxT, ValT>
 	    // handle any leftovers from the first vector
 	    while (pos1 < elts1)
 	       {
-	       ValT diff = std::abs(v1->elementValue(pos1++)) ;
+	       ValT diff = abs_value(v1->elementValue(pos1++)) ;
 	       sum += std::pow(diff,power) ;
 	       }
 	    // handle any leftovers from the second vector
 	    while (pos2 < elts2)
 	       {
-	       ValT diff = std::abs(v2->elementValue(pos2++)) ;
+	       ValT diff = abs_value(v2->elementValue(pos2++)) ;
 	       sum += std::pow(diff,power) ;
 	       }
 	    return std::pow(sum,1.0/power) ;
