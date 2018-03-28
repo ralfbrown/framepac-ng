@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-25					*/
+/* Version 0.03, last edit 2018-03-28					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -217,25 +217,16 @@ class VectorMeasure
    public:
       const char* canonicalName() const { return myCanonicalName() ; }
       
-      // dispatch to either the general implementation that can take any vector type, or the
-      //   more efficient specialization for two dense vectors
+      // base version is just an identity comparison
       virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    if (!v1 || !v2) return -1 ;
-	    if (v1->isSparseVector() || v2->isSparseVector())
-	       return sparseSimilarity(reinterpret_cast<SparseVector<IdxT, ValT>>(v1),
-		  reinterpret_cast<SparseVector<IdxT, ValT>>(v2)) ;
-	    else
-	       return denseSimilarity(v1,v2) ;
+	    return v1 == v2 ? 1 : 0 ;
 	 }
       virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
 	    if (!v1 || !v2) return -1 ;
-	    if (v1->isSparseVector() || v2->isSparseVector())
-	       return sparseDistance(reinterpret_cast<SparseVector<IdxT, ValT>>(v1),
-		  reinterpret_cast<SparseVector<IdxT, ValT>>(v2)) ;
-	    else
-	       return denseDistance(v1,v2) ;
+	    return v1 != v2 ? 1 : 0 ; 
 	 }
 
    protected:
@@ -251,12 +242,6 @@ class VectorMeasure
       void binaryAgreement(const Vector<ValT>* v1, const Vector<ValT>* v2, size_t& both, size_t& disagree,
 		   	   size_t& neither) const ;
       
-      // base version is just an identity comparison
-      virtual double sparseSimilarity(const SparseVector<IdxT, ValT>* v1, const SparseVector<IdxT, ValT>* v2) const
-	 { return v1 == v2 ? 1 : 0 ; }
-      virtual double sparseDistance(const SparseVector<IdxT, ValT>* v1, const SparseVector<IdxT, ValT>* v2) const
-	 { return v1 != v2 ? 1 : 0 ; }
-
       // support for subclass hierarchy of measures based on scoring a 2x2 contingency table
       virtual double scoreContingencyTable(ValT both, ValT v1_only, ValT v2_only) const
 	 { return both / (both + v1_only + v2_only) ; }
@@ -264,16 +249,6 @@ class VectorMeasure
 	 { return both / (both + v1_only + v2_only + neither) ; }
       virtual double scoreBinaryAgreement(size_t both, size_t disagree, size_t neither) const
 	 { return both / (both + disagree + neither) ; }
-
-      // by default, we don't have a specialization for dense vectors
-      virtual double denseSimilarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	 return sparseSimilarity(v1,v2) ;
-	 }
-      virtual double denseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
-	 {
-	 return sparseDistance(v1,v2) ;
-	 }
 
    protected:
       VectorSimilarityOptions m_opt ;
