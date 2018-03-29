@@ -104,6 +104,28 @@ ObjectPtr RefArray::subseq_iter(const Object*,ObjectIter start, ObjectIter stop)
    return ObjectPtr(nullptr) ; //FIXME
 }
 
+//----------------------------------------------------------------------------
+
+bool RefArray::append(Object* obj)
+{
+   if (m_size >= m_alloc)
+      {
+      size_t newsize = m_alloc < 30 ? 30 : 3 * m_alloc / 2 ;
+      if (!reserve(newsize))
+	 return false ;
+      }
+   m_array[m_size++] = obj ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+void RefArray::pop_back()
+{
+   if (m_size > 0) --m_size ;
+   return ;
+}
+
 /************************************************************************/
 /************************************************************************/
 

@@ -100,7 +100,7 @@ class ClusterInfo : public Object
       void clearFlag(Flags f) ;
       
    protected:
-      Array* m_members ;	// individual vectors in this cluster
+      RefArray* m_members ;	// individual vectors in this cluster
       Array* m_subclusters ;	// sub-clusters (if any) of this cluster
       Object* m_rep ;		// representative element: centroid/mediod/etc.
       Symbol* m_label ;		// cluster label

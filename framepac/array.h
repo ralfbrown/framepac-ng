@@ -86,7 +86,7 @@ class Array : public Object
       void resize(size_t N) ;
       void resize(size_t N, Object*) ;
       void shrink_to_fit() ;
-      void push_back(Object*) ; // append item to array
+      void push_back(Object* obj) { (void)append(obj) ; } // append item to array
       void pop_back() ;  	// remove last element of array
       void insert(size_t pos, Object*) ;
       void erase(size_t pos) ;
@@ -168,7 +168,6 @@ class Array : public Object
 
 class RefArray : public Array
    {
-//TODO
    public:
       static RefArray* create(size_t initial_size = 0) { return new RefArray(initial_size) ; }
       static RefArray* create(const Object*) ;
@@ -176,6 +175,9 @@ class RefArray : public Array
 
       bool append(Object*) ;
       void setNth(size_t N, Object* val) { if (N < m_size) m_array[N] = val ; }
+
+      // STL compatibility
+      void pop_back() ;  	// remove last element of array
 
    private: // static members
       static Allocator s_allocator ;
@@ -192,7 +194,7 @@ class RefArray : public Array
       friend class FramepaC::Object_VMT<RefArray> ;
 
       // type determination predicates
-      static const char *typeName_(const Object*) { return "RefRefArray" ; }
+      static const char *typeName_(const Object*) { return "RefArray" ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object*) ;
@@ -201,9 +203,9 @@ class RefArray : public Array
       static ObjectPtr subseq_iter(const Object*, ObjectIter start, ObjectIter stop) ;
 
       // *** destroying ***
-      static void free_(Object* obj) { delete (RefArray*)obj ; }
+      static void free_(Object* obj) { delete static_cast<RefArray*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object* obj) { delete (RefArray*)obj ; }
+      static void shallowFree_(Object* obj) { delete static_cast<RefArray*>(obj) ; }
 
    } ;
 

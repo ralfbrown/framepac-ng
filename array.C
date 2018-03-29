@@ -131,6 +131,20 @@ void Array::setNth(size_t N, const Object* val)
 
 //----------------------------------------------------------------------------
 
+bool Array::append(Object* obj)
+{
+   if (m_size >= m_alloc)
+      {
+      size_t newsize = m_alloc < 30 ? 30 : 3 * m_alloc / 2 ;
+      if (!reserve(newsize))
+	 return false ;
+      }
+   m_array[m_size++] = obj ? obj->clone() : nullptr ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
 bool Array::reserve(size_t N)
 {
    if (N > capacity())
@@ -193,6 +207,19 @@ void Array::shrink_to_fit()
 	 delete[] m_array ;
 	 m_array = new_arr ;
 	 }
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void Array::pop_back()
+{
+   if (m_size > 0)
+      {
+      --m_size ;
+      if (m_array[m_size])
+	 m_array[m_size]->free() ;
       }
    return ;
 }
