@@ -364,6 +364,8 @@ inline uint32_t abs_value(uint32_t v)
 
 //----------------------------------------------------------------------------
 
+VectorSimilarityMeasure parse_vector_measure_name(const char* name) ;
+
 } ; // end of namespace Fr
 
 #endif /* !__FrVECSIM_H_INCLUDED */
