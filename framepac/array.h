@@ -60,7 +60,7 @@ class Array : public Object
 
       bool append(Object*) ;
       Object* getNth(size_t N) const { return N < m_size ? m_array[N] : nullptr ; }
-      void setNth(size_t N, Object* val) { if (N < m_size) m_array[N] = val ; }
+      void setNth(size_t N, const Object* val) ;
 
       // *** standard info functions ***
       size_t size() const { return m_size ; }
@@ -102,13 +102,14 @@ class Array : public Object
 
    private: // static members
       static Allocator s_allocator ;
-   private:
+   protected:
       Object** m_array ;
       size_t   m_size ;
       size_t   m_alloc ;
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
+      Array() : m_array(nullptr), m_size(0), m_alloc(0) {}
       Array(size_t initial_size) ;
       Array(const Array*) ;
       Array(const Array& a) : Array(&a) {}
@@ -159,6 +160,51 @@ class Array : public Object
       // *** iterator support ***
       static Object* next_(const Object*) { return nullptr ; }
       static ObjectIter& next_(const Object*, ObjectIter& it) { it.incrIndex() ; return it ; }
+   } ;
+
+//----------------------------------------------------------------------------
+// exactly the same as Array, except that it doesn't copy inserted objects and
+//   doesn't delete the contained objects when it is deleted
+
+class RefArray : public Array
+   {
+//TODO
+   public:
+      static RefArray* create(size_t initial_size = 0) { return new RefArray(initial_size) ; }
+      static RefArray* create(const Object*) ;
+      static RefArray* create(const Array*) ;
+
+      bool append(Object*) ;
+      void setNth(size_t N, Object* val) { if (N < m_size) m_array[N] = val ; }
+
+   private: // static members
+      static Allocator s_allocator ;
+   protected: // construction/destruction
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
+      RefArray(size_t initial_size) : Array(initial_size) {}
+      RefArray(const Array*) ;
+      RefArray(const Array& a) : RefArray(&a) {}
+      RefArray(const Object *, size_t repeat = 1) ;
+      ~RefArray() ;
+      void operator= (const RefArray&) = delete ;
+   protected: // implementation functions for virtual methods
+      friend class FramepaC::Object_VMT<RefArray> ;
+
+      // type determination predicates
+      static const char *typeName_(const Object*) { return "RefRefArray" ; }
+
+      // *** copying ***
+      static ObjectPtr clone_(const Object*) ;
+      static Object *shallowCopy_(const Object*obj) { return clone_(obj) ; }
+      static ObjectPtr subseq_int(const Object*, size_t start, size_t stop) ;
+      static ObjectPtr subseq_iter(const Object*, ObjectIter start, ObjectIter stop) ;
+
+      // *** destroying ***
+      static void free_(Object* obj) { delete (RefArray*)obj ; }
+      // use shallowFree() on a shallowCopy()
+      static void shallowFree_(Object* obj) { delete (RefArray*)obj ; }
+
    } ;
 
 } ; // end namespace Fr

@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.03, last edit 2018-03-28					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -61,7 +61,7 @@ Array::Array(const Array *orig)
       m_alloc = m_size ;
       for (size_t i = 0 ; i < m_size ; i++)
 	 {
-	 Object *elt { nullptr }; //FIXME: orig[i] ;
+	 Object *elt { orig->m_array[i] };
 	 Object *copy = nullptr ;
 	 if (elt)
 	    {
@@ -97,7 +97,14 @@ Array::Array(const Object *obj, size_t repeat)
 
 Array::~Array()
 {
-   //FIXME
+   for (size_t i = 0 ; i < m_size ; ++i)
+      {
+      Object* obj = m_array[i] ;
+      if (obj) obj->free() ;
+      }
+   delete[] m_array ;
+   m_size = 0 ;
+   m_alloc = 0 ;
    return ;
 }
 
@@ -108,6 +115,18 @@ static Object* dummy_obj = nullptr ;
 Object*& Array::operator [] (size_t N)
 {
    return (N < size()) ? m_array[N] : dummy_obj ;
+}
+
+//----------------------------------------------------------------------------
+
+void Array::setNth(size_t N, const Object* val)
+{
+   if (N < m_size)
+      {
+      if (m_array[N]) m_array[N]->free() ;
+      m_array[N] = val ? val->clone() : nullptr ;
+      }
+   return ;
 }
 
 //----------------------------------------------------------------------------
@@ -180,10 +199,10 @@ void Array::shrink_to_fit()
 
 //----------------------------------------------------------------------------
 
-ObjectPtr Array::clone_(const Object *)
+ObjectPtr Array::clone_(const Object* obj)
 {
-
-   return ObjectPtr(nullptr) ; //FIXME
+   const Array* orig = static_cast<const Array*>(obj) ;
+   return ObjectPtr(new Array(orig)) ;
 }
 
 //----------------------------------------------------------------------------

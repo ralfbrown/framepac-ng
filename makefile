@@ -261,7 +261,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	listutil$(OBJ) loadfilelist$(OBJ) map$(OBJ) matrix$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
 	nonobject$(OBJ) object$(OBJ) objreader$(OBJ) \
-	printf$(OBJ) ptrie_u32$(OBJ) \
+	printf$(OBJ) ptrie_u32$(OBJ) refarray$(OBJ) \
 	rational$(OBJ) set$(OBJ) slab$(OBJ) \
 	slabgroup$(OBJ) smallalloc$(OBJ) \
 	sparsematrix$(OBJ) spelling$(OBJ) \
@@ -465,6 +465,7 @@ progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
 ptrie_u32$(OBJ):		ptrie_u32$(C) template/ptrie.cc
 random$(OBJ):			random$(C) framepac/random.h
 rational$(OBJ):		rational$(C) framepac/rational.h
+refarray$(OBJ):			refarray$(C) framepac/array.h framepac/fasthash64.h
 set$(OBJ):			set$(C) framepac/set.h
 slab$(OBJ):			slab$(C) framepac/memory.h
 slabgroup$(OBJ):		slabgroup$(C) framepac/memory.h
