@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 25mar2018
+# Last change: 29mar2018
 
 #########################################################################
 # define the locations of all the files
@@ -261,6 +261,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	listutil$(OBJ) loadfilelist$(OBJ) map$(OBJ) matrix$(OBJ) \
 	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
 	nonobject$(OBJ) object$(OBJ) objreader$(OBJ) \
+	prefixmatcher$(OBJ) \
 	printf$(OBJ) ptrie_u32$(OBJ) refarray$(OBJ) \
 	rational$(OBJ) set$(OBJ) slab$(OBJ) \
 	slabgroup$(OBJ) smallalloc$(OBJ) \
@@ -460,6 +461,7 @@ objreader$(OBJ):		objreader$(C) framepac/objreader.h framepac/symboltable.h fram
 			framepac/bignum.h framepac/bitvector.h framepac/map.h framepac/rational.h \
 			framepac/list.h framepac/number.h framepac/stringbuilder.h framepac/termvector.h \
 			framepac/texttransforms.h
+prefixmatcher$(OBJ):		prefixmatcher$(C) framepac/utility.h
 printf$(OBJ):			printf$(C) framepac/texttransforms.h
 progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
 ptrie_u32$(OBJ):		ptrie_u32$(C) template/ptrie.cc
