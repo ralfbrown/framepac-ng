@@ -75,7 +75,8 @@ bool assign_vector_to_nearest_center(const void* vectors, size_t index, va_list 
    auto best_center = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(vector,centers,measure,threshold) ;
    if (best_center)
       {
-      //TODO: assign cluster to which best_center belongs to vector
+      // assign cluster to which best_center belongs to vector
+      vector->setLabel(best_center->label()) ;
       }
    return true ;
 }
