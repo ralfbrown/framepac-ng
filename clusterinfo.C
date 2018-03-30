@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-26					*/
+/* Version 0.03, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -40,6 +40,27 @@ Fr::Initializer<ClusterInfo> static_init ;
 /************************************************************************/
 /************************************************************************/
 
+
+//----------------------------------------------------------------------------
+
+bool ClusterInfo::addVector(Object* v)
+{
+   if (!m_members)
+      m_members = RefArray::create() ;
+   m_members->append(v) ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ClusterInfo::addVectors(const RefArray& vectors)
+{
+   for (size_t i = 0 ; i < vectors.size() ; ++i)
+      {
+      addVector(vectors.getNth(i)) ;
+      }
+   return true ;
+}
 
 //----------------------------------------------------------------------------
 

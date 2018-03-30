@@ -101,6 +101,7 @@ class ClusterInfo : public Object
       void setFlag(Flags f) ;
       void clearFlag(Flags f) ;
 
+      bool addVector(Object*) ;
       bool addVectors(const RefArray&) ;
 
       template <typename IdxT, typename ValT>

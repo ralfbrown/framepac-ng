@@ -415,7 +415,7 @@ cluster_brown$(OBJ):	cluster_brown$(C) framepac/cluster.h
 cluster_dbscan$(OBJ):	cluster_dbscan$(C) framepac/cluster.h
 cluster_growseed$(OBJ):	cluster_growseed$(C) framepac/cluster.h
 cluster_incr$(OBJ):	cluster_incr$(C) framepac/cluster.h
-cluster_kmeans$(OBJ):	cluster_kmeans$(C) framepac/cluster.h
+cluster_kmeans$(OBJ):	cluster_kmeans$(C) framepac/hashtable.h framepac/threadpool.h template/cluster.cc
 cluster_kmediods$(OBJ):	cluster_kmediods$(C) framepac/cluster.h
 cluster_tight$(OBJ):	cluster_tight$(C) framepac/cluster.h
 cluster_u32_dbl(OBJ):	cluster_u32_dbl$(C) template/cluster_factory.cc

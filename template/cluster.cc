@@ -21,6 +21,7 @@
 
 #include <stdarg.h>
 #include "framepac/cluster.h"
+#include "framepac/hashtable.h"
 #include "framepac/threadpool.h"
 
 namespace Fr
@@ -117,17 +118,34 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(Array& vectors, ClusterInfo*& cl
    RefArray* unassigned) const
 {
    clusters = nullptr ;
-   num_clusters = 0 ;
-   // count the number of unique labels on the vectors
+   // count the number of unique labels on the vectors, and assign each one an index
+   ObjCountHashTable label_map ;
    for (size_t i = 0 ; i < vectors.size() ; ++i)
       {
-//TODO
+      auto vector = static_cast<Vector<ValT>*>(vectors.getNth(i)) ;
+      if (!vector) continue ;
+      Symbol* label = nullptr ; //FIXME
+      if (!label) continue ;
+      if (!label_map.contains(label))
+	 {
+	 label_map.add(label,label_map.size()) ;
+	 }
       }
-   if (num_clusters > 0)
+   num_clusters = label_map.size() ;
+   if (num_clusters)
       {
       clusters = new ClusterInfo*[num_clusters] ;
       // collect the vectors into the appropriate cluster
-//TODO
+      for (size_t i = 0 ; i < vectors.size() ; ++i)
+	 {
+	 auto vector = static_cast<Vector<ValT>*>(vectors.getNth(i)) ;
+	 if (!vector) continue ;
+	 Symbol* label = nullptr ; //FIXME
+	 if (!label && unassigned)
+	    unassigned->append(vector) ;
+	 size_t index = label_map.lookup(label) ;
+	 clusters[index].addVector(vector) ;
+	 }
       }
    return true ;
 }
