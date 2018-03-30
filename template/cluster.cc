@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-30					*/
+/* Version 0.04, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -84,24 +84,24 @@ bool assign_vector_to_nearest_center(const void* vectors, size_t index, va_list 
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-bool ClusteringAlgo<IdxT,ValT>::assignToNearest(Array& vectors, const Array& centers, double threshold) const
+bool ClusteringAlgo<IdxT,ValT>::assignToNearest(Array* vectors, const Array* centers, double threshold) const
 {
    ThreadPool *tp = ThreadPool::defaultPool() ;
    if (!tp) return false ;
-   return tp->parallelize(assign_vector_to_nearest_center<IdxT,ValT>,vectors,&centers,m_measure,threshold) ;
+   return tp->parallelize(assign_vector_to_nearest_center<IdxT,ValT>,*vectors,centers,m_measure,threshold) ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vector, const Array& centers,
+Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vector, const Array* centers,
    VectorMeasure<IdxT,ValT>* measure, double threshold)
 {
    Vector<ValT>* best_center = nullptr ;
    double best_sim = -999.99 ;
-   for (size_t i = 0 ; i < centers.size() ; ++i)
+   for (size_t i = 0 ; i < centers->size() ; ++i)
       {
-      auto center = static_cast<Vector<ValT>*>(centers.getNth(i)) ;
+      auto center = static_cast<Vector<ValT>*>(centers->getNth(i)) ;
       double sim = measure->similarity(vector,center) ;
       if (sim >= threshold && sim > best_sim)
 	 {
@@ -116,15 +116,15 @@ Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vec
 
 //TODO: can we parallelize this enough that the speedup is worth the effort?
 template <typename IdxT, typename ValT>
-bool ClusteringAlgo<IdxT,ValT>::extractClusters(Array& vectors, ClusterInfo*& clusters, size_t& num_clusters,
+bool ClusteringAlgo<IdxT,ValT>::extractClusters(Array* vectors, ClusterInfo*& clusters, size_t& num_clusters,
    RefArray* unassigned) const
 {
    clusters = nullptr ;
    // count the number of unique labels on the vectors, and assign each one an index
    ObjCountHashTable label_map ;
-   for (size_t i = 0 ; i < vectors.size() ; ++i)
+   for (size_t i = 0 ; i < vectors->size() ; ++i)
       {
-      auto vector = static_cast<Vector<ValT>*>(vectors.getNth(i)) ;
+      auto vector = static_cast<Vector<ValT>*>(vectors->getNth(i)) ;
       if (!vector) continue ;
       Symbol* label = vector->label() ;
       if (!label) continue ;
@@ -138,9 +138,9 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(Array& vectors, ClusterInfo*& cl
       {
       clusters = new ClusterInfo*[num_clusters] ;
       // collect the vectors into the appropriate cluster
-      for (size_t i = 0 ; i < vectors.size() ; ++i)
+      for (size_t i = 0 ; i < vectors->size() ; ++i)
 	 {
-	 auto vector = static_cast<Vector<ValT>*>(vectors.getNth(i)) ;
+	 auto vector = static_cast<Vector<ValT>*>(vectors->getNth(i)) ;
 	 if (!vector) continue ;
 	 Symbol* label = vector->label() ;
 	 if (!label && unassigned)

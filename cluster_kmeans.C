@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-30					*/
+/* Version 0.04, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -116,17 +116,20 @@ template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
 {
    // collect the input vectors into an array
-   RefArray vectors ;
+   RefArray* vectors = RefArray::create() ;
    for ( ; first != past_end ; ++first)
       {
       Object* obj = *first ;
       if (obj && obj->isVector())
-	 vectors.append(obj) ;
+	 vectors->append(obj) ;
       }
    if (!this->checkSparseOrDense(vectors))
+      {
+      vectors->free() ;
       return nullptr ;			// vectors must be all dense or all sparse
+      }
    // select K vectors which are (approximately) maximally separated
-   RefArray centers ;
+   RefArray* centers = RefArray::create() ;
 //TODO
 
    // until converged or iteration limit:
@@ -145,7 +148,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
       if (!changes)
 	 break ;			// we've converged!
       if (iteration != 1)
-	 centers.clearArray(true) ;
+	 centers->clearArray(true) ;
       auto fn = update_centroid<IdxT,ValT> ;
       if (usingMedioids())
 	 fn = update_medioid<IdxT,ValT> ;
@@ -153,6 +156,8 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
       }
    // build the final cluster result from the extracted clusters
 //TODO
+   vectors->free() ;
+   centers->free() ;
    return nullptr ;
 }
 

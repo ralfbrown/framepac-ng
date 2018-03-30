@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-29					*/
+/* Version 0.04, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -47,27 +47,34 @@ class ClusteringAlgoGrowseed : public ClusteringAlgo<IdxT,ValT>
 template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
 {
-   RefArray seed ;			// vectors with a cluster assignment at the outset
-   RefArray nonseed ;			// vectors which need to be given a cluster assignment
-   RefArray vectors ;			// all vectors
+   RefArray* seed = RefArray::create() ;	// vectors with a cluster assignment at the outset
+   RefArray* nonseed = RefArray::create() ;	// vectors which need to be given a cluster assignment
+   RefArray* vectors = RefArray::create() ;	// all vectors
    for (ObjectIter it = first ; it != past_end ; ++it)
       {
       Object* obj = *it ;
       if (!obj || !obj->isVector())
 	 continue ;
       Vector<ValT>* vec = static_cast<Vector<ValT>*>(obj) ;
-      vectors.append(vec) ;
+      vectors->append(vec) ;
       if (1) // TODO
-	 seed.append(vec) ;
+	 seed->append(vec) ;
       else
-	 nonseed.append(vec) ;
+	 nonseed->append(vec) ;
       }
    if (!this->checkSparseOrDense(vectors))
+      {
+      seed->free() ;
+      nonseed->free() ;
+      vectors->free() ;
       return nullptr ;			// vectors must be all dense or all sparse
+      }
    // assign each of the non-seed vectors to the same cluster as the
    //   nearest of the seed vectors, provided the similarity measure
    //   is above threshold
    this->assignToNearest(nonseed, seed, m_clusterthresh) ;
+   seed->free() ;
+   nonseed->free() ;
    // collect the vectors into clusters based on the assignment stored
    //   in the vector
    // many vectors will not be assigned to any cluster (because they
@@ -75,12 +82,14 @@ ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(ObjectIter& first, Objec
    //   "null" cluster
    ClusterInfo* clusters ;
    size_t num_clusters ;
-   RefArray unassigned ;
+   RefArray* unassigned = RefArray::create();
    this->extractClusters(vectors,clusters,num_clusters,&unassigned) ;
+   vectors->free() ;
    // build a ClusterInfo structure with the subclusters, and all unassigned vectors inserted at the top level
    ClusterInfo* result_clusters = ClusterInfo::create(clusters,num_clusters) ;
    delete[] clusters ;
    result_clusters->addVectors(unassigned) ;
+   unassigned->free() ;
    // the subclusters are the actual result, the unassigned vectors at the top level should (normally) be ignored
    result_clusters->setFlag(ClusterInfo::Flags::group) ;
    return result_clusters ;

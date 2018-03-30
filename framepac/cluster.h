@@ -204,17 +204,17 @@ class ClusteringAlgo
 
       virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
 
-      static Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array& centers,
+      static Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array* centers,
 	 VectorMeasure<IdxT,ValT>* measure, double threshold = -1.0) ;
    protected: //methods
       ClusteringAlgo() : m_measure(nullptr), m_use_sparse_vectors(false) {}
 
-      bool checkSparseOrDense(const Array& vectors) ;
+      bool checkSparseOrDense(const Array* vectors) ;
 
-      Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array& centers, double threshold = -1.0) const
+      Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array* centers, double threshold = -1.0) const
 	 { return nearestNeighbor(vector,centers,m_measure,threshold) ; }
-      bool assignToNearest(Array& vectors, const Array& centers, double threshold = -1.0) const ;
-      bool extractClusters(Array& vectors, ClusterInfo*& clusters, size_t& num_clusters,
+      bool assignToNearest(Array* vectors, const Array* centers, double threshold = -1.0) const ;
+      bool extractClusters(Array* vectors, ClusterInfo*& clusters, size_t& num_clusters,
 	 RefArray* unassigned = nullptr) const ;
 
       bool usingSparseVectors() const { return m_use_sparse_vectors ; }
