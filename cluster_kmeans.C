@@ -39,7 +39,11 @@ class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
       virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
 
       void useMedioids() { m_use_medioids = true ; }
-      bool usingMedioids() { return m_use_medioids ; }
+
+      // accessors
+      bool usingMedioids() const { return m_use_medioids ; }
+      size_t desiredClusters() const { return m_desired_clusters ; }
+      size_t iterations() const { return m_iterations ; }
    protected:
       size_t m_desired_clusters ;
       size_t m_iterations ;
@@ -88,24 +92,27 @@ bool update_centroid(const void* o, size_t id, va_list args)
 template <typename IdxT, typename ValT>
 bool update_medioid(const void* o, size_t id, va_list args)
 {
+   typedef VectorMeasure<IdxT,ValT> VM ;
    auto inf = reinterpret_cast<const ClusterInfo*>(o) + id ;
    auto centers = va_arg(args,RefArray*) ;
    int sparse = va_arg(args,int) ;
+   auto measure = va_arg(args,VM*) ;
    if (sparse)
       {
       // create a centroid of the members of the current cluster
       auto centroid = inf->createSparseCentroid<IdxT,ValT>() ;
-//TODO: find nearest original vector
-      // make the centroid the new center for the cluster
-      centers->setNth(id,centroid) ;
+      auto medioid = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(centroid,inf->members(),measure) ;
+      // make the medioid the new center for the cluster
+      centers->setNth(id,medioid->clone()) ;
       }
    else
       {
       // create a centroid of the members of the current cluster
       auto centroid = inf->createDenseCentroid<ValT>() ;
-//TODO: find nearest original vector
-      // make the centroid the new center for the cluster
-      centers->setNth(id,centroid) ;
+      // find nearest original vector in cluster
+      auto medioid = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(centroid,inf->members(),measure) ;
+      // make the medioid the new center for the cluster
+      centers->setNth(id,medioid->clone()) ;
       }
    return true ;			// no errors, safe to continue processing
 }
@@ -128,10 +135,16 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
       vectors->free() ;
       return nullptr ;			// vectors must be all dense or all sparse
       }
-   // select K vectors which are (approximately) maximally separated
+#if 0
+   //TODO: select K vectors which are (approximately) maximally separated
    RefArray* centers = RefArray::create() ;
-//TODO
+   RefArray* sample = vectors->randomSample(2*desiredClusters()) ;
 
+   sample->free() ;
+#else
+//for now, we'll just randomly select K vectors
+   RefArray* centers = vectors->randomSample(desiredClusters()) ;
+#endif
    // until converged or iteration limit:
    //    assign each vector to the nearest center
    //    collect vectors into clusters by assigned center
@@ -141,7 +154,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
    ClusterInfo* clusters(nullptr) ;
    size_t num_clusters(0) ;
    ThreadPool* tp = ThreadPool::defaultPool() ;
-   for (iteration = 1 ; iteration <= m_iterations ; iteration++)
+   for (iteration = 1 ; iteration <= iterations() ; iteration++)
       {
       bool changes = this->assignToNearest(vectors, centers) ;
       this->extractClusters(vectors,clusters,num_clusters) ;
@@ -152,7 +165,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
       auto fn = update_centroid<IdxT,ValT> ;
       if (usingMedioids())
 	 fn = update_medioid<IdxT,ValT> ;
-      tp->parallelize(fn,num_clusters,clusters,&centers,this->usingSparseVectors()) ;
+      tp->parallelize(fn,num_clusters,clusters,&centers,this->usingSparseVectors(),this->m_measure) ;
       }
    // build the final cluster result from the extracted clusters
 //TODO
