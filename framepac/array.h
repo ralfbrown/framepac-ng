@@ -51,6 +51,8 @@ class RevArrayIter
 
 //----------------------------------------------------------------------------
 
+class RefArray ;
+
 class Array : public Object
    {
    public:
@@ -61,6 +63,10 @@ class Array : public Object
       bool append(Object*) ;
       Object* getNth(size_t N) const { return N < m_size ? m_array[N] : nullptr ; }
       void setNth(size_t N, const Object* val) ;
+
+      // return a reference array containing the given number of elements sampled at random
+      //   if size < 1, use the given proportion; if size >= 1, use that number of elements
+      RefArray* randomSample(double size) const ;
 
       // *** standard info functions ***
       size_t size() const { return m_size ; }
@@ -171,7 +177,7 @@ class RefArray : public Array
    public:
       static RefArray* create(size_t initial_size = 0) { return new RefArray(initial_size) ; }
       static RefArray* create(const Object*) ;
-      static RefArray* create(const Array*) ;
+      static RefArray* create(const Array* a) { return new RefArray(a) ; }
 
       bool append(Object*) ;
       void setNth(size_t N, Object* val) { if (N < m_size) m_array[N] = val ; }

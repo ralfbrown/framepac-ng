@@ -469,7 +469,7 @@ progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
 ptrie_u32$(OBJ):	ptrie_u32$(C) template/ptrie.cc
 random$(OBJ):		random$(C) framepac/random.h
 rational$(OBJ):		rational$(C) framepac/rational.h
-refarray$(OBJ):		refarray$(C) framepac/array.h framepac/fasthash64.h
+refarray$(OBJ):		refarray$(C) framepac/array.h framepac/fasthash64.h framepac/random.h
 set$(OBJ):		set$(C) framepac/set.h
 slab$(OBJ):		slab$(C) framepac/memory.h
 slabgroup$(OBJ):	slabgroup$(C) framepac/memory.h

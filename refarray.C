@@ -22,7 +22,6 @@
 #include "framepac/array.h"
 
 using namespace FramepaC ;
-using namespace Fr ;
 
 namespace Fr
 {

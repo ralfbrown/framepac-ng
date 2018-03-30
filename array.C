@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-28					*/
+/* Version 0.03, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -21,6 +21,7 @@
 
 #include "framepac/array.h"
 #include "framepac/fasthash64.h"
+#include "framepac/random.h"
 
 using namespace FramepaC ;
 using namespace Fr ;
@@ -369,6 +370,28 @@ int Array::lessThan_(const Object *obj, const Object *other)
       return 0 ;
 
    return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+RefArray* Array::randomSample(double sz) const
+{
+   if (sz <= 0)
+      return RefArray::create() ;
+   if (sz >= this->size())
+      return RefArray::create(this) ;
+   if (sz < 1)
+      sz = (size_t)(sz * this->size() + 0.9) ;
+   size_t to_sample = (size_t)sz ;
+   RefArray* sample = RefArray::create(to_sample) ;
+   bool* selected = RandomSample(this->size(),to_sample) ;
+   size_t index = 0 ;
+   for (size_t i = 0 ; i < size() ; ++i)
+      {
+      if (selected[i])
+	 sample->setNth(index++,getNth(i)) ;
+      }
+   return sample ;
 }
 
 /************************************************************************/
