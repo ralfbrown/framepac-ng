@@ -678,7 +678,7 @@ framepac/trie.h:	framepac/config.h
 framepac/vecsim.h:	framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/vector.h:	framepac/list.h
+framepac/vector.h:	framepac/list.h framepac/symbol.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/words.h:	framepac/bidindex.h framepac/file.h framepac/string.h

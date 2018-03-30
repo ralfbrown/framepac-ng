@@ -113,6 +113,7 @@ Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vec
 
 //----------------------------------------------------------------------------
 
+//TODO: can we parallelize this enough that the speedup is worth the effort?
 template <typename IdxT, typename ValT>
 bool ClusteringAlgo<IdxT,ValT>::extractClusters(Array& vectors, ClusterInfo*& clusters, size_t& num_clusters,
    RefArray* unassigned) const
@@ -124,7 +125,7 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(Array& vectors, ClusterInfo*& cl
       {
       auto vector = static_cast<Vector<ValT>*>(vectors.getNth(i)) ;
       if (!vector) continue ;
-      Symbol* label = nullptr ; //FIXME
+      Symbol* label = vector->label() ;
       if (!label) continue ;
       if (!label_map.contains(label))
 	 {
@@ -140,7 +141,7 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(Array& vectors, ClusterInfo*& cl
 	 {
 	 auto vector = static_cast<Vector<ValT>*>(vectors.getNth(i)) ;
 	 if (!vector) continue ;
-	 Symbol* label = nullptr ; //FIXME
+	 Symbol* label = vector->label() ;
 	 if (!label && unassigned)
 	    unassigned->append(vector) ;
 	 size_t index = label_map.lookup(label) ;

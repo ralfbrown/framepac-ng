@@ -23,6 +23,7 @@
 #define __FrVECTOR_H_INCLUDED
 
 #include "framepac/list.h"
+#include "framepac/symbol.h"
 
 namespace Fr {
 
@@ -38,6 +39,12 @@ class Vector : public Object
       typedef ValT value_type ;
 
       static Vector* create(size_t numelts) ;
+
+      Symbol* key() const { return m_key ; }
+      Symbol* label() const { return m_label ; }
+
+      void setKey(Symbol* key) { m_key = key ; }
+      void setLabel(Symbol* label) { m_label = label ; }
 
       double length() const { return m_length >= 0.0 ? m_length : vectorLength() ; }
 
@@ -109,10 +116,12 @@ class Vector : public Object
    private:
       static Allocator s_allocator ;
    protected:
-      ValT*  m_values ;
+      ValT*   m_values ;
+      Symbol* m_key ;		// the vector's name (e.g. word for which this is a context vector)
+      Symbol* m_label ;		// user label applied to vector (e.g. cluster name)
       mutable double m_length ; // cached vector length (L2-norm)
-      size_t m_size ;	  	// number of elements in vector
-      size_t m_capacity ;	// number of elements allocated (may be greater than m_size)
+      size_t  m_size ;	  	// number of elements in vector
+      size_t  m_capacity ;	// number of elements allocated (may be greater than m_size)
    } ;
 
 //----------------------------------------------------------------------------
