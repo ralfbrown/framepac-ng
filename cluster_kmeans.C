@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-29					*/
+/* Version 0.03, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -20,6 +20,8 @@
 /************************************************************************/
 
 #include "framepac/cluster.h"
+#include "framepac/threadpool.h"
+
 using namespace Fr ;
 
 namespace Fr
@@ -45,10 +47,11 @@ class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
-bool update_centroid(const void* o, size_t id, const void* user_data, bool sparse)
+bool update_centroid(const void* o, size_t id, va_list args)
 {
    auto inf = reinterpret_cast<const ClusterInfo*>(o) + id ;
-   auto centers = reinterpret_cast<RefArray*>(user_data) ;
+   auto centers = va_arg(args,RefArray*) ;
+   int sparse = va_arg(args,int) ;
    if (sparse)
       {
       // create a centroid of the members of the current cluster
@@ -93,6 +96,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
    size_t iteration ;
    ClusterInfo* clusters(nullptr) ;
    size_t num_clusters(0) ;
+   ThreadPool* tp = ThreadPool::defaultPool() ;
    for (iteration = 1 ; iteration <= m_iterations ; iteration++)
       {
       bool changes = this->assignToNearest(vectors, centers) ;
@@ -101,10 +105,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
 	 break ;			// we've converged!
       if (iteration != 1)
 	 centers.clearArray(true) ;
-      for (size_t i = 0 ;  i < num_clusters ; ++i)
-	 {
-	 update_centroid<IdxT,ValT>(clusters[i],i,&centers,this->usingSparseVectors()) ;
-	 }
+      tp->parallelize(update_centroid<IdxT,ValT>,num_clusters,clusters,&centers,this->usingSparseVectors()) ;
       }
    // build the final cluster result from the extracted clusters
 //TODO

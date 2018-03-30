@@ -56,6 +56,68 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
    return centroid ;
 }
 
+/************************************************************************/
+/*	methods for class ClusterAlgo					*/
+/************************************************************************/
+
+template <typename IdxT, typename ValT>
+bool assign_vector_to_nearest_center(const void* vectors, size_t index, va_list args)
+{
+   auto vector = reinterpret_cast<Vector<ValT>*>(vectors) + index ;
+   auto centers = va_arg(args,const Array*) ;
+   auto measure = va_args(args,VectorMeasure<IdxT,ValT>*) ;
+   auto threshold = va_arg(args,double) ;
+   if (!vector) return false ;
+   Object* best_center = nullptr ;
+   double best_sim = -999.99 ;
+   for (size_t i = 0 ; i < centers->size() ; ++i)
+      {
+      auto center = static_cast<Vector<ValT>*>(centers->getNth(i)) ;
+      double sim = measure->similarity(vector,center) ;
+      if (sim >= threshold && sim > best_sim)
+	 {
+	 best_center = center ;
+	 best_sim = sim ;
+	 }
+      }
+   if (best_center)
+      {
+      //TODO: assign cluster to which best_center belongs to vector
+      }
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+bool ClusteringAlgo<IdxT,ValT>::assignToNearest(Array& vectors, const Array& centers, double threshold) const
+{
+   ThreadPool *tp = ThreadPool::defaultPool() ;
+   if (!tp) return false ;
+   return tp->parallelize(assign_vector_to_nearest_center<IdxT,ValT>,vectors,&centers,m_measure,threshold) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+bool ClusteringAlgo<IdxT,ValT>::extractClusters(Array& vectors, ClusterInfo*& clusters, size_t& num_clusters,
+   RefArray* unassigned) const
+{
+   clusters = nullptr ;
+   num_clusters = 0 ;
+   // count the number of unique labels on the vectors
+   for (size_t i = 0 ; i < vectors.size() ; ++i)
+      {
+//TODO
+      }
+   if (num_clusters > 0)
+      {
+      clusters = new ClusterInfo*[num_clusters] ;
+      // collect the vectors into the appropriate cluster
+//TODO
+      }
+   return true ;
+}
 
 } // end namespace Fr
 

@@ -27,8 +27,12 @@ namespace Fr
 template <typename IdxT, typename ValT>
 ClusteringAlgo<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::instantiate(const char* algo_name, const char* options)
 {
-   (void)algo_name; (void)options;
+   if (!algo_name || !*algo_name)
+      return nullptr ;
+   if (!options)
+      options = "" ;
    //TODO
+
    return nullptr ;
 }
 

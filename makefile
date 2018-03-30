@@ -243,7 +243,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	bidindex_cstr$(OBJ) bitvector$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) canonsent$(OBJ) \
 	charget$(OBJ) cfile$(OBJ) cognate$(OBJ) confmatrix$(OBJ) \
-	cluster$(OBJ) clusterinfo$(OBJ) \
+	clusterinfo$(OBJ) \
 	cluster_u32_dbl$(OBJ) cluster_u32_flt$(OBJ) cluster_u32_u32$(OBJ) \
 	cluster_agglom$(OBJ) cluster_anneal$(OBJ) cluster_brown$(OBJ) \
 	cluster_dbscan$(OBJ) cluster_growseed$(OBJ) cluster_incr$(OBJ) \
@@ -408,7 +408,6 @@ bwt$(OBJ):		bwt$(C) framepac/config.h
 canonsent$(OBJ):	canonsent$(C) framepac/stringbuilder.h framepac/texttransforms.h
 charget$(OBJ):		charget$(C) framepac/charget.h
 cfile$(OBJ):		cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
-cluster$(OBJ):		cluster$(C) framepac/cluster.h
 clusterinfo$(OBJ):	clusterinfo$(C) framepac/cluster.h
 cluster_agglom$(OBJ):	cluster_agglom$(C) framepac/cluster.h
 cluster_anneal$(OBJ):	cluster_anneal$(C) framepac/cluster.h

@@ -208,7 +208,7 @@ class ClusteringAlgo
 
       bool checkSparseOrDense(const Array& vectors) ;
 
-      bool assignToNearest(Array& vectors, Array& centers, double threshold = -1.0) const ;
+      bool assignToNearest(Array& vectors, const Array& centers, double threshold = -1.0) const ;
       bool extractClusters(Array& vectors, ClusterInfo*& clusters, size_t& num_clusters,
 	 RefArray* unassigned = nullptr) const ;
 
