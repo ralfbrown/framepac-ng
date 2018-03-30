@@ -38,9 +38,23 @@ class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
 
       virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
 
+      void useMedioids() { m_use_medioids = true ; }
+      bool usingMedioids() { return m_use_medioids ; }
    protected:
       size_t m_desired_clusters ;
       size_t m_iterations ;
+      bool   m_use_medioids { false } ;
+   } ;
+
+template <typename IdxT, typename ValT>
+class ClusteringAlgoKMedioids : public ClusteringAlgoKMeans<IdxT,ValT>
+   {
+   public:
+      ClusteringAlgoKMedioids() : ClusteringAlgoKMeans<IdxT,ValT>()
+	 {
+	    this->useMedioids() ;
+	    return ;
+	 }
    } ;
 
 /************************************************************************/
@@ -63,6 +77,33 @@ bool update_centroid(const void* o, size_t id, va_list args)
       {
       // create a centroid of the members of the current cluster
       auto centroid = inf->createDenseCentroid<ValT>() ;
+      // make the centroid the new center for the cluster
+      centers->setNth(id,centroid) ;
+      }
+   return true ;			// no errors, safe to continue processing
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+bool update_medioid(const void* o, size_t id, va_list args)
+{
+   auto inf = reinterpret_cast<const ClusterInfo*>(o) + id ;
+   auto centers = va_arg(args,RefArray*) ;
+   int sparse = va_arg(args,int) ;
+   if (sparse)
+      {
+      // create a centroid of the members of the current cluster
+      auto centroid = inf->createSparseCentroid<IdxT,ValT>() ;
+//TODO: find nearest original vector
+      // make the centroid the new center for the cluster
+      centers->setNth(id,centroid) ;
+      }
+   else
+      {
+      // create a centroid of the members of the current cluster
+      auto centroid = inf->createDenseCentroid<ValT>() ;
+//TODO: find nearest original vector
       // make the centroid the new center for the cluster
       centers->setNth(id,centroid) ;
       }
@@ -105,7 +146,10 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
 	 break ;			// we've converged!
       if (iteration != 1)
 	 centers.clearArray(true) ;
-      tp->parallelize(update_centroid<IdxT,ValT>,num_clusters,clusters,&centers,this->usingSparseVectors()) ;
+      auto fn = update_centroid<IdxT,ValT> ;
+      if (usingMedioids())
+	 fn = update_medioid<IdxT,ValT> ;
+      tp->parallelize(fn,num_clusters,clusters,&centers,this->usingSparseVectors()) ;
       }
    // build the final cluster result from the extracted clusters
 //TODO
