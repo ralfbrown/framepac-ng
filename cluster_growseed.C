@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-25					*/
+/* Version 0.03, last edit 2018-03-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include "framepac/cluster.h"
+#include "framepac/vector.h"
 using namespace Fr ;
 
 namespace Fr
@@ -28,10 +29,13 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-class ClusteringAlgoGrowseed : public ClusteringAlgo
+template <typename IdxT, typename ValT>
+class ClusteringAlgoGrowseed : public ClusteringAlgo<IdxT,ValT>
    {
    public:
       virtual ~ClusteringAlgoGrowseed() { delete this ; }
+
+      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
 
    protected:
 
@@ -40,6 +44,26 @@ class ClusteringAlgoGrowseed : public ClusteringAlgo
 /************************************************************************/
 /************************************************************************/
 
+template <typename IdxT, typename ValT>
+ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
+{
+   RefArray seed ;
+   RefArray nonseed ;
+   for (ObjectIter it = first ; it != past_end ; ++it)
+      {
+      Object* obj = *it ;
+      if (!obj || !obj->isVector())
+	 continue ;
+      Vector<ValT>* vec = static_cast<Vector<ValT>*>(obj) ;
+      if (1) // TODO
+	 seed.append(vec) ;
+      else
+	 nonseed.append(vec) ;
+      }
+   //TODO
+   return nullptr ;
+}
+
 } // end of namespace Fr
 
-// end of file cluster_growseed.C //
+// end of file cluster_growseed.cc //

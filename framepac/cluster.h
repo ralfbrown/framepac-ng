@@ -184,12 +184,14 @@ inline ClusterInfoIter::ClusterInfoIter(const ClusterInfo* inf)
 
 //----------------------------------------------------------------------------
 
-
+template <typename IdxT, typename ValT>
 class ClusteringAlgo
    {
    public:
       static ClusteringAlgo* instantiate(const char* algo_name, const char* options) ;
       virtual ~ClusteringAlgo() {}
+
+      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
 
    protected:
       ClusteringAlgo() {}

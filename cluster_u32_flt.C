@@ -19,30 +19,14 @@
 /*									*/
 /************************************************************************/
 
-#include "framepac/cluster.h"
-using namespace Fr ;
+#include "template/cluster_factory.cc"
 
 namespace Fr
 {
 
-/************************************************************************/
-/************************************************************************/
+// explicit instantiation
+template class ClusteringAlgo<uint32_t,float> ;
 
-template <typename IdxT, typename ValT>
-class ClusteringAlgoBrown : public ClusteringAlgo<IdxT,ValT>
-   {
-   public:
-      virtual ~ClusteringAlgoBrown() { delete this ; }
+} // end namespace Fr
 
-      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
-
-   protected:
-
-   } ;
-
-/************************************************************************/
-/************************************************************************/
-
-} // end of namespace Fr
-
-// end of file cluster_brown.C //
+// end of file cluster_u32_flt.C //

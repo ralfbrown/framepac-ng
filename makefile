@@ -244,6 +244,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) canonsent$(OBJ) \
 	charget$(OBJ) cfile$(OBJ) cognate$(OBJ) confmatrix$(OBJ) \
 	cluster$(OBJ) clusterinfo$(OBJ) \
+	cluster_u32_dbl$(OBJ) cluster_u32_flt$(OBJ) cluster_u32_u32$(OBJ) \
 	cluster_agglom$(OBJ) cluster_anneal$(OBJ) cluster_brown$(OBJ) \
 	cluster_dbscan$(OBJ) cluster_growseed$(OBJ) cluster_incr$(OBJ) \
 	cluster_kmeans$(OBJ) cluster_kmediods$(OBJ) cluster_optics$(OBJ) \
@@ -418,6 +419,9 @@ cluster_incr$(OBJ):	cluster_incr$(C) framepac/cluster.h
 cluster_kmeans$(OBJ):	cluster_kmeans$(C) framepac/cluster.h
 cluster_kmediods$(OBJ):	cluster_kmediods$(C) framepac/cluster.h
 cluster_tight$(OBJ):	cluster_tight$(C) framepac/cluster.h
+cluster_u32_dbl(OBJ):	cluster_u32_dbl$(C) template/cluster_factory.cc
+cluster_u32_flt(OBJ):	cluster_u32_flt$(C) template/cluster_factory.cc
+cluster_u32_u32(OBJ):	cluster_u32_u32$(C) template/cluster_factory.cc
 cognate$(OBJ):		cognate$(C) framepac/spelling.h
 complex$(OBJ):		complex$(C) framepac/complex.h framepac/fasthash64.h
 confmatrix$(OBJ):	confmatrix$(C) framepac/spelling.h
@@ -507,6 +511,9 @@ template/argopt.cc:	framepac/argparser.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/bufbuilder.cc:	framepac/builder.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/cluster_factory.cc: framepac/cluster.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/hashtable.cc:	framepac/hashtable.h framepac/message.h framepac/fasthash64.h

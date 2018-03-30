@@ -28,7 +28,8 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-ClusteringAlgo* ClusteringAlgo::instantiate(const char* algo_name, const char* options)
+template <typename IdxT, typename ValT>
+ClusteringAlgo<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::instantiate(const char* algo_name, const char* options)
 {
    if (!algo_name || !*algo_name)
       return nullptr ;

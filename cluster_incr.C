@@ -28,10 +28,13 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-class ClusteringAlgoIncr : public ClusteringAlgo
+template <typename IdxT, typename ValT>
+class ClusteringAlgoIncr : public ClusteringAlgo<IdxT,ValT>
    {
    public:
       virtual ~ClusteringAlgoIncr() { delete this ; }
+
+      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
 
    protected:
 

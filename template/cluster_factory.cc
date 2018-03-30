@@ -20,29 +20,20 @@
 /************************************************************************/
 
 #include "framepac/cluster.h"
-using namespace Fr ;
 
 namespace Fr
 {
 
-/************************************************************************/
-/************************************************************************/
-
 template <typename IdxT, typename ValT>
-class ClusteringAlgoBrown : public ClusteringAlgo<IdxT,ValT>
-   {
-   public:
-      virtual ~ClusteringAlgoBrown() { delete this ; }
+ClusteringAlgo<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::instantiate(const char* algo_name, const char* options)
+{
+   (void)algo_name; (void)options;
+   //TODO
+   return nullptr ;
+}
 
-      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
 
-   protected:
+} // end namespace Fr
 
-   } ;
+// end of file cluster_factory.cc //
 
-/************************************************************************/
-/************************************************************************/
-
-} // end of namespace Fr
-
-// end of file cluster_brown.C //

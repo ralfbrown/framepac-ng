@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-25					*/
+/* Version 0.03, last edit 2018-03-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -28,10 +28,13 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-class ClusteringAlgoKMeans : public ClusteringAlgo
+template <typename IdxT, typename ValT>
+class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
    {
    public:
       virtual ~ClusteringAlgoKMeans() { delete this ; }
+
+      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
 
    protected:
 
