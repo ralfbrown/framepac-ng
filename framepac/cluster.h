@@ -25,6 +25,7 @@
 #include "framepac/array.h"
 #include "framepac/list.h"
 #include "framepac/symbol.h"
+#include "framepac/vecsim.h"
 
 namespace Fr {
 
@@ -73,6 +74,7 @@ class ClusterInfo : public Object
       static ClusterInfo* create() ;
       static ClusterInfo* create(List* members) ;
       static ClusterInfo* create(List* members, List* subclusters) ;
+      static ClusterInfo* create(const ClusterInfo* subclus, size_t num_subclus) ;
 
       // *** standard info functions ***
       //inherited: size_t size() const ;
@@ -98,7 +100,9 @@ class ClusterInfo : public Object
       // *** modifiers ***
       void setFlag(Flags f) ;
       void clearFlag(Flags f) ;
-      
+
+      bool addVectors(const RefArray&) ;
+
    protected:
       RefArray* m_members ;	// individual vectors in this cluster
       Array* m_subclusters ;	// sub-clusters (if any) of this cluster
@@ -193,9 +197,19 @@ class ClusteringAlgo
 
       virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
 
-   protected:
-      ClusteringAlgo() {}
+   protected: //methods
+      ClusteringAlgo() : m_measure(nullptr), m_use_sparse_vectors(false) {}
 
+      bool checkSparseOrDense(const Array& vectors) ;
+
+      bool assignToNearest(Array& vectors, Array& centers, double threshold = -1.0) const ;
+      bool extractClusters(Array& vectors, ClusterInfo*& clusters, size_t& num_clusters,
+	 RefArray* unassigned = nullptr) const ;
+
+      bool usingSparseVectors() const { return m_use_sparse_vectors ; }
+   protected: // data
+      VectorMeasure<IdxT,ValT>* m_measure ;
+      bool m_use_sparse_vectors ;
    } ;
 
 } ; // end of namespace Fr

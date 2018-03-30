@@ -37,8 +37,8 @@ class ClusteringAlgoGrowseed : public ClusteringAlgo<IdxT,ValT>
 
       virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
 
-   protected:
-
+   protected: // data
+      double m_clusterthresh ;
    } ;
 
 /************************************************************************/
@@ -47,21 +47,43 @@ class ClusteringAlgoGrowseed : public ClusteringAlgo<IdxT,ValT>
 template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
 {
-   RefArray seed ;
-   RefArray nonseed ;
+   RefArray seed ;			// vectors with a cluster assignment at the outset
+   RefArray nonseed ;			// vectors which need to be given a cluster assignment
+   RefArray vectors ;			// all vectors
    for (ObjectIter it = first ; it != past_end ; ++it)
       {
       Object* obj = *it ;
       if (!obj || !obj->isVector())
 	 continue ;
       Vector<ValT>* vec = static_cast<Vector<ValT>*>(obj) ;
+      vectors.append(vec) ;
       if (1) // TODO
 	 seed.append(vec) ;
       else
 	 nonseed.append(vec) ;
       }
-   //TODO
-   return nullptr ;
+   if (!this->checkSparseOrDense(vectors))
+      return nullptr ;			// vectors must be all dense or all sparse
+   // assign each of the non-seed vectors to the same cluster as the
+   //   nearest of the seed vectors, provided the similarity measure
+   //   is above threshold
+   this->assignToNearest(nonseed, seed, m_clusterthresh) ;
+   // collect the vectors into clusters based on the assignment stored
+   //   in the vector
+   // many vectors will not be assigned to any cluster (because they
+   //   weren't close enough to a seed); those will be assigned to a
+   //   "null" cluster
+   ClusterInfo* clusters ;
+   size_t num_clusters ;
+   RefArray unassigned ;
+   this->extractClusters(vectors,clusters,num_clusters,&unassigned) ;
+   // build a ClusterInfo structure with the subclusters, and all unassigned vectors inserted at the top level
+   ClusterInfo* result_clusters = ClusterInfo::create(clusters,num_clusters) ;
+   delete[] clusters ;
+   result_clusters->addVectors(unassigned) ;
+   // the subclusters are the actual result, the unassigned vectors at the top level should (normally) be ignored
+   result_clusters->setFlag(ClusterInfo::Flags::group) ;
+   return result_clusters ;
 }
 
 } // end of namespace Fr
