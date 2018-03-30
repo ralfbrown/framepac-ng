@@ -176,6 +176,8 @@ class RefArray : public Array
       bool append(Object*) ;
       void setNth(size_t N, Object* val) { if (N < m_size) m_array[N] = val ; }
 
+      void clearArray(bool free_objects = false) ;
+
       // STL compatibility
       void pop_back() ;  	// remove last element of array
 

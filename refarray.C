@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-28					*/
+/* Version 0.03, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -102,6 +102,23 @@ ObjectPtr RefArray::subseq_iter(const Object*,ObjectIter start, ObjectIter stop)
    (void)start; (void)stop; //FIXME
 
    return ObjectPtr(nullptr) ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+void RefArray::clearArray(bool free_objects)
+{
+   if (free_objects)
+      {
+      for (size_t i = 0 ; i < size() ; ++i)
+	 {
+	 if (m_array[i])
+	    m_array[i]->free() ;
+	 }
+      }
+   for (size_t i = 0 ; i < size() ; ++i)
+      m_array[i] = nullptr ;
+   return ;
 }
 
 //----------------------------------------------------------------------------

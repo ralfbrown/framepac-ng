@@ -103,6 +103,12 @@ class ClusterInfo : public Object
 
       bool addVectors(const RefArray&) ;
 
+      template <typename IdxT, typename ValT>
+      SparseVector<IdxT,ValT>* createSparseCentroid() const ;
+
+      template <typename ValT>
+      DenseVector<ValT>* createDenseCentroid() const ;
+      
    protected:
       RefArray* m_members ;	// individual vectors in this cluster
       Array* m_subclusters ;	// sub-clusters (if any) of this cluster

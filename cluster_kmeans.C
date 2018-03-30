@@ -45,6 +45,30 @@ class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
+bool update_centroid(const void* o, size_t id, const void* user_data, bool sparse)
+{
+   const ClusterInfo* inf = reinterpret_cast<const ClusterInfo*>(o) ;
+   RefArray* centers = reinterpret_cast<RefArray*>(user_data) ;
+   if (sparse)
+      {
+      // create a centroid of the members of the current cluster
+      auto centroid = inf->createSparseCentroid<IdxT,ValT>() ;
+      // make the centroid the new center for the cluster
+      centers->setNth(id,centroid) ;
+      }
+   else
+      {
+      // create a centroid of the members of the current cluster
+      auto centroid = inf->createDenseCentroid<ValT>() ;
+      // make the centroid the new center for the cluster
+      centers->setNth(id,centroid) ;
+      }
+   return true ;			// no errors, safe to continue processing
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
 {
    // collect the input vectors into an array
@@ -67,52 +91,22 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
    //    generate a new centroid for each cluster
    //    make the centroids the new centers
    size_t iteration ;
+   ClusterInfo* clusters(nullptr) ;
+   size_t num_clusters(0) ;
    for (iteration = 1 ; iteration <= m_iterations ; iteration++)
       {
-      if (!this->assignToNearest(vectors, centers))
-	 break ;			// we've converged!
-      ClusterInfo* clusters ;
-      size_t num_clusters ;
+      bool changes = this->assignToNearest(vectors, centers) ;
       this->extractClusters(vectors,clusters,num_clusters) ;
-      if (this->usingSparseVectors())
+      if (!changes)
+	 break ;			// we've converged!
+      if (iteration != 1)
+	 centers.clearArray(true) ;
+      for (size_t i = 0 ;  i < num_clusters ; ++i)
 	 {
-	 for (size_t i = 0 ; i < num_clusters ; ++i)
-	    {
-	    // create a centroid of the members of the current cluster
-	    SparseVector<IdxT,ValT>* centroid = SparseVector<IdxT,ValT>::create() ;
-	    const Array* members = clusters[i].members() ;
-	    for (size_t j = 0 ; j < members->size() ; j++)
-	       {
-	       SparseVector<IdxT,ValT>* vec = static_cast<SparseVector<IdxT,ValT>*>(members->getNth(j)) ;
-	       if (!vec) continue ;
-	       centroid->add(vec) ;
-	       }
-	    // make the centroid the new center for the cluster
-	    if (iteration != 1)
-	       centers.getNth(i)->free() ;
-	    centers.setNth(i,centroid) ;
-	    }
-	 }
-      else
-	 {
-	 for (size_t i = 0 ; i < num_clusters ; ++i)
-	    {
-	    // create a centroid of the members of the current cluster
-	    Vector<ValT>* centroid = Vector<ValT>::create() ;
-	    const Array* members = clusters[i].members() ;
-	    for (size_t j = 0 ; j < members->size() ; j++)
-	       {
-	       DenseVector<ValT>* vec = static_cast<DenseVector<ValT>*>(members->getNth(j)) ;
-	       if (!vec) continue ;
-	       centroid->add(vec) ;
-	       }
-	    // make the centroid the new center for the cluster
-	    if (iteration != 1)
-	       centers.getNth(i)->free() ;
-	    centers.setNth(i,centroid) ;
-	    }
+	 update_centroid<IdxT,ValT>(clusters[i],i,&centers,this->usingSparseVectors()) ;
 	 }
       }
+   // build the final cluster result from the extracted clusters
 //TODO
    return nullptr ;
 }
