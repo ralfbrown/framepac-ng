@@ -28,8 +28,26 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
+// the Agglomerative method from the first-gen FramepaC is basically Brown clustering with early exit where
+//   the resulting clusters are flattened, so we'll implement Brown clustering with an early-exit option and
+//   make Agglomerative a subclass of Brown
+
 template <typename IdxT, typename ValT>
-class ClusteringAlgoAgglom : public ClusteringAlgo<IdxT,ValT>
+class ClusteringAlgoBrown : public ClusteringAlgo<IdxT,ValT>
+   {
+   public:
+      virtual ~ClusteringAlgoBrown() { delete this ; }
+
+      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
+
+   protected:
+
+   } ;
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+class ClusteringAlgoAgglom : public ClusteringAlgoBrown<IdxT,ValT>
    {
    public:
       virtual ~ClusteringAlgoAgglom() { delete this ; }
