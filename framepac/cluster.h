@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-26					*/
+/* Version 0.04, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -28,6 +28,23 @@
 #include "framepac/vecsim.h"
 
 namespace Fr {
+
+//----------------------------------------------------------------------------
+
+enum ClusteringAlgorithm
+   {
+   no_clustering,
+   agglomerative,		// AGGLOM from first-gen FramepaC
+   annealing,
+   brown,
+   dbscan,
+   growseeds,
+   kmeans,
+   kmediods,
+   multipass_single_link,	// INCR2 from first-gen FramepaC
+   optics,
+   single_link			// INCR from first-gen FramepaC
+   } ;
 
 //----------------------------------------------------------------------------
 //   due to the circular dependencies, we can't actually define all of
@@ -71,10 +88,11 @@ class ClusterInfo : public Object
 
    public:
       // *** object factories ***
-      static ClusterInfo* create() ;
-      static ClusterInfo* create(List* members) ;
-      static ClusterInfo* create(List* members, List* subclusters) ;
-      static ClusterInfo* create(const ClusterInfo* subclus, size_t num_subclus) ;
+      static ClusterInfo* create() { return new ClusterInfo ; }
+      static ClusterInfo* create(const List* members) ;
+      static ClusterInfo* create(const List* members, const List* subclusters) ;
+      static ClusterInfo* create(ClusterInfo** subclus, size_t num_subclus) ;
+      static ClusterInfo* create(const ClusterInfo** subclus, size_t num_subclus) ;
 
       // *** standard info functions ***
       //inherited: size_t size() const ;
@@ -102,7 +120,8 @@ class ClusterInfo : public Object
       void clearFlag(Flags f) ;
 
       bool addVector(Object*) ;
-      bool addVectors(const RefArray&) ;
+      bool addVectors(const RefArray*) ;
+      bool addVectors(const RefArray& a) { return addVectors(&a) ; }
 
       template <typename IdxT, typename ValT>
       SparseVector<IdxT,ValT>* createSparseCentroid() const ;
@@ -214,8 +233,9 @@ class ClusteringAlgo
       Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array* centers, double threshold = -1.0) const
 	 { return nearestNeighbor(vector,centers,m_measure,threshold) ; }
       bool assignToNearest(Array* vectors, const Array* centers, double threshold = -1.0) const ;
-      bool extractClusters(Array* vectors, ClusterInfo*& clusters, size_t& num_clusters,
+      bool extractClusters(Array* vectors, ClusterInfo**& clusters, size_t& num_clusters,
 	 RefArray* unassigned = nullptr) const ;
+      static void freeClusters(ClusterInfo** clusters, size_t num_clusters) ;
 
       bool usingSparseVectors() const { return m_use_sparse_vectors ; }
    protected: // data

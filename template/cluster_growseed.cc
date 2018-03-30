@@ -80,14 +80,14 @@ ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(ObjectIter& first, Objec
    // many vectors will not be assigned to any cluster (because they
    //   weren't close enough to a seed); those will be assigned to a
    //   "null" cluster
-   ClusterInfo* clusters ;
+   ClusterInfo** clusters ;
    size_t num_clusters ;
    RefArray* unassigned = RefArray::create();
-   this->extractClusters(vectors,clusters,num_clusters,&unassigned) ;
+   this->extractClusters(vectors,clusters,num_clusters,unassigned) ;
    vectors->free() ;
    // build a ClusterInfo structure with the subclusters, and all unassigned vectors inserted at the top level
    ClusterInfo* result_clusters = ClusterInfo::create(clusters,num_clusters) ;
-   delete[] clusters ;
+   this->freeClusters(clusters,num_clusters) ;
    result_clusters->addVectors(unassigned) ;
    unassigned->free() ;
    // the subclusters are the actual result, the unassigned vectors at the top level should (normally) be ignored

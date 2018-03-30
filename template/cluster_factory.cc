@@ -19,7 +19,14 @@
 /*									*/
 /************************************************************************/
 
-#include "framepac/cluster.h"
+#include "template/cluster.cc"
+#include "template/cluster_agglom.cc"
+#include "template/cluster_anneal.cc"
+#include "template/cluster_dbscan.cc"
+#include "template/cluster_growseed.cc"
+#include "template/cluster_incr.cc"
+#include "template/cluster_kmeans.cc"
+#include "template/cluster_optics.cc"
 
 namespace Fr
 {
@@ -31,9 +38,39 @@ ClusteringAlgo<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::instantiate(const char* al
       return nullptr ;
    if (!options)
       options = "" ;
-   //TODO
-
-   return nullptr ;
+   ClusteringAlgorithm algo = ClusteringAlgorithm::no_clustering ; //FIXME
+   ClusteringAlgo* clusterer = nullptr ;
+   switch (algo)
+      {
+      case ClusteringAlgorithm::agglomerative:
+	 clusterer = new ClusteringAlgoAgglom<IdxT,ValT> ; break  ;
+      case ClusteringAlgorithm::annealing:
+	 clusterer = new ClusteringAlgoAnneal<IdxT,ValT> ; break  ;
+      case ClusteringAlgorithm::brown:
+	 clusterer = new ClusteringAlgoBrown<IdxT,ValT> ; break  ;
+      case ClusteringAlgorithm::dbscan:
+	 clusterer = new ClusteringAlgoDBScan<IdxT,ValT> ; break  ;
+      case ClusteringAlgorithm::growseeds:
+	 clusterer = new ClusteringAlgoGrowseed<IdxT,ValT> ; break  ;
+      case ClusteringAlgorithm::kmeans:
+	 clusterer = new ClusteringAlgoKMeans<IdxT,ValT> ; break  ;
+      case ClusteringAlgorithm::kmediods:
+	 clusterer = new ClusteringAlgoKMedioids<IdxT,ValT> ; break  ;
+      case ClusteringAlgorithm::optics:
+	 clusterer = new ClusteringAlgoOPTICS<IdxT,ValT> ; break  ;
+//      case ClusteringAlgorithm::multipass_single_link:
+//	 clusterer = new ClusteringAlgo<IdxT,ValT> ; break  ;
+      case ClusteringAlgorithm::single_link:
+	 clusterer = new ClusteringAlgoIncr<IdxT,ValT> ; break  ;
+      default:
+	 // missed case?
+	 break ;
+      }
+   if (clusterer)
+      {
+      // parse options
+      }
+   return clusterer ;
 }
 
 

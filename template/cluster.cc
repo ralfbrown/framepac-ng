@@ -39,7 +39,7 @@ SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid() const
       {
       auto vec = static_cast<SparseVector<IdxT,ValT>*>(members()->getNth(i)) ;
       if (!vec) continue ;
-      centroid->add(vec) ;
+//FIXME:      centroid->add(vec) ;
       }
    return centroid ;
 }
@@ -54,7 +54,7 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
       {
       auto vec = static_cast<DenseVector<ValT>*>(members()->getNth(i)) ;
       if (!vec) continue ;
-      centroid->add(vec) ;
+//FIXME:      centroid->add(vec) ;
       }
    return centroid ;
 }
@@ -67,7 +67,7 @@ template <typename IdxT, typename ValT>
 bool assign_vector_to_nearest_center(const void* vectors, size_t index, va_list args)
 {
    typedef VectorMeasure<IdxT,ValT> VM ;
-   auto vector = reinterpret_cast<Vector<ValT>*>(vectors) + index ;
+   auto vector = reinterpret_cast<Vector<ValT>*>(const_cast<void*>(vectors)) + index ;
    auto centers = va_arg(args,const Array*) ;
    auto measure = va_arg(args,VM*) ;
    auto threshold = va_arg(args,double) ;
@@ -114,9 +114,22 @@ Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vec
 
 //----------------------------------------------------------------------------
 
+template <typename IdxT, typename ValT>
+void ClusteringAlgo<IdxT,ValT>::freeClusters(ClusterInfo** clusters, size_t num_clusters)
+{
+   for (size_t i = 0 ; i < num_clusters ; ++i)
+      {
+      if (clusters[i])
+	 clusters[i]->free() ;
+      }
+   delete[] clusters ;
+}
+
+//----------------------------------------------------------------------------
+
 //TODO: can we parallelize this enough that the speedup is worth the effort?
 template <typename IdxT, typename ValT>
-bool ClusteringAlgo<IdxT,ValT>::extractClusters(Array* vectors, ClusterInfo*& clusters, size_t& num_clusters,
+bool ClusteringAlgo<IdxT,ValT>::extractClusters(Array* vectors, ClusterInfo**& clusters, size_t& num_clusters,
    RefArray* unassigned) const
 {
    clusters = nullptr ;
@@ -137,6 +150,10 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(Array* vectors, ClusterInfo*& cl
    if (num_clusters)
       {
       clusters = new ClusterInfo*[num_clusters] ;
+      for (size_t i = 0 ; i < num_clusters ; ++i)
+	 {
+	 clusters[i] = ClusterInfo::create() ;
+	 }
       // collect the vectors into the appropriate cluster
       for (size_t i = 0 ; i < vectors->size() ; ++i)
 	 {
@@ -146,7 +163,7 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(Array* vectors, ClusterInfo*& cl
 	 if (!label && unassigned)
 	    unassigned->append(vector) ;
 	 size_t index = label_map.lookup(label) ;
-	 clusters[index].addVector(vector) ;
+	 clusters[index]->addVector(vector) ;
 	 }
       }
    return true ;

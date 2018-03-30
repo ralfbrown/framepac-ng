@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-29					*/
+/* Version 0.04, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -45,4 +45,4 @@ class ClusteringAlgoDBScan : public ClusteringAlgo<IdxT,ValT>
 
 } // end of namespace Fr
 
-// end of file cluster_dbscan.C //
+// end of file cluster_dbscan.cc //

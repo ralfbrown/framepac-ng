@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-25					*/
+/* Version 0.04, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -28,10 +28,13 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-class ClusteringAlgoOPTICS : public ClusteringAlgo
+template <typename IdxT, typename ValT>
+class ClusteringAlgoOPTICS : public ClusteringAlgo<IdxT,ValT>
    {
    public:
       virtual ~ClusteringAlgoOPTICS() { delete this ; }
+
+      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
 
    protected:
 
@@ -42,4 +45,4 @@ class ClusteringAlgoOPTICS : public ClusteringAlgo
 
 } // end of namespace Fr
 
-// end of file cluster_optics.C //
+// end of file cluster_optics.cc //

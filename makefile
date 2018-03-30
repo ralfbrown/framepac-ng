@@ -245,10 +245,6 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	charget$(OBJ) cfile$(OBJ) cognate$(OBJ) confmatrix$(OBJ) \
 	clusterinfo$(OBJ) \
 	cluster_u32_dbl$(OBJ) cluster_u32_flt$(OBJ) cluster_u32_u32$(OBJ) \
-	cluster_agglom$(OBJ) cluster_anneal$(OBJ) cluster_brown$(OBJ) \
-	cluster_dbscan$(OBJ) cluster_growseed$(OBJ) cluster_incr$(OBJ) \
-	cluster_kmeans$(OBJ) cluster_optics$(OBJ) \
-	cluster_tight$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
 	fasthash64$(OBJ) \
 	float$(OBJ) frame$(OBJ) hazardptr$(OBJ) \
@@ -409,14 +405,6 @@ canonsent$(OBJ):	canonsent$(C) framepac/stringbuilder.h framepac/texttransforms.
 charget$(OBJ):		charget$(C) framepac/charget.h
 cfile$(OBJ):		cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
 clusterinfo$(OBJ):	clusterinfo$(C) framepac/cluster.h
-cluster_agglom$(OBJ):	cluster_agglom$(C) framepac/cluster.h
-cluster_anneal$(OBJ):	cluster_anneal$(C) framepac/cluster.h
-cluster_brown$(OBJ):	cluster_brown$(C) framepac/cluster.h
-cluster_dbscan$(OBJ):	cluster_dbscan$(C) framepac/cluster.h
-cluster_growseed$(OBJ):	cluster_growseed$(C) framepac/cluster.h
-cluster_incr$(OBJ):	cluster_incr$(C) framepac/cluster.h
-cluster_kmeans$(OBJ):	cluster_kmeans$(C) framepac/hashtable.h framepac/threadpool.h template/cluster.cc
-cluster_tight$(OBJ):	cluster_tight$(C) framepac/cluster.h
 cluster_u32_dbl(OBJ):	cluster_u32_dbl$(C) template/cluster_factory.cc
 cluster_u32_flt(OBJ):	cluster_u32_flt$(C) template/cluster_factory.cc
 cluster_u32_u32(OBJ):	cluster_u32_u32$(C) template/cluster_factory.cc
@@ -511,7 +499,33 @@ template/argopt.cc:	framepac/argparser.h
 template/bufbuilder.cc:	framepac/builder.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/cluster_factory.cc: framepac/cluster.h
+template/cluster_agglom.cc:	framepac/cluster.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/cluster_anneal.cc:	framepac/cluster.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/cluster_dbscan.cc:	template/cluster.cc
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/cluster_growseed.cc:	template/cluster.cc
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/cluster_incr.cc:	template/cluster.cc
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/cluster_kmeans.cc:	framepac/cluster.h framepac/threadpool.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/cluster_optics.cc:	template/cluster.cc
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/cluster_tight.cc:	template/cluster.cc
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/cluster_factory.cc: template/cluster.cc template/cluster_agglom.cc template_cluster/anneal.cc \
+			template/cluster_dbscan.cc template/cluster_growseed.cc template/cluster_incr.cc \
+			template/cluster_kmeans.cc template/cluster_optics.cc template/cluster_tight.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster.cc:	framepac/cluster.h framepac/threadpool.h

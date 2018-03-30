@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.04, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -138,7 +138,7 @@ template <typename ValT>
 class DenseVector : public Vector<ValT>
    {
    public:
-      static DenseVector* create(size_t capacity) { return new DenseVector(capacity) ; }
+      static DenseVector* create(size_t capacity = 0) { return new DenseVector(capacity) ; }
 
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
@@ -165,7 +165,7 @@ template <typename IdxT, typename ValT>
 class SparseVector : public Vector<ValT>
    {
    public:
-      static SparseVector* create(size_t numelts) { return new SparseVector(numelts) ; }
+      static SparseVector* create(size_t numelts = 0) { return new SparseVector(numelts) ; }
 
       // retrieve elements of the vector
       IdxT keyAt(size_t N) const { return  m_indices[N] ; }

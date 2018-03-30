@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-30					*/
+/* Version 0.04, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -40,6 +40,37 @@ Fr::Initializer<ClusterInfo> static_init ;
 /************************************************************************/
 /************************************************************************/
 
+ClusterInfo* ClusterInfo::create(const List* elts)
+{
+   //TODO
+   (void)elts ;
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+ClusterInfo* ClusterInfo::create(const List* elts, const List* subclus)
+{
+   //TODO
+   (void)elts ; (void)subclus;
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+ClusterInfo* ClusterInfo::create(const ClusterInfo** subclus, size_t num_subclus)
+{
+   ClusterInfo* info = new ClusterInfo ;
+   if (!subclus) num_subclus = 0 ;
+   for (size_t i = 0 ; i < num_subclus ; ++i)
+      {
+      if (subclus[i])
+	 {
+	 //TODO
+	 }
+      }
+   return info ;
+}
 
 //----------------------------------------------------------------------------
 
@@ -53,11 +84,11 @@ bool ClusterInfo::addVector(Object* v)
 
 //----------------------------------------------------------------------------
 
-bool ClusterInfo::addVectors(const RefArray& vectors)
+bool ClusterInfo::addVectors(const RefArray* vectors)
 {
-   for (size_t i = 0 ; i < vectors.size() ; ++i)
+   for (size_t i = 0 ; i < vectors->size() ; ++i)
       {
-      addVector(vectors.getNth(i)) ;
+      addVector(vectors->getNth(i)) ;
       }
    return true ;
 }

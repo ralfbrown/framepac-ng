@@ -19,7 +19,7 @@
 /*									*/
 /************************************************************************/
 
-#include "template/cluster.cc"
+#include "framepac/cluster.h"
 #include "framepac/threadpool.h"
 
 using namespace Fr ;
@@ -151,7 +151,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
    //    generate a new centroid for each cluster
    //    make the centroids the new centers
    size_t iteration ;
-   ClusterInfo* clusters(nullptr) ;
+   ClusterInfo** clusters(nullptr) ;
    size_t num_clusters(0) ;
    ThreadPool* tp = ThreadPool::defaultPool() ;
    for (iteration = 1 ; iteration <= iterations() ; iteration++)
@@ -166,6 +166,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
       if (usingMedioids())
 	 fn = update_medioid<IdxT,ValT> ;
       tp->parallelize(fn,num_clusters,clusters,&centers,this->usingSparseVectors(),this->m_measure) ;
+      this->freeClusters(clusters,num_clusters) ;
       }
    // build the final cluster result from the extracted clusters
 //TODO

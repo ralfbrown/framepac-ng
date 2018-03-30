@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-26					*/
+/* Version 0.04, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -169,7 +169,9 @@ class Object
       // *** standard info functions ***
       FrVIRTFUNC0(size_t,size,size_,const) ;
       FrVIRTFUNC0(bool,empty,empty_,const) ;
-      operator bool () const { return this != nullptr && !this->empty() ; }
+      operator bool () const
+	 { const void* v = this ; // work around "non-null pointer compared against null" warning
+           return v != nullptr && !this->empty() ; }
 
       // *** standard access functions ***
       FrVIRTFUNC0(Object*,front,front_,) ;
