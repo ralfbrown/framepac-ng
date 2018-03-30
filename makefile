@@ -515,6 +515,9 @@ template/bufbuilder.cc:	framepac/builder.h
 template/cluster_factory.cc: framepac/cluster.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+template/cluster.cc:	framepac/cluster.h framepac/threadpool.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 template/hashtable.cc:	framepac/hashtable.h framepac/message.h framepac/fasthash64.h
 	$(TOUCH) $@ $(BITBUCKET)
 

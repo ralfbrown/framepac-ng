@@ -19,7 +19,9 @@
 /*									*/
 /************************************************************************/
 
+#include <stdarg.h>
 #include "framepac/cluster.h"
+#include "framepac/threadpool.h"
 
 namespace Fr
 {
@@ -63,23 +65,13 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
 template <typename IdxT, typename ValT>
 bool assign_vector_to_nearest_center(const void* vectors, size_t index, va_list args)
 {
+   typedef VectorMeasure<IdxT,ValT> VM ;
    auto vector = reinterpret_cast<Vector<ValT>*>(vectors) + index ;
    auto centers = va_arg(args,const Array*) ;
-   auto measure = va_args(args,VectorMeasure<IdxT,ValT>*) ;
+   auto measure = va_arg(args,VM*) ;
    auto threshold = va_arg(args,double) ;
    if (!vector) return false ;
-   Object* best_center = nullptr ;
-   double best_sim = -999.99 ;
-   for (size_t i = 0 ; i < centers->size() ; ++i)
-      {
-      auto center = static_cast<Vector<ValT>*>(centers->getNth(i)) ;
-      double sim = measure->similarity(vector,center) ;
-      if (sim >= threshold && sim > best_sim)
-	 {
-	 best_center = center ;
-	 best_sim = sim ;
-	 }
-      }
+   auto best_center = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(vector,centers,measure,threshold) ;
    if (best_center)
       {
       //TODO: assign cluster to which best_center belongs to vector
@@ -95,6 +87,27 @@ bool ClusteringAlgo<IdxT,ValT>::assignToNearest(Array& vectors, const Array& cen
    ThreadPool *tp = ThreadPool::defaultPool() ;
    if (!tp) return false ;
    return tp->parallelize(assign_vector_to_nearest_center<IdxT,ValT>,vectors,&centers,m_measure,threshold) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vector, const Array& centers,
+   VectorMeasure<IdxT,ValT>* measure, double threshold)
+{
+   Vector<ValT>* best_center = nullptr ;
+   double best_sim = -999.99 ;
+   for (size_t i = 0 ; i < centers.size() ; ++i)
+      {
+      auto center = static_cast<Vector<ValT>*>(centers.getNth(i)) ;
+      double sim = measure->similarity(vector,center) ;
+      if (sim >= threshold && sim > best_sim)
+	 {
+	 best_center = center ;
+	 best_sim = sim ;
+	 }
+      }
+   return best_center ;
 }
 
 //----------------------------------------------------------------------------

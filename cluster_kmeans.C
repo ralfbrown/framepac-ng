@@ -19,7 +19,7 @@
 /*									*/
 /************************************************************************/
 
-#include "framepac/cluster.h"
+#include "template/cluster.cc"
 #include "framepac/threadpool.h"
 
 using namespace Fr ;
