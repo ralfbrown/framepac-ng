@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.03, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -22,6 +22,7 @@
 #ifndef _Fr_THREADPOOL_H_INCLUDED
 #define _Fr_THREADPOOL_H_INCLUDED
 
+#include <stdarg.h>
 #include <thread>
 #include "framepac/atomic.h"
 #include "framepac/critsect.h"
@@ -36,6 +37,7 @@ namespace Fr {
 /************************************************************************/
 
 typedef void ThreadPoolWorkFunc(const void *input, void *output) ;
+typedef bool ThreadPoolMapFunc(const void* input, size_t index, va_list args) ;
 
 // classes used internally by ThreadPool
 class WorkOrder ;
@@ -72,6 +74,19 @@ class ThreadPool
       template <typename InOutT>
       bool dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, InOutT* in_out)
 	 { return dispatchBatch(fn,count,sizeof(InOutT),in_out,sizeof(InOutT),in_out) ; }
+
+      // simplified interface for map/reduce applications
+      //   we use void* and va_list to avoid bloating the object code; the worker function needs to
+      //   cast appropriately
+      bool parallelize(ThreadPoolMapFunc* fn, size_t num_items, const void* first_item, va_list args) ;
+      bool parallelize(ThreadPoolMapFunc* fn, size_t num_items, const void* first_item, ...)
+	 {
+	    va_list args ;
+	    va_start(args,first_item) ;
+	    bool status = parallelize(fn,num_items,first_item,args) ;
+	    va_end(args) ;
+	    return status ;
+	 }
 
       static void defaultPool(ThreadPool*) ;
 

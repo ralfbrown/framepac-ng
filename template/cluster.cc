@@ -31,11 +31,10 @@ namespace Fr
 template <typename IdxT, typename ValT>
 SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid() const
 {
-   SparseVector<IdxT,ValT>* centroid = SparseVector<IdxT,ValT>::create() ;
-   const Array* members = clusters[i].members() ;
-   for (size_t j = 0 ; j < members->size() ; j++)
+   auto centroid = SparseVector<IdxT,ValT>::create() ;
+   for (size_t i = 0 ; i < members()->size() ; i++)
       {
-      auto vec = static_cast<SparseVector<IdxT,ValT>*>(members->getNth(j)) ;
+      auto vec = static_cast<SparseVector<IdxT,ValT>*>(members()->getNth(i)) ;
       if (!vec) continue ;
       centroid->add(vec) ;
       }
@@ -47,11 +46,10 @@ SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid() const
 template <typename ValT>
 DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
 {
-   DenseVector<ValT>* centroid = DenseVector<ValT>::create() ;
-   const Array* members = clusters[i].members() ;
-   for (size_t j = 0 ; j < members->size() ; j++)
+   auto centroid = DenseVector<ValT>::create() ;
+   for (size_t i = 0 ; i < members()->size() ; i++)
       {
-      auto vec = static_cast<DenseVector<ValT>*>(members->getNth(j)) ;
+      auto vec = static_cast<DenseVector<ValT>*>(members()->getNth(i)) ;
       if (!vec) continue ;
       centroid->add(vec) ;
       }

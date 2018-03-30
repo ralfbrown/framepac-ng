@@ -47,8 +47,8 @@ class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
 template <typename IdxT, typename ValT>
 bool update_centroid(const void* o, size_t id, const void* user_data, bool sparse)
 {
-   const ClusterInfo* inf = reinterpret_cast<const ClusterInfo*>(o) ;
-   RefArray* centers = reinterpret_cast<RefArray*>(user_data) ;
+   auto inf = reinterpret_cast<const ClusterInfo*>(o) + id ;
+   auto centers = reinterpret_cast<RefArray*>(user_data) ;
    if (sparse)
       {
       // create a centroid of the members of the current cluster

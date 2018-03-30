@@ -570,6 +570,31 @@ bool ThreadPool::dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, size_t insi
 
 //----------------------------------------------------------------------------
 
+bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, const void* first_item, va_list args)
+{
+   if (!fn) return false ;
+   if (numThreads() == 0 && 0) //FIXME
+      {
+      // we don't have any worker threads enabled, so directly invoke the mapping function
+      bool success = true ;
+      for (size_t i = 0 ; success && i < num_items ; ++i)
+	 {
+	 va_list arg_copy ;
+	 va_copy(arg_copy,args) ;
+	 success = fn(first_item,i,arg_copy) ;
+	 va_end(arg_copy) ;
+	 }
+      return success ;
+      }
+   for (size_t i = 0 ; i < num_items ; ++i)
+      {
+//TODO
+      }
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
 void ThreadPool::waitUntilIdle()
 {
    if (numThreads() == 0)
