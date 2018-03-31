@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-29					*/
+/* Version 0.04, last edit 2018-03-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -19,7 +19,6 @@
 /*									*/
 /************************************************************************/
 
-#include "framepac/cluster.h"
 #include "template/cluster_factory.cc"
 
 namespace Fr

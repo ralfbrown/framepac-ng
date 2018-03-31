@@ -405,9 +405,9 @@ canonsent$(OBJ):	canonsent$(C) framepac/stringbuilder.h framepac/texttransforms.
 charget$(OBJ):		charget$(C) framepac/charget.h
 cfile$(OBJ):		cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
 clusterinfo$(OBJ):	clusterinfo$(C) framepac/cluster.h
-cluster_u32_dbl(OBJ):	cluster_u32_dbl$(C) template/cluster_factory.cc
-cluster_u32_flt(OBJ):	cluster_u32_flt$(C) template/cluster_factory.cc
-cluster_u32_u32(OBJ):	cluster_u32_u32$(C) template/cluster_factory.cc
+cluster_u32_dbl$(OBJ):	cluster_u32_dbl$(C) template/cluster_factory.cc
+cluster_u32_flt$(OBJ):	cluster_u32_flt$(C) template/cluster_factory.cc
+cluster_u32_u32$(OBJ):	cluster_u32_u32$(C) template/cluster_factory.cc
 cognate$(OBJ):		cognate$(C) framepac/spelling.h
 complex$(OBJ):		complex$(C) framepac/complex.h framepac/fasthash64.h
 confmatrix$(OBJ):	confmatrix$(C) framepac/spelling.h
@@ -523,7 +523,7 @@ template/cluster_optics.cc:	template/cluster.cc
 template/cluster_tight.cc:	template/cluster.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/cluster_factory.cc: template/cluster.cc template/cluster_agglom.cc template_cluster/anneal.cc \
+template/cluster_factory.cc: template/cluster.cc template/cluster_agglom.cc template/cluster_anneal.cc \
 			template/cluster_dbscan.cc template/cluster_growseed.cc template/cluster_incr.cc \
 			template/cluster_kmeans.cc template/cluster_optics.cc template/cluster_tight.cc
 	$(TOUCH) $@ $(BITBUCKET)

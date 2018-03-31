@@ -48,6 +48,7 @@ class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
       size_t m_desired_clusters ;
       size_t m_iterations ;
       bool   m_use_medioids { false } ;
+      bool   m_fast_init { false } ;
    } ;
 
 template <typename IdxT, typename ValT>
@@ -65,7 +66,7 @@ class ClusteringAlgoKMedioids : public ClusteringAlgoKMeans<IdxT,ValT>
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
-bool update_centroid(const void* o, size_t id, va_list args)
+static bool update_centroid(const void* o, size_t id, va_list args)
 {
    auto inf = reinterpret_cast<const ClusterInfo*>(o) + id ;
    auto centers = va_arg(args,RefArray*) ;
@@ -90,7 +91,7 @@ bool update_centroid(const void* o, size_t id, va_list args)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-bool update_medioid(const void* o, size_t id, va_list args)
+static bool update_medioid(const void* o, size_t id, va_list args)
 {
    typedef VectorMeasure<IdxT,ValT> VM ;
    auto inf = reinterpret_cast<const ClusterInfo*>(o) + id ;
@@ -120,6 +121,31 @@ bool update_medioid(const void* o, size_t id, va_list args)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
+static size_t find_least_similar(const Array* vectors, const Array* refs, VectorMeasure<IdxT,ValT>* vm)
+{
+   size_t selected = (size_t)~0 ;
+   double best_sim = 999.99 ;
+   for (size_t i = 0 ; i < vectors->size() ; ++i)
+      {
+      auto vector = static_cast<Vector<ValT>*>(vectors->getNth(i)) ;
+      if (!vector) continue ;
+      double sim = -999.99 ;
+      for (size_t j = 0 ; j < refs->size() ; ++j)
+	 {
+	 sim = std::max(sim,vm->similarity(vector,static_cast<Vector<ValT>*>(refs->getNth(j)))) ;
+	 }
+      if (sim < best_sim)
+	 {
+	 best_sim = sim ;
+	 selected = i ;
+	 }
+      }
+   return selected ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
 {
    // collect the input vectors into an array
@@ -135,16 +161,31 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
       vectors->free() ;
       return nullptr ;			// vectors must be all dense or all sparse
       }
-#if 0
-   //TODO: select K vectors which are (approximately) maximally separated
-   RefArray* centers = RefArray::create() ;
-   RefArray* sample = vectors->randomSample(2*desiredClusters()) ;
-
-   sample->free() ;
-#else
-//for now, we'll just randomly select K vectors
-   RefArray* centers = vectors->randomSample(desiredClusters()) ;
-#endif
+   RefArray* centers ;
+   if (this->m_fast_init)
+      {
+      // do a quick and dirty init -- just randomly select K vectors
+      centers = vectors->randomSample(desiredClusters()) ;
+      }
+   else
+      {
+      // select K vectors which are (approximately) maximally separated
+      centers = RefArray::create() ;
+      RefArray* sample = vectors->randomSample(2*desiredClusters()) ;
+      // start by arbitrarily picking the first vector in the sample
+      centers->append(sample->getNth(0)) ;
+      sample->setNth(0,nullptr) ;
+      // until we've accumulated desiredClusters() vectors, search for
+      //   the as-yet-unselected vector with the smallest maximal
+      //   similarity to any already-selected vector
+      for (size_t i = 1 ; i < this->desiredClusters() ; ++i)
+	 {
+	 size_t selected = find_least_similar<IdxT,ValT>(sample, centers,this->m_measure) ;
+	 centers->append(sample->getNth(selected)) ;
+	 sample->setNth(selected,nullptr) ;
+	 }
+      sample->free() ;
+      }
    // until converged or iteration limit:
    //    assign each vector to the nearest center
    //    collect vectors into clusters by assigned center
@@ -169,10 +210,13 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
       this->freeClusters(clusters,num_clusters) ;
       }
    // build the final cluster result from the extracted clusters
-//TODO
+   ClusterInfo* result_clusters = ClusterInfo::create(clusters,num_clusters) ;
+   this->freeClusters(clusters,num_clusters) ;
+   // the subclusters are the actual result
+   result_clusters->setFlag(ClusterInfo::Flags::group) ;
    vectors->free() ;
    centers->free() ;
-   return nullptr ;
+   return result_clusters ;
 }
 
 } // end of namespace Fr
