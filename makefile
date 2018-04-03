@@ -487,9 +487,9 @@ vecsim_u32_flt$(OBJ):	vecsim_u32_flt$(C) template/vecsim_factory.cc
 vecsim_u32_u32$(OBJ):	vecsim_u32_u32$(C) template/vecsim_factory.cc
 vector_obj_dbl$(OBJ):	vector_obj_dbl$(C) framepac/vector.h
 vector_obj_flt$(OBJ):	vector_obj_flt$(C) framepac/vector.h
-vector_u32_dbl$(OBJ):	vector_u32_dbl$(C) framepac/vector.h template/sparsevector.cc
-vector_u32_flt$(OBJ):	vector_u32_flt$(C) framepac/termvector.h template/sparsevector.cc
-vector_u32_u32$(OBJ):	vector_u32_u32$(C) framepac/termvector.h template/sparsevector.cc
+vector_u32_dbl$(OBJ):	vector_u32_dbl$(C) framepac/vector.h template/sparsevector.cc template/vector_arith.cc
+vector_u32_flt$(OBJ):	vector_u32_flt$(C) framepac/termvector.h template/sparsevector.cc template/vector_arith.cc
+vector_u32_u32$(OBJ):	vector_u32_u32$(C) framepac/termvector.h template/sparsevector.cc template/vector_arith.cc
 wordcorpus_u32u32$(OBJ): 	wordcorpus_u32u32$(C) template/wordcorpus.cc
 wordcorpus_u32u40$(OBJ): 	wordcorpus_u32u40$(C) template/wordcorpus.cc
 wordsplit$(OBJ):	wordsplit$(C) framepac/words.h

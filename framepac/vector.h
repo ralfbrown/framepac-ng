@@ -53,6 +53,12 @@ class Vector : public Object
       ValT elementValue(size_t N) const { return m_values[N] ; }
       size_t elementIndex(size_t N) const { return N ; }
 
+      // arithmetic operations
+      template <typename IdxT>
+      Vector* add(const Vector* other) const ;
+      void scale(double factor) ;
+      void normalize() ;
+
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
@@ -125,41 +131,6 @@ class Vector : public Object
    } ;
 
 //----------------------------------------------------------------------------
-//   we have a bunch of template functions that define a
-//   more-efficient specialization for the case of two dense vectors
-//   and a generic version for the other combinations of dense and
-//   sparce vectors.  To get the proper template inference,
-//   SparseVector can't be a derivative of the dense vector type, so
-//   we have a common base type from which both DenseVector and
-//   SparseVector derive, and make that base class a dense vector in
-//   all but name.
-
-template <typename ValT>
-class DenseVector : public Vector<ValT>
-   {
-   public:
-      static DenseVector* create(size_t capacity = 0) { return new DenseVector(capacity) ; }
-
-   protected: // creation/destruction
-      void* operator new(size_t) { return s_allocator.allocate() ; }
-      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      DenseVector(size_t capacity = 0) : Vector<ValT>(capacity) {}
-      DenseVector(const Vector<ValT>&v) : Vector<ValT>(v) {}
-      ~DenseVector() {}
-      DenseVector& operator= (const DenseVector&) ;
-
-   protected: // implementation functions for virtual methods
-      friend class FramepaC::Object_VMT<DenseVector> ;
-
-   private:
-      static Allocator s_allocator ;
-   } ;
-
-extern template class DenseVector<uint32_t> ;
-extern template class DenseVector<float> ;
-extern template class DenseVector<double> ;
-
-//----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
 class SparseVector : public Vector<ValT>
@@ -173,6 +144,10 @@ class SparseVector : public Vector<ValT>
       
       // support for iterating through elements for e.g. vector similarity functions
       size_t elementIndex(size_t N) const { return (size_t)m_indices[N] ; }
+
+      // arithmetic operations
+      SparseVector* add(const Vector<ValT>* other) const ;
+      SparseVector* add(const SparseVector* other) const ;
 
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
@@ -328,6 +303,46 @@ extern template class SparseVector<uint32_t,float> ;
 extern template class SparseVector<uint32_t,double> ;
 extern template class SparseVector<Object*,float> ;
 extern template class SparseVector<Object*,double> ;
+
+//----------------------------------------------------------------------------
+//   we have a bunch of template functions that define a
+//   more-efficient specialization for the case of two dense vectors
+//   and a generic version for the other combinations of dense and
+//   sparce vectors.  To get the proper template inference,
+//   SparseVector can't be a derivative of the dense vector type, so
+//   we have a common base type from which both DenseVector and
+//   SparseVector derive, and make that base class a dense vector in
+//   all but name.
+
+template <typename ValT>
+class DenseVector : public Vector<ValT>
+   {
+   public:
+      static DenseVector* create(size_t capacity = 0) { return new DenseVector(capacity) ; }
+
+      // arithmetic operations
+      DenseVector<ValT>* add(const DenseVector* other) const ;
+      template <typename IdxT>
+      SparseVector<IdxT,ValT>* add(const SparseVector<IdxT,ValT>* other) const ;
+
+   protected: // creation/destruction
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
+      DenseVector(size_t capacity = 0) : Vector<ValT>(capacity) {}
+      DenseVector(const Vector<ValT>&v) : Vector<ValT>(v) {}
+      ~DenseVector() {}
+      DenseVector& operator= (const DenseVector&) ;
+
+   protected: // implementation functions for virtual methods
+      friend class FramepaC::Object_VMT<DenseVector> ;
+
+   private:
+      static Allocator s_allocator ;
+   } ;
+
+extern template class DenseVector<uint32_t> ;
+extern template class DenseVector<float> ;
+extern template class DenseVector<double> ;
 
 //----------------------------------------------------------------------------
 

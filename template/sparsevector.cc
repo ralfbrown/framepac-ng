@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-16					*/
+/* Version 0.04, last edit 2018-04-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -26,7 +26,30 @@ namespace Fr
 {
 
 /************************************************************************/
+/*	Methods for class SparseVector					*/
 /************************************************************************/
+
+template <typename IdxT, typename ValT>
+SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const Vector<ValT>* other) const
+{
+   if (!other)
+      return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone()) ;
+   SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create() ;
+
+   return result ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const SparseVector<IdxT,ValT>* other) const
+{
+   if (!other)
+      return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone()) ;
+   SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create() ;
+
+   return result ;
+}
 
 //----------------------------------------------------------------------------
 
