@@ -485,8 +485,8 @@ vecsim_name$(OBJ):	vecsim_name$(C) framepac/utility.h framepac/vecsim.h
 vecsim_u32_dbl$(OBJ):	vecsim_u32_dbl$(C) template/vecsim_factory.cc
 vecsim_u32_flt$(OBJ):	vecsim_u32_flt$(C) template/vecsim_factory.cc
 vecsim_u32_u32$(OBJ):	vecsim_u32_u32$(C) template/vecsim_factory.cc
-vector_obj_dbl$(OBJ):	vector_obj_dbl$(C) framepac/vector.h
-vector_obj_flt$(OBJ):	vector_obj_flt$(C) framepac/vector.h
+vector_obj_dbl$(OBJ):	vector_obj_dbl$(C) framepac/vector.h template/sparsevector.cc template/vector_arith.cc
+vector_obj_flt$(OBJ):	vector_obj_flt$(C) framepac/vector.h template/sparsevector.cc template/vector_arith.cc
 vector_u32_dbl$(OBJ):	vector_u32_dbl$(C) framepac/vector.h template/sparsevector.cc template/vector_arith.cc
 vector_u32_flt$(OBJ):	vector_u32_flt$(C) framepac/termvector.h template/sparsevector.cc template/vector_arith.cc
 vector_u32_u32$(OBJ):	vector_u32_u32$(C) framepac/termvector.h template/sparsevector.cc template/vector_arith.cc

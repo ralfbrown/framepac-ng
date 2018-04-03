@@ -113,8 +113,9 @@ template <typename ValT>
 template <typename IdxT>
 SparseVector<IdxT,ValT>* DenseVector<ValT>::add(const SparseVector<IdxT,ValT>* other) const
 {
+   if (other) return other->add(this) ;
    SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create() ;
-
+   //TODO
    return result ;
 }
 

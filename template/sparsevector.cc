@@ -34,8 +34,50 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const Vector<ValT>* other)
 {
    if (!other)
       return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone()) ;
-   SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create() ;
-
+   size_t count { 0 } ;
+   size_t elts1 { this->numElements() } ;
+   size_t elts2 { other->numElements() } ;
+   size_t pos1 { 0 } ;
+   size_t pos2 { 0 } ;
+   while (pos1 < elts1 && pos2 < elts2)
+      {
+      auto elt1 { this->elementIndex(pos1) } ;
+      auto elt2 { other->elementIndex(pos2) } ;
+      if (elt1 <= elt2)
+	 {
+	 pos1++ ;
+	 }
+      if (elt1 >= elt2)
+	 {
+	 pos2++ ;
+	 }
+      count++ ;
+      }
+   count += (elts1 - pos1) + (elts2 - pos2) ;
+   SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create(count) ;
+   pos1 = 0 ;
+   pos2 = 0 ;
+   count = 0 ;
+   while (pos1 < elts1 && pos2 < elts2)
+      {
+      auto elt1 { (IdxT)(this->elementIndex(pos1)) } ;
+      auto elt2 { (IdxT)(other->elementIndex(pos2)) } ;
+      if (elt1 < elt2)
+	 {
+	 result->m_indices[count] = elt1 ;
+	 result->m_values[count++] = this->elementValue(pos1++) ;
+	 }
+      else if (elt1 > elt2)
+	 {
+	 result->m_indices[count] = elt2 ;
+	 result->m_values[count++] = other->elementValue(pos2++) ;
+	 }
+      else // elt1 == elt2
+	 {
+	 result->m_indices[count] = elt1 ;
+	 result->m_values[count++] = this->elementValue(pos1++) + other->elementValue(pos2++) ;
+	 }
+      }
    return result ;
 }
 
@@ -46,8 +88,50 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const SparseVector<IdxT,Va
 {
    if (!other)
       return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone()) ;
-   SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create() ;
-
+   size_t count { 0 } ;
+   size_t elts1 { this->numElements() } ;
+   size_t elts2 { other->numElements() } ;
+   size_t pos1 { 0 } ;
+   size_t pos2 { 0 } ;
+   while (pos1 < elts1 && pos2 < elts2)
+      {
+      auto elt1 { this->elementIndex(pos1) } ;
+      auto elt2 { other->elementIndex(pos2) } ;
+      if (elt1 <= elt2)
+	 {
+	 pos1++ ;
+	 }
+      if (elt1 >= elt2)
+	 {
+	 pos2++ ;
+	 }
+      count++ ;
+      }
+   count += (elts1 - pos1) + (elts2 - pos2) ;
+   SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create(count) ;
+   pos1 = 0 ;
+   pos2 = 0 ;
+   count = 0 ;
+   while (pos1 < elts1 && pos2 < elts2)
+      {
+      auto elt1 { (IdxT)(this->elementIndex(pos1)) } ;
+      auto elt2 { (IdxT)(other->elementIndex(pos2)) } ;
+      if (elt1 < elt2)
+	 {
+	 result->m_indices[count] = elt1 ;
+	 result->m_values[count++] = this->elementValue(pos1++) ;
+	 }
+      else if (elt1 > elt2)
+	 {
+	 result->m_indices[count] = elt2 ;
+	 result->m_values[count++] = other->elementValue(pos2++) ;
+	 }
+      else // elt1 == elt2
+	 {
+	 result->m_indices[count] = elt1 ;
+	 result->m_values[count++] = this->elementValue(pos1++) + other->elementValue(pos2++) ;
+	 }
+      }
    return result ;
 }
 

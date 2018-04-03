@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-03-30					*/
+/* Version 0.04, last edit 2018-04-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -39,7 +39,7 @@ SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid() const
       {
       auto vec = static_cast<SparseVector<IdxT,ValT>*>(members()->getNth(i)) ;
       if (!vec) continue ;
-//FIXME:      centroid->add(vec) ;
+      centroid->add(vec) ;
       }
    return centroid ;
 }
@@ -54,7 +54,7 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
       {
       auto vec = static_cast<DenseVector<ValT>*>(members()->getNth(i)) ;
       if (!vec) continue ;
-//FIXME:      centroid->add(vec) ;
+      centroid->add(vec) ;
       }
    return centroid ;
 }
