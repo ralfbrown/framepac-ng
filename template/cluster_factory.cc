@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-29					*/
+/* Version 0.04, last edit 2018-04-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -38,7 +38,7 @@ ClusteringAlgo<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::instantiate(const char* al
       return nullptr ;
    if (!options)
       options = "" ;
-   ClusteringAlgorithm algo = ClusteringAlgorithm::no_clustering ; //FIXME
+   ClusteringAlgorithm algo = parse_cluster_algo_name(algo_name) ;
    ClusteringAlgo* clusterer = nullptr ;
    switch (algo)
       {

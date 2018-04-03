@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-03-30					*/
+/* Version 0.04, last edit 2018-04-02					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -31,9 +31,9 @@ namespace Fr {
 
 //----------------------------------------------------------------------------
 
-enum ClusteringAlgorithm
+enum class ClusteringAlgorithm
    {
-   no_clustering,
+   none,
    agglomerative,		// AGGLOM from first-gen FramepaC
    annealing,
    brown,
@@ -242,6 +242,11 @@ class ClusteringAlgo
       VectorMeasure<IdxT,ValT>* m_measure ;
       bool m_use_sparse_vectors ;
    } ;
+
+/************************************************************************/
+/************************************************************************/
+
+ClusteringAlgorithm parse_cluster_algo_name(const char* name) ;
 
 } ; // end of namespace Fr
 

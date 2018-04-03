@@ -243,7 +243,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	bidindex_cstr$(OBJ) bitvector$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) canonsent$(OBJ) \
 	charget$(OBJ) cfile$(OBJ) cognate$(OBJ) confmatrix$(OBJ) \
-	clusterinfo$(OBJ) \
+	clusterinfo$(OBJ) cluster_name$(OBJ) \
 	cluster_u32_dbl$(OBJ) cluster_u32_flt$(OBJ) cluster_u32_u32$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
 	fasthash64$(OBJ) \
@@ -405,6 +405,7 @@ canonsent$(OBJ):	canonsent$(C) framepac/stringbuilder.h framepac/texttransforms.
 charget$(OBJ):		charget$(C) framepac/charget.h
 cfile$(OBJ):		cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
 clusterinfo$(OBJ):	clusterinfo$(C) framepac/cluster.h
+cluster_name$(OBJ):	cluster_name$(C) framepac/cluster.h
 cluster_u32_dbl$(OBJ):	cluster_u32_dbl$(C) template/cluster_factory.cc
 cluster_u32_flt$(OBJ):	cluster_u32_flt$(C) template/cluster_factory.cc
 cluster_u32_u32$(OBJ):	cluster_u32_u32$(C) template/cluster_factory.cc
