@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-03-30					*/
+/* Version 0.04, last edit 2018-04-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -133,6 +133,69 @@ class Vector : public Object
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
+class OneHotVector : public Vector<ValT>
+   {
+   public:
+      static OneHotVector* create(size_t numelts) ;
+
+      // support for iterating through elements for e.g. vector similarity functions
+      size_t elementIndex(size_t /*N*/) const { return (size_t)m_index ; }
+
+   protected:
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
+      OneHotVector(IdxT index, ValT value = (ValT)1) ;
+      OneHotVector(const OneHotVector&) ;
+      ~OneHotVector() { m_value = (ValT)0 ; }
+      OneHotVector& operator= (const OneHotVector&) ;
+
+   protected: // implementation functions for virtual methods
+      friend class FramepaC::Object_VMT<OneHotVector> ;
+
+      // type determination predicates
+      static bool isSparseVector_(const Object *) { return true ; }
+      static bool isOneHotVector_(const Object *) { return true ; }
+      static const char* typeName_(const Object*) { return "OneHotVector" ; }
+
+      // *** copying ***
+      static ObjectPtr clone_(const Object *) ;
+      static Object *shallowCopy_(const Object *obj) { return clone_(obj) ; }
+      static ObjectPtr subseq_int(const Object *,size_t start, size_t stop) ;
+      static ObjectPtr subseq_iter(const Object *,ObjectIter start, ObjectIter stop) ;
+
+      // *** destroying ***
+      static void free_(Object *obj) { delete static_cast<OneHotVector*>(obj) ; }
+      // use shallowFree() on a shallowCopy()
+      static void shallowFree_(Object *obj) { delete static_cast<OneHotVector*>(obj) ; }
+
+      // *** standard info functions ***
+      static size_t size_(const Object *obj) { return static_cast<const OneHotVector*>(obj)->size() ; }
+      static bool empty_(const Object *obj) { return static_cast<const OneHotVector*>(obj)->empty() ; }
+
+      // *** standard access functions ***
+      static Object *front_(Object *obj) { return obj ; }
+      static const Object *front_const(const Object *obj) { return obj ; }
+      static const char *stringValue_(const Object *) { return nullptr ; }
+
+      // *** comparison functions ***
+      static bool equal_(const Object *obj, const Object *other) ;
+      static int compare_(const Object *obj, const Object *other) ;
+      static int lessThan_(const Object *obj, const Object *other) ;
+
+      // *** iterator support ***
+      static Object* next_(const Object *) { return nullptr ; }
+      static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
+
+   private:
+      static Allocator s_allocator ;
+   protected:
+      IdxT m_index ;
+      ValT m_value ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
 class SparseVector : public Vector<ValT>
    {
    public:
@@ -148,6 +211,7 @@ class SparseVector : public Vector<ValT>
       // arithmetic operations
       SparseVector* add(const Vector<ValT>* other) const ;
       SparseVector* add(const SparseVector* other) const ;
+      SparseVector* add(const OneHotVector<IdxT,ValT>* other) const ;
 
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
@@ -343,65 +407,6 @@ class DenseVector : public Vector<ValT>
 extern template class DenseVector<uint32_t> ;
 extern template class DenseVector<float> ;
 extern template class DenseVector<double> ;
-
-//----------------------------------------------------------------------------
-
-template <typename IdxT, typename ValT>
-class OneHotVector : public Vector<ValT>
-   {
-   public:
-      static OneHotVector* create(size_t numelts) ;
-
-   protected:
-      void* operator new(size_t) { return s_allocator.allocate() ; }
-      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      OneHotVector(IdxT index, ValT value = (ValT)1) ;
-      OneHotVector(const OneHotVector&) ;
-      ~OneHotVector() { m_value = (ValT)0 ; }
-      OneHotVector& operator= (const OneHotVector&) ;
-
-   protected: // implementation functions for virtual methods
-      friend class FramepaC::Object_VMT<OneHotVector> ;
-
-      // type determination predicates
-      static bool isSparseVector_(const Object *) { return true ; }
-      static const char* typeName_(const Object*) { return "OneHotVector" ; }
-
-      // *** copying ***
-      static ObjectPtr clone_(const Object *) ;
-      static Object *shallowCopy_(const Object *obj) { return clone_(obj) ; }
-      static ObjectPtr subseq_int(const Object *,size_t start, size_t stop) ;
-      static ObjectPtr subseq_iter(const Object *,ObjectIter start, ObjectIter stop) ;
-
-      // *** destroying ***
-      static void free_(Object *obj) { delete static_cast<OneHotVector*>(obj) ; }
-      // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object *obj) { delete static_cast<OneHotVector*>(obj) ; }
-
-      // *** standard info functions ***
-      static size_t size_(const Object *obj) { return static_cast<const OneHotVector*>(obj)->size() ; }
-      static bool empty_(const Object *obj) { return static_cast<const OneHotVector*>(obj)->empty() ; }
-
-      // *** standard access functions ***
-      static Object *front_(Object *obj) { return obj ; }
-      static const Object *front_const(const Object *obj) { return obj ; }
-      static const char *stringValue_(const Object *) { return nullptr ; }
-
-      // *** comparison functions ***
-      static bool equal_(const Object *obj, const Object *other) ;
-      static int compare_(const Object *obj, const Object *other) ;
-      static int lessThan_(const Object *obj, const Object *other) ;
-
-      // *** iterator support ***
-      static Object* next_(const Object *) { return nullptr ; }
-      static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
-
-   private:
-      static Allocator s_allocator ;
-   protected:
-      IdxT m_index ;
-      ValT m_value ;
-   } ;
 
 //----------------------------------------------------------------------------
 

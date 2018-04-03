@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-26					*/
+/* Version 0.04, last edit 2018-04-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -192,6 +192,7 @@ class ObjectVMT
       bool (*isMap_)(const Fr::Object*) ;
       bool (*isNumber_)(const Fr::Object*) ;
       bool (*isObject_)(const Fr::Object*) ;
+      bool (*isOneHotVector_)(const Fr::Object*) ;
       bool (*isRational_)(const Fr::Object*) ;
       bool (*isSet_)(const Fr::Object*) ;
       bool (*isSparseVector_)(const Fr::Object*) ;
@@ -264,6 +265,7 @@ class Object_VMT : public ObjectVMT
 	 isMap_ = &ObjT::isMap_ ;
 	 isNumber_ = &ObjT::isNumber_ ;
 	 isObject_ = &ObjT::isObject_ ;
+	 isOneHotVector_ = &ObjT::isOneHotVector_ ;
 	 isRational_ = &ObjT::isRational_ ;
 	 isSet_ = &ObjT::isSet_ ;
 	 isSparseVector_ = &ObjT::isSparseVector_ ;

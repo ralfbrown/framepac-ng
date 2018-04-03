@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-03-30					*/
+/* Version 0.04, last edit 2018-04-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -131,6 +131,7 @@ class Object
       FrVIRTFUNC0(bool,isMap,isMap_,const) ;
       FrVIRTFUNC0(bool,isNumber,isNumber_,const) ;
       FrVIRTFUNC0(bool,isObject,isObject_,const) ;
+      FrVIRTFUNC0(bool,isOneHotVector,isOneHotVector_,const) ;
       FrVIRTFUNC0(bool,isRational,isRational_,const) ;
       FrVIRTFUNC0(bool,isSet,isSet_,const) ;
       FrVIRTFUNC0(bool,isSparseVector,isSparseVector_,const) ;
@@ -218,6 +219,7 @@ inline bool Object::isList_(const Object*) { return false ; }
 inline bool Object::isMap_(const Object*) { return false ; }
 inline bool Object::isNumber_(const Object*) { return false ; }
 inline bool Object::isObject_(const Object*) { return true ; }
+inline bool Object::isOneHotVector_(const Object*) { return false ; }
 inline bool Object::isRational_(const Object*) { return false ; }
 inline bool Object::isSet_(const Object*) { return false ; }
 inline bool Object::isSparseVector_(const Object*) { return false ; }

@@ -132,6 +132,51 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const SparseVector<IdxT,Va
 	 result->m_values[count++] = this->elementValue(pos1++) + other->elementValue(pos2++) ;
 	 }
       }
+   while (pos1 < elts1)
+      {
+      result->m_indices[count] = (IdxT)(this->elementIndex(pos1)) ;
+      result->m_values[count++] = this->elementValue(pos1++) ;
+      }
+   while (pos2 < elts2)
+      {
+      result->m_indices[count] = (IdxT)(other->elementIndex(pos2)) ;
+      result->m_values[count++] = other->elementValue(pos2++) ;
+      }
+   return result ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const OneHotVector<IdxT,ValT>* other) const
+{
+   size_t count = this->numElements() ;
+   
+   SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create(count) ;
+   auto elt2 { (IdxT)other->elementIndex(0) } ;
+   count = 0 ;
+   size_t elts1 { this->numElements() } ;
+   size_t pos1 { 0 } ;
+   while ((IdxT)this->elementIndex(pos1) < elt2)
+      {
+      result->m_indices[count] = (IdxT)(this->elementIndex(pos1)) ;
+      result->m_values[count++] = this->elementValue(pos1++) ;
+      }
+   if ((IdxT)this->elementIndex(pos1) == elt2)
+      {
+      result->m_indices[count] = (IdxT)(this->elementIndex(pos1)) ;
+      result->m_values[count++] = this->elementValue(pos1++) + other->elementValue(0) ;
+      }
+   else
+      {
+      result->m_indices[count] = (IdxT)(other->elementIndex(0)) ;
+      result->m_values[count++] = other->elementValue(0) ;
+      }
+   while (pos1 < elts1)
+      {
+      result->m_indices[count] = (IdxT)(this->elementIndex(pos1)) ;
+      result->m_values[count++] = this->elementValue(pos1++) ;
+      }
    return result ;
 }
 
