@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-13					*/
+/* Version 0.04, last edit 2018-04-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -156,6 +156,12 @@ class Array : public Object
       // *** standard access functions ***
       static Object* front_(Object* obj) { return static_cast<const Array*>(obj)->front() ; }
       static const Object* front_(const Object* obj) { return static_cast<const Array*>(obj)->front() ; }
+      static long nthInt_(const Object* obj, size_t N)
+	 { const Object* val = static_cast<const Array*>(obj)->getNth(N) ;
+           return val ? val->intValue() : 0 ; }
+      static double nthFloat_(const Object* obj, size_t N)
+	 { const Object* val = static_cast<const Array*>(obj)->getNth(N) ;
+           return val ? val->floatValue() : 0 ; }
 
       // *** comparison functions ***
       static size_t hashValue_(const Object*) ;
