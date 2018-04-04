@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 29mar2018
+# Last change: 03apr2018
 
 #########################################################################
 # define the locations of all the files
@@ -243,7 +243,7 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	bidindex_cstr$(OBJ) bitvector$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) canonsent$(OBJ) \
 	charget$(OBJ) cfile$(OBJ) cognate$(OBJ) confmatrix$(OBJ) \
-	clusterinfo$(OBJ) cluster_name$(OBJ) \
+	contextcoll$(OBJ) clusterinfo$(OBJ) cluster_name$(OBJ) \
 	cluster_u32_dbl$(OBJ) cluster_u32_flt$(OBJ) cluster_u32_u32$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
 	fasthash64$(OBJ) \
@@ -412,6 +412,7 @@ cluster_u32_u32$(OBJ):	cluster_u32_u32$(C) template/cluster_factory.cc
 cognate$(OBJ):		cognate$(C) framepac/spelling.h
 complex$(OBJ):		complex$(C) framepac/complex.h framepac/fasthash64.h
 confmatrix$(OBJ):	confmatrix$(C) framepac/spelling.h
+contextcoll$(OBJ):	contextcoll$(C) framepac/contextcoll.h
 critsect$(OBJ):		critsect$(C) framepac/critsect.h
 cstring$(OBJ):		cstring$(C) framepac/cstring.h framepac/fasthash64.h
 fasthash64$(OBJ):	fasthash64$(C) framepac/fasthash64.h
@@ -599,6 +600,9 @@ framepac/cluster.h:	framepac/array.h framepac/list.h framepac/symbol.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/complex.h:	framepac/number.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/contextcoll.h:	framepac/hashtable.h framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/counter.h:	framepac/atomic.h

@@ -23,6 +23,7 @@
 #define Fr_CONTEXTCOLL_H_INCLUDED
 
 #include "framepac/hashtable.h"
+#include "framepac/vector.h"
 
 namespace Fr
 {
@@ -41,6 +42,11 @@ class ContextVectorCollection
       map_type m_term_map ;
       map_type m_context_map ;
    } ;
+
+// the typical application for this class uses Symbol as the term type and SparseVector<uint32_t,float>
+//  as the context vectors, so predefine that instantiation
+extern template class ContextVectorCollection<Symbol*,uint32_t,float> ;
+typedef ContextVectorCollection<Symbol*,uint32_t,float> ContextVectorColl ;
 
 } // end of namespace Fr
 

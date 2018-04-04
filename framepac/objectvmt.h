@@ -176,6 +176,8 @@ class ObjectVMT
       long int (*intValue_)(const Fr::Object*) ;
       mpz_t (*bignumValue_)(const Fr::Object*) ;
       mpq_t (*rationalValue_)(const Fr::Object*) ;
+      long (*nthInt_)(const Fr::Object*,size_t) ;
+      double (*nthFloat_)(const Fr::Object*,size_t) ;
 
       // *** dynamic type determination ***
       // name of the actual type of the current object
@@ -255,6 +257,8 @@ class Object_VMT : public ObjectVMT
 	 intValue_ = &ObjT::intValue_ ;
 	 bignumValue_ = &ObjT::bignumValue_ ;
 	 rationalValue_ = &ObjT::rationalValue_ ;
+	 nthInt_ = &ObjT::nthInt_ ;
+	 nthFloat_ = &ObjT::nthFloat_ ;
 	 typeName_ = &ObjT::typeName_ ;
 	 isArray_ = &ObjT::isArray_ ;
 	 isBigNum_ = &ObjT::isBigNum_ ;

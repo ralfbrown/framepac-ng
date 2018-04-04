@@ -52,8 +52,6 @@ class Vector : public Object
       size_t numElements() const { return m_size ; }
       ValT elementValue(size_t N) const { return m_values[N] ; }
       size_t elementIndex(size_t N) const { return N ; }
-      virtual size_t elementValueLong(size_t N) const { return (size_t)m_values[N] ; }
-      virtual double elementValueDouble(size_t N) const { return (double)m_values[N] ; }
       
       // arithmetic operations
       template <typename IdxT>
@@ -108,6 +106,10 @@ class Vector : public Object
       static Object *front_(Object *obj) { return obj ; }
       static const Object *front_const(const Object *obj) { return obj ; }
       static const char *stringValue_(const Object *) { return nullptr ; }
+      static long nthInt_(const Object* obj, size_t N)
+	 { return (long)static_cast<const Vector<ValT>*>(obj)->m_values[N] ; }
+      static double nthFloat_(const Object* obj, size_t N)
+	 { return (double)static_cast<const Vector<ValT>*>(obj)->m_values[N] ; }
 
       // *** comparison functions ***
       static bool equal_(const Object *obj, const Object *other) ;
@@ -142,8 +144,6 @@ class OneHotVector : public Vector<ValT>
 
       // support for iterating through elements for e.g. vector similarity functions
       size_t elementIndex(size_t /*N*/) const { return (size_t)m_index ; }
-      virtual size_t elementValueLong(size_t /*N*/) const { return (size_t)m_value ; }
-      virtual double elementValueDouble(size_t /*N*/) const { return (double)m_value ; }
 
    protected:
       void* operator new(size_t) { return s_allocator.allocate() ; }
@@ -180,6 +180,10 @@ class OneHotVector : public Vector<ValT>
       static Object *front_(Object *obj) { return obj ; }
       static const Object *front_const(const Object *obj) { return obj ; }
       static const char *stringValue_(const Object *) { return nullptr ; }
+      static long nthInt_(const Object* obj, size_t N)
+	 { return (long)static_cast<const Vector<ValT>*>(obj)->m_value ; }
+      static double nthFloat_(const Object* obj, size_t N)
+	 { return (double)static_cast<const Vector<ValT>*>(obj)->m_value ; }
 
       // *** comparison functions ***
       static bool equal_(const Object *obj, const Object *other) ;

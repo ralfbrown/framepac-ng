@@ -183,6 +183,8 @@ class Object
       FrVIRTFUNC0(long int,intValue,intValue_,const) ;
       FrVIRTFUNC0(mpz_t,bignumValue,bignumValue_,const) ;
       FrVIRTFUNC0(mpq_t,rationalValue,rationalValue_,const) ;
+      FrVIRTFUNC1(long,nthInt,nthInt_,const,size_t,N) ;
+      FrVIRTFUNC1(double,nthFloat,nthFloat_,const,size_t,N) ;
 
       // *** comparison functions ***
       FrVIRTFUNC0(size_t,hashValue,hashValue_,const) ;
@@ -237,6 +239,8 @@ inline const char* Object::stringValue_(const Object*) { return nullptr ; }
 inline double Object::floatValue_(const Object*) { return 0.0 ; }
 inline double Object::imagValue_(const Object*) { return 0.0 ; }
 inline long Object::intValue_(const Object*) { return 0 ; }
+inline long Object::nthInt_(const Object*,size_t) { return 0 ; }
+inline double Object::nthFloat_(const Object*,size_t) { return 0.0 ; }
 
 inline bool Object::equal_(const Object* obj, const Object* other) { return obj == other ; }
 
