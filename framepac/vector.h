@@ -19,8 +19,8 @@
 /*									*/
 /************************************************************************/
 
-#ifndef __FrVECTOR_H_INCLUDED
-#define __FrVECTOR_H_INCLUDED
+#ifndef Fr_VECTOR_H_INCLUDED
+#define Fr_VECTOR_H_INCLUDED
 
 #include "framepac/list.h"
 #include "framepac/symbol.h"
@@ -52,7 +52,9 @@ class Vector : public Object
       size_t numElements() const { return m_size ; }
       ValT elementValue(size_t N) const { return m_values[N] ; }
       size_t elementIndex(size_t N) const { return N ; }
-
+      virtual size_t elementValueLong(size_t N) const { return (size_t)m_values[N] ; }
+      virtual double elementValueDouble(size_t N) const { return (double)m_values[N] ; }
+      
       // arithmetic operations
       template <typename IdxT>
       Vector* add(const Vector* other) const ;
@@ -140,6 +142,8 @@ class OneHotVector : public Vector<ValT>
 
       // support for iterating through elements for e.g. vector similarity functions
       size_t elementIndex(size_t /*N*/) const { return (size_t)m_index ; }
+      virtual size_t elementValueLong(size_t /*N*/) const { return (size_t)m_value ; }
+      virtual double elementValueDouble(size_t /*N*/) const { return (double)m_value ; }
 
    protected:
       void* operator new(size_t) { return s_allocator.allocate() ; }
@@ -442,6 +446,6 @@ class VectorGroup
 
 } ; // end of namespace Fr
 
-#endif /* !__FrVECTOR_H_INCLUDED */
+#endif /* !Fr_VECTOR_H_INCLUDED */
 
 // end of vector.h //
