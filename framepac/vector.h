@@ -144,6 +144,7 @@ class OneHotVector : public Vector<ValT>
 
       // support for iterating through elements for e.g. vector similarity functions
       size_t elementIndex(size_t /*N*/) const { return (size_t)m_index ; }
+      ValT elementValue(size_t N) const { return N == (size_t)m_index ? m_value : (ValT)0 ; }
 
    protected:
       void* operator new(size_t) { return s_allocator.allocate() ; }
@@ -181,9 +182,11 @@ class OneHotVector : public Vector<ValT>
       static const Object *front_const(const Object *obj) { return obj ; }
       static const char *stringValue_(const Object *) { return nullptr ; }
       static long nthInt_(const Object* obj, size_t N)
-	 { return (long)static_cast<const Vector<ValT>*>(obj)->m_value ; }
+	 { auto v = static_cast<const Vector<ValT>*>(obj) ;
+           return N == (size_t)v->m_index ? (long)v->m_value : 0 ; }
       static double nthFloat_(const Object* obj, size_t N)
-	 { return (double)static_cast<const Vector<ValT>*>(obj)->m_value ; }
+	 { auto v = static_cast<const Vector<ValT>*>(obj) ;
+           return N == (size_t)v->m_index ? (double)v->m_value : 0 ; }
 
       // *** comparison functions ***
       static bool equal_(const Object *obj, const Object *other) ;
