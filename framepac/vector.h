@@ -139,7 +139,12 @@ class Vector : public Object
 template <typename IdxT, typename ValT>
 class OneHotVector : public Vector<ValT>
    {
-   public:
+   public: // types
+      // export the template type parameter for use in other templates that may not have
+      //   an explicit parameter giving this type because they inferred the vector type
+      typedef IdxT index_type ;
+
+   public: // methods
       static OneHotVector* create(size_t numelts) ;
 
       // support for iterating through elements for e.g. vector similarity functions
@@ -209,7 +214,12 @@ class OneHotVector : public Vector<ValT>
 template <typename IdxT, typename ValT>
 class SparseVector : public Vector<ValT>
    {
-   public:
+   public: // types
+      // export the template type parameter for use in other templates that may not have
+      //   an explicit parameter giving this type because they inferred the vector type
+      typedef IdxT index_type ;
+
+   public: // methods
       static SparseVector* create(size_t numelts = 0) { return new SparseVector(numelts) ; }
 
       // retrieve elements of the vector

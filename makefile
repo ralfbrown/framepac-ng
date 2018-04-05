@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 03apr2018
+# Last change: 04apr2018
 
 #########################################################################
 # define the locations of all the files
@@ -243,7 +243,8 @@ OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
 	bidindex_cstr$(OBJ) bitvector$(OBJ) \
 	bufbuilder_char$(OBJ) bwt$(OBJ) canonsent$(OBJ) \
 	charget$(OBJ) cfile$(OBJ) cognate$(OBJ) confmatrix$(OBJ) \
-	contextcoll$(OBJ) clusterinfo$(OBJ) cluster_name$(OBJ) \
+	contextcoll_sym$(OBJ) contextcoll_u32$(OBJ) \
+	clusterinfo$(OBJ) cluster_name$(OBJ) \
 	cluster_u32_dbl$(OBJ) cluster_u32_flt$(OBJ) cluster_u32_u32$(OBJ) \
 	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
 	fasthash64$(OBJ) \
@@ -412,7 +413,8 @@ cluster_u32_u32$(OBJ):	cluster_u32_u32$(C) template/cluster_factory.cc
 cognate$(OBJ):		cognate$(C) framepac/spelling.h
 complex$(OBJ):		complex$(C) framepac/complex.h framepac/fasthash64.h
 confmatrix$(OBJ):	confmatrix$(C) framepac/spelling.h
-contextcoll$(OBJ):	contextcoll$(C) framepac/contextcoll.h
+contextcoll_sym$(OBJ):	contextcoll_sym$(C) template/contextcoll.cc
+contextcoll_u32$(OBJ):	contextcoll_u32$(C) template/contextcoll.cc
 critsect$(OBJ):		critsect$(C) framepac/critsect.h
 cstring$(OBJ):		cstring$(C) framepac/cstring.h framepac/fasthash64.h
 fasthash64$(OBJ):	fasthash64$(C) framepac/fasthash64.h
@@ -531,6 +533,9 @@ template/cluster_factory.cc: template/cluster.cc template/cluster_agglom.cc temp
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster.cc:	framepac/cluster.h framepac/threadpool.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/contextcoll.cc:	framepac/contextcoll.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/hashtable.cc:	framepac/hashtable.h framepac/message.h framepac/fasthash64.h

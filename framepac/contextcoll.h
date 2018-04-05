@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-03					*/
+/* Version 0.04, last edit 2018-04-04					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -28,25 +28,41 @@
 namespace Fr
 {
 
-template <typename KeyT, typename IdxT, typename ValT>
+template <typename KeyT, typename IdxT, typename ValT, bool sparse = true>
 class ContextVectorCollection
    {
    public:
-      typedef HashTable<KeyT,Object*> map_type ;
-      typedef Vector<ValT> context_type ;
+      typedef HashTable<KeyT,Object*>* map_type ;
+      typedef Vector<ValT>* context_type ;
 
       ContextVectorCollection() ;
       ~ContextVectorCollection() ;
 
+      template <typename RetT = SparseVector<IdxT,ValT>>
+      typename std::enable_if<sparse,RetT>::type contextVector(const KeyT key) const ;
+      
+      template <typename RetT = DenseVector<ValT>>
+      typename std::enable_if<!sparse,RetT>::type contextVector(const KeyT key) const ;
+
+      bool setTermVector(const KeyT term, context_type vector) ;
+      context_type getTermVector(const KeyT term) const ;
+
+      bool updateContextVector(const KeyT key, const KeyT term, double weight = 1.0) ;
+
    protected:
       map_type m_term_map ;
       map_type m_context_map ;
+      bool m_sparse_vectors { sparse } ;
    } ;
 
-// the typical application for this class uses Symbol as the term type and SparseVector<uint32_t,float>
-//  as the context vectors, so predefine that instantiation
+// the typical application for this class uses either Symbol or
+//  uint32_t as the term type and SparseVector<uint32_t,float> as the
+//  context vectors, so predefine those instantiations
 extern template class ContextVectorCollection<Symbol*,uint32_t,float> ;
-typedef ContextVectorCollection<Symbol*,uint32_t,float> ContextVectorColl ;
+typedef ContextVectorCollection<Symbol*,uint32_t,float> ContextVectorCollSym ;
+
+extern template class ContextVectorCollection<uint32_t,uint32_t,float> ;
+typedef ContextVectorCollection<uint32_t,uint32_t,float> ContextVectorCollU32 ;
 
 } // end of namespace Fr
 
