@@ -39,20 +39,25 @@ class ContextVectorCollection
       ~ContextVectorCollection() ;
 
       template <typename RetT = SparseVector<IdxT,ValT>>
-      typename std::enable_if<sparse,RetT>::type contextVector(const KeyT key) const ;
+      typename std::enable_if<sparse,RetT>::type contextVector(const KeyT key) const
+	 { return static_cast<RetT>(getContextVector(key)) ; }
       
       template <typename RetT = DenseVector<ValT>>
-      typename std::enable_if<!sparse,RetT>::type contextVector(const KeyT key) const ;
+      typename std::enable_if<!sparse,RetT>::type contextVector(const KeyT key) const
+	 { return static_cast<RetT>(getContextVector(key)) ; }
 
       bool setTermVector(const KeyT term, context_type vector) ;
       context_type getTermVector(const KeyT term) const ;
 
       bool updateContextVector(const KeyT key, const KeyT term, double weight = 1.0) ;
 
-   protected:
+   protected: // data
       map_type m_term_map ;
       map_type m_context_map ;
       bool m_sparse_vectors { sparse } ;
+
+   protected: // methods
+      context_type getContextVector(const KeyT key) const ;
    } ;
 
 // the typical application for this class uses either Symbol or
