@@ -116,6 +116,12 @@
 #  define ifnot_INTERLEAVED(x) x
 #endif /* FrHASHTABLE_INTERLEAVED_ENTRIES */
 
+#ifdef FrHASHTABLE_USE_FASTHASH64
+#  define FrHASHTABLE_INT_HASH(k) (size_t)FramepaC::fasthash64_int(k)
+#else
+#  define FrHASHTABLE_INT_HASH(k) ((size_t)k)
+#endif /* FrHASHTABLE_USE_FASTHASH64 */
+
 /************************************************************************/
 
 namespace FramepaC
@@ -759,9 +765,15 @@ class HashTable : public HashTableBase
       static bool stillLive(const Table *version) ;
 
       size_t maxSize() const { return m_table.load()->m_size ; }
-      inline size_t hashVal(KeyT key) const
+      template <typename RetT = size_t>
+      inline typename std::enable_if<!std::is_integral<KeyT>::value,RetT>::type hashVal(KeyT key) const
 	 {
 	    return key ? key->hashValue() : 0 ;
+	 }
+      template <typename RetT = size_t>
+      inline typename std::enable_if<std::is_integral<KeyT>::value,RetT>::type hashVal(KeyT key) const
+	 {
+	    return FrHASHTABLE_INT_HASH(key) ;
 	 }
       inline size_t hashValFull(KeyT key) const
 	 {
@@ -773,7 +785,13 @@ class HashTable : public HashTableBase
       // special support for Fr::SymHashSet
       size_t hashVal(const char *keyname, size_t *namelen) const
 	 { return Symbol::hashValue(keyname,namelen) ; }
-      inline bool isEqual(KeyT key1, KeyT key2) const
+      template <typename RetT = bool>
+      inline typename std::enable_if<std::is_integral<KeyT>::value,RetT>::type isEqual(KeyT key1, KeyT key2) const
+	 {
+ 	    return key2 != Entry::DELETED() && key1 == key2 ;
+	 }
+      template <typename RetT = bool>
+      inline typename std::enable_if<!std::is_integral<KeyT>::value,RetT>::type isEqual(KeyT key1, KeyT key2) const
 	 {
 	    return key2 != Entry::DELETED() && Fr::equal(key1,key2) ;
 	 }
@@ -818,6 +836,12 @@ class HashTable : public HashTableBase
       HashTable(const HashTable &ht) ;
       virtual ~HashTable() ;
 
+      // *** object factories ***
+      static HashTable* create(size_t initial_size = 257)
+	 { return new HashTable(initial_size) ; }
+      // *** destroying ***
+      static void free_(Object* obj) { delete static_cast<HashTable*>(obj) ; }
+      
       bool resizeTo(size_t newsize) { DELEGATE(resize(newsize)) ; }
       bool reserve_(size_t newsize) { DELEGATE(resize(newsize)) ; }
 
@@ -1072,20 +1096,7 @@ Fr::ThreadInitializer<HashTable<KeyT,ValT> > HashTable<KeyT,ValT>::initializer ;
 //----------------------------------------------------------------------
 // specializations: integer keys
 
-#ifdef FrHASHTABLE_USE_FASTHASH64
-#  define FrHASHTABLE_INT_HASH(k) (size_t)FramepaC::fasthash64_int(k)
-#else
-#  define FrHASHTABLE_INT_HASH(k) ((size_t)k)
-#endif /* FrHASHTABLE_USE_FASTHASH64 */
-
 #define FrMAKE_INTEGER_HASHTABLE_CLASS(NAME,K,V) \
-\
-template <> \
-inline size_t HashTable<K,V>::hashVal(const K key) const { return FrHASHTABLE_INT_HASH(key) ; } \
-\
-template <> \
-inline bool HashTable<K,V>::isEqual(const K key1, const K key2) const \
-{ return key1 == key2 ; } \
 \
 template <> \
 inline Object* HashTable<K,V>::Table::makeObject(K key) \
@@ -1108,9 +1119,6 @@ typedef HashTable<K,V> NAME ;
 #define FrMAKE_SYMBOL_HASHTABLE_CLASS(NAME,V) \
 \
 template <> \
-inline size_t HashTable<const Symbol*,V>::hashVal(const Symbol* key) const \
-{ return key->hashValue() ; }						\
-\
 template <> \
 inline bool HashTable<const Symbol*,V>::isEqual(const Symbol* key1, const Symbol* key2) const \
 { return (size_t)key1 == (size_t)key2 ; }			  \
