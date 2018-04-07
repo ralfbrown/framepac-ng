@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-04					*/
+/* Version 0.04, last edit 2018-04-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -32,32 +32,35 @@ template <typename KeyT, typename IdxT, typename ValT, bool sparse = true>
 class ContextVectorCollection
    {
    public:
-      typedef HashTable<KeyT,Object*>* map_type ;
-      typedef Vector<ValT>* context_type ;
+      typedef HashTable<KeyT,Object*> map_type ;
+      typedef Vector<ValT> context_type ;
 
       ContextVectorCollection() ;
       ~ContextVectorCollection() ;
 
-      template <typename RetT = SparseVector<IdxT,ValT>>
+      template <typename RetT = SparseVector<IdxT,ValT>*>
       typename std::enable_if<sparse,RetT>::type contextVector(const KeyT key) const
 	 { return static_cast<RetT>(getContextVector(key)) ; }
       
-      template <typename RetT = DenseVector<ValT>>
+      template <typename RetT = DenseVector<ValT>*>
       typename std::enable_if<!sparse,RetT>::type contextVector(const KeyT key) const
 	 { return static_cast<RetT>(getContextVector(key)) ; }
 
-      bool setTermVector(const KeyT term, context_type vector) ;
-      context_type getTermVector(const KeyT term) const ;
+      void setDimensions(size_t dim) { if (!m_sparse_vectors) m_dimensions = dim ; }
+
+      bool setTermVector(const KeyT term, context_type* vector) ;
+      context_type* getTermVector(const KeyT term) const ;
 
       bool updateContextVector(const KeyT key, const KeyT term, double weight = 1.0) ;
 
    protected: // data
-      map_type m_term_map ;
-      map_type m_context_map ;
+      map_type* m_term_map ;
+      map_type* m_context_map ;
+      size_t m_dimensions { 0 } ;
       bool m_sparse_vectors { sparse } ;
 
    protected: // methods
-      context_type getContextVector(const KeyT key) const ;
+      context_type* getContextVector(const KeyT key) const ;
    } ;
 
 // the typical application for this class uses either Symbol or

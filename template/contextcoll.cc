@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-04					*/
+/* Version 0.04, last edit 2018-04-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -30,7 +30,8 @@ namespace Fr
 template <typename KeyT, typename IdxT, typename ValT, bool sparse>
 ContextVectorCollection<KeyT,IdxT,ValT,sparse>::ContextVectorCollection()
 {
-
+   m_term_map = static_cast<map_type*>(map_type::create()) ;
+   m_context_map = static_cast<map_type*>(map_type::create()) ;
    return ;
 }
 
@@ -39,29 +40,27 @@ ContextVectorCollection<KeyT,IdxT,ValT,sparse>::ContextVectorCollection()
 template <typename KeyT, typename IdxT, typename ValT, bool sparse>
 ContextVectorCollection<KeyT,IdxT,ValT,sparse>::~ContextVectorCollection()
 {
-
+   m_term_map->free() ;
+   m_context_map->free() ;
    return ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename IdxT, typename ValT, bool sparse>
-bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::setTermVector(const KeyT term, typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type vector)
+bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::setTermVector(const KeyT term, typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type* vector)
 {
-   //TODO
-   (void)term; (void)vector;
+   m_term_map->add(term,vector) ;
    return true ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename IdxT, typename ValT, bool sparse>
-typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type
+typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type*
 ContextVectorCollection<KeyT,IdxT,ValT,sparse>::getTermVector(const KeyT term) const
 {
-   //TODO
-   (void)term;
-   return nullptr ;
+   return static_cast<context_type*>(m_term_map->lookup(term)) ;
 }
 
 //----------------------------------------------------------------------------
@@ -69,20 +68,25 @@ ContextVectorCollection<KeyT,IdxT,ValT,sparse>::getTermVector(const KeyT term) c
 template <typename KeyT, typename IdxT, typename ValT, bool sparse>
 bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::updateContextVector(const KeyT key, const KeyT term, double wt)
 {
-   //TODO
-   (void)key; (void)term; (void)wt;
+   context_type* context = getContextVector(key) ;
+   if (!context)
+      {
+      context = static_cast<context_type*>(context_type::create(m_dimensions)) ;
+      m_context_map->add(key,context) ;
+      }
+   context_type* termvec = getTermVector(term) ;
+   if (termvec)
+      context->incr(termvec,wt) ;
    return true;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename IdxT, typename ValT, bool sparse>
-typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type
+typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type*
 ContextVectorCollection<KeyT,IdxT,ValT,sparse>::getContextVector(const KeyT key) const
 {
-   //TODO
-   (void)key;
-   return nullptr ;
+   return static_cast<context_type*>(m_context_map->lookup(key)) ;
 }
 
 //----------------------------------------------------------------------------

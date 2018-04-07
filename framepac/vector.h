@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-03					*/
+/* Version 0.04, last edit 2018-04-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -55,7 +55,8 @@ class Vector : public Object
       
       // arithmetic operations
       template <typename IdxT>
-      Vector* add(const Vector* other) const ;
+      Vector* add(const Vector* other) const ;			// ret = (*this) + (*other)
+      Vector* incr(const Vector* other, double wt = 1.0) ;	// (*this) += wt*(*other)
       void scale(double factor) ;
       void normalize() ;
 
@@ -233,6 +234,9 @@ class SparseVector : public Vector<ValT>
       SparseVector* add(const Vector<ValT>* other) const ;
       SparseVector* add(const SparseVector* other) const ;
       SparseVector* add(const OneHotVector<IdxT,ValT>* other) const ;
+      SparseVector* incr(const Vector<ValT>* other, double wt = 1.0) ;
+      SparseVector* incr(const SparseVector* other, double wt = 1.0) ;
+      SparseVector* incr(const OneHotVector<IdxT,ValT>* other, double wt = 1.0) ;
 
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
@@ -406,9 +410,17 @@ class DenseVector : public Vector<ValT>
       static DenseVector* create(size_t capacity = 0) { return new DenseVector(capacity) ; }
 
       // arithmetic operations
-      DenseVector<ValT>* add(const DenseVector* other) const ;
+      DenseVector* add(const DenseVector* other) const ;
       template <typename IdxT>
       SparseVector<IdxT,ValT>* add(const SparseVector<IdxT,ValT>* other) const ;
+      template <typename IdxT>
+      DenseVector<ValT>* add(const OneHotVector<IdxT,ValT>* other) const ;
+
+      DenseVector* incr(const DenseVector* other, double wt = 1.0) ;
+      template <typename IdxT>
+      DenseVector* incr(const SparseVector<IdxT,ValT>* other, double wt = 1.0) ;
+      template <typename IdxT>
+      DenseVector* incr(const OneHotVector<IdxT,ValT>* other, double wt = 1.0) ;
 
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
