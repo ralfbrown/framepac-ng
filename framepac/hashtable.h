@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-24					*/
+/* Version 0.04, last edit 2018-04-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -560,7 +560,12 @@ class HashTable : public HashTableBase
 	 bool reclaimChain(size_t bucketnum) ;
 	 void resizeCleanup() ;
 
-	 static Object* makeObject(KeyT key) ;
+	 template <typename RetT = Object*>
+	 static typename std::enable_if<std::is_integral<KeyT>::value,RetT>::type makeObject(KeyT key)
+	    { return Integer::create(key) ; }
+	 template <typename RetT = Object*>
+	 static typename std::enable_if<!std::is_integral<KeyT>::value,RetT>::type makeObject(KeyT key)
+	    { return (Object*)key ; }
 
       public:
 	 void onRemove(HashKVFunc *func) { remove_fn = func ; }
@@ -635,8 +640,39 @@ class HashTable : public HashTableBase
 	 // ============= Object support =============
 	 ostream &printValue(ostream &output) const ;
 	 ostream &printKeyValue(ostream &output, KeyT key) const ;
-	 size_t keyDisplayLength(KeyT key) const ;
-	 char *displayKeyValue(char *buffer, KeyT key) const ;
+
+	 template <typename RetT = size_t>
+	 typename std::enable_if<std::is_integral<KeyT>::value,RetT>::type
+	 keyDisplayLength(KeyT key) const
+	    { return snprintf(nullptr,0,"%ld%c",(ssize_t)key,(char)'\0') ; }
+	 template <typename RetT = size_t>
+	 typename std::enable_if<!std::is_integral<KeyT>::value,RetT>::type
+	 keyDisplayLength(KeyT key) const
+	    { return key ? key->cStringLength() + 1 : 3 ; }
+
+	 template <typename RetT = char*>
+	 typename std::enable_if<std::is_integral<KeyT>::value,RetT>::type
+	 displayKeyValue(char *buffer, KeyT key) const
+	    { return buffer + snprintf(buffer,50,"%ld%c",(ssize_t)key,(char)'\0') ; }
+	 template <typename RetT = char*>
+	 typename std::enable_if<!std::is_integral<KeyT>::value,RetT>::type
+	 displayKeyValue(char *buffer, KeyT key) const
+	    {
+	       if (key)
+		  {
+		  size_t len = key->cStringLength() ;
+		  if (key->toCstring(buffer,len))
+		     buffer += len ;
+		  *buffer = '\0' ;
+		  return buffer ;
+		  }
+	       else
+		  {
+		  memcpy(buffer,"NIL",4) ;
+		  return buffer + 4 ;
+		  }
+	    }
+
 	 char *displayValue(char *buffer) const ;
 	 // get size of buffer needed to display the string representation of the hash table
 	 // NOTE: will not be valid if there are any add/remove/resize calls between calling
@@ -1094,26 +1130,6 @@ Fr::ThreadInitializer<HashTable<KeyT,ValT> > HashTable<KeyT,ValT>::initializer ;
 #endif /* FrSINGLE_THREADED */
 
 //----------------------------------------------------------------------
-// specializations: integer keys
-
-#define FrMAKE_INTEGER_HASHTABLE_CLASS(NAME,K,V) \
-\
-template <> \
-inline Object* HashTable<K,V>::Table::makeObject(K key) \
-{ return Integer::create(key) ; }	 \
-\
-template <> \
-inline size_t HashTable<K,V>::Table::keyDisplayLength(const K key) const	\
-{ return snprintf(nullptr,0,"%ld%c",(size_t)key,(char)'\0') ; }		\
-\
-template <> \
-inline char* HashTable<K,V>::Table::displayKeyValue(char* buffer,const K key) const \
-{ return buffer + snprintf(buffer,50,"%ld%c",(size_t)key,(char)'\0') ; }	\
-\
-extern template class HashTable<K,V> ; \
-typedef HashTable<K,V> NAME ;
-
-//----------------------------------------------------------------------
 // specializations: Fr::Symbol* keys
 
 #define FrMAKE_SYMBOL_HASHTABLE_CLASS(NAME,V) \
@@ -1378,6 +1394,9 @@ typedef HashTable<Object*,Object*> ObjHashTable ;
 extern template class HashTable<Object*,size_t> ;
 typedef HashTable<Object*,size_t> ObjCountHashTable ;
 
+extern template class HashTable<uint32_t,uint32_t> ;
+typedef HashTable<uint32_t,uint32_t> HashTable_U32_U32 ;
+
 FrMAKE_SYMBOL_HASHTABLE_CLASS(SymHashTable,Object*) ;
 FrMAKE_SYMBOL_HASHTABLE_CLASS(SymCountHashTable,size_t) ;
 
@@ -1385,8 +1404,10 @@ FrMAKE_SYMBOL_HASHTABLE_CLASS(SymCountHashTable,size_t) ;
 extern template class HashTable<Object*,NullObject> ;
 typedef HashTable<Object*,NullObject> ObjHashSet ;
 
+extern template class HashTable<uint32_t,NullObject> ;
+typedef HashTable<uint32_t,NullObject> HashSet_U32 ;
+
 FrMAKE_SYMBOL_HASHTABLE_CLASS(SymHashSet,NullObject) ;
-FrMAKE_INTEGER_HASHTABLE_CLASS(HashSet_U32,uint32_t,NullObject) ;
 
 //----------------------------------------------------------------------------
 

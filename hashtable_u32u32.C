@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-12					*/
+/* Version 0.04, last edit 2018-04-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -23,9 +23,6 @@
 
 namespace Fr
 {
-
-// declare a template with appropriate specializations for an integer key
-FrMAKE_INTEGER_HASHTABLE_CLASS(HashTable_U32_U32,uint32_t,uint32_t) ;
 
 // request explicit instantiation
 template class HashTable<uint32_t,uint32_t> ;

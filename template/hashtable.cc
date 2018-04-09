@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-24					*/
+/* Version 0.04, last edit 2018-04-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -1358,14 +1358,6 @@ bool HashTable<KeyT,ValT>::Table::iterateVA(HashKeyValueFunc* func, std::va_list
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-Object* HashTable<KeyT,ValT>::Table::makeObject(KeyT key)
-{
-   return (Object*)key ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
 List* HashTable<KeyT,ValT>::Table::allKeys() const
 {
    List* keys = nullptr ;
@@ -1405,37 +1397,6 @@ template <typename KeyT, typename ValT>
 ostream &HashTable<KeyT,ValT>::Table::printKeyValue(ostream &output, KeyT key) const
 {
    return output << key ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-size_t HashTable<KeyT,ValT>::Table::keyDisplayLength(KeyT key) const
-{
-   return key ? key->cStringLength() + 1 : 3 ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-char* HashTable<KeyT,ValT>::Table::displayKeyValue(char* buffer, KeyT key) const
-{
-   if (key)
-      {
-      size_t len = key->cStringLength() ;
-      if (key->toCstring(buffer,len))
-	 buffer += len ;
-      *buffer = '\0' ;
-      return buffer ;
-      }
-   else
-      {
-      *buffer++ = 'N' ;
-      *buffer++ = 'I' ;
-      *buffer++ = 'L' ;
-      *buffer = '\0' ;
-      return  buffer ;
-      }
 }
 
 //----------------------------------------------------------------------------
