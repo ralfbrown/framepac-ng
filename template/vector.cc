@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-09					*/
+/* Version 0.04, last edit 2018-04-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include <cmath>
 #include "framepac/vector.h"
 
 namespace Fr
@@ -27,6 +28,41 @@ namespace Fr
 /************************************************************************/
 /*	Methods for class Vector					*/
 /************************************************************************/
+
+template <typename ValT>
+Vector<ValT>::Vector(size_t capacity)
+{
+   reserve(capacity) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
+Vector<ValT>::Vector(const Vector&)
+   : Object()
+{
+   //TODO
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
+double Vector<ValT>::vectorLength() const
+{
+   this->m_critsect.lock() ;
+   double len { 0.0 } ;
+   for (size_t i = 0 ; i < m_size ; ++i)
+      {
+      ValT elt = this->elementValue(i) ;
+      len += (elt * elt) ;
+      }
+   len = std::sqrt(len) ;
+   m_length = len ;
+   this->m_critsect.unlock() ;
+   return len ;
+}
 
 //----------------------------------------------------------------------------
 
@@ -63,6 +99,14 @@ bool Vector<ValT>::equal_(const Object*, const Object*)
 //----------------------------------------------------------------------------
 
 template <typename ValT>
+int Vector<ValT>::compare_(const Object*, const Object*)
+{
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
 int Vector<ValT>::lessThan_(const Object*, const Object*)
 {
    return 0 ; //FIXME
@@ -71,9 +115,11 @@ int Vector<ValT>::lessThan_(const Object*, const Object*)
 //----------------------------------------------------------------------------
 
 template <typename ValT>
-int Vector<ValT>::compare_(const Object*, const Object*)
+bool Vector<ValT>::reserve(size_t N)
 {
-   return 0 ; //FIXME
+   if (N < m_capacity) return true ;  // nothing to do
+   //TODO
+   return false ;
 }
 
 //----------------------------------------------------------------------------
@@ -121,7 +167,7 @@ template <typename ValT>
 size_t Vector<ValT>::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
 {
    (void)obj ;
-   (void)wrap; (void)indent; //FIXME
+   (void)wrap; (void)indent; //TODO
    return 0 ;
 }
 
@@ -133,7 +179,7 @@ bool Vector<ValT>::toJSONString_(const Object* obj, char* buffer, size_t buflen,
 {
    (void)obj ;
    (void)buffer; (void)buflen; (void)indent ;
-//FIXME
+//TODO
    return false ;
 }
 

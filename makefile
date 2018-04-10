@@ -579,6 +579,9 @@ template/vecsim_ct.cc:	framepac/vecsim.h
 template/vecsim_factory.cc:	template/vecsim.cc template/vecsim_ct.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
+template/vector.cc:	framepac/vector.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 template/wordcorpus.cc:	framepac/wordcorpus.h
 	$(TOUCH) $@ $(BITBUCKET)
 
@@ -706,7 +709,7 @@ framepac/trie.h:	framepac/config.h
 framepac/vecsim.h:	framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/vector.h:	framepac/list.h framepac/symbol.h
+framepac/vector.h:	framepac/critsect.h framepac/list.h framepac/symbol.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/words.h:	framepac/bidindex.h framepac/file.h framepac/string.h

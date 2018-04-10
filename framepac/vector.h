@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-06					*/
+/* Version 0.04, last edit 2018-04-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -22,6 +22,7 @@
 #ifndef Fr_VECTOR_H_INCLUDED
 #define Fr_VECTOR_H_INCLUDED
 
+#include "framepac/critsect.h"
 #include "framepac/list.h"
 #include "framepac/symbol.h"
 
@@ -63,25 +64,22 @@ class Vector : public Object
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      Vector(size_t capacity = 0)
-	 { (void)capacity; //FIXME
-	 }
-      Vector(const Vector&) : Object()
-	 { //FIXME
-	 }
+      Vector(size_t capacity = 0) ;
+      Vector(const Vector&) ;
       ~Vector() { delete [] m_values ; m_size = 0 ; }
       Vector& operator= (const Vector&) ;
 
       size_t size() const { return m_size ; }
       size_t capacity() const { return m_capacity ; }
 
+   protected:
+      void startModifying() { m_critsect.lock() ; m_length = -1 ; }
+      void doneModifying() { m_critsect.unlock() ; }
+
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<Vector> ;
 
-      double vectorLength() const
-	 { //FIXME
-	    return -1.0 ;
-	 }
+      double vectorLength() const ;
 
       // type determination predicates
       static bool isVector_(const Object *) { return true ; }
@@ -129,19 +127,18 @@ class Vector : public Object
       static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
 
       // STL compatibility
-      bool reserve(size_t /*n*/)
-	 { //FIXME
-	    return false;}
+      bool reserve(size_t n) ;
       
    private:
       static Allocator s_allocator ;
    protected:
-      ValT*   m_values ;
-      Symbol* m_key ;		// the vector's name (e.g. word for which this is a context vector)
-      Symbol* m_label ;		// user label applied to vector (e.g. cluster name)
-      mutable double m_length ; // cached vector length (L2-norm)
-      size_t  m_size ;	  	// number of elements in vector
-      size_t  m_capacity ;	// number of elements allocated (may be greater than m_size)
+      ValT*   m_values { nullptr } ;
+      Symbol* m_key { nullptr } ;	// the vector's name (e.g. word for which this is a context vector)
+      Symbol* m_label { nullptr } ;	// user label applied to vector (e.g. cluster name)
+      mutable double m_length { -1 } ;	// cached vector length (L2-norm)
+      uint32_t  m_size { 0 } ;	  	// number of elements in vector
+      uint32_t  m_capacity { 0 } ;	// number of elements allocated (may be greater than m_size)
+      mutable CriticalSection m_critsect ;
 
    protected:
       // helper functions, needed to properly output various index and value types
@@ -376,7 +373,7 @@ class SparseVector : public Vector<ValT>
    protected:
       void setElement(size_t N, IdxT key, ValT value)
 	 {
-	 if (N >= Vector<ValT>::m_capacity && !this->reserve(std::max(N+1,2*Vector<ValT>::m_capacity)))
+	 if (N >= Vector<ValT>::m_capacity && !this->reserve(std::max(N+1,2*Vector<ValT>::capacity())))
 	    return ;
 	 if (N >= this->m_size) this->m_size = N+1 ;
 	 this->m_indices[N] = key ;
