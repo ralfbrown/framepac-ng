@@ -183,6 +183,54 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const OneHotVector<IdxT,Va
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
+ObjectPtr SparseVector<IdxT,ValT>::clone_(const Object*)
+{
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+ObjectPtr SparseVector<IdxT,ValT>::subseq_int(const Object*, size_t /*start*/, size_t /*stop*/)
+{
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+ObjectPtr SparseVector<IdxT,ValT>::subseq_iter(const Object*, ObjectIter /*start*/, ObjectIter /*stop*/)
+{
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+bool SparseVector<IdxT,ValT>::equal_(const Object*, const Object*)
+{
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+int SparseVector<IdxT,ValT>::lessThan_(const Object*, const Object*)
+{
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+int SparseVector<IdxT,ValT>::compare_(const Object*, const Object*)
+{
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
 size_t SparseVector<IdxT,ValT>::cStringLength_(const Object* obj, size_t /*wrap_at*/,
    size_t indent, size_t /*wrapped_indent*/)
 {

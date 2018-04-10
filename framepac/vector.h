@@ -63,8 +63,12 @@ class Vector : public Object
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      Vector(size_t capacity = 0) ;
-      Vector(const Vector&) ;
+      Vector(size_t capacity = 0)
+	 { (void)capacity; //FIXME
+	 }
+      Vector(const Vector&) : Object()
+	 { //FIXME
+	 }
       ~Vector() { delete [] m_values ; m_size = 0 ; }
       Vector& operator= (const Vector&) ;
 
@@ -74,7 +78,10 @@ class Vector : public Object
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<Vector> ;
 
-      double vectorLength() const ;
+      double vectorLength() const
+	 { //FIXME
+	    return -1.0 ;
+	 }
 
       // type determination predicates
       static bool isVector_(const Object *) { return true ; }
@@ -122,7 +129,9 @@ class Vector : public Object
       static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
 
       // STL compatibility
-      bool reserve(size_t n) ;
+      bool reserve(size_t /*n*/)
+	 { //FIXME
+	    return false;}
       
    private:
       static Allocator s_allocator ;
@@ -133,6 +142,77 @@ class Vector : public Object
       mutable double m_length ; // cached vector length (L2-norm)
       size_t  m_size ;	  	// number of elements in vector
       size_t  m_capacity ;	// number of elements allocated (may be greater than m_size)
+
+   protected:
+      // helper functions, needed to properly output various index and value types
+      static size_t item_c_len(intmax_t value)
+	 {
+	 return snprintf(nullptr,0,"%jd",value) ;
+	 }
+      static size_t item_c_len(uintmax_t value)
+	 {
+	 return snprintf(nullptr,0,"%ju",value) ;
+	 }
+      static size_t item_c_len(unsigned value)
+	 {
+	 return snprintf(nullptr,0,"%u",value) ;
+	 }
+      static size_t item_c_len(long double value)
+	 {
+	 return snprintf(nullptr,0,"%LG",value) ;
+	 }
+      static size_t item_c_len(double value)
+	 {
+	 return snprintf(nullptr,0,"%G",value) ;
+	 }
+      static size_t item_c_len(const Object* o)
+	 {
+	 return o ? o->cStringLength() : 4 ; // will print #N<> for nullptr
+	 }
+      static size_t item_c_len(const void*)
+	 {
+	 return 3 ; // will print ???
+	 }
+
+      static char* item_c_string(intmax_t value, char* buffer, size_t buflen)
+	 {
+	 return buffer + snprintf(buffer,buflen,"%jd",value) ;
+	 }
+      static char* item_c_string(uintmax_t value, char* buffer, size_t buflen)
+	 {
+	 return buffer + snprintf(buffer,buflen,"%ju",value) ;
+	 }
+      static char* item_c_string(unsigned value, char* buffer, size_t buflen)
+	 {
+	 return buffer + snprintf(buffer,buflen,"%u",value) ;
+	 }
+      static char* item_c_string(long double value, char* buffer, size_t buflen)
+	 {
+	 return buffer + snprintf(buffer,buflen,"%LG",value) ;
+	 }
+      static char* item_c_string(double value, char* buffer, size_t buflen)
+	 {
+	 return buffer + snprintf(buffer,buflen,"%G",value) ;
+	 }
+      static char* item_c_string(const Object* o, char* buffer, size_t buflen)
+	 {
+	 if (o)
+	    return o->toCstring(buffer,buflen,0,0,0) ;
+	 return buffer + snprintf(buffer,buflen,"#N<>") ;
+	 }
+      static char* item_c_string(const void*, char* buffer, size_t buflen)
+	 {
+	 return buffer + snprintf(buffer,buflen,"???") ;
+	 }
+
+      size_t value_c_len(size_t N) const
+	 {
+	 return item_c_len(elementValue(N)) ;
+	 }
+      char* value_c_string(size_t N, char* buffer, size_t buflen) const
+	 {
+	 return item_c_string(elementValue(N),buffer,buflen) ;
+	 }
    } ;
 
 //----------------------------------------------------------------------------
@@ -241,7 +321,9 @@ class SparseVector : public Vector<ValT>
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      SparseVector(size_t capacity = 0) ;
+      SparseVector(size_t capacity = 0) : Vector<ValT>(capacity)
+	 { //FIXME
+	 }
       SparseVector(const SparseVector&) ;
       ~SparseVector() { delete [] m_indices ; }
       SparseVector& operator= (const SparseVector&) ;
@@ -303,83 +385,15 @@ class SparseVector : public Vector<ValT>
 
    protected:
       // helper functions, needed to properly output various index and value types
-      static size_t item_c_len(intmax_t value)
-	 {
-	 return snprintf(nullptr,0,"%jd",value) ;
-	 }
-      static size_t item_c_len(uintmax_t value)
-	 {
-	 return snprintf(nullptr,0,"%ju",value) ;
-	 }
-      static size_t item_c_len(unsigned value)
-	 {
-	 return snprintf(nullptr,0,"%u",value) ;
-	 }
-      static size_t item_c_len(long double value)
-	 {
-	 return snprintf(nullptr,0,"%LG",value) ;
-	 }
-      static size_t item_c_len(double value)
-	 {
-	 return snprintf(nullptr,0,"%G",value) ;
-	 }
-      static size_t item_c_len(const Object* o)
-	 {
-	 return o ? o->cStringLength() : 4 ; // will print #N<> for nullptr
-	 }
-      static size_t item_c_len(const void*)
-	 {
-	 return 3 ; // will print ???
-	 }
-
-      static char* item_c_string(intmax_t value, char* buffer, size_t buflen)
-	 {
-	 return buffer + snprintf(buffer,buflen,"%jd",value) ;
-	 }
-      static char* item_c_string(uintmax_t value, char* buffer, size_t buflen)
-	 {
-	 return buffer + snprintf(buffer,buflen,"%ju",value) ;
-	 }
-      static char* item_c_string(unsigned value, char* buffer, size_t buflen)
-	 {
-	 return buffer + snprintf(buffer,buflen,"%u",value) ;
-	 }
-      static char* item_c_string(long double value, char* buffer, size_t buflen)
-	 {
-	 return buffer + snprintf(buffer,buflen,"%LG",value) ;
-	 }
-      static char* item_c_string(double value, char* buffer, size_t buflen)
-	 {
-	 return buffer + snprintf(buffer,buflen,"%G",value) ;
-	 }
-      static char* item_c_string(const Object* o, char* buffer, size_t buflen)
-	 {
-	 if (o)
-	    return o->toCstring(buffer,buflen,0,0,0) ;
-	 return buffer + snprintf(buffer,buflen,"#N<>") ;
-	 }
-      static char* item_c_string(const void*, char* buffer, size_t buflen)
-	 {
-	 return buffer + snprintf(buffer,buflen,"???") ;
-	 }
-
       size_t index_c_len(size_t N) const
 	 {
-	 return item_c_len(keyAt(N)) ;
+	 return this->item_c_len(keyAt(N)) ;
 	 }
       char* index_c_string(size_t N, char* buffer, size_t buflen) const
 	 {
-	 return item_c_string(keyAt(N),buffer,buflen) ;
+	 return this->item_c_string(keyAt(N),buffer,buflen) ;
 	 }
 
-      size_t value_c_len(size_t N) const
-	 {
-	 return item_c_len(elementValue(N)) ;
-	 }
-      char* value_c_string(size_t N, char* buffer, size_t buflen) const
-	 {
-	 return item_c_string(elementValue(N),buffer,buflen) ;
-	 }
 
    private:
       static Allocator s_allocator ;

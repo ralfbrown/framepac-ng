@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-29					*/
+/* Version 0.04, last edit 2018-04-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -42,6 +42,13 @@ class ClusteringAlgoAnneal : public ClusteringAlgo<IdxT,ValT>
 
 /************************************************************************/
 /************************************************************************/
+
+template <typename IdxT, typename ValT>
+ClusterInfo* ClusteringAlgoAnneal<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
+{
+   (void)first; (void)past_end;
+   return nullptr ; //TODO
+}
 
 } // end of namespace Fr
 

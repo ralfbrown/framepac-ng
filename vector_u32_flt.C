@@ -27,10 +27,14 @@ namespace Fr
 {
 
 // request explicit instantiations
+template class Vector<float> ;
 template class DenseVector<float> ;
 template class SparseVector<uint32_t,float> ;
 
 // static data for the instantiated templates
+template <>
+Allocator Vector<float>::s_allocator(FramepaC::Object_VMT<Vector<float>>::instance(), sizeof(Vector<float>)) ;
+
 template <>
 Allocator DenseVector<float>::s_allocator(FramepaC::Object_VMT<DenseVector<float>>::instance(),
    sizeof(DenseVector<float>)) ;

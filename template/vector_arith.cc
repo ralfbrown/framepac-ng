@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-02					*/
+/* Version 0.04, last edit 2018-04-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include "framepac/vector.h"
+#include "template/vector.cc"
 
 namespace Fr
 {

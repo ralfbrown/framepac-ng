@@ -89,8 +89,7 @@ class ClusterInfo : public Object
    public:
       // *** object factories ***
       static ClusterInfo* create() { return new ClusterInfo ; }
-      static ClusterInfo* create(const List* members) ;
-      static ClusterInfo* create(const List* members, const List* subclusters) ;
+      static ClusterInfo* create(const List* members, const List* subclusters = nullptr) ;
       static ClusterInfo* create(ClusterInfo** subclus, size_t num_subclus) ;
       static ClusterInfo* create(const ClusterInfo** subclus, size_t num_subclus) ;
 
@@ -162,7 +161,7 @@ class ClusterInfo : public Object
       static ObjectPtr subseq_iter(const Object*, ObjectIter start, ObjectIter stop) ;
 
       // *** destroying ***
-      static void free_(Object* obj) ;
+      static void free_(Object* obj) { delete static_cast<ClusterInfo*>(obj) ; }
       // use shallowFree() on a shallowCopy()
       static void shallowFree_(Object* obj) { return free_(obj) ; }
 
@@ -221,7 +220,7 @@ class ClusteringAlgo
       static ClusteringAlgo* instantiate(const char* algo_name, const char* options) ;
       virtual ~ClusteringAlgo() {}
 
-      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
+      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) = 0 ;
 
       static Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array* centers,
 	 VectorMeasure<IdxT,ValT>* measure, double threshold = -1.0) ;

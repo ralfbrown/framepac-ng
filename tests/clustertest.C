@@ -31,17 +31,28 @@ using namespace Fr ;
 
 int main(int argc, char** argv)
 {
+   const char* algo_name ;
+   const char* vecsim_name ;
+   const char* cluster_options ;
+
    Fr::Initialize() ;
    ArgParser cmdline_flags ;
    cmdline_flags
+      .add(algo_name,"a","algorithm","name of clustering algorithm to use (k-means, etc.)","k-means")
+      .add(vecsim_name,"m","measure","name of similarity measure (cosine, etc.)","cosine")
+      .add(cluster_options,"O","options","options to pass to clustering algorithm","")
       .addHelp("h","help","show usage summary") ;
    if (!cmdline_flags.parseArgs(argc,argv))
       {
       cmdline_flags.showHelp() ;
       return 1 ;
       }
+//   VectorSimilarityMeasure vecsim = parse_vector_measure_name(vecsim_name) ;
+//   ClusteringAlgorithm algo = parse_cluster_algo_name(algo_name) ;
+   auto clusterer = ClusteringAlgo<uint32_t,float>::instantiate(algo_name,cluster_options) ;
    //TODO
 
+   delete clusterer ;
    return 0 ;
 }
 

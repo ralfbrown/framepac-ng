@@ -84,6 +84,15 @@ bool assign_vector_to_nearest_center(const void* vectors, size_t index, va_list 
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
+bool ClusteringAlgo<IdxT,ValT>::checkSparseOrDense(const Array* vectors)
+{
+   (void)vectors;
+   return false; //for now
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
 bool ClusteringAlgo<IdxT,ValT>::assignToNearest(Array* vectors, const Array* centers, double threshold) const
 {
    ThreadPool *tp = ThreadPool::defaultPool() ;

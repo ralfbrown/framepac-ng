@@ -35,25 +35,32 @@ ClusterInfo::Initializer ClusterInfo::s_init ;
 
 // register initialization and cleanup functions for the ClusterInfo class as a whole
 // these will be called by Fr::Initialize() and Fr::Shutdown()
-Fr::Initializer<ClusterInfo> static_init ;
+//Fr::Initializer<ClusterInfo> static_init ;
 
 /************************************************************************/
 /************************************************************************/
-
-ClusterInfo* ClusterInfo::create(const List* elts)
-{
-   //TODO
-   (void)elts ;
-   return nullptr ;
-}
-
-//----------------------------------------------------------------------------
 
 ClusterInfo* ClusterInfo::create(const List* elts, const List* subclus)
 {
    //TODO
    (void)elts ; (void)subclus;
    return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+ClusterInfo* ClusterInfo::create(ClusterInfo** subclus, size_t num_subclus)
+{
+   ClusterInfo* info = new ClusterInfo ;
+   if (!subclus) num_subclus = 0 ;
+   for (size_t i = 0 ; i < num_subclus ; ++i)
+      {
+      if (subclus[i])
+	 {
+	 //TODO
+	 }
+      }
+   return info ;
 }
 
 //----------------------------------------------------------------------------
@@ -84,6 +91,22 @@ bool ClusterInfo::addVector(Object* v)
 
 //----------------------------------------------------------------------------
 
+void ClusterInfo::setFlag(ClusterInfo::Flags f)
+{
+   (void)f ; //TODO
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void ClusterInfo::clearFlag(ClusterInfo::Flags f)
+{
+   (void)f ; //TODO
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 bool ClusterInfo::addVectors(const RefArray* vectors)
 {
    for (size_t i = 0 ; i < vectors->size() ; ++i)
@@ -91,6 +114,27 @@ bool ClusterInfo::addVectors(const RefArray* vectors)
       addVector(vectors->getNth(i)) ;
       }
    return true ;
+}
+
+//----------------------------------------------------------------------------
+
+ObjectPtr ClusterInfo::clone_(const Object*)
+{
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+ObjectPtr ClusterInfo::subseq_int(const Object*,size_t /*start*/, size_t /*stop*/)
+{
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+ObjectPtr ClusterInfo::subseq_iter(const Object*, ObjectIter /*start*/, ObjectIter /*stop*/)
+{
+   return nullptr ; //FIXME
 }
 
 //----------------------------------------------------------------------------

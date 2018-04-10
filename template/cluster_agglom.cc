@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-29					*/
+/* Version 0.04, last edit 2018-04-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -60,6 +60,23 @@ class ClusteringAlgoAgglom : public ClusteringAlgoBrown<IdxT,ValT>
 
 /************************************************************************/
 /************************************************************************/
+
+template <typename IdxT, typename ValT>
+ClusterInfo* ClusteringAlgoAgglom<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
+{
+   (void)first; (void)past_end;
+   return nullptr ; //TODO
+}
+
+/************************************************************************/
+/************************************************************************/
+
+template <typename IdxT, typename ValT>
+ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
+{
+   (void)first; (void)past_end;
+   return nullptr ; //TODO
+}
 
 } // end of namespace Fr
 
