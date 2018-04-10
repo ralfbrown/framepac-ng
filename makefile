@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 04apr2018
+# Last change: 09apr2018
 
 #########################################################################
 # define the locations of all the files
@@ -292,8 +292,9 @@ DISTFILES= LICENSE COPYING makefile .gitignore *.C *.h framepac/*.h template/*.c
 LIBRARY = $(PACKAGE)$(LIB)
 
 # the executable(s) to be built for testing the package
-TESTPROGS = $(BINDIR)/argparser$(EXE) $(BINDIR)/membench$(EXE) $(BINDIR)/objtest$(EXE) $(BINDIR)/parhash$(EXE) \
-	 $(BINDIR)/stringtest$(EXE) $(BINDIR)/tpool$(EXE)
+TESTPROGS = $(BINDIR)/argparser$(EXE) $(BINDIR)/clustertest$(EXE) $(BINDIR)/membench$(EXE) \
+	$(BINDIR)/objtest$(EXE) $(BINDIR)/parhash$(EXE) \
+	$(BINDIR)/stringtest$(EXE) $(BINDIR)/tpool$(EXE)
 
 #########################################################################
 ## the generawl build rules
@@ -368,6 +369,10 @@ $(LIBINSTDIR)/$(LIBRARY): $(LIBRARY)
 ## the dependencies for each module of the full package
 
 $(BINDIR)/argparser$(EXE):	tests/argparser$(OBJ) $(LIBRARY)
+		@ mkdir -p $(BINDIR)
+		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
+
+$(BINDIR)/clustertest$(EXE):	tests/clustertest$(OBJ) $(LIBRARY)
 		@ mkdir -p $(BINDIR)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
@@ -715,6 +720,7 @@ FramepaC.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 tests/argparser$(OBJ):	tests/argparser$(C) framepac/argparser.h
+tests/clustertest$(OBJ): tests/clustertest$(C) framepac/argparser.h framepac/cluster.h framepac/timer.h
 tests/membench$(OBJ):	tests/membench$(C) framepac/argparser.h framepac/memory.h framepac/threadpool.h \
 			framepac/timer.h
 tests/objtest$(OBJ):	tests/objtest$(C) framepac/objreader.h framepac/symboltable.h
