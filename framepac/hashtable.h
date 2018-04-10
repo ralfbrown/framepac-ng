@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-08					*/
+/* Version 0.04, last edit 2018-04-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -1323,7 +1323,7 @@ class HashTableLocalIter : public HashTableLocalIterBase<KeyT,ValT>
 /************************************************************************/
 
 // these need to be defined *after* the members of HashTableIter due to the
-//  circular dependendy between the types
+//  circular dependency between the types
 
 template <typename KeyT, typename ValT>
 typename HashTable<KeyT,ValT>::iterator HashTable<KeyT,ValT>::begin() const
@@ -1354,9 +1354,8 @@ typename HashTable<KeyT,ValT>::const_iterator HashTable<KeyT,ValT>::cend() const
 }
 
 // these need to be defined *after* the members of HashTableLocalIter due to the
-//  circular dependendy between the types
+//  circular dependency between the types
 
-#if 1
 template <typename KeyT, typename ValT>
 typename HashTable<KeyT,ValT>::local_iterator HashTable<KeyT,ValT>::begin(int bucket) const
 {
@@ -1384,7 +1383,6 @@ typename HashTable<KeyT,ValT>::const_local_iterator HashTable<KeyT,ValT>::cend(i
    Table* table = m_table.load() ;
    return const_local_iterator(table,bcket,FramepaC::NULLPTR) ;
 }
-#endif
 
 /************************************************************************/
 
