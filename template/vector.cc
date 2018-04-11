@@ -121,8 +121,17 @@ template <typename ValT>
 bool Vector<ValT>::reserve(size_t N)
 {
    if (N < m_capacity) return true ;  // nothing to do
-   //TODO
-   return false ;
+   auto new_values = new ValT[N] ;
+   for (size_t i = 0 ; i < this->size() ; ++i)
+      {
+      new_values[i] = this->m_values[i] ;
+      }
+   this->startModifying() ;
+   delete[] this->m_values ;
+   this->m_values = new_values ;
+   this->m_capacity = N ;
+   this->doneModifying() ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------

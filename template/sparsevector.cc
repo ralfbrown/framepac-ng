@@ -265,8 +265,21 @@ template <typename IdxT, typename ValT>
 bool SparseVector<IdxT,ValT>::reserve(size_t N)
 {
    if (N < this->m_capacity) return true ;  // nothing to do
-   //TODO
-   return false ;
+   auto new_indices = new IdxT[N] ;
+   auto new_values = new ValT[N] ;
+   for (size_t i = 0 ; i < this->size() ; ++i)
+      {
+      new_indices[i] = this->m_indices[i] ;
+      new_values[i] = this->m_values[i] ;
+      }
+   this->startModifying() ;
+   delete[] this->m_indices ;
+   delete[] this->m_values ;
+   this->m_indices = new_indices ;
+   this->m_values = new_values ;
+   this->m_capacity = N ;
+   this->doneModifying() ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
