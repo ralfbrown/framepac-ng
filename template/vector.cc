@@ -32,17 +32,20 @@ namespace Fr
 template <typename ValT>
 Vector<ValT>::Vector(size_t capacity)
 {
-   reserve(capacity) ;
+   this->reserve(capacity) ;
    return ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename ValT>
-Vector<ValT>::Vector(const Vector&)
-   : Object()
+Vector<ValT>::Vector(const Vector& orig)
+   : Vector(orig.size())
 {
-   //TODO
+   for (size_t i = 0 ; i < this->size() ; ++i)
+      {
+      m_values[i] = orig.m_values[i] ;
+      }
    return ;
 }
 
@@ -67,9 +70,9 @@ double Vector<ValT>::vectorLength() const
 //----------------------------------------------------------------------------
 
 template <typename ValT>
-ObjectPtr Vector<ValT>::clone_(const Object*)
+ObjectPtr Vector<ValT>::clone_(const Object* obj)
 {
-   return nullptr ; //FIXME
+   return obj ? new Vector<ValT>(*static_cast<const Vector*>(obj)) : nullptr ;
 }
 
 //----------------------------------------------------------------------------

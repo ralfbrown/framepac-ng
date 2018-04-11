@@ -582,6 +582,9 @@ template/vecsim_factory.cc:	template/vecsim.cc template/vecsim_ct.cc
 template/vector.cc:	framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+template/vector_arith.cc:	template/vector.cc
+	$(TOUCH) $@ $(BITBUCKET)
+
 template/wordcorpus.cc:	framepac/wordcorpus.h
 	$(TOUCH) $@ $(BITBUCKET)
 

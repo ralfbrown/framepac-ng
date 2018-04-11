@@ -315,12 +315,13 @@ class SparseVector : public Vector<ValT>
       SparseVector* incr(const SparseVector* other, double wt = 1.0) ;
       SparseVector* incr(const OneHotVector<IdxT,ValT>* other, double wt = 1.0) ;
 
+      // STL compatibility
+      bool reserve(size_t n) ;
+      
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      SparseVector(size_t capacity = 0) : Vector<ValT>(capacity)
-	 { //FIXME
-	 }
+      SparseVector(size_t capacity = 0) ;
       SparseVector(const SparseVector&) ;
       ~SparseVector() { delete [] m_indices ; }
       SparseVector& operator= (const SparseVector&) ;

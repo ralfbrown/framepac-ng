@@ -30,6 +30,29 @@ namespace Fr
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
+SparseVector<IdxT,ValT>::SparseVector(size_t capacity)
+{
+   this->reserve(capacity) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+SparseVector<IdxT,ValT>::SparseVector(const SparseVector& orig)
+   : SparseVector(orig.size())
+{
+   for (size_t i = 0 ; i < this->size() ; ++i)
+      {
+      this->m_indices[i] = orig.m_indices[i] ;
+      this->m_values[i] = orig.m_values[i] ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
 SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const Vector<ValT>* other) const
 {
    if (!other)
@@ -207,9 +230,17 @@ ObjectPtr SparseVector<IdxT,ValT>::subseq_iter(const Object*, ObjectIter /*start
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-bool SparseVector<IdxT,ValT>::equal_(const Object*, const Object*)
+bool SparseVector<IdxT,ValT>::equal_(const Object* obj1, const Object* obj2)
 {
-   return false ; //FIXME
+   if (obj1 == obj2) return true ;	// if same object, contents must be the same, too
+   if (!obj2 || !obj2->isSparseVector())
+      return false ;			// can currently only compare sparse vector with another sparse vector
+   auto v1 = static_cast<const SparseVector<IdxT,ValT>*>(obj1) ;
+   auto v2 = static_cast<const SparseVector<IdxT,ValT>*>(obj2) ;
+   if (v1->size() != v2->size())
+      return false ;
+   //TODO
+   return false ;
 }
 
 //----------------------------------------------------------------------------
@@ -226,6 +257,16 @@ template <typename IdxT, typename ValT>
 int SparseVector<IdxT,ValT>::compare_(const Object*, const Object*)
 {
    return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+bool SparseVector<IdxT,ValT>::reserve(size_t N)
+{
+   if (N < this->m_capacity) return true ;  // nothing to do
+   //TODO
+   return false ;
 }
 
 //----------------------------------------------------------------------------
