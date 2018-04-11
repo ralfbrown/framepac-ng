@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-08					*/
+/* Version 0.04, last edit 2018-04-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -50,8 +50,11 @@ class BufferBuilder
       void remove() { if (m_currsize > 0) --m_currsize ; } // remove last-added item
 
       size_t currentLength() const { return m_currsize ; }
-      T *currentBuffer() const { return m_buffer ; }
-      T *finalize() const ;
+      size_t size() const { return m_currsize ; }
+      size_t capacity() const { return m_alloc ; }
+      T* currentBuffer() const { return m_buffer ; }
+      T* finalize() const ;
+      T* move() ;
 
       // operator overloads
       T *operator * () const { return m_buffer ; }

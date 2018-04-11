@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include <cstring>
+#include "template/bufbuilder.cc"
 #include "framepac/vector.h"
 
 namespace Fr
@@ -33,6 +34,24 @@ template <typename IdxT, typename ValT>
 SparseVector<IdxT,ValT>::SparseVector(size_t capacity)
 {
    this->reserve(capacity) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+SparseVector<IdxT,ValT>::SparseVector(const char* rep)
+{
+   BufferBuilder<IdxT,16> indices ;
+   BufferBuilder<ValT,16> values ;
+   if (rep)
+      {
+      //TODO
+      }
+   this->m_size = values.size() ;
+   this->m_capacity = values.capacity() ;
+   this->m_values = values.move() ;
+   this->m_indices = indices.move() ;
    return ;
 }
 

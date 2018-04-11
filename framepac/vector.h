@@ -322,6 +322,7 @@ class SparseVector : public Vector<ValT>
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       SparseVector(size_t capacity = 0) ;
+      SparseVector(const char* rep) ;
       SparseVector(const SparseVector&) ;
       ~SparseVector() { delete [] m_indices ; }
       SparseVector& operator= (const SparseVector&) ;

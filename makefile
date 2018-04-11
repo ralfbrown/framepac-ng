@@ -558,7 +558,7 @@ template/ptrie.cc:	framepac/trie.h
 template/sufarray.cc:	framepac/sufarray.h framepac/bitvector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/sparsevector.cc:	framepac/vector.h
+template/sparsevector.cc:	framepac/vector.h template/bufbuilder.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/termvector.cc:	framepac/termvector.h framepac/charget.h framepac/fasthash64.h

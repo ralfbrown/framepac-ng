@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.04, last edit 2018-04-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -34,6 +34,29 @@ BufferBuilder<T,minsize>::~BufferBuilder()
       delete [] m_buffer ;
    m_currsize = 0 ;
    return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, size_t minsize>
+T* BufferBuilder<T,minsize>::move()
+{
+   T* buf { m_buffer } ;
+   if (buf == m_localbuf)
+      {
+      // we need to make a copy of the buffer
+      buf = new T[this->capacity()] ;
+      for (size_t i = 0 ; i < m_currsize ; ++i)
+	 {
+	 buf[i] = m_buffer[i] ;
+	 }
+      }
+   // reset our buffer
+   m_buffer = m_localbuf ;
+   m_alloc = minsize ;
+   m_currsize = 0 ;
+   // and return the buffer that had been built
+   return buf ;
 }
 
 //----------------------------------------------------------------------------
