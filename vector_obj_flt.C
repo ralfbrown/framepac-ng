@@ -19,9 +19,7 @@
 /*									*/
 /************************************************************************/
 
-#include "framepac/vector.h"
 #include "template/sparsevector.cc"
-#include "template/vector_arith.cc"
 
 namespace Fr
 {

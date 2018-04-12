@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-10					*/
+/* Version 0.04, last edit 2018-04-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -65,6 +65,60 @@ double Vector<ValT>::vectorLength() const
    m_length = len ;
    this->m_critsect.unlock() ;
    return len ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
+template <typename IdxT>
+Vector<ValT>* Vector<ValT>::add(const Vector* other) const
+{
+   if (!other) return this->clone() ;
+   if (this->isSparseVector())
+      {
+      if (other->isSparseVector())
+	 {
+	 return static_cast<const SparseVector<IdxT,ValT>*>(this)->add(static_cast<SparseVector<IdxT,ValT>*>(other)) ;
+	 }
+      else
+	 {
+	 return static_cast<const SparseVector<IdxT,ValT>*>(this)->add(static_cast<DenseVector<ValT>*>(other)) ;
+	 }
+      }
+   else if (other->isSparseVector())
+      {
+      return static_cast<const SparseVector<IdxT,ValT>*>(other)->add(static_cast<DenseVector<ValT>*>(this)) ;
+      }
+   else
+      {
+      return static_cast<const DenseVector<ValT>*>(other)->add(static_cast<DenseVector<ValT>*>(this)) ;
+      }
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
+void Vector<ValT>::scale(double factor)
+{
+   for (size_t i = 0 ; i < this->numElements() ; ++i)
+      {
+      m_values[i] *= factor ;
+      }
+   return  ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
+void Vector<ValT>::normalize()
+{
+   double factor = this->vectorLength() ;
+   if (factor <= 0.0) return ;
+   for (size_t i = 0 ; i < this->numElements() ; ++i)
+      {
+      m_values[i] /= factor ;
+      }
+   return  ;
 }
 
 //----------------------------------------------------------------------------

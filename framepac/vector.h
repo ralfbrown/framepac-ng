@@ -299,6 +299,7 @@ class SparseVector : public Vector<ValT>
 
    public: // methods
       static SparseVector* create(size_t numelts = 0) { return new SparseVector(numelts) ; }
+      static SparseVector* create(const char* rep) { return new SparseVector(rep) ; }
 
       // retrieve elements of the vector
       IdxT keyAt(size_t N) const { return  m_indices[N] ; }
@@ -421,6 +422,7 @@ class DenseVector : public Vector<ValT>
    {
    public:
       static DenseVector* create(size_t capacity = 0) { return new DenseVector(capacity) ; }
+      static DenseVector* create(const char* rep) { return new DenseVector(rep) ; }
 
       // arithmetic operations
       DenseVector* add(const DenseVector* other) const ;
@@ -439,6 +441,7 @@ class DenseVector : public Vector<ValT>
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       DenseVector(size_t capacity = 0) : Vector<ValT>(capacity) {}
+      DenseVector(const char* rep) ;
       DenseVector(const Vector<ValT>&v) : Vector<ValT>(v) {}
       ~DenseVector() {}
       DenseVector& operator= (const DenseVector&) ;

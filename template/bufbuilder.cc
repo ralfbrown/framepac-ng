@@ -19,6 +19,9 @@
 /*									*/
 /************************************************************************/
 
+#ifndef Fr_BUFBUILDER_CC_INCLUDED
+#define Fr_BUFBUILDER_CC_INCLUDED
+
 #include "framepac/builder.h"
 
 namespace Fr
@@ -98,5 +101,7 @@ T *BufferBuilder<T,minsize>::finalize() const
 //----------------------------------------------------------------------------
 
 } // end namespace Fr
+
+#endif /* !Fr_BUFBUILDER_CC_INCLUDED */
 
 // end of file template/bufbuilder.cc //
