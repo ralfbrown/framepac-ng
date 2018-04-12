@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-02					*/
+/* Version 0.04, last edit 2018-04-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -86,8 +86,13 @@ bool assign_vector_to_nearest_center(const void* vectors, size_t index, va_list 
 template <typename IdxT, typename ValT>
 bool ClusteringAlgo<IdxT,ValT>::checkSparseOrDense(const Array* vectors)
 {
-   (void)vectors;
-   return false; //for now
+   for (size_t i = 0 ; i < vectors->size() ; ++i)
+      {
+      Object* o = vectors->getNth(i) ;
+      if (o && o->isSparseVector())
+	 return true ;			// at least one sparse vector
+      }
+   return false ;			// no sparse vectors
 }
 
 //----------------------------------------------------------------------------
