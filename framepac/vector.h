@@ -56,8 +56,9 @@ class Vector : public Object
       
       // arithmetic operations
       template <typename IdxT>
-      Vector* add(const Vector* other) const ;			// ret = (*this) + (*other)
-      Vector* incr(const Vector* other, double wt = 1.0) ;	// (*this) += wt*(*other)
+      Vector* add(const Vector* other) const ;		// ret = (*this) + (*other)
+      Vector* incr(const Vector* other) ;		// (*this) += (*other)
+      Vector* incr(const Vector* other, ValT wt) ;	// (*this) += wt*(*other)
       void scale(double factor) ;
       void normalize() ;
 
@@ -312,9 +313,9 @@ class SparseVector : public Vector<ValT>
       SparseVector* add(const Vector<ValT>* other) const ;
       SparseVector* add(const SparseVector* other) const ;
       SparseVector* add(const OneHotVector<IdxT,ValT>* other) const ;
-      SparseVector* incr(const Vector<ValT>* other, double wt = 1.0) ;
-      SparseVector* incr(const SparseVector* other, double wt = 1.0) ;
-      SparseVector* incr(const OneHotVector<IdxT,ValT>* other, double wt = 1.0) ;
+      SparseVector* incr(const Vector<ValT>* other, ValT wt = 1.0) ;
+      SparseVector* incr(const SparseVector* other, ValT wt = 1.0) ;
+      SparseVector* incr(const OneHotVector<IdxT,ValT>* other, ValT wt = 1.0) ;
 
       // STL compatibility
       bool reserve(size_t n) ;
@@ -433,9 +434,11 @@ class DenseVector : public Vector<ValT>
 
       DenseVector* incr(const DenseVector* other, double wt = 1.0) ;
       template <typename IdxT>
-      DenseVector* incr(const SparseVector<IdxT,ValT>* other, double wt = 1.0) ;
+      DenseVector* incr(const SparseVector<IdxT,ValT>* other) ;
       template <typename IdxT>
-      DenseVector* incr(const OneHotVector<IdxT,ValT>* other, double wt = 1.0) ;
+      DenseVector* incr(const SparseVector<IdxT,ValT>* other, ValT wt = 1.0) ;
+      template <typename IdxT>
+      DenseVector* incr(const OneHotVector<IdxT,ValT>* other, ValT wt = 1.0) ;
 
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }

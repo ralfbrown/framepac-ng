@@ -83,6 +83,44 @@ SparseVector<IdxT,ValT>* DenseVector<ValT>::add(const SparseVector<IdxT,ValT>* o
 
 //----------------------------------------------------------------------------
 
+template <typename ValT>
+template <typename IdxT>
+DenseVector<ValT>* DenseVector<ValT>::incr(const SparseVector<IdxT,ValT>* other)
+{
+   if (other) return other->add(this) ;
+   size_t pos(0) ;
+   while (pos < other->numElements())
+      {
+      IdxT index = other->elementIndex(pos) ;
+      if (index >= this->numElements())
+	 break ;
+      ValT value = other->elementValue(pos++) ;
+      this->m_values[index] += value ;
+      }
+   return this ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
+template <typename IdxT>
+DenseVector<ValT>* DenseVector<ValT>::incr(const SparseVector<IdxT,ValT>* other, ValT wt)
+{
+   if (other) return other->add(this) ;
+   size_t pos(0) ;
+   while (pos < other->numElements())
+      {
+      IdxT index = other->elementIndex(pos) ;
+      if (index >= this->numElements())
+	 break ;
+      ValT value = other->elementValue(pos++) ;
+      this->m_values[index] += wt*value ;
+      }
+   return this ;
+}
+
+//----------------------------------------------------------------------------
+
 } // end namespace Fr
 
 // end of file densevector.cc //

@@ -229,6 +229,77 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const OneHotVector<IdxT,Va
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
+SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::incr(const SparseVector<IdxT,ValT>* other, ValT wt)
+{
+   if (!other)
+      return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone()) ;
+   size_t new_size { 0 } ;
+   size_t elts1 { this->numElements() } ;
+   size_t elts2 { other->numElements() } ;
+   size_t pos1 { 0 } ;
+   size_t pos2 { 0 } ;
+   while (pos1 < elts1 && pos2 < elts2)
+      {
+      auto elt1 { this->elementIndex(pos1) } ;
+      auto elt2 { other->elementIndex(pos2) } ;
+      if (elt1 <= elt2)
+	 {
+	 pos1++ ;
+	 }
+      if (elt1 >= elt2)
+	 {
+	 pos2++ ;
+	 }
+      new_size++ ;
+      }
+   new_size += (elts1 - pos1) + (elts2 - pos2) ;
+   IdxT* new_indices { new IdxT[new_size] } ;
+   ValT* new_values { new ValT[new_size] } ;
+   pos1 = 0 ;
+   pos2 = 0 ;
+   size_t count { 0 } ;
+   while (pos1 < elts1 && pos2 < elts2)
+      {
+      auto elt1 { (IdxT)(this->elementIndex(pos1)) } ;
+      auto elt2 { (IdxT)(other->elementIndex(pos2)) } ;
+      if (elt1 < elt2)
+	 {
+	 new_indices[count] = elt1 ;
+	 new_values[count++] = this->elementValue(pos1++) ;
+	 }
+      else if (elt1 > elt2)
+	 {
+	 new_indices[count] = elt2 ;
+	 new_values[count++] = wt*other->elementValue(pos2++) ;
+	 }
+      else // elt1 == elt2
+	 {
+	 new_indices[count] = elt1 ;
+	 new_values[count++] = this->elementValue(pos1++) + wt*other->elementValue(pos2++) ;
+	 }
+      }
+   while (pos1 < elts1)
+      {
+      new_indices[count] = (IdxT)(this->elementIndex(pos1)) ;
+      new_values[count++] = this->elementValue(pos1++) ;
+      }
+   while (pos2 < elts2)
+      {
+      new_indices[count] = (IdxT)(other->elementIndex(pos2)) ;
+      new_values[count++] = wt*other->elementValue(pos2++) ;
+      }
+   this->startModifying() ;
+   this->m_size = new_size ;
+   this->m_capacity = new_size ;
+   this->m_indices = new_indices ;
+   this->m_values = new_values ;
+   this->doneModifying() ;
+   return this ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
 ObjectPtr SparseVector<IdxT,ValT>::clone_(const Object*)
 {
    return nullptr ; //FIXME
