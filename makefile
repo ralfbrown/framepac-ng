@@ -244,7 +244,7 @@ build/%$(OBJ) : src/%$(C)
 # define the package info and files to be used
 
 PACKAGE=framepacng
-RELEASE=0.03
+RELEASE=0.04
 
 # the object modules to be included in the library file
 OBJS = \
@@ -412,7 +412,7 @@ strip:
 	strip $(TESTPROGS)
 
 tags:
-	etags --c++ *.h *$(C) framepac/*.h templates/*cc tests/*.h tests/*$(C)
+	etags --c++ *.h *$(C) src/*$(C) framepac/*.h templates/*cc tests/*.h tests/*$(C)
 
 tar:
 	$(RM) $(PACKAGE).tar
