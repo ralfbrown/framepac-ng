@@ -44,9 +44,13 @@ SparseVector<IdxT,ValT>::SparseVector(const char* rep)
 {
    BufferBuilder<IdxT,16> indices ;
    BufferBuilder<ValT,16> values ;
-   if (rep)
+   while (indices.read(rep))
       {
-      //TODO
+      if (*rep != ':')
+	 break ;
+      ++rep ;
+      if (!values.read(rep))
+	 break ;
       }
    this->m_size = values.size() ;
    this->m_capacity = values.capacity() ;

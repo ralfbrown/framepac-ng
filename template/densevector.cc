@@ -34,9 +34,9 @@ template <typename ValT>
 DenseVector<ValT>::DenseVector(const char* rep)
 {
    BufferBuilder<ValT,16> values ;
-   if (rep)
+   while (values.read(rep))
       {
-      //TODO
+      // nothing to do
       }
    this->m_size = values.size() ;
    this->m_capacity = values.capacity() ;
