@@ -46,6 +46,8 @@ class BufferBuilder
       bool preallocate(size_t newsize) ;
       void clear() ;
 
+      bool read(const char*&) ;
+      bool read(char*& input) { return read(const_cast<char*&>(input)) ; }
       void append(T value) ;
       void remove() { if (m_currsize > 0) --m_currsize ; } // remove last-added item
 

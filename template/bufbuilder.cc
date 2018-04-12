@@ -23,6 +23,7 @@
 #define Fr_BUFBUILDER_CC_INCLUDED
 
 #include "framepac/builder.h"
+#include "framepac/convert.h"
 
 namespace Fr
 {
@@ -37,6 +38,19 @@ BufferBuilder<T,minsize>::~BufferBuilder()
       delete [] m_buffer ;
    m_currsize = 0 ;
    return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, size_t minsize>
+bool BufferBuilder<T,minsize>::read(const char*& input)
+{
+   if (!input || !*input) return false ;
+   T value ;
+   if (!convert_string(input,value))
+      return false ;
+   this->append(value) ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
