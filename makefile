@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 11apr2018
+# Last change: 12apr2018
 
 #########################################################################
 # define the locations of all the files
@@ -223,6 +223,9 @@ endif
 
 $(C)$(OBJ): ; $(CC) $(CFLAGS) -c -o $@ $<
 
+build/%$(OBJ) : %$(C)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 .cpp.C: ; ln -s $< $@
 
 .SUFFIXES: $(OBJ) .C $(C) .cpp
@@ -238,46 +241,108 @@ PACKAGE=framepacng
 RELEASE=0.03
 
 # the object modules to be included in the library file
-OBJS = allocator$(OBJ) array$(OBJ) bignum$(OBJ) \
-	argopt$(OBJ) argopt_real$(OBJ) argparser$(OBJ) \
-	bidindex_cstr$(OBJ) bitvector$(OBJ) \
-	bufbuilder_char$(OBJ) bwt$(OBJ) canonsent$(OBJ) \
-	charget$(OBJ) cfile$(OBJ) cognate$(OBJ) confmatrix$(OBJ) \
-	contextcoll_sym$(OBJ) contextcoll_u32$(OBJ) convert$(OBJ) \
-	clusterinfo$(OBJ) cluster_name$(OBJ) \
-	cluster_u32_dbl$(OBJ) cluster_u32_flt$(OBJ) cluster_u32_u32$(OBJ) \
-	complex$(OBJ) critsect$(OBJ) cstring$(OBJ) filename$(OBJ) \
-	fasthash64$(OBJ) \
-	float$(OBJ) frame$(OBJ) hazardptr$(OBJ) \
-	hashset_obj$(OBJ) hashset_sym$(OBJ) hashset_u32$(OBJ) \
-	hashtable_objobj$(OBJ) hashtable_objsz$(OBJ) \
-	hashtable_symnul$(OBJ) hashtable_symobj$(OBJ) hashtable_symsz$(OBJ) \
-	hashtable_u32u32$(OBJ) hashtable_data$(OBJ) \
-	hashtable_helper$(OBJ) \
-	init$(OBJ) linebatch$(OBJ) random$(OBJ) \
-	integer$(OBJ) jsonreader$(OBJ) list$(OBJ) listbuilder$(OBJ) \
-	listutil$(OBJ) loadfilelist$(OBJ) map$(OBJ) matrix$(OBJ) \
-	message$(OBJ) mmapfile$(OBJ) number$(OBJ) \
-	nonobject$(OBJ) object$(OBJ) objreader$(OBJ) \
-	prefixmatcher$(OBJ) \
-	printf$(OBJ) ptrie_u32$(OBJ) refarray$(OBJ) \
-	rational$(OBJ) set$(OBJ) slab$(OBJ) \
-	slabgroup$(OBJ) smallalloc$(OBJ) \
-	sparsematrix$(OBJ) spelling$(OBJ) \
-	string$(OBJ) stringbuilder$(OBJ) \
-	sufarray_u32u32$(OBJ) sufarray_u32u40$(OBJ) \
-	symbol$(OBJ) symboltable$(OBJ) synchevent$(OBJ) \
-	termvector$(OBJ) texttransforms$(OBJ) \
-	threadpool$(OBJ) threshold$(OBJ) timer$(OBJ) \
-	trie$(OBJ) trie_u32dbl$(OBJ) trie_u32u32$(OBJ) \
-	vecsimopt$(OBJ) vecsim_name$(OBJ) \
-	vecsim_u32_dbl$(OBJ) vecsim_u32_flt$(OBJ) vecsim_u32_u32$(OBJ) \
-	vector_obj_dbl$(OBJ) vector_obj_flt$(OBJ) \
-	vector_u32_dbl$(OBJ) vector_u32_flt$(OBJ) vector_u32_u32$(OBJ) \
-	basisvector_u32$(OBJ) progress$(OBJ) \
-	wordcorpus_u32u32$(OBJ) wordcorpus_u32u40$(OBJ) \
-	wordsplit$(OBJ) \
-	globaldata$(OBJ)
+OBJS = \
+	build/globaldata$(OBJ) \
+	build/allocator$(OBJ) \
+	build/argopt$(OBJ) \
+	build/argopt_real$(OBJ) \
+	build/argparser$(OBJ) \
+	build/array$(OBJ) \
+	build/basisvector_u32$(OBJ) \
+	build/bidindex_cstr$(OBJ) \
+	build/bignum$(OBJ) \
+	build/bitvector$(OBJ) \
+	build/bufbuilder_char$(OBJ) \
+	build/bwt$(OBJ) \
+	build/canonsent$(OBJ) \
+	build/cfile$(OBJ) \
+	build/charget$(OBJ) \
+	build/cluster_name$(OBJ) \
+	build/cluster_u32_dbl$(OBJ) \
+	build/cluster_u32_flt$(OBJ) \
+	build/cluster_u32_u32$(OBJ) \
+	build/clusterinfo$(OBJ) \
+	build/cognate$(OBJ) \
+	build/complex$(OBJ) \
+	build/confmatrix$(OBJ) \
+	build/contextcoll_sym$(OBJ) \
+	build/contextcoll_u32$(OBJ) \
+	build/convert$(OBJ) \
+	build/critsect$(OBJ) \
+	build/cstring$(OBJ) \
+	build/fasthash64$(OBJ) \
+	build/filename$(OBJ) \
+	build/float$(OBJ) \
+	build/frame$(OBJ) \
+	build/hashset_obj$(OBJ) \
+	build/hashset_sym$(OBJ) \
+	build/hashset_u32$(OBJ) \
+	build/hashtable_data$(OBJ) \
+	build/hashtable_helper$(OBJ) \
+	build/hashtable_objobj$(OBJ) \
+	build/hashtable_objsz$(OBJ) \
+	build/hashtable_symnul$(OBJ) \
+	build/hashtable_symobj$(OBJ) \
+	build/hashtable_symsz$(OBJ) \
+	build/hashtable_u32u32$(OBJ) \
+	build/hazardptr$(OBJ) \
+	build/init$(OBJ) \
+	build/integer$(OBJ) \
+	build/jsonreader$(OBJ) \
+	build/linebatch$(OBJ) \
+	build/list$(OBJ) \
+	build/listbuilder$(OBJ) \
+	build/listutil$(OBJ) \
+	build/loadfilelist$(OBJ) \
+	build/map$(OBJ) \
+	build/matrix$(OBJ) \
+	build/message$(OBJ) \
+	build/mmapfile$(OBJ) \
+	build/nonobject$(OBJ) \
+	build/number$(OBJ) \
+	build/object$(OBJ) \
+	build/objreader$(OBJ) \
+	build/prefixmatcher$(OBJ) \
+	build/printf$(OBJ) \
+	build/progress$(OBJ) \
+	build/ptrie_u32$(OBJ) \
+	build/random$(OBJ) \
+	build/rational$(OBJ) \
+	build/refarray$(OBJ) \
+	build/set$(OBJ) \
+	build/slab$(OBJ) \
+	build/slabgroup$(OBJ) \
+	build/smallalloc$(OBJ) \
+	build/sparsematrix$(OBJ) \
+	build/spelling$(OBJ) \
+	build/string$(OBJ) \
+	build/stringbuilder$(OBJ) \
+	build/sufarray_u32u32$(OBJ) \
+	build/sufarray_u32u40$(OBJ) \
+	build/symbol$(OBJ) \
+	build/symboltable$(OBJ) \
+	build/synchevent$(OBJ) \
+	build/termvector$(OBJ) \
+	build/texttransforms$(OBJ) \
+	build/threadpool$(OBJ) \
+	build/threshold$(OBJ) \
+	build/timer$(OBJ) \
+	build/trie$(OBJ) \
+	build/trie_u32dbl$(OBJ) \
+	build/trie_u32u32$(OBJ) \
+	build/vecsim_name$(OBJ) \
+	build/vecsim_u32_dbl$(OBJ) \
+	build/vecsim_u32_flt$(OBJ) \
+	build/vecsim_u32_u32$(OBJ) \
+	build/vecsimopt$(OBJ) \
+	build/vector_obj_dbl$(OBJ) \
+	build/vector_obj_flt$(OBJ) \
+	build/vector_u32_dbl$(OBJ) \
+	build/vector_u32_flt$(OBJ) \
+	build/vector_u32_u32$(OBJ) \
+	build/wordcorpus_u32u32$(OBJ) \
+	build/wordcorpus_u32u40$(OBJ) \
+	build/wordsplit$(OBJ)
 
 TESTS = bin/argparser$(EXE)
 
@@ -319,7 +384,7 @@ help:
 lib:	$(LIBRARY)
 
 clean:
-	$(RM) *$(OBJ) tests/*$(OBJ)
+	$(RM) *$(OBJ) build/*$(OBJ) tests/*$(OBJ)
 	$(RM) $(TESTPROGS)
 
 veryclean: clean
@@ -335,6 +400,7 @@ install: $(BINDIR)/$(TESTPROG)$(EXE)
 system: $(TESTPROGS)
 
 bootstrap:
+	@mkdir -p build
 
 strip:
 	strip $(TESTPROGS)
@@ -396,112 +462,115 @@ $(BINDIR)/tpool$(EXE):		tests/tpool$(OBJ) $(LIBRARY)
 		@ mkdir -p $(BINDIR)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
-allocator$(OBJ):	allocator$(C) framepac/atomic.h framepac/memory.h
-argopt$(OBJ):		argopt$(C) template/argopt.cc
-argopt_real$(OBJ):	argopt_real$(C) template/argopt.cc
-argparser$(OBJ):	argparser$(C) framepac/argparser.h
-array$(OBJ):		array$(C) framepac/array.h framepac/fasthash64.h
-basisvector_u32$(OBJ):	basisvector_u32$(C) template/basisvector.cc
-bidindex_cstr$(OBJ):	bidindex_cstr$(C) framepac/bidindex.h
-bignum$(OBJ):		bignum$(C) framepac/bignum.h
-bitvector$(OBJ):	bitvector$(C) framepac/bitvector.h framepac/number.h framepac/fasthash64.h
-bufbuilder_char$(OBJ):	bufbuilder_char$(C) template/bufbuilder.cc
-bwt$(OBJ):		bwt$(C) framepac/config.h
-canonsent$(OBJ):	canonsent$(C) framepac/stringbuilder.h framepac/texttransforms.h
-charget$(OBJ):		charget$(C) framepac/charget.h
-cfile$(OBJ):		cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
-clusterinfo$(OBJ):	clusterinfo$(C) framepac/cluster.h
-cluster_name$(OBJ):	cluster_name$(C) framepac/cluster.h
-cluster_u32_dbl$(OBJ):	cluster_u32_dbl$(C) template/cluster_factory.cc
-cluster_u32_flt$(OBJ):	cluster_u32_flt$(C) template/cluster_factory.cc
-cluster_u32_u32$(OBJ):	cluster_u32_u32$(C) template/cluster_factory.cc
-cognate$(OBJ):		cognate$(C) framepac/spelling.h
-complex$(OBJ):		complex$(C) framepac/complex.h framepac/fasthash64.h
-confmatrix$(OBJ):	confmatrix$(C) framepac/spelling.h
-contextcoll_sym$(OBJ):	contextcoll_sym$(C) template/contextcoll.cc
-contextcoll_u32$(OBJ):	contextcoll_u32$(C) template/contextcoll.cc
-convert$(OBJ):		convert$(C) framepac/convert.h
-critsect$(OBJ):		critsect$(C) framepac/critsect.h
-cstring$(OBJ):		cstring$(C) framepac/cstring.h framepac/fasthash64.h
-fasthash64$(OBJ):	fasthash64$(C) framepac/fasthash64.h
-filename$(OBJ):		filename$(C) framepac/file.h framepac/texttransforms.h
-float$(OBJ):		float$(C) framepac/number.h framepac/fasthash64.h
-frame$(OBJ):		frame$(C) framepac/frame.h
-globaldata$(OBJ):	globaldata$(C)
-hashset_obj$(OBJ):	hashset_obj$(C) template/hashtable.cc
-hashset_sym$(OBJ):	hashset_sym$(C) template/hashtable.cc
-hashset_u32$(OBJ):	hashset_u32$(C) template/hashtable.cc
-hashtable_data$(OBJ):	hashtable_data$(C) framepac/hashtable.h
-hashtable_helper$(OBJ):	hashtable_helper$(C) framepac/hashtable.h framepac/atomic.h
-hashtable_objobj$(OBJ):	hashtable_objobj$(C) template/hashtable.cc
-hashtable_objsz$(OBJ):	hashtable_objsz$(C) template/hashtable.cc
-hashtable_symnul$(OBJ):	hashtable_symnul$(C) template/hashtable.cc
-hashtable_symobj$(OBJ):	hashtable_symobj$(C) template/hashtable.cc
-hashtable_symsz$(OBJ):	hashtable_symsz$(C) template/hashtable.cc
-hashtable_u32u32$(OBJ):	hashtable_u32u32$(C) template/hashtable.cc
-hazardptr$(OBJ):	hazardptr$(C) framepac/atomic.h
-init$(OBJ):		init$(C) framepac/init.h framepac/symboltable.h
-integer$(OBJ):		integer$(C) framepac/number.h framepac/fasthash64.h
-jsonreader$(OBJ):	jsonreader$(C) framepac/objreader.h framepac/stringbuilder.h framepac/list.h \
+build/allocator$(OBJ):		allocator$(C) framepac/atomic.h framepac/memory.h
+build/argopt$(OBJ):		argopt$(C) template/argopt.cc
+build/argopt_real$(OBJ):	argopt_real$(C) template/argopt.cc
+build/argparser$(OBJ):		argparser$(C) framepac/argparser.h
+build/array$(OBJ):		array$(C) framepac/array.h framepac/fasthash64.h
+build/basisvector_u32$(OBJ):	basisvector_u32$(C) template/basisvector.cc
+build/bidindex_cstr$(OBJ):	bidindex_cstr$(C) framepac/bidindex.h
+build/bignum$(OBJ):		bignum$(C) framepac/bignum.h
+build/bitvector$(OBJ):		bitvector$(C) framepac/bitvector.h framepac/number.h framepac/fasthash64.h
+build/bufbuilder_char$(OBJ):	bufbuilder_char$(C) template/bufbuilder.cc
+build/bwt$(OBJ):		bwt$(C) framepac/config.h
+build/canonsent$(OBJ):		canonsent$(C) framepac/stringbuilder.h framepac/texttransforms.h
+build/charget$(OBJ):		charget$(C) framepac/charget.h
+build/cfile$(OBJ):		cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
+build/clusterinfo$(OBJ):	clusterinfo$(C) framepac/cluster.h
+build/cluster_name$(OBJ):	cluster_name$(C) framepac/cluster.h
+build/cluster_u32_dbl$(OBJ):	cluster_u32_dbl$(C) template/cluster_factory.cc
+build/cluster_u32_flt$(OBJ):	cluster_u32_flt$(C) template/cluster_factory.cc
+build/cluster_u32_u32$(OBJ):	cluster_u32_u32$(C) template/cluster_factory.cc
+build/cognate$(OBJ):		cognate$(C) framepac/spelling.h
+build/complex$(OBJ):		complex$(C) framepac/complex.h framepac/fasthash64.h
+build/confmatrix$(OBJ):		confmatrix$(C) framepac/spelling.h
+build/contextcoll_sym$(OBJ):	contextcoll_sym$(C) template/contextcoll.cc
+build/contextcoll_u32$(OBJ):	contextcoll_u32$(C) template/contextcoll.cc
+build/convert$(OBJ):		convert$(C) framepac/convert.h
+build/critsect$(OBJ):		critsect$(C) framepac/critsect.h
+build/cstring$(OBJ):		cstring$(C) framepac/cstring.h framepac/fasthash64.h
+build/fasthash64$(OBJ):		fasthash64$(C) framepac/fasthash64.h
+build/filename$(OBJ):		filename$(C) framepac/file.h framepac/texttransforms.h
+build/float$(OBJ):		float$(C) framepac/number.h framepac/fasthash64.h
+build/frame$(OBJ):		frame$(C) framepac/frame.h
+build/globaldata$(OBJ):		./globaldata$(C)
+build/hashset_obj$(OBJ):	hashset_obj$(C) template/hashtable.cc
+build/hashset_sym$(OBJ):	hashset_sym$(C) template/hashtable.cc
+build/hashset_u32$(OBJ):	hashset_u32$(C) template/hashtable.cc
+build/hashtable_data$(OBJ):	hashtable_data$(C) framepac/hashtable.h
+build/hashtable_helper$(OBJ):	hashtable_helper$(C) framepac/hashtable.h framepac/atomic.h
+build/hashtable_objobj$(OBJ):	hashtable_objobj$(C) template/hashtable.cc
+build/hashtable_objsz$(OBJ):	hashtable_objsz$(C) template/hashtable.cc
+build/hashtable_symnul$(OBJ):	hashtable_symnul$(C) template/hashtable.cc
+build/hashtable_symobj$(OBJ):	hashtable_symobj$(C) template/hashtable.cc
+build/hashtable_symsz$(OBJ):	hashtable_symsz$(C) template/hashtable.cc
+build/hashtable_u32u32$(OBJ):	hashtable_u32u32$(C) template/hashtable.cc
+build/hazardptr$(OBJ):		hazardptr$(C) framepac/atomic.h
+build/init$(OBJ):		init$(C) framepac/init.h framepac/symboltable.h
+build/integer$(OBJ):		integer$(C) framepac/number.h framepac/fasthash64.h
+build/jsonreader$(OBJ):		jsonreader$(C) framepac/objreader.h framepac/stringbuilder.h framepac/list.h \
 			framepac/map.h framepac/number.h
-jsonwriter$(OBJ):	jsonwriter$(C) framepac/file.h framepac/list.h
-linebatch$(OBJ):	linebatch$(C) framepac/file.h
-list$(OBJ):		list$(C) framepac/list.h framepac/fasthash64.h framepac/init.h
-listbuilder$(OBJ):	listbuilder$(C) framepac/list.h framepac/string.h
-listutil$(OBJ):		listutil$(C) framepac/list.h framepac/string.h
-loadfilelist$(OBJ):	loadfilelist$(C) framepac/file.h framepac/list.h framepac/message.h
-map$(OBJ):		map$(C) framepac/map.h framepac/fasthash64.h
-matrix$(OBJ):		matrix$(C) framepac/matrix.h
-message$(OBJ):		message$(C) framepac/message.h framepac/texttransforms.h
-mmapfile$(OBJ):		mmapfile$(C) framepac/mmapfile.h framepac/file.h
-nonobject$(OBJ):	nonobject$(C) framepac/nonobject.h
-number$(OBJ):		number$(C) framepac/bignum.h framepac/rational.h
-object$(OBJ):		object$(C) framepac/object.h
-objreader$(OBJ):	objreader$(C) framepac/objreader.h framepac/symboltable.h framepac/array.h \
+build/jsonwriter$(OBJ):		jsonwriter$(C) framepac/file.h framepac/list.h
+build/linebatch$(OBJ):		linebatch$(C) framepac/file.h
+build/list$(OBJ):		list$(C) framepac/list.h framepac/fasthash64.h framepac/init.h
+build/listbuilder$(OBJ):	listbuilder$(C) framepac/list.h framepac/string.h
+build/listutil$(OBJ):		listutil$(C) framepac/list.h framepac/string.h
+build/loadfilelist$(OBJ):	loadfilelist$(C) framepac/file.h framepac/list.h framepac/message.h
+build/map$(OBJ):		map$(C) framepac/map.h framepac/fasthash64.h
+build/matrix$(OBJ):		matrix$(C) framepac/matrix.h
+build/message$(OBJ):		message$(C) framepac/message.h framepac/texttransforms.h
+build/mmapfile$(OBJ):		mmapfile$(C) framepac/mmapfile.h framepac/file.h
+build/nonobject$(OBJ):		nonobject$(C) framepac/nonobject.h
+build/number$(OBJ):		number$(C) framepac/bignum.h framepac/rational.h
+build/object$(OBJ):		object$(C) framepac/object.h
+build/objreader$(OBJ):		objreader$(C) framepac/objreader.h framepac/symboltable.h framepac/array.h \
 			framepac/bignum.h framepac/bitvector.h framepac/map.h framepac/rational.h \
 			framepac/list.h framepac/number.h framepac/stringbuilder.h framepac/termvector.h \
 			framepac/texttransforms.h
-prefixmatcher$(OBJ):	prefixmatcher$(C) framepac/utility.h
-printf$(OBJ):		printf$(C) framepac/texttransforms.h
-progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
-ptrie_u32$(OBJ):	ptrie_u32$(C) template/ptrie.cc
-random$(OBJ):		random$(C) framepac/random.h
-rational$(OBJ):		rational$(C) framepac/rational.h
-refarray$(OBJ):		refarray$(C) framepac/array.h framepac/fasthash64.h framepac/random.h
-set$(OBJ):		set$(C) framepac/set.h
-slab$(OBJ):		slab$(C) framepac/memory.h
-slabgroup$(OBJ):	slabgroup$(C) framepac/memory.h
-smallalloc$(OBJ):	smallalloc$(C) framepac/memory.h
-sparsematrix$(OBJ):	sparsematrix$(C) framepac/matrix.h
-spelling$(OBJ):		spelling$(C) framepac/spelling.h
-string$(OBJ):		string$(C) framepac/string.h framepac/fasthash64.h
-stringbuilder$(OBJ):	stringbuilder$(C) framepac/stringbuilder.h framepac/file.h
-sufarray_u32u32$(OBJ):	sufarray_u32u32$(C) template/sufarray.cc
-sufarray_u32u40$(OBJ):	sufarray_u32u40$(C) template/sufarray.cc framepac/byteorder.h
-symbol$(OBJ):		symbol$(C) framepac/symbol.h framepac/nonobject.h framepac/fasthash64.h
-symboltable$(OBJ):	symboltable$(C) framepac/symboltable.h framepac/fasthash64.h framepac/texttransforms.h
-synchevent$(OBJ):	synchevent$(C) framepac/synchevent.h
-termvector$(OBJ):	termvector$(C) template/termvector.cc
-texttransforms$(OBJ):	texttransforms$(C) framepac/texttransforms.h
-threadpool$(OBJ):	threadpool$(C) framepac/threadpool.h framepac/thread.h
-threshold$(OBJ):	threshold$(C) framepac/threshold.h
-timer$(OBJ):		timer$(C) framepac/timer.h
-trie$(OBJ):		trie$(C) framepac/trie.h
-trie_u32dbl$(OBJ):	trie_u32dbl$(C) template/trie.cc
-trie_u32u32$(OBJ):	trie_u32u32$(C) template/trie.cc
-vecsimopt$(OBJ):	vecsimopt$(C) framepac/vecsim.h
-vecsim_name$(OBJ):	vecsim_name$(C) framepac/utility.h framepac/vecsim.h
-vecsim_u32_dbl$(OBJ):	vecsim_u32_dbl$(C) template/vecsim_factory.cc
-vecsim_u32_flt$(OBJ):	vecsim_u32_flt$(C) template/vecsim_factory.cc
-vecsim_u32_u32$(OBJ):	vecsim_u32_u32$(C) template/vecsim_factory.cc
-vector_obj_dbl$(OBJ):	vector_obj_dbl$(C) template/sparsevector.cc
-vector_obj_flt$(OBJ):	vector_obj_flt$(C) template/sparsevector.cc
-vector_u32_dbl$(OBJ):	vector_u32_dbl$(C) template/vector.cc template/densevector.cc template/sparsevector.cc
-vector_u32_flt$(OBJ):	vector_u32_flt$(C) template/vector.cc template/densevector.cc template/sparsevector.cc
-vector_u32_u32$(OBJ):	vector_u32_u32$(C) template/vector.cc template/densevector.cc template/sparsevector.cc
-wordcorpus_u32u32$(OBJ): 	wordcorpus_u32u32$(C) template/wordcorpus.cc
-wordcorpus_u32u40$(OBJ): 	wordcorpus_u32u40$(C) template/wordcorpus.cc
-wordsplit$(OBJ):	wordsplit$(C) framepac/words.h
+build/prefixmatcher$(OBJ):	prefixmatcher$(C) framepac/utility.h
+build/printf$(OBJ):		printf$(C) framepac/texttransforms.h
+build/progress$(OBJ):		progress$(C) framepac/progress.h framepac/timer.h
+build/ptrie_u32$(OBJ):		ptrie_u32$(C) template/ptrie.cc
+build/random$(OBJ):		random$(C) framepac/random.h
+build/rational$(OBJ):		rational$(C) framepac/rational.h
+build/refarray$(OBJ):		refarray$(C) framepac/array.h framepac/fasthash64.h framepac/random.h
+build/set$(OBJ):		set$(C) framepac/set.h
+build/slab$(OBJ):		slab$(C) framepac/memory.h
+build/slabgroup$(OBJ):		slabgroup$(C) framepac/memory.h
+build/smallalloc$(OBJ):		smallalloc$(C) framepac/memory.h
+build/sparsematrix$(OBJ):	sparsematrix$(C) framepac/matrix.h
+build/spelling$(OBJ):		spelling$(C) framepac/spelling.h
+build/string$(OBJ):		string$(C) framepac/string.h framepac/fasthash64.h
+build/stringbuilder$(OBJ):	stringbuilder$(C) framepac/stringbuilder.h framepac/file.h
+build/sufarray_u32u32$(OBJ):	sufarray_u32u32$(C) template/sufarray.cc
+build/sufarray_u32u40$(OBJ):	sufarray_u32u40$(C) template/sufarray.cc framepac/byteorder.h
+build/symbol$(OBJ):		symbol$(C) framepac/symbol.h framepac/nonobject.h framepac/fasthash64.h
+build/symboltable$(OBJ):	symboltable$(C) framepac/symboltable.h framepac/fasthash64.h framepac/texttransforms.h
+build/synchevent$(OBJ):		synchevent$(C) framepac/synchevent.h
+build/termvector$(OBJ):		termvector$(C) template/termvector.cc
+build/texttransforms$(OBJ):	texttransforms$(C) framepac/texttransforms.h
+build/threadpool$(OBJ):		threadpool$(C) framepac/threadpool.h framepac/thread.h
+build/threshold$(OBJ):		threshold$(C) framepac/threshold.h
+build/timer$(OBJ):		timer$(C) framepac/timer.h
+build/trie$(OBJ):		trie$(C) framepac/trie.h
+build/trie_u32dbl$(OBJ):	trie_u32dbl$(C) template/trie.cc
+build/trie_u32u32$(OBJ):	trie_u32u32$(C) template/trie.cc
+build/vecsimopt$(OBJ):		vecsimopt$(C) framepac/vecsim.h
+build/vecsim_name$(OBJ):	vecsim_name$(C) framepac/utility.h framepac/vecsim.h
+build/vecsim_u32_dbl$(OBJ):	vecsim_u32_dbl$(C) template/vecsim_factory.cc
+build/vecsim_u32_flt$(OBJ):	vecsim_u32_flt$(C) template/vecsim_factory.cc
+build/vecsim_u32_u32$(OBJ):	vecsim_u32_u32$(C) template/vecsim_factory.cc
+build/vector_obj_dbl$(OBJ):	vector_obj_dbl$(C) template/sparsevector.cc
+build/vector_obj_flt$(OBJ):	vector_obj_flt$(C) template/sparsevector.cc
+build/vector_u32_dbl$(OBJ):	vector_u32_dbl$(C) template/vector.cc template/densevector.cc template/sparsevector.cc
+build/vector_u32_flt$(OBJ):	vector_u32_flt$(C) template/vector.cc template/densevector.cc template/sparsevector.cc
+build/vector_u32_u32$(OBJ):	vector_u32_u32$(C) template/vector.cc template/densevector.cc template/sparsevector.cc
+build/wordcorpus_u32u32$(OBJ): 	wordcorpus_u32u32$(C) template/wordcorpus.cc
+build/wordcorpus_u32u40$(OBJ): 	wordcorpus_u32u40$(C) template/wordcorpus.cc
+build/wordsplit$(OBJ):		wordsplit$(C) framepac/words.h
+
+globaldata$(C):
+	@mkdir -p build
 
 template/argopt.cc:	framepac/argparser.h
 	$(TOUCH) $@ $(BITBUCKET)
