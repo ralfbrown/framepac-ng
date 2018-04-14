@@ -356,19 +356,24 @@ TESTS = bin/argparser$(EXE)
 HEADERS = 
 
 # the files to be included in the source distribution archive
-DISTFILES= LICENSE COPYING makefile .gitignore *.C *.h framepac/*.h template/*.cc tests/*.C tests/*.h tests/*.sh \
-	hopscotch/*.h
+DISTFILES= LICENSE COPYING makefile .gitignore *.h src/*.C framepac/*.h template/*.cc \
+	tests/*.C tests/*.h tests/*.sh hopscotch/*.h
 
 # the library archive file for this module
 LIBRARY = $(PACKAGE)$(LIB)
 
 # the executable(s) to be built for testing the package
-TESTPROGS = $(BINDIR)/argparser$(EXE) $(BINDIR)/clustertest$(EXE) $(BINDIR)/membench$(EXE) \
-	$(BINDIR)/objtest$(EXE) $(BINDIR)/parhash$(EXE) \
-	$(BINDIR)/stringtest$(EXE) $(BINDIR)/tpool$(EXE)
+TESTPROGS = \
+	$(BINDIR)/argparser$(EXE) \
+	$(BINDIR)/clustertest$(EXE) \
+	$(BINDIR)/membench$(EXE) \
+	$(BINDIR)/objtest$(EXE) \
+	$(BINDIR)/parhash$(EXE) \
+	$(BINDIR)/stringtest$(EXE) \
+	$(BINDIR)/tpool$(EXE)
 
 #########################################################################
-## the generawl build rules
+## the general build rules
 
 all: $(TESTPROGS)
 
@@ -395,7 +400,7 @@ clean:
 
 veryclean: clean
 	$(RM) *.BAK
-	$(RM) *.CKP *~
+	$(RM) *.CKP *~ */*~
 	$(RM) "#*#"
 	$(RM) $(LIBRARY)
 
@@ -803,7 +808,8 @@ framepac/wordcorpus.h:	framepac/bidindex.h framepac/builder.h framepac/byteorder
 		framepac/cstring.h framepac/file.h framepac/sufarray.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-FramepaC.h:	framepac/config.h
+FramepaC.h:		framepac/config.h framepac/argparser.h framepac/hashtable.h framepac/cluster.h \
+		framepac/sufarray.h framepac/threadpool.h framepac/wordcorpus.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 tests/argparser$(OBJ):	tests/argparser$(C) framepac/argparser.h

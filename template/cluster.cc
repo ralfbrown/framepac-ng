@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-12					*/
+/* Version 0.04, last edit 2018-04-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -64,6 +64,42 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
+ClusterInfo* ClusteringAlgo<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end) const
+{
+   // collect the input vectors into an array
+   RefArray* vectors = RefArray::create() ;
+   for ( ; first != past_end ; ++first)
+      {
+      Object* obj = *first ;
+      if (obj && obj->isVector())
+	 vectors->append(obj) ;
+      }
+   ClusterInfo* clusters = cluster(vectors) ;
+   vectors->free() ;
+   return clusters ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+ClusterInfo* ClusteringAlgo<IdxT,ValT>::cluster(ArrayIter first, ArrayIter past_end) const
+{
+   // collect the input vectors into an array
+   RefArray* vectors = RefArray::create() ;
+   for ( ; first != past_end ; ++first)
+      {
+      Object* obj = *first ;
+      if (obj && obj->isVector())
+	 vectors->append(obj) ;
+      }
+   ClusterInfo* clusters = cluster(vectors) ;
+   vectors->free() ;
+   return clusters ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
 bool assign_vector_to_nearest_center(const void* vectors, size_t index, va_list args)
 {
    typedef VectorMeasure<IdxT,ValT> VM ;
@@ -84,7 +120,7 @@ bool assign_vector_to_nearest_center(const void* vectors, size_t index, va_list 
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-bool ClusteringAlgo<IdxT,ValT>::checkSparseOrDense(const Array* vectors)
+bool ClusteringAlgo<IdxT,ValT>::checkSparseOrDense(const Array* vectors) const
 {
    for (size_t i = 0 ; i < vectors->size() ; ++i)
       {
@@ -98,7 +134,7 @@ bool ClusteringAlgo<IdxT,ValT>::checkSparseOrDense(const Array* vectors)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-bool ClusteringAlgo<IdxT,ValT>::assignToNearest(Array* vectors, const Array* centers, double threshold) const
+bool ClusteringAlgo<IdxT,ValT>::assignToNearest(const Array* vectors, const Array* centers, double threshold) const
 {
    ThreadPool *tp = ThreadPool::defaultPool() ;
    if (!tp) return false ;
@@ -143,7 +179,7 @@ void ClusteringAlgo<IdxT,ValT>::freeClusters(ClusterInfo** clusters, size_t num_
 
 //TODO: can we parallelize this enough that the speedup is worth the effort?
 template <typename IdxT, typename ValT>
-bool ClusteringAlgo<IdxT,ValT>::extractClusters(Array* vectors, ClusterInfo**& clusters, size_t& num_clusters,
+bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInfo**& clusters, size_t& num_clusters,
    RefArray* unassigned) const
 {
    clusters = nullptr ;

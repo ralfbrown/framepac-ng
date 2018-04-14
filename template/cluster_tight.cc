@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-29					*/
+/* Version 0.04, last edit 2018-04-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -34,7 +34,7 @@ class ClusteringAlgoTight : public ClusteringAlgo<IdxT,ValT>
    public:
       virtual ~ClusteringAlgoTight() { delete this ; }
 
-      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
+      virtual ClusterInfo* cluster(const Array* vectors) const ;
 
    protected:
 
@@ -42,6 +42,13 @@ class ClusteringAlgoTight : public ClusteringAlgo<IdxT,ValT>
 
 /************************************************************************/
 /************************************************************************/
+
+template <typename IdxT, typename ValT>
+ClusterInfo* ClusteringAlgoTight<IdxT,ValT>::cluster(const Array* vectors) const
+{
+   (void)vectors;
+   return nullptr ; //TODO
+}
 
 } // end of namespace Fr
 

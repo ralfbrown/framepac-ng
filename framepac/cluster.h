@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-02					*/
+/* Version 0.04, last edit 2018-04-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -220,19 +220,21 @@ class ClusteringAlgo
       static ClusteringAlgo* instantiate(const char* algo_name, const char* options) ;
       virtual ~ClusteringAlgo() {}
 
-      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) = 0 ;
+      ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) const ;
+      ClusterInfo* cluster(ArrayIter first, ArrayIter past_end) const ;
+      virtual ClusterInfo* cluster(const Array* vectors) const = 0 ;
 
       static Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array* centers,
 	 VectorMeasure<IdxT,ValT>* measure, double threshold = -1.0) ;
    protected: //methods
       ClusteringAlgo() : m_measure(nullptr), m_use_sparse_vectors(false) {}
 
-      bool checkSparseOrDense(const Array* vectors) ;
+      bool checkSparseOrDense(const Array* vectors) const ;
 
       Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array* centers, double threshold = -1.0) const
 	 { return nearestNeighbor(vector,centers,m_measure,threshold) ; }
-      bool assignToNearest(Array* vectors, const Array* centers, double threshold = -1.0) const ;
-      bool extractClusters(Array* vectors, ClusterInfo**& clusters, size_t& num_clusters,
+      bool assignToNearest(const Array* vectors, const Array* centers, double threshold = -1.0) const ;
+      bool extractClusters(const Array* vectors, ClusterInfo**& clusters, size_t& num_clusters,
 	 RefArray* unassigned = nullptr) const ;
       static void freeClusters(ClusterInfo** clusters, size_t num_clusters) ;
 

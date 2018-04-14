@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-09					*/
+/* Version 0.04, last edit 2018-04-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -34,7 +34,7 @@ class ClusteringAlgoAnneal : public ClusteringAlgo<IdxT,ValT>
    public:
       virtual ~ClusteringAlgoAnneal() { delete this ; }
 
-      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
+      virtual ClusterInfo* cluster(const Array* vectors) const ;
 
    protected:
 
@@ -44,9 +44,9 @@ class ClusteringAlgoAnneal : public ClusteringAlgo<IdxT,ValT>
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
-ClusterInfo* ClusteringAlgoAnneal<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
+ClusterInfo* ClusteringAlgoAnneal<IdxT,ValT>::cluster(const Array* vectors) const
 {
-   (void)first; (void)past_end;
+   (void)vectors;
    return nullptr ; //TODO
 }
 

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-09					*/
+/* Version 0.04, last edit 2018-04-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -38,7 +38,7 @@ class ClusteringAlgoBrown : public ClusteringAlgo<IdxT,ValT>
    public:
       virtual ~ClusteringAlgoBrown() { delete this ; }
 
-      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
+      virtual ClusterInfo* cluster(const Array* vectors) const ;
 
    protected:
 
@@ -52,7 +52,7 @@ class ClusteringAlgoAgglom : public ClusteringAlgoBrown<IdxT,ValT>
    public:
       virtual ~ClusteringAlgoAgglom() { delete this ; }
 
-      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
+      virtual ClusterInfo* cluster(const Array* vectors) const ;
 
    protected:
 
@@ -62,9 +62,9 @@ class ClusteringAlgoAgglom : public ClusteringAlgoBrown<IdxT,ValT>
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
-ClusterInfo* ClusteringAlgoAgglom<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
+ClusterInfo* ClusteringAlgoAgglom<IdxT,ValT>::cluster(const Array* vectors) const
 {
-   (void)first; (void)past_end;
+   (void)vectors;
    return nullptr ; //TODO
 }
 
@@ -72,9 +72,9 @@ ClusterInfo* ClusteringAlgoAgglom<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
-ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
+ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
 {
-   (void)first; (void)past_end;
+   (void)vectors;
    return nullptr ; //TODO
 }
 

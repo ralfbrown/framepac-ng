@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-03-30					*/
+/* Version 0.04, last edit 2018-04-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -35,7 +35,7 @@ class ClusteringAlgoGrowseed : public ClusteringAlgo<IdxT,ValT>
    public:
       virtual ~ClusteringAlgoGrowseed() { delete this ; }
 
-      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
+      virtual ClusterInfo* cluster(const Array* vectors) const ;
 
    protected: // data
       double m_clusterthresh ;
@@ -45,18 +45,15 @@ class ClusteringAlgoGrowseed : public ClusteringAlgo<IdxT,ValT>
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
-ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
+ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(const Array* vectors) const
 {
    RefArray* seed = RefArray::create() ;	// vectors with a cluster assignment at the outset
    RefArray* nonseed = RefArray::create() ;	// vectors which need to be given a cluster assignment
-   RefArray* vectors = RefArray::create() ;	// all vectors
-   for (ObjectIter it = first ; it != past_end ; ++it)
+   for (auto obj : *vectors)
       {
-      Object* obj = *it ;
       if (!obj || !obj->isVector())
 	 continue ;
       Vector<ValT>* vec = static_cast<Vector<ValT>*>(obj) ;
-      vectors->append(vec) ;
       if (1) // TODO
 	 seed->append(vec) ;
       else
@@ -66,7 +63,6 @@ ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(ObjectIter& first, Objec
       {
       seed->free() ;
       nonseed->free() ;
-      vectors->free() ;
       return nullptr ;			// vectors must be all dense or all sparse
       }
    // assign each of the non-seed vectors to the same cluster as the
@@ -84,7 +80,6 @@ ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(ObjectIter& first, Objec
    size_t num_clusters ;
    RefArray* unassigned = RefArray::create();
    this->extractClusters(vectors,clusters,num_clusters,unassigned) ;
-   vectors->free() ;
    // build a ClusterInfo structure with the subclusters, and all unassigned vectors inserted at the top level
    ClusterInfo* result_clusters = ClusterInfo::create(clusters,num_clusters) ;
    this->freeClusters(clusters,num_clusters) ;

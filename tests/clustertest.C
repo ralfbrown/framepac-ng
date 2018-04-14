@@ -31,16 +31,18 @@ using namespace Fr ;
 
 int main(int argc, char** argv)
 {
-   const char* algo_name ;
-   const char* vecsim_name ;
-   const char* cluster_options ;
+   const char* algo_name { "k-means" } ;
+   const char* vecsim_name { "cosine" } ;
+   const char* cluster_options { "" } ;
+   const char* vector_file { nullptr } ;
 
    Fr::Initialize() ;
    ArgParser cmdline_flags ;
    cmdline_flags
-      .add(algo_name,"a","algorithm","name of clustering algorithm to use (k-means, etc.)","k-means")
-      .add(vecsim_name,"m","measure","name of similarity measure (cosine, etc.)","cosine")
-      .add(cluster_options,"O","options","options to pass to clustering algorithm","")
+      .add(algo_name,"a","algorithm","name of clustering algorithm to use (k-means, etc.)")
+      .add(vecsim_name,"m","measure","name of similarity measure (cosine, etc.)")
+      .add(cluster_options,"O","options","options to pass to clustering algorithm")
+      .add(vector_file,"V","vectors","file containing vectors to be clustered")
       .addHelp("h","help","show usage summary") ;
    if (!cmdline_flags.parseArgs(argc,argv))
       {
@@ -50,8 +52,19 @@ int main(int argc, char** argv)
 //   VectorSimilarityMeasure vecsim = parse_vector_measure_name(vecsim_name) ;
 //   ClusteringAlgorithm algo = parse_cluster_algo_name(algo_name) ;
    auto clusterer = ClusteringAlgo<uint32_t,float>::instantiate(algo_name,cluster_options) ;
+   Array* vectors = Array::create() ;
+   if (vector_file)
+      {
+      }
+   else
+      {
+      // generate some random vectors
+      //TODO
+      }
+   ClusterInfo* clusters = clusterer->cluster(vectors->begin(),vectors->end()) ;
    //TODO
 
+   clusters->free() ;
    delete clusterer ;
    return 0 ;
 }

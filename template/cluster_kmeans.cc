@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-03-30					*/
+/* Version 0.04, last edit 2018-04-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -36,7 +36,7 @@ class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
    public:
       virtual ~ClusteringAlgoKMeans() { delete this ; }
 
-      virtual ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) ;
+      virtual ClusterInfo* cluster(const Array* vectors) const ;
 
       void useMedioids() { m_use_medioids = true ; }
 
@@ -45,8 +45,8 @@ class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
       size_t desiredClusters() const { return m_desired_clusters ; }
       size_t iterations() const { return m_iterations ; }
    protected:
-      size_t m_desired_clusters ;
-      size_t m_iterations ;
+      size_t m_desired_clusters { 2 } ;
+      size_t m_iterations { 10 } ;
       bool   m_use_medioids { false } ;
       bool   m_fast_init { false } ;
    } ;
@@ -146,19 +146,10 @@ static size_t find_least_similar(const Array* vectors, const Array* refs, Vector
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end)
+ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) const
 {
-   // collect the input vectors into an array
-   RefArray* vectors = RefArray::create() ;
-   for ( ; first != past_end ; ++first)
-      {
-      Object* obj = *first ;
-      if (obj && obj->isVector())
-	 vectors->append(obj) ;
-      }
    if (!this->checkSparseOrDense(vectors))
       {
-      vectors->free() ;
       return nullptr ;			// vectors must be all dense or all sparse
       }
    RefArray* centers ;
@@ -214,7 +205,6 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(ObjectIter& first, ObjectI
    this->freeClusters(clusters,num_clusters) ;
    // the subclusters are the actual result
    result_clusters->setFlag(ClusterInfo::Flags::group) ;
-   vectors->free() ;
    centers->free() ;
    return result_clusters ;
 }
