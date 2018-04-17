@@ -103,6 +103,8 @@ int main(int argc, char** argv)
 	 }
       cout << "   ====   " << endl ;
       }
+   cout << "Starting " << clusterer->algorithmName() << " clustering using " << clusterer->measureName()
+	<< " similarity" << endl ;
    ClusterInfo* clusters = clusterer->cluster(vectors->begin(),vectors->end()) ;
    //TODO
 

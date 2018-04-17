@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-13					*/
+/* Version 0.05, last edit 2018-04-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -35,6 +35,7 @@ class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
    {
    public:
       virtual ~ClusteringAlgoKMeans() {}
+      virtual const char*algorithmName() const { return "K-Means" ; }
 
       virtual ClusterInfo* cluster(const Array* vectors) const ;
 
@@ -60,6 +61,7 @@ class ClusteringAlgoKMedioids : public ClusteringAlgoKMeans<IdxT,ValT>
 	    this->useMedioids() ;
 	    return ;
 	 }
+      virtual const char*algorithmName() const { return "K-Medioids" ; }
    } ;
 
 /************************************************************************/
@@ -151,6 +153,10 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
    if (!this->checkSparseOrDense(vectors))
       {
       return nullptr ;			// vectors must be all dense or all sparse
+      }
+   if (!this->m_measure)
+      {
+      return nullptr ;			// we need a similarity measure
       }
    RefArray* centers ;
    if (this->m_fast_init)

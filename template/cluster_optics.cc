@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-13					*/
+/* Version 0.05, last edit 2018-04-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -33,6 +33,7 @@ class ClusteringAlgoOPTICS : public ClusteringAlgo<IdxT,ValT>
    {
    public:
       virtual ~ClusteringAlgoOPTICS() { delete this ; }
+      virtual const char*algorithmName() const { return "OPTICS" ; }
 
       virtual ClusterInfo* cluster(const Array* vectors) const ;
 

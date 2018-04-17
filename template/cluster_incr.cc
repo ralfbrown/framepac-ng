@@ -33,6 +33,7 @@ class ClusteringAlgoIncr : public ClusteringAlgo<IdxT,ValT>
    {
    public:
       virtual ~ClusteringAlgoIncr() { delete this ; }
+      virtual const char*algorithmName() const { return "Single-Link" ; }
 
       virtual ClusterInfo* cluster(const Array* vectors) const ;
 
