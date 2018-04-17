@@ -65,11 +65,12 @@ template <typename IdxT, typename ValT>
 SparseVector<IdxT,ValT>::SparseVector(const SparseVector& orig)
    : SparseVector(orig.size())
 {
-   for (size_t i = 0 ; i < this->size() ; ++i)
+   for (size_t i = 0 ; i < orig.size() ; ++i)
       {
       this->m_indices[i] = orig.m_indices[i] ;
       this->m_values[i] = orig.m_values[i] ;
       }
+   this->m_size = orig.size() ;
    return ;
 }
 
@@ -300,9 +301,9 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::incr(const SparseVector<IdxT,V
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-ObjectPtr SparseVector<IdxT,ValT>::clone_(const Object*)
+ObjectPtr SparseVector<IdxT,ValT>::clone_(const Object* obj)
 {
-   return nullptr ; //FIXME
+   return obj ? new SparseVector<IdxT,ValT>(*static_cast<const SparseVector*>(obj)) : nullptr ;
 }
 
 //----------------------------------------------------------------------------
@@ -384,7 +385,7 @@ size_t SparseVector<IdxT,ValT>::cStringLength_(const Object* obj, size_t /*wrap_
 {
    auto v = static_cast<const SparseVector*>(obj) ;
    // format of printed rep is #<type:i1:v1 i2:v2 .... iN:vN>
-   size_t len = indent + 4 + strlen(v->typeName()) ;
+   size_t len = indent + 4 + strlen(v->typeName()) + v->numElements() ;
    if (v->numElements() > 0)
       len += v->numElements() - 1 ;
    for (size_t i = 0 ; i < v->numElements() ; ++i)

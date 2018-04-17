@@ -71,11 +71,20 @@ ObjectPtr Object::subseq_iter(const Object *obj, ObjectIter start, ObjectIter st
 
 ostream& Object::print(ostream& out) const
 {
-   // FIXME: make a virtual function that dispatches to the proper
-   //   type so that we don't need to go via a string conversion first
-   char* printed { cString() } ;
-   out << printed << flush ;
-   delete[] printed ;
+   const Object* o = this ;
+   if (o)
+      {
+      // FIXME: make a virtual function that dispatches to the proper
+      //   type so that we don't need to go via a string conversion
+      //   first
+      char* printed { cString() } ;
+      out << printed << flush ;
+      delete[] printed ;
+      }
+   else
+      {
+      out << "#N<>" << flush ;
+      }
    return out ;
 }
 
