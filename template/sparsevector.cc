@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-02					*/
+/* Version 0.04, last edit 2018-04-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -79,7 +79,7 @@ template <typename IdxT, typename ValT>
 SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const Vector<ValT>* other) const
 {
    if (!other)
-      return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone()) ;
+      return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone().move()) ;
    size_t count { 0 } ;
    size_t elts1 { this->numElements() } ;
    size_t elts2 { other->numElements() } ;
@@ -133,7 +133,7 @@ template <typename IdxT, typename ValT>
 SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const SparseVector<IdxT,ValT>* other) const
 {
    if (!other)
-      return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone()) ;
+      return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone().move()) ;
    size_t count { 0 } ;
    size_t elts1 { this->numElements() } ;
    size_t elts2 { other->numElements() } ;
@@ -232,7 +232,7 @@ template <typename IdxT, typename ValT>
 SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::incr(const SparseVector<IdxT,ValT>* other, ValT wt)
 {
    if (!other)
-      return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone()) ;
+      return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone().move()) ;
    size_t new_size { 0 } ;
    size_t elts1 { this->numElements() } ;
    size_t elts2 { other->numElements() } ;

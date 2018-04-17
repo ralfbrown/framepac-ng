@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-30					*/
+/* Version 0.04, last edit 2018-04-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -63,14 +63,7 @@ Array::Array(const Array *orig)
       for (size_t i = 0 ; i < m_size ; i++)
 	 {
 	 Object *elt { orig->m_array[i] };
-	 Object *copy = nullptr ;
-	 if (elt)
-	    {
-	    ObjectPtr cp = elt->clone() ;
-	    copy = cp ;
-	    cp.release() ;
-	    }
-	 m_array[i] = copy ;
+	 m_array[i] = elt ? elt->clone().move() : nullptr ;
 	 }
       }
    else
@@ -85,11 +78,9 @@ Array::Array(const Array *orig)
 Array::Array(const Object *obj, size_t repeat)
    : Array(repeat)
 {
-   (void)obj;//FIXME
    for (size_t i = 0 ; i < repeat ; i++)
       {
-//!!!      m_array[i] = obj->clone() ;
-   //FIXME?
+      m_array[i] = obj ? obj->clone().move() : nullptr ;
       }
    return ;
 }
@@ -125,7 +116,7 @@ void Array::setNth(size_t N, const Object* val)
    if (N < m_size)
       {
       if (m_array[N]) m_array[N]->free() ;
-      m_array[N] = val ? val->clone() : nullptr ;
+      m_array[N] = val ? val->clone().move() : nullptr ;
       }
    return ;
 }
@@ -140,7 +131,7 @@ bool Array::append(Object* obj)
       if (!reserve(newsize))
 	 return false ;
       }
-   m_array[m_size++] = obj ? obj->clone() : nullptr ;
+   m_array[m_size++] = obj ? obj->clone().move() : nullptr ;
    return true ;
 }
 

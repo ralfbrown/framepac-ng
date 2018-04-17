@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-11					*/
+/* Version 0.04, last edit 2018-04-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -42,10 +42,11 @@ template <typename ValT>
 Vector<ValT>::Vector(const Vector& orig)
    : Vector(orig.size())
 {
-   for (size_t i = 0 ; i < this->size() ; ++i)
+   for (size_t i = 0 ; i < orig.size() ; ++i)
       {
-      m_values[i] = orig.m_values[i] ;
+      this->m_values[i] = orig.m_values[i] ;
       }
+   this->m_size = orig.size() ;
    return ;
 }
 
@@ -73,7 +74,7 @@ template <typename ValT>
 template <typename IdxT>
 Vector<ValT>* Vector<ValT>::add(const Vector* other) const
 {
-   if (!other) return this->clone() ;
+   if (!other) return this->clone().move() ;
    if (this->isSparseVector())
       {
       if (other->isSparseVector())

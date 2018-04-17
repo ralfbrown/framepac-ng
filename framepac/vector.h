@@ -84,6 +84,7 @@ class Vector : public Object
 
       // type determination predicates
       static bool isVector_(const Object *) { return true ; }
+      static const char* typeName_(const Object*) { return "Vector" ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object *) ;
@@ -451,6 +452,15 @@ class DenseVector : public Vector<ValT>
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<DenseVector> ;
+
+      // type determination predicates
+      static const char* typeName_(const Object*) { return "DenseVector" ; }
+
+      // *** copying ***
+      static ObjectPtr clone_(const Object *) ;
+      static Object *shallowCopy_(const Object *obj) { return clone_(obj) ; }
+      static ObjectPtr subseq_int(const Object *,size_t start, size_t stop) ;
+      static ObjectPtr subseq_iter(const Object *,ObjectIter start, ObjectIter stop) ;
 
    private:
       static Allocator s_allocator ;

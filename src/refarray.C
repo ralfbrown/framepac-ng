@@ -71,9 +71,8 @@ RefArray::RefArray(const Object* obj, size_t repeat)
 
 RefArray::~RefArray()
 {
-   delete[] m_array ;
    m_size = 0 ;
-   m_alloc = 0 ;
+   // ~Array() will free m_array for us
    return ;
 }
 

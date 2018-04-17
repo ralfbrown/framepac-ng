@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-16					*/
+/* Version 0.04, last edit 2018-04-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -41,7 +41,7 @@ ListBuilder::ListBuilder(List*& init_list)
 
 ListBuilder::ListBuilder(const List* init_list, bool)
 {
-   m_list = static_cast<List*>((Object*)init_list->clone()) ;
+   m_list = static_cast<List*>(init_list->clone().move()) ;
    List* tail = m_list->last() ;
    m_list_end = tail->nextPtr() ;
    init_list = List::emptyList() ;
@@ -103,9 +103,7 @@ void ListBuilder::appendClone(Object* o)
 {
    if (o)
       {
-      ObjectPtr cp(o->clone()) ;
-      o = cp ;
-      cp.release() ;
+      o = o->clone().move() ;
       }
    append(o) ;
    return ;

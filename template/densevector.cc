@@ -47,10 +47,34 @@ DenseVector<ValT>::DenseVector(const char* rep)
 //----------------------------------------------------------------------------
 
 template <typename ValT>
+ObjectPtr DenseVector<ValT>::clone_(const Object* obj)
+{
+   return obj ? new DenseVector<ValT>(*static_cast<const DenseVector*>(obj)) : nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
+ObjectPtr DenseVector<ValT>::subseq_int(const Object*, size_t /*start*/, size_t /*stop*/)
+{
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
+ObjectPtr DenseVector<ValT>::subseq_iter(const Object*, ObjectIter /*start*/, ObjectIter /*stop*/)
+{
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
 DenseVector<ValT>* DenseVector<ValT>::add(const DenseVector<ValT>* other) const
 {
    if (!other)
-      return static_cast<DenseVector<ValT>*>(&*this->clone()) ;
+      return static_cast<DenseVector<ValT>*>(&*this->clone().move()) ;
    size_t len = std::max(this->numElements(),other->numElements()) ;
    size_t minlen = std::min(this->numElements(),other->numElements()) ;
    DenseVector<ValT>* result = DenseVector<ValT>::create(len) ;

@@ -813,7 +813,8 @@ FramepaC.h:		framepac/config.h framepac/argparser.h framepac/hashtable.h framepa
 	$(TOUCH) $@ $(BITBUCKET)
 
 tests/argparser$(OBJ):	tests/argparser$(C) framepac/argparser.h
-tests/clustertest$(OBJ): tests/clustertest$(C) framepac/argparser.h framepac/cluster.h framepac/timer.h
+tests/clustertest$(OBJ): tests/clustertest$(C) framepac/argparser.h framepac/cluster.h framepac/file.h \
+			framepac/message.h framepac/timer.h
 tests/membench$(OBJ):	tests/membench$(C) framepac/argparser.h framepac/memory.h framepac/threadpool.h \
 			framepac/timer.h
 tests/objtest$(OBJ):	tests/objtest$(C) framepac/objreader.h framepac/symboltable.h

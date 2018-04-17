@@ -381,7 +381,7 @@ class HashTable : public HashTableBase
 	 void *operator new(size_t,void *where) { return where ; }
 	 template <typename K_T = KeyT>
 	 static typename std::enable_if<std::is_pointer<KeyT>::value,K_T>::type
-	 copy(KeyT obj) { return obj ? static_cast<KeyT>(obj->clone()) : nullKey() ; }
+	 copy(KeyT obj) { return obj ? static_cast<KeyT>(obj->clone().move()) : nullKey() ; }
 	 template <typename K_T = KeyT>
 	 static typename std::enable_if<!std::is_pointer<KeyT>::value,K_T>::type
 	 copy(KeyT obj) { return KeyT(obj) ; }

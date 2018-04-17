@@ -34,7 +34,7 @@ template <typename IdxT, typename ValT>
 class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
    {
    public:
-      virtual ~ClusteringAlgoKMeans() { delete this ; }
+      virtual ~ClusteringAlgoKMeans() {}
 
       virtual ClusterInfo* cluster(const Array* vectors) const ;
 

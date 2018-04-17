@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-03					*/
+/* Version 0.04, last edit 2018-04-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -72,6 +72,7 @@ class ObjectPtr
 
       void acquire(ObjectPtr &o) { m_object = o.m_object ; o.release() ; }
       void release() { m_object = nullptr ; }
+      Object* move() { Object* o = m_object ; release() ; return o ; }
       inline void free() ; //  forward declaration, see after definition of Object
    } ;
 
