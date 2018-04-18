@@ -68,8 +68,9 @@ class ClusteringAlgoKMedioids : public ClusteringAlgoKMeans<IdxT,ValT>
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
-static bool update_centroid(const void* o, size_t id, va_list args)
+static bool update_centroid(size_t id, va_list args)
 {
+   auto o = va_arg(args,const void*) ;
    auto inf = reinterpret_cast<const ClusterInfo*>(o) + id ;
    auto centers = va_arg(args,RefArray*) ;
    int sparse = va_arg(args,int) ;
@@ -93,9 +94,10 @@ static bool update_centroid(const void* o, size_t id, va_list args)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-static bool update_medioid(const void* o, size_t id, va_list args)
+static bool update_medioid(size_t id, va_list args)
 {
    typedef VectorMeasure<IdxT,ValT> VM ;
+   auto o = va_arg(args,const void*) ;
    auto inf = reinterpret_cast<const ClusterInfo*>(o) + id ;
    auto centers = va_arg(args,RefArray*) ;
    int sparse = va_arg(args,int) ;

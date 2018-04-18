@@ -102,9 +102,10 @@ ClusterInfo* ClusteringAlgo<IdxT,ValT>::cluster(ArrayIter first, ArrayIter past_
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-bool assign_vector_to_nearest_center(const void* vectors, size_t index, va_list args)
+bool assign_vector_to_nearest_center(size_t index, va_list args)
 {
    typedef VectorMeasure<IdxT,ValT> VM ;
+   auto vectors = va_arg(args,const void*) ;
    auto vecarray = reinterpret_cast<const Array*>(vectors) ;
    auto vector = reinterpret_cast<Vector<ValT>*>(vecarray->getNth(index)) ;
    auto centers = va_arg(args,const Array*) ;

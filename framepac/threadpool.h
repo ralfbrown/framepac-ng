@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-30					*/
+/* Version 0.05, last edit 2018-04-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -37,7 +37,7 @@ namespace Fr {
 /************************************************************************/
 
 typedef void ThreadPoolWorkFunc(const void *input, void *output) ;
-typedef bool ThreadPoolMapFunc(const void* input, size_t index, va_list args) ;
+typedef bool ThreadPoolMapFunc(size_t index, va_list args) ;
 
 // classes used internally by ThreadPool
 class WorkOrder ;
@@ -78,12 +78,12 @@ class ThreadPool
       // simplified interface for map/reduce applications
       //   we use void* and va_list to avoid bloating the object code; the worker function needs to
       //   cast appropriately
-      bool parallelize(ThreadPoolMapFunc* fn, size_t num_items, const void* first_item, va_list args) ;
-      bool parallelize(ThreadPoolMapFunc* fn, size_t num_items, const void* first_item, ...)
+      bool parallelize(ThreadPoolMapFunc* fn, size_t num_items, va_list args) ;
+      bool parallelize(ThreadPoolMapFunc* fn, size_t num_items, ...)
 	 {
 	    va_list args ;
-	    va_start(args,first_item) ;
-	    bool status = parallelize(fn,num_items,first_item,args) ;
+	    va_start(args,num_items) ;
+	    bool status = parallelize(fn,num_items,args) ;
 	    va_end(args) ;
 	    return status ;
 	 }

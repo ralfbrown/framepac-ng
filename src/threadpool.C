@@ -171,6 +171,17 @@ class WorkBatch
    } ;
 
 /************************************************************************/
+/************************************************************************/
+
+struct ParallelJob
+   {
+   public:
+      ThreadPoolMapFunc* fn ;
+      size_t	         id ;
+      va_list	         args ;
+   } ;
+
+/************************************************************************/
 /*	Global variables						*/
 /************************************************************************/
 
@@ -543,8 +554,8 @@ bool ThreadPool::dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, size_t insi
 	 }
       return true ;
       }
-   size_t prev_item = 0 ;
-   size_t curr_item = 0 ;
+   size_t prev_item { 0 } ;
+   size_t curr_item { 0 } ;
    if (input == nullptr) insize = 0 ;
    if (output == nullptr) outsize = 0 ;
    while (curr_item < count)
@@ -570,7 +581,17 @@ bool ThreadPool::dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, size_t insi
 
 //----------------------------------------------------------------------------
 
-bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, const void* first_item, va_list args)
+static void parallelize_worker(const void*, void* output)
+{
+   ParallelJob* job = reinterpret_cast<ParallelJob*>(output) ;
+   if (job->fn)
+      (void)job->fn(job->id,job->args) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, va_list args)
 {
    if (!fn) return false ;
    if (numThreads() == 0 || 1) //FIXME
@@ -581,15 +602,22 @@ bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, const void
 	 {
 	 va_list arg_copy ;
 	 va_copy(arg_copy,args) ;
-	 success = fn(first_item,i,arg_copy) ;
+	 success = fn(i,arg_copy) ;
 	 va_end(arg_copy) ;
 	 }
       return success ;
       }
+   // dispatch a job request for each item in the input
+   ParallelJob* jobs = new ParallelJob[num_items] ;
    for (size_t i = 0 ; i < num_items ; ++i)
       {
-//TODO
+      jobs[i].id = i ;
+      jobs[i].fn = fn ;
+      va_copy(jobs[i].args,args) ;
+      this->dispatch(parallelize_worker,nullptr,&jobs[i]) ;
       }
+   this->waitUntilIdle() ;
+   delete[] jobs ;
    return false ;
 }
 
