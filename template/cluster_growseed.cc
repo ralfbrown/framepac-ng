@@ -50,6 +50,11 @@ class ClusteringAlgoGrowseed : public ClusteringAlgo<IdxT,ValT>
 template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(const Array* vectors) const
 {
+   if (!this->checkSparseOrDense(vectors))
+      {
+      return nullptr ;			// vectors must be all dense or all sparse
+      }
+   this->log(1,"Separating seed vectors from non-seed vectors") ;
    RefArray* seed = RefArray::create() ;	// vectors with a cluster assignment at the outset
    RefArray* nonseed = RefArray::create() ;	// vectors which need to be given a cluster assignment
    for (auto obj : *vectors)
@@ -57,20 +62,15 @@ ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(const Array* vectors) co
       if (!obj || !obj->isVector())
 	 continue ;
       Vector<ValT>* vec = static_cast<Vector<ValT>*>(obj) ;
-      if (1) // TODO
+      if (vec->label())
 	 seed->append(vec) ;
       else
 	 nonseed->append(vec) ;
       }
-   if (!this->checkSparseOrDense(vectors))
-      {
-      seed->free() ;
-      nonseed->free() ;
-      return nullptr ;			// vectors must be all dense or all sparse
-      }
    // assign each of the non-seed vectors to the same cluster as the
    //   nearest of the seed vectors, provided the similarity measure
    //   is above threshold
+   this->log(0,"Assigning vectors to nearest seed") ;
    ProgressIndicator* prog = this->makeProgressIndicator(nonseed->size()) ;
    this->assignToNearest(nonseed, seed, prog, m_clusterthresh) ;
    delete prog ;
@@ -81,10 +81,12 @@ ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(const Array* vectors) co
    // many vectors will not be assigned to any cluster (because they
    //   weren't close enough to a seed); those will be assigned to a
    //   "null" cluster
+   this->log(0,"Collecting vectors into clusters") ;
    ClusterInfo** clusters ;
    size_t num_clusters ;
    RefArray* unassigned = RefArray::create();
    this->extractClusters(vectors,clusters,num_clusters,unassigned) ;
+   this->log(0,"  %lu vectors were not assigned to a seed",unassigned->size()) ;
    // build a ClusterInfo structure with the subclusters, and all unassigned vectors inserted at the top level
    ClusterInfo* result_clusters = ClusterInfo::create(clusters,num_clusters) ;
    this->freeClusters(clusters,num_clusters) ;
