@@ -89,6 +89,27 @@ ClusterInfo* ClusterInfo::create(const ClusterInfo** subclus, size_t num_subclus
 
 //----------------------------------------------------------------------------
 
+ClusterInfo* ClusterInfo::createSingletonClusters(const Array* vectors)
+{
+   ClusterInfo* info = new ClusterInfo ;
+   //TODO
+
+   return info ;
+}
+
+//----------------------------------------------------------------------------
+
+ClusterInfo* ClusterInfo::merge(const ClusterInfo* other) const
+{
+   if (!other)
+      return static_cast<ClusterInfo*>(clone().move()) ;
+
+   //TODO
+   return nullptr; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
 Symbol* ClusterInfo::genLabel()
 {
    size_t id = ++next_cluster_ID ;

@@ -67,6 +67,7 @@ ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(const Array* vectors) co
       else
 	 nonseed->append(vec) ;
       }
+   this->log(1,"  %lu seed vectors and %lu non-seed vectors found",seed->size(),nonseed->size()) ;
    // assign each of the non-seed vectors to the same cluster as the
    //   nearest of the seed vectors, provided the similarity measure
    //   is above threshold

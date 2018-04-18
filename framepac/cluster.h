@@ -100,6 +100,9 @@ class ClusterInfo : public Object
       static ClusterInfo* create(const List* members, const List* subclusters = nullptr) ;
       static ClusterInfo* create(ClusterInfo** subclus, size_t num_subclus) ;
       static ClusterInfo* create(const ClusterInfo** subclus, size_t num_subclus) ;
+      static ClusterInfo* createSingletonClusters(const Array* vectors) ;
+
+      ClusterInfo* merge(const ClusterInfo* other) const ;
 
       static Symbol* genLabel() ;
 

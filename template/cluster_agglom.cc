@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-17					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -42,7 +42,9 @@ class ClusteringAlgoBrown : public ClusteringAlgo<IdxT,ValT>
       virtual ClusterInfo* cluster(const Array* vectors) const ;
 
    protected:
-
+      size_t m_desired_clusters ;
+      double m_threshold ;
+      bool   m_flatten { false } ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -66,8 +68,10 @@ class ClusteringAlgoAgglom : public ClusteringAlgoBrown<IdxT,ValT>
 template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoAgglom<IdxT,ValT>::cluster(const Array* vectors) const
 {
-   (void)vectors;
-   return nullptr ; //TODO
+   ClusterInfo* clusters = ClusterInfo::createSingletonClusters(vectors) ;
+
+   //TODO   
+   return clusters ;
 }
 
 /************************************************************************/
@@ -76,8 +80,10 @@ ClusterInfo* ClusteringAlgoAgglom<IdxT,ValT>::cluster(const Array* vectors) cons
 template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
 {
-   (void)vectors;
-   return nullptr ; //TODO
+   ClusterInfo* clusters = ClusterInfo::createSingletonClusters(vectors) ;
+
+   //TODO   
+   return clusters ;
 }
 
 } // end of namespace Fr
