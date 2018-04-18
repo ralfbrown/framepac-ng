@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-17					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -21,6 +21,7 @@
 
 #include "framepac/cluster.h"
 #include "framepac/message.h"
+#include "framepac/progress.h"
 
 namespace Fr
 {
@@ -67,6 +68,20 @@ void ClusteringAlgoBase::log(int level, const char* fmt, ...) const
       SystemMessage::status(fmt,args) ;
       }
    return ;
+}
+
+//----------------------------------------------------------------------------
+
+ProgressIndicator* ClusteringAlgoBase::makeProgressIndicator(size_t limit) const
+{
+   if (this->verbosity() >= 0)
+      {
+      ProgressIndicator* prog = new ConsoleProgressIndicator(1,limit,50,"","") ;
+      prog->showRemainingTime(true) ;
+      return prog ;
+      }
+   else
+      return new NullProgressIndicator ;
 }
 
 //----------------------------------------------------------------------------

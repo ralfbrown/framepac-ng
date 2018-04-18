@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-31					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -38,6 +38,8 @@ class ProgressIndicator
       ProgressIndicator(const ProgressIndicator&) = delete ;
       ProgressIndicator& operator= (const ProgressIndicator&) = delete ;
 
+      virtual void finalize() { return ; }
+
       // configuration
       void showElapsedTime(bool show) { m_show_elapsed = show ; }
       void showRemainingTime(bool show) { m_show_estimated = show ; }
@@ -57,6 +59,7 @@ class ProgressIndicator
       Atomic<size_t>  m_prev_update ;
       bool            m_show_elapsed ;
       bool	      m_show_estimated ;
+      bool	      m_finalized { false } ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -64,7 +67,11 @@ class ProgressIndicator
 class NullProgressIndicator : public ProgressIndicator
    {
    public:
-      NullProgressIndicator() : ProgressIndicator(0,0) {}
+      NullProgressIndicator() : ProgressIndicator(0,0)
+	 {
+	    showElapsedTime(false) ;
+	    showRemainingTime(false) ;
+	 }
       virtual ~NullProgressIndicator() {}
       NullProgressIndicator(const NullProgressIndicator&) = delete ;
       NullProgressIndicator& operator= (const NullProgressIndicator&) = delete ;
@@ -74,6 +81,7 @@ class NullProgressIndicator : public ProgressIndicator
 
    protected:
       virtual void updateDisplay(size_t) { return ; }
+      virtual void finalize() { return ; }
 
    protected:
 
@@ -95,6 +103,7 @@ class ConsoleProgressIndicator : public ProgressIndicator
 
    protected:
       virtual void updateDisplay(size_t curr) ;
+      virtual void finalize() ;
 
    protected:
       double m_prevfrac ;

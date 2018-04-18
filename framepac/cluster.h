@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-17					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -28,6 +28,10 @@
 #include "framepac/vecsim.h"
 
 namespace Fr {
+
+//----------------------------------------------------------------------------
+
+class ProgressIndicator ;
 
 //----------------------------------------------------------------------------
 
@@ -224,6 +228,7 @@ class ClusteringAlgoBase
       static bool checkSparseOrDense(const Array* vectors) ;
       static void freeClusters(ClusterInfo** clusters, size_t num_clusters) ;
       void log(int level, const char* fmt, ...) const ;
+      ProgressIndicator* makeProgressIndicator(size_t limit) const ;
 
       void useSparseVectors(bool use) { m_use_sparse_vectors = use ; }
 
@@ -259,7 +264,8 @@ class ClusteringAlgo : public ClusteringAlgoBase
 
       Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array* centers, double threshold = -1.0) const
 	 { return nearestNeighbor(vector,centers,m_measure,threshold) ; }
-      size_t assignToNearest(const Array* vectors, const Array* centers, double threshold = -1.0) const ;
+      size_t assignToNearest(const Array* vectors, const Array* centers, ProgressIndicator *prog = nullptr,
+	 double threshold = -1.0) const ;
       bool extractClusters(const Array* vectors, ClusterInfo**& clusters, size_t& num_clusters,
 	 RefArray* unassigned = nullptr) const ;
 

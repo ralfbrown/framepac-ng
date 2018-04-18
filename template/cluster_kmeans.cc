@@ -152,10 +152,11 @@ static size_t find_least_similar(const Array* vectors, const Array* refs, Vector
 template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) const
 {
-   if (!this->checkSparseOrDense(vectors))
+   if (!vectors || vectors->size() == 0 || !this->checkSparseOrDense(vectors))
       {
       return nullptr ;			// vectors must be all dense or all sparse
       }
+   bool using_sparse_vectors = vectors->getNth(0)->isSparseVector() ;
    if (!this->m_measure)
       {
       return nullptr ;			// we need a similarity measure
@@ -205,7 +206,9 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
    for (iteration = 1 ; iteration <= iterations() ; iteration++)
       {
       this->log(0,"Iteration %lu",iteration) ;
-      size_t changes = this->assignToNearest(vectors, centers) ;
+      auto prog = this->makeProgressIndicator(vectors->size()) ;
+      size_t changes = this->assignToNearest(vectors, centers, prog) ;
+      delete prog ;
       this->log(0,"  %lu vectors changed cluster",changes) ;
       this->extractClusters(vectors,clusters,num_clusters) ;
       if (!changes)
@@ -215,7 +218,8 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       auto fn = update_centroid<IdxT,ValT> ;
       if (usingMedioids())
 	 fn = update_medioid<IdxT,ValT> ;
-      tp->parallelize(fn,num_clusters,clusters,centers,this->usingSparseVectors(),this->m_measure) ;
+      this->log(1,"  updating centers") ;
+      tp->parallelize(fn,num_clusters,clusters,centers,using_sparse_vectors,this->m_measure) ;
       this->freeClusters(clusters,num_clusters) ;
       }
    // build the final cluster result from the extracted clusters

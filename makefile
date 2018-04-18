@@ -486,7 +486,7 @@ build/bwt$(OBJ):		src/bwt$(C) framepac/config.h
 build/canonsent$(OBJ):		src/canonsent$(C) framepac/stringbuilder.h framepac/texttransforms.h
 build/charget$(OBJ):		src/charget$(C) framepac/charget.h
 build/cfile$(OBJ):		src/cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
-build/cluster$(OBJ):		src/cluster$(C) framepac/cluster.h framepac/message.h
+build/cluster$(OBJ):		src/cluster$(C) framepac/cluster.h framepac/message.h framepac/progress.h
 build/clusterinfo$(OBJ):	src/clusterinfo$(C) framepac/atomic.h framepac/cluster.h framepac/texttransforms.h
 build/cluster_name$(OBJ):	src/cluster_name$(C) framepac/cluster.h
 build/cluster_u32_dbl$(OBJ):	src/cluster_u32_dbl$(C) template/cluster_factory.cc
@@ -602,7 +602,7 @@ template/cluster_anneal.cc:	framepac/cluster.h
 template/cluster_dbscan.cc:	template/cluster.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/cluster_growseed.cc:	template/cluster.cc
+template/cluster_growseed.cc:	framepac/cluster.h framepac/progress.h framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster_incr.cc:	template/cluster.cc
@@ -622,7 +622,7 @@ template/cluster_factory.cc: template/cluster.cc template/cluster_agglom.cc temp
 			template/cluster_kmeans.cc template/cluster_optics.cc template/cluster_tight.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/cluster.cc:	framepac/cluster.h framepac/threadpool.h
+template/cluster.cc:	framepac/cluster.h framepac/hashtable.h framepac/progress.h framepac/threadpool.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/contextcoll.cc:	framepac/contextcoll.h

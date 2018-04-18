@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-17					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -22,6 +22,7 @@
 #include <stdarg.h>
 #include "framepac/cluster.h"
 #include "framepac/hashtable.h"
+#include "framepac/progress.h"
 #include "framepac/threadpool.h"
 
 namespace Fr
@@ -115,6 +116,7 @@ bool assign_vector_to_nearest_center(size_t index, va_list args)
    auto measure = va_arg(args,VM*) ;
    auto threshold = va_arg(args,double) ;
    auto changes = va_arg(args,size_t*) ;
+   auto prog = va_arg(args,ProgressIndicator*) ;
    if (!vector) return false ;
    auto best_center = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(vector,centers,measure,threshold) ;
    if (best_center)
@@ -129,19 +131,21 @@ bool assign_vector_to_nearest_center(size_t index, va_list args)
 	 (*changes)++ ;
 	 }
       }
+   prog->incr() ;
    return true ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-size_t ClusteringAlgo<IdxT,ValT>::assignToNearest(const Array* vectors, const Array* centers, double threshold) const
+size_t ClusteringAlgo<IdxT,ValT>::assignToNearest(const Array* vectors, const Array* centers,
+   ProgressIndicator* prog, double threshold) const
 {
    ThreadPool *tp = ThreadPool::defaultPool() ;
    if (!tp) return false ;
    size_t changes { 0 } ;
    if (tp->parallelize(assign_vector_to_nearest_center<IdxT,ValT>,vectors->size(),vectors,
-	 centers,m_measure,threshold,&changes))
+	 centers,m_measure,threshold,&changes,prog))
       return changes ;
    else
       return 0 ;

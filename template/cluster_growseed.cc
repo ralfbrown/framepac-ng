@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-17					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -20,7 +20,9 @@
 /************************************************************************/
 
 #include "framepac/cluster.h"
+#include "framepac/progress.h"
 #include "framepac/vector.h"
+
 using namespace Fr ;
 
 namespace Fr
@@ -69,7 +71,9 @@ ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(const Array* vectors) co
    // assign each of the non-seed vectors to the same cluster as the
    //   nearest of the seed vectors, provided the similarity measure
    //   is above threshold
-   this->assignToNearest(nonseed, seed, m_clusterthresh) ;
+   ProgressIndicator* prog = this->makeProgressIndicator(nonseed->size()) ;
+   this->assignToNearest(nonseed, seed, prog, m_clusterthresh) ;
+   delete prog ;
    seed->free() ;
    nonseed->free() ;
    // collect the vectors into clusters based on the assignment stored

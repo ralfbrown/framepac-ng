@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-17					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -32,6 +32,7 @@ namespace Fr
 
 template <typename IdxT, typename ValT>
 SparseVector<IdxT,ValT>::SparseVector(size_t capacity)
+   : Vector<ValT>(0), m_indices(nullptr)
 {
    this->reserve(capacity) ;
    return ;
@@ -63,14 +64,13 @@ SparseVector<IdxT,ValT>::SparseVector(const char* rep)
 
 template <typename IdxT, typename ValT>
 SparseVector<IdxT,ValT>::SparseVector(const SparseVector& orig)
-   : SparseVector(orig.size())
+   : Vector<ValT>(orig)
 {
+   this->m_indices = new IdxT[this->capacity()] ;
    for (size_t i = 0 ; i < orig.size() ; ++i)
       {
       this->m_indices[i] = orig.m_indices[i] ;
-      this->m_values[i] = orig.m_values[i] ;
       }
-   this->m_size = orig.size() ;
    return ;
 }
 
