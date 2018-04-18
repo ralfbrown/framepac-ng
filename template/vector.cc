@@ -47,6 +47,8 @@ Vector<ValT>::Vector(const Vector& orig)
       this->m_values[i] = orig.m_values[i] ;
       }
    this->m_size = orig.size() ;
+   this->setKey(orig.key()) ;
+   this->setLabel(orig.label()) ;
    return ;
 }
 

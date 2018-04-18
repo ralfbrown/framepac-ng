@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-17					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -23,6 +23,7 @@
 #include "framepac/cluster.h"
 #include "framepac/file.h"
 #include "framepac/message.h"
+#include "framepac/threadpool.h"
 #include "framepac/timer.h"
 
 using namespace Fr ;
@@ -39,12 +40,14 @@ int main(int argc, char** argv)
    const char* vector_file { nullptr } ;
    bool use_sparse_vectors { false } ;
    bool dump_vectors { false } ;
+   int threads { -1 } ;
 
    Fr::Initialize() ;
    ArgParser cmdline_flags ;
    cmdline_flags
       .add(algo_name,"a","algorithm","name of clustering algorithm to use (k-means, etc.)")
       .add(dump_vectors,"D","dump","output the vectors to be clustered")
+      .add(threads,"j","threads","number of worker threads to use (default=number of cores)")
       .add(vecsim_name,"m","measure","name of similarity measure (cosine, etc.)")
       .add(cluster_options,"O","options","options to pass to clustering algorithm")
       .add(use_sparse_vectors,"s","sparse","use sparse vectors instead of dense vectors")
@@ -102,6 +105,10 @@ int main(int argc, char** argv)
 	 cout << vectors->getNth(i) << endl ;
 	 }
       cout << "   ====   " << endl ;
+      }
+   if (threads >= 0)
+      {
+      ThreadPool::defaultPool(new ThreadPool(threads)) ;
       }
    cout << "Starting " << clusterer->algorithmName() << " clustering using " << clusterer->measureName()
 	<< " similarity" << endl ;

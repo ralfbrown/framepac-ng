@@ -594,7 +594,7 @@ static void parallelize_worker(const void*, void* output)
 bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, va_list args)
 {
    if (!fn) return false ;
-   if (numThreads() == 0 || 1) //FIXME
+   if (numThreads() == 0)
       {
       // we don't have any worker threads enabled, so directly invoke the mapping function
       bool success = true ;
