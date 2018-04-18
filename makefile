@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 12apr2018
+# Last change: 18apr2018
 
 #########################################################################
 # define the locations of all the files
@@ -267,6 +267,7 @@ OBJS = \
 	build/cluster_u32_dbl$(OBJ) \
 	build/cluster_u32_flt$(OBJ) \
 	build/cluster_u32_u32$(OBJ) \
+	build/cluster$(OBJ) \
 	build/clusterinfo$(OBJ) \
 	build/cognate$(OBJ) \
 	build/complex$(OBJ) \
@@ -485,7 +486,8 @@ build/bwt$(OBJ):		src/bwt$(C) framepac/config.h
 build/canonsent$(OBJ):		src/canonsent$(C) framepac/stringbuilder.h framepac/texttransforms.h
 build/charget$(OBJ):		src/charget$(C) framepac/charget.h
 build/cfile$(OBJ):		src/cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
-build/clusterinfo$(OBJ):	src/clusterinfo$(C) framepac/cluster.h
+build/cluster$(OBJ):		src/cluster$(C) framepac/cluster.h framepac/message.h
+build/clusterinfo$(OBJ):	src/clusterinfo$(C) framepac/atomic.h framepac/cluster.h framepac/texttransforms.h
 build/cluster_name$(OBJ):	src/cluster_name$(C) framepac/cluster.h
 build/cluster_u32_dbl$(OBJ):	src/cluster_u32_dbl$(C) template/cluster_factory.cc
 build/cluster_u32_flt$(OBJ):	src/cluster_u32_flt$(C) template/cluster_factory.cc
@@ -606,7 +608,7 @@ template/cluster_growseed.cc:	template/cluster.cc
 template/cluster_incr.cc:	template/cluster.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/cluster_kmeans.cc:	framepac/cluster.h framepac/threadpool.h
+template/cluster_kmeans.cc:	framepac/cluster.h framepac/message.h framepac/threadpool.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster_optics.cc:	template/cluster.cc

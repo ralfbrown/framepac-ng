@@ -93,6 +93,8 @@ class ClusterInfo : public Object
       static ClusterInfo* create(ClusterInfo** subclus, size_t num_subclus) ;
       static ClusterInfo* create(const ClusterInfo** subclus, size_t num_subclus) ;
 
+      static Symbol* genLabel() ;
+
       // *** standard info functions ***
       //inherited: size_t size() const ;
       //inherited: bool empty() const ;
@@ -129,12 +131,12 @@ class ClusterInfo : public Object
       DenseVector<ValT>* createDenseCentroid() const ;
       
    protected:
-      RefArray* m_members ;	// individual vectors in this cluster
-      Array* m_subclusters ;	// sub-clusters (if any) of this cluster
-      Object* m_rep ;		// representative element: centroid/mediod/etc.
-      Symbol* m_label ;		// cluster label
-      uint32_t m_size ;		// number of elements in this cluster
-      uint32_t m_flags ;
+      RefArray* m_members { nullptr } ;	// individual vectors in this cluster
+      Array* m_subclusters { nullptr };	// sub-clusters (if any) of this cluster
+      Object* m_rep { nullptr } ;	// representative element: centroid/mediod/etc.
+      Symbol* m_label { nullptr } ;	// cluster label
+      uint32_t m_size { 0 } ;		// number of elements in this cluster
+      uint32_t m_flags { 0 } ;
 
    private: // static members
       static Allocator s_allocator ;
@@ -213,8 +215,30 @@ inline ClusterInfoIter::ClusterInfoIter(const ClusterInfo* inf)
 
 //----------------------------------------------------------------------------
 
+class ClusteringAlgoBase
+   {
+   public:
+      ClusteringAlgoBase() {}
+      ~ClusteringAlgoBase() {}
+
+      static bool checkSparseOrDense(const Array* vectors) ;
+      static void freeClusters(ClusterInfo** clusters, size_t num_clusters) ;
+      void log(int level, const char* fmt, ...) const ;
+
+      void useSparseVectors(bool use) { m_use_sparse_vectors = use ; }
+
+      int verbosity() const { return m_verbosity ; }
+      bool usingSparseVectors() const { return m_use_sparse_vectors ; }
+
+   protected:
+      int	m_verbosity { 0 } ;
+      bool	m_use_sparse_vectors { false } ;
+   } ;
+
+//----------------------------------------------------------------------------
+
 template <typename IdxT, typename ValT>
-class ClusteringAlgo
+class ClusteringAlgo : public ClusteringAlgoBase
    {
    public:
       static ClusteringAlgo* instantiate(const char* algo_name, const char* options) ;
@@ -230,21 +254,17 @@ class ClusteringAlgo
       static Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array* centers,
 	 VectorMeasure<IdxT,ValT>* measure, double threshold = -1.0) ;
    protected: //methods
-      ClusteringAlgo() : m_measure(nullptr), m_use_sparse_vectors(false) {}
+      ClusteringAlgo() {}
 
-      bool checkSparseOrDense(const Array* vectors) const ;
 
       Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array* centers, double threshold = -1.0) const
 	 { return nearestNeighbor(vector,centers,m_measure,threshold) ; }
-      bool assignToNearest(const Array* vectors, const Array* centers, double threshold = -1.0) const ;
+      size_t assignToNearest(const Array* vectors, const Array* centers, double threshold = -1.0) const ;
       bool extractClusters(const Array* vectors, ClusterInfo**& clusters, size_t& num_clusters,
 	 RefArray* unassigned = nullptr) const ;
-      static void freeClusters(ClusterInfo** clusters, size_t num_clusters) ;
 
-      bool usingSparseVectors() const { return m_use_sparse_vectors ; }
    protected: // data
-      VectorMeasure<IdxT,ValT>* m_measure ;
-      bool m_use_sparse_vectors ;
+      VectorMeasure<IdxT,ValT>* m_measure { nullptr } ;
    } ;
 
 /************************************************************************/

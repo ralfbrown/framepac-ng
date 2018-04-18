@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-04					*/
+/* Version 0.05, last edit 2018-04-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -24,6 +24,8 @@
 #include <iostream>
 #include "framepac/message.h"
 #include "framepac/texttransforms.h"
+
+using namespace std ;
 
 namespace Fr
 {
@@ -72,13 +74,33 @@ bool SystemMessage::setInstance(SystemMessage& inst)
 
 //----------------------------------------------------------------------------
 
+#pragma GCC diagnostic ignored "-Wsuggest-attribute=format"
+
+bool SystemMessage::modal(const char* fmt, va_list args)
+{
+   char* msg = vaprintf(fmt,args) ;
+   instance().showModal(msg) ;
+   delete [] msg ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
 bool SystemMessage::modal(const char* fmt, ...)
 {
    va_list args ;
    va_start(args,fmt) ;
-   char* msg = vaprintf(fmt,args) ;
+   bool res = modal(fmt,args) ;
    va_end(args) ;
-   instance().showModal(msg) ;
+   return res ;
+}
+
+//----------------------------------------------------------------------------
+
+bool SystemMessage::confirmation(const char* fmt, va_list args)
+{
+   char* msg = vaprintf(fmt,args) ;
+   instance().showConfirmation(msg) ;
    delete [] msg ;
    return true ;
 }
@@ -89,9 +111,17 @@ bool SystemMessage::confirmation(const char* fmt, ...)
 {
    va_list args ;
    va_start(args,fmt) ;
-   char* msg = vaprintf(fmt,args) ;
+   bool res = confirmation(fmt,args) ;
    va_end(args) ;
-   instance().showConfirmation(msg) ;
+   return res ;
+}
+
+//----------------------------------------------------------------------------
+
+bool SystemMessage::status(const char* fmt, va_list args)
+{
+   char* msg = vaprintf(fmt,args) ;
+   instance().showMessage(msg) ;
    delete [] msg ;
    return true ;
 }
@@ -102,9 +132,17 @@ bool SystemMessage::status(const char* fmt, ...)
 {
    va_list args ;
    va_start(args,fmt) ;
-   char* msg = vaprintf(fmt,args) ;
+   bool res = status(fmt,args) ;
    va_end(args) ;
-   instance().showMessage(msg) ;
+   return res ;
+}
+
+//----------------------------------------------------------------------------
+
+bool SystemMessage::warning(const char* fmt, va_list args)
+{
+   char* msg = vaprintf(fmt,args) ;
+   instance().showWarning(msg) ;
    delete [] msg ;
    return true ;
 }
@@ -115,9 +153,17 @@ bool SystemMessage::warning(const char* fmt, ...)
 {
    va_list args ;
    va_start(args,fmt) ;
-   char* msg = vaprintf(fmt,args) ;
+   bool res = warning(fmt,args) ;
    va_end(args) ;
-   instance().showWarning(msg) ;
+   return res ;
+}
+
+//----------------------------------------------------------------------------
+
+bool SystemMessage::error(const char* fmt, va_list args)
+{
+   char* msg = vaprintf(fmt,args) ;
+   instance().showError(msg) ;
    delete [] msg ;
    return true ;
 }
@@ -128,9 +174,17 @@ bool SystemMessage::error(const char* fmt, ...)
 {
    va_list args ;
    va_start(args,fmt) ;
-   char* msg = vaprintf(fmt,args) ;
+   bool res = error(fmt,args) ;
    va_end(args) ;
-   instance().showError(msg) ;
+   return res ;
+}
+
+//----------------------------------------------------------------------------
+
+bool SystemMessage::fatal(const char* fmt, va_list args)
+{
+   char* msg = vaprintf(fmt,args) ;
+   instance().showFatal(msg) ;
    delete [] msg ;
    return true ;
 }
@@ -141,11 +195,9 @@ bool SystemMessage::fatal(const char* fmt, ...)
 {
    va_list args ;
    va_start(args,fmt) ;
-   char* msg = vaprintf(fmt,args) ;
+   bool res = fatal(fmt,args) ;
    va_end(args) ;
-   instance().showFatal(msg) ;
-   delete [] msg ;
-   return true ;
+   return res ;
 }
 
 //----------------------------------------------------------------------------
@@ -158,12 +210,30 @@ bool SystemMessage::nomemory(const char* msg)
 
 //----------------------------------------------------------------------------
 
+bool SystemMessage::prog_error(const char* fmt, va_list args)
+{
+   char* msg = vaprintf(fmt,args) ;
+   instance().showFatal(msg) ;
+   delete [] msg ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
 bool SystemMessage::prog_error(const char* fmt, ...)
 {
    va_list args ;
    va_start(args,fmt) ;
-   char* msg = vaprintf(fmt,args) ;
+   bool res = prog_error(fmt,args) ;
    va_end(args) ;
+   return res ;
+}
+
+//----------------------------------------------------------------------------
+
+bool SystemMessage::missed_case(const char* fmt, va_list args)
+{
+   char* msg = vaprintf(fmt,args) ;
    instance().showFatal(msg) ;
    delete [] msg ;
    return true ;
@@ -175,11 +245,9 @@ bool SystemMessage::missed_case(const char* fmt, ...)
 {
    va_list args ;
    va_start(args,fmt) ;
-   char* msg = vaprintf(fmt,args) ;
+   bool res = missed_case(fmt,args) ;
    va_end(args) ;
-   instance().showFatal(msg) ;
-   delete [] msg ;
-   return true ;
+   return res ;
 }
 
 //----------------------------------------------------------------------------

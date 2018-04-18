@@ -159,6 +159,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       return nullptr ;			// we need a similarity measure
       }
    RefArray* centers ;
+   this->log(0,"Initializing %lu centers",desiredClusters()) ;
    if (this->m_fast_init)
       {
       // do a quick and dirty init -- just randomly select K vectors
@@ -183,6 +184,13 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
 	 }
       sample->free() ;
       }
+   // assign a label to each of the selected centers
+   for (size_t i = 0 ; i < centers->size() ; ++i)
+      {
+      Vector<ValT>* v = static_cast<Vector<ValT>*>(centers->getNth(i)) ;
+      if (v)
+	 v->setLabel(ClusterInfo::genLabel()) ;
+      }
    // until converged or iteration limit:
    //    assign each vector to the nearest center
    //    collect vectors into clusters by assigned center
@@ -194,8 +202,10 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
    ThreadPool* tp = ThreadPool::defaultPool() ;
    for (iteration = 1 ; iteration <= iterations() ; iteration++)
       {
-      bool changes = this->assignToNearest(vectors, centers) ;
+      this->log(0,"Iteration %lu",iteration) ;
+      size_t changes = this->assignToNearest(vectors, centers) ;
       this->extractClusters(vectors,clusters,num_clusters) ;
+      this->log(0,"%lu vectors changed cluster",changes) ;
       if (!changes)
 	 break ;			// we've converged!
       if (iteration != 1)

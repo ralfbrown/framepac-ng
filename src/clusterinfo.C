@@ -19,7 +19,9 @@
 /*									*/
 /************************************************************************/
 
+#include "framepac/atomic.h"
 #include "framepac/cluster.h"
+#include "framepac/texttransforms.h"
 
 using namespace Fr ;
 
@@ -36,6 +38,12 @@ ClusterInfo::Initializer ClusterInfo::s_init ;
 // register initialization and cleanup functions for the ClusterInfo class as a whole
 // these will be called by Fr::Initialize() and Fr::Shutdown()
 //Fr::Initializer<ClusterInfo> static_init ;
+
+/************************************************************************/
+/*	Global data for this module					*/
+/************************************************************************/
+
+static Atomic<size_t> next_cluster_ID { 0 } ;
 
 /************************************************************************/
 /************************************************************************/
@@ -77,6 +85,17 @@ ClusterInfo* ClusterInfo::create(const ClusterInfo** subclus, size_t num_subclus
 	 }
       }
    return info ;
+}
+
+//----------------------------------------------------------------------------
+
+Symbol* ClusterInfo::genLabel()
+{
+   size_t id = ++next_cluster_ID ;
+   char* symname = Fr::aprintf("<CL_%lu>",id) ;
+   Symbol *sym = Symbol::create(symname) ;
+   delete[] symname ;
+   return sym ;
 }
 
 //----------------------------------------------------------------------------

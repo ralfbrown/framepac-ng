@@ -573,7 +573,7 @@ bool ThreadPool::dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, size_t insi
 bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, const void* first_item, va_list args)
 {
    if (!fn) return false ;
-   if (numThreads() == 0 && 0) //FIXME
+   if (numThreads() == 0 || 1) //FIXME
       {
       // we don't have any worker threads enabled, so directly invoke the mapping function
       bool success = true ;

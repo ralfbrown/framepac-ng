@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-02					*/
+/* Version 0.05, last edit 2018-04-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -69,6 +69,12 @@ ClusteringAlgo<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::instantiate(const char* al
    if (clusterer)
       {
       // parse options
+      //TODO
+      // default to cosine similarity if no other similarity measure is given in the options
+      if (!clusterer->m_measure)
+	 {
+	 clusterer->m_measure = VectorMeasure<IdxT,ValT>::create(VectorSimilarityMeasure::cosine) ;
+	 }
       }
    return clusterer ;
 }

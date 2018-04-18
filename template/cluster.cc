@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-13					*/
+/* Version 0.05, last edit 2018-04-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -50,7 +50,9 @@ template <typename ValT>
 DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
 {
    auto centroid = DenseVector<ValT>::create() ;
-   for (size_t i = 0 ; i < members()->size() ; i++)
+   auto mem = members() ;
+   auto sz = mem ? mem->size() : 0 ;
+   for (size_t i = 0 ; i < sz ; i++)
       {
       auto vec = static_cast<DenseVector<ValT>*>(members()->getNth(i)) ;
       if (!vec) continue ;
@@ -103,16 +105,26 @@ template <typename IdxT, typename ValT>
 bool assign_vector_to_nearest_center(const void* vectors, size_t index, va_list args)
 {
    typedef VectorMeasure<IdxT,ValT> VM ;
-   auto vector = reinterpret_cast<Vector<ValT>*>(const_cast<void*>(vectors)) + index ;
+   auto vecarray = reinterpret_cast<const Array*>(vectors) ;
+   auto vector = reinterpret_cast<Vector<ValT>*>(vecarray->getNth(index)) ;
    auto centers = va_arg(args,const Array*) ;
    auto measure = va_arg(args,VM*) ;
    auto threshold = va_arg(args,double) ;
+   auto changes = va_arg(args,size_t*) ;
    if (!vector) return false ;
+cout  << "centers->size() = "<<centers->size()<<endl;
    auto best_center = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(vector,centers,measure,threshold) ;
    if (best_center)
       {
       // assign cluster to which best_center belongs to vector
-      vector->setLabel(best_center->label()) ;
+      auto old_label = vector->label() ;
+      auto new_label = best_center->label() ;
+ cout << "old_label = "<<old_label<<", new_label="<<new_label<<endl;
+      if (old_label != new_label)
+	 {
+	 vector->setLabel(new_label) ;
+	 (*changes)++ ;
+	 }
       }
    return true ;
 }
@@ -120,25 +132,16 @@ bool assign_vector_to_nearest_center(const void* vectors, size_t index, va_list 
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-bool ClusteringAlgo<IdxT,ValT>::checkSparseOrDense(const Array* vectors) const
-{
-   for (size_t i = 0 ; i < vectors->size() ; ++i)
-      {
-      Object* o = vectors->getNth(i) ;
-      if (o && o->isSparseVector())
-	 return true ;			// at least one sparse vector
-      }
-   return false ;			// no sparse vectors
-}
-
-//----------------------------------------------------------------------------
-
-template <typename IdxT, typename ValT>
-bool ClusteringAlgo<IdxT,ValT>::assignToNearest(const Array* vectors, const Array* centers, double threshold) const
+size_t ClusteringAlgo<IdxT,ValT>::assignToNearest(const Array* vectors, const Array* centers, double threshold) const
 {
    ThreadPool *tp = ThreadPool::defaultPool() ;
    if (!tp) return false ;
-   return tp->parallelize(assign_vector_to_nearest_center<IdxT,ValT>,*vectors,centers,m_measure,threshold) ;
+   size_t changes { 0 } ;
+   if (tp->parallelize(assign_vector_to_nearest_center<IdxT,ValT>,vectors->size(),vectors,
+	 centers,m_measure,threshold,&changes))
+      return changes ;
+   else
+      return 0 ;
 }
 
 //----------------------------------------------------------------------------
@@ -152,7 +155,9 @@ Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vec
    for (size_t i = 0 ; i < centers->size() ; ++i)
       {
       auto center = static_cast<Vector<ValT>*>(centers->getNth(i)) ;
+      if (!center) continue ;
       double sim = measure->similarity(vector,center) ;
+ cout << "sim = "<<sim<<endl;
       if (sim >= threshold && sim > best_sim)
 	 {
 	 best_center = center ;
@@ -160,19 +165,6 @@ Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vec
 	 }
       }
    return best_center ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename IdxT, typename ValT>
-void ClusteringAlgo<IdxT,ValT>::freeClusters(ClusterInfo** clusters, size_t num_clusters)
-{
-   for (size_t i = 0 ; i < num_clusters ; ++i)
-      {
-      if (clusters[i])
-	 clusters[i]->free() ;
-      }
-   delete[] clusters ;
 }
 
 //----------------------------------------------------------------------------
@@ -193,10 +185,10 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInf
       if (!label) continue ;
       if (!label_map.contains(label))
 	 {
-	 label_map.add(label,label_map.size()) ;
+	 label_map.add(label,label_map.currentSize()) ;
 	 }
       }
-   num_clusters = label_map.size() ;
+   num_clusters = label_map.currentSize() ;
    if (num_clusters)
       {
       clusters = new ClusterInfo*[num_clusters] ;
