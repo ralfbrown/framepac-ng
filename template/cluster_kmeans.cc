@@ -206,8 +206,8 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       {
       this->log(0,"Iteration %lu",iteration) ;
       size_t changes = this->assignToNearest(vectors, centers) ;
+      this->log(0,"  %lu vectors changed cluster",changes) ;
       this->extractClusters(vectors,clusters,num_clusters) ;
-      this->log(0,"%lu vectors changed cluster",changes) ;
       if (!changes)
 	 break ;			// we've converged!
       if (iteration != 1)

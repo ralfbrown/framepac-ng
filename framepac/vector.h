@@ -425,6 +425,7 @@ class DenseVector : public Vector<ValT>
    public:
       static DenseVector* create(size_t capacity = 0) { return new DenseVector(capacity) ; }
       static DenseVector* create(const char* rep) { return new DenseVector(rep) ; }
+      static DenseVector* create(const DenseVector* orig) { return orig ? new DenseVector(*orig) : new DenseVector ; }
 
       // arithmetic operations
       DenseVector* add(const DenseVector* other) const ;

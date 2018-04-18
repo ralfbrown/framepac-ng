@@ -49,12 +49,15 @@ SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid() const
 template <typename ValT>
 DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
 {
-   auto centroid = DenseVector<ValT>::create() ;
+   typedef DenseVector<ValT> DV ;
    auto mem = members() ;
    auto sz = mem ? mem->size() : 0 ;
-   for (size_t i = 0 ; i < sz ; i++)
+   if (sz == 0)
+      return DV::create() ;
+   auto centroid = DV::create(static_cast<DV*>(mem->getNth(0))) ;
+   for (size_t i = 1 ; i < sz ; i++)
       {
-      auto vec = static_cast<DenseVector<ValT>*>(members()->getNth(i)) ;
+      auto vec = static_cast<DV*>(mem->getNth(i)) ;
       if (!vec) continue ;
       centroid->incr(vec) ;
       }
