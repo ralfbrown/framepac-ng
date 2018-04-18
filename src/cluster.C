@@ -31,13 +31,16 @@ namespace Fr
 
 bool ClusteringAlgoBase::checkSparseOrDense(const Array* vectors)
 {
-   for (size_t i = 0 ; i < vectors->size() ; ++i)
+   if (vectors->size() <= 1) return true ;
+   Object* o = vectors->getNth(0) ;
+   bool sparse = o && o->isSparseVector() ;
+   for (size_t i = 1 ; i < vectors->size() ; ++i)
       {
-      Object* o = vectors->getNth(i) ;
-      if (o && o->isSparseVector())
-	 return true ;			// at least one sparse vector
+      /*Object* */o = vectors->getNth(i) ;
+      if (o && o->isSparseVector() != sparse)
+	 return false ;			// array contains both sparse and dense vectors
       }
-   return false ;			// no sparse vectors
+   return true ;			// vectors are all of the same type
 }
 
 //----------------------------------------------------------------------------

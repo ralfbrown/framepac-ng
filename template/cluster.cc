@@ -39,7 +39,7 @@ SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid() const
       {
       auto vec = static_cast<SparseVector<IdxT,ValT>*>(members()->getNth(i)) ;
       if (!vec) continue ;
-      centroid->add(vec) ;
+      centroid->incr(vec) ;
       }
    return centroid ;
 }
@@ -56,7 +56,7 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
       {
       auto vec = static_cast<DenseVector<ValT>*>(members()->getNth(i)) ;
       if (!vec) continue ;
-      centroid->add(vec) ;
+      centroid->incr(vec) ;
       }
    return centroid ;
 }
@@ -112,7 +112,6 @@ bool assign_vector_to_nearest_center(const void* vectors, size_t index, va_list 
    auto threshold = va_arg(args,double) ;
    auto changes = va_arg(args,size_t*) ;
    if (!vector) return false ;
-cout  << "centers->size() = "<<centers->size()<<endl;
    auto best_center = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(vector,centers,measure,threshold) ;
    if (best_center)
       {

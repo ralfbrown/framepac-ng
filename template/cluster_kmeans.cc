@@ -213,7 +213,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       auto fn = update_centroid<IdxT,ValT> ;
       if (usingMedioids())
 	 fn = update_medioid<IdxT,ValT> ;
-      tp->parallelize(fn,num_clusters,clusters,&centers,this->usingSparseVectors(),this->m_measure) ;
+      tp->parallelize(fn,num_clusters,clusters,centers,this->usingSparseVectors(),this->m_measure) ;
       this->freeClusters(clusters,num_clusters) ;
       }
    // build the final cluster result from the extracted clusters

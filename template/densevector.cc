@@ -108,6 +108,18 @@ SparseVector<IdxT,ValT>* DenseVector<ValT>::add(const SparseVector<IdxT,ValT>* o
 //----------------------------------------------------------------------------
 
 template <typename ValT>
+DenseVector<ValT>* DenseVector<ValT>::incr(const DenseVector<ValT>* other, double wt)
+{
+   for (size_t idx = 0 ; idx < this->numElements() && idx < other->numElements() ; ++idx)
+      {
+      this->m_values[idx] += (wt*other->m_values[idx]) ;
+      }
+   return this ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
 template <typename IdxT>
 DenseVector<ValT>* DenseVector<ValT>::incr(const SparseVector<IdxT,ValT>* other)
 {
