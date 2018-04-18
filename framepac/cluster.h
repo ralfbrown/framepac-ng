@@ -91,6 +91,10 @@ class ClusterInfo : public Object
 	 } ;
 
    public:
+      void setLabel(Symbol* label) { m_label = label ; }
+      Symbol* label() const { return m_label ; }
+
+   public:
       // *** object factories ***
       static ClusterInfo* create() { return new ClusterInfo ; }
       static ClusterInfo* create(const List* members, const List* subclusters = nullptr) ;

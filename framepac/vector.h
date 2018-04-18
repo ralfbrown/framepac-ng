@@ -376,6 +376,8 @@ class SparseVector : public Vector<ValT>
       static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
 
    protected:
+      static size_t totalElements(const SparseVector* v1, const Vector<ValT>* v2) ;
+      static size_t totalElements(const SparseVector* v1, const SparseVector* v2) ;
       void setElement(size_t N, IdxT key, ValT value)
 	 {
 	 if (N >= Vector<ValT>::m_capacity && !this->reserve(std::max(N+1,2*Vector<ValT>::capacity())))

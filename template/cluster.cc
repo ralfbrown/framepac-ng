@@ -42,6 +42,7 @@ SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid() const
       if (!vec) continue ;
       centroid->incr(vec) ;
       }
+   centroid->setLabel(this->label()) ;
    return centroid ;
 }
 
@@ -62,6 +63,7 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
       if (!vec) continue ;
       centroid->incr(vec) ;
       }
+   centroid->setLabel(this->label()) ;
    return centroid ;
 }
 
@@ -213,6 +215,7 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInf
 	    unassigned->append(vector) ;
 	 size_t index = label_map.lookup(label) ;
 	 clusters[index]->addVector(vector) ;
+	 clusters[index]->setLabel(vector->label()) ;
 	 }
       }
    return true ;

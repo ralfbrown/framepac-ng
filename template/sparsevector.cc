@@ -77,19 +77,18 @@ SparseVector<IdxT,ValT>::SparseVector(const SparseVector& orig)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const Vector<ValT>* other) const
+size_t SparseVector<IdxT,ValT>::totalElements(const SparseVector<IdxT,ValT>* v1,
+   const SparseVector<IdxT,ValT>* v2)
 {
-   if (!other)
-      return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone().move()) ;
-   size_t count { 0 } ;
-   size_t elts1 { this->numElements() } ;
-   size_t elts2 { other->numElements() } ;
+   size_t total { 0 } ;
+   size_t elts1 { v1->numElements() } ;
+   size_t elts2 { v2->numElements() } ;
    size_t pos1 { 0 } ;
    size_t pos2 { 0 } ;
    while (pos1 < elts1 && pos2 < elts2)
       {
-      auto elt1 { this->elementIndex(pos1) } ;
-      auto elt2 { other->elementIndex(pos2) } ;
+      auto elt1 { v1->elementIndex(pos1) } ;
+      auto elt2 { v2->elementIndex(pos2) } ;
       if (elt1 <= elt2)
 	 {
 	 pos1++ ;
@@ -98,13 +97,56 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const Vector<ValT>* other)
 	 {
 	 pos2++ ;
 	 }
-      count++ ;
+      total++ ;
       }
-   count += (elts1 - pos1) + (elts2 - pos2) ;
-   SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create(count) ;
-   pos1 = 0 ;
-   pos2 = 0 ;
-   count = 0 ;
+   total += (elts1 - pos1) + (elts2 - pos2) ;
+   return total ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+size_t SparseVector<IdxT,ValT>::totalElements(const SparseVector<IdxT,ValT>* v1,
+   const Vector<ValT>* v2)
+{
+   if (v2->isSparseVector())
+      return totalElements(v1,static_cast<const SparseVector<IdxT,ValT>*>(v2)) ;
+   size_t total { 0 } ;
+   size_t elts1 { v1->numElements() } ;
+   size_t elts2 { v2->numElements() } ;
+   size_t pos1 { 0 } ;
+   size_t pos2 { 0 } ;
+   while (pos1 < elts1 && pos2 < elts2)
+      {
+      auto elt1 { v1->elementIndex(pos1) } ;
+      auto elt2 { v2->elementIndex(pos2) } ;
+      if (elt1 <= elt2)
+	 {
+	 pos1++ ;
+	 }
+      if (elt1 >= elt2)
+	 {
+	 pos2++ ;
+	 }
+      total++ ;
+      }
+   total += (elts1 - pos1) + (elts2 - pos2) ;
+   return total ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const Vector<ValT>* other) const
+{
+   if (!other)
+      return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone().move()) ;
+   SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create(totalElements(this,other)) ;
+   size_t count { 0 } ;
+   size_t elts1 { this->numElements() } ;
+   size_t elts2 { other->numElements() } ;
+   size_t pos1 { 0 } ;
+   size_t pos2 { 0 } ;
    while (pos1 < elts1 && pos2 < elts2)
       {
       auto elt1 { (IdxT)(this->elementIndex(pos1)) } ;
@@ -135,30 +177,12 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const SparseVector<IdxT,Va
 {
    if (!other)
       return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone().move()) ;
+   SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create(totalElements(this,other)) ;
    size_t count { 0 } ;
    size_t elts1 { this->numElements() } ;
    size_t elts2 { other->numElements() } ;
    size_t pos1 { 0 } ;
    size_t pos2 { 0 } ;
-   while (pos1 < elts1 && pos2 < elts2)
-      {
-      auto elt1 { this->elementIndex(pos1) } ;
-      auto elt2 { other->elementIndex(pos2) } ;
-      if (elt1 <= elt2)
-	 {
-	 pos1++ ;
-	 }
-      if (elt1 >= elt2)
-	 {
-	 pos2++ ;
-	 }
-      count++ ;
-      }
-   count += (elts1 - pos1) + (elts2 - pos2) ;
-   SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create(count) ;
-   pos1 = 0 ;
-   pos2 = 0 ;
-   count = 0 ;
    while (pos1 < elts1 && pos2 < elts2)
       {
       auto elt1 { (IdxT)(this->elementIndex(pos1)) } ;
@@ -234,30 +258,13 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::incr(const SparseVector<IdxT,V
 {
    if (!other)
       return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone().move()) ;
-   size_t new_size { 0 } ;
+   size_t new_size { totalElements(this,other) } ;
+   IdxT* new_indices { new IdxT[new_size] } ;
+   ValT* new_values { new ValT[new_size] } ;
    size_t elts1 { this->numElements() } ;
    size_t elts2 { other->numElements() } ;
    size_t pos1 { 0 } ;
    size_t pos2 { 0 } ;
-   while (pos1 < elts1 && pos2 < elts2)
-      {
-      auto elt1 { this->elementIndex(pos1) } ;
-      auto elt2 { other->elementIndex(pos2) } ;
-      if (elt1 <= elt2)
-	 {
-	 pos1++ ;
-	 }
-      if (elt1 >= elt2)
-	 {
-	 pos2++ ;
-	 }
-      new_size++ ;
-      }
-   new_size += (elts1 - pos1) + (elts2 - pos2) ;
-   IdxT* new_indices { new IdxT[new_size] } ;
-   ValT* new_values { new ValT[new_size] } ;
-   pos1 = 0 ;
-   pos2 = 0 ;
    size_t count { 0 } ;
    while (pos1 < elts1 && pos2 < elts2)
       {
