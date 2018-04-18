@@ -126,7 +126,6 @@ bool assign_vector_to_nearest_center(size_t index, va_list args)
       // assign cluster to which best_center belongs to vector
       auto old_label = vector->label() ;
       auto new_label = best_center->label() ;
- cout << "old_label = "<<old_label<<", new_label="<<new_label<<endl;
       if (old_label != new_label)
 	 {
 	 vector->setLabel(new_label) ;
@@ -166,7 +165,6 @@ Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vec
       auto center = static_cast<Vector<ValT>*>(centers->getNth(i)) ;
       if (!center) continue ;
       double sim = measure->similarity(vector,center) ;
- cout << "sim = "<<sim<<endl;
       if (sim >= threshold && sim > best_sim)
 	 {
 	 best_center = center ;
