@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-17					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -178,10 +178,21 @@ void Array::resize(size_t N)
 
 //----------------------------------------------------------------------------
 
-void Array::resize(size_t N, Object*)
+void Array::resize(size_t N, Object* obj)
 {
-   (void)N;
-   return ; //FIXME
+   Object** new_arr = new Object*[N] ;
+   if (new_arr)
+      {
+      for (size_t i = 0 ; i < size() && i < N ; ++i)
+	 new_arr[i] = m_array[i] ;
+      for (size_t i = size() ; i < N ; ++i)
+	 new_arr[i] = obj ? obj->clone().move() : nullptr ;
+      delete[] m_array ;
+      m_array = new_arr ;
+      m_size = std::min(size(),N) ;
+      m_alloc = N ;
+      }
+   return ;
 }
 
 //----------------------------------------------------------------------------
@@ -226,11 +237,18 @@ ObjectPtr Array::clone_(const Object* obj)
 
 //----------------------------------------------------------------------------
 
-ObjectPtr Array::subseq_int(const Object *, size_t start, size_t stop)
+ObjectPtr Array::subseq_int(const Object* obj, size_t start, size_t stop)
 {
-   (void)start; (void)stop; //FIXME
-
-   return ObjectPtr(nullptr) ; //FIXME
+   auto a = static_cast<const Array*>(obj) ;
+   if (start > stop)
+      start = stop ;
+   Array* new_array = Array::create(stop-start) ;
+   for (size_t i = start ; i < stop ; ++i)
+      {
+      auto o = a->getNth(i) ;
+      new_array->setNth(i-start,o ? o->clone().move() : o) ;
+      }
+   return ObjectPtr(new_array) ;
 }
 
 //----------------------------------------------------------------------------
