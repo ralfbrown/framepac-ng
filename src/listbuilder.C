@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-17					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -146,7 +146,19 @@ Object* ListBuilder::pop()
 
 void ListBuilder::reverse()
 {
-//FIXME
+   List* prev = List::emptyList() ;
+   List* curr = m_list ;
+   // swap the head and tail pointers
+   m_list_end = m_list->nextPtr() ;
+   // now iterate along the list, reversing the links
+   while (curr != List::emptyList())
+      {
+      List* next = curr->next() ;
+      curr->setNext(prev) ;
+      m_list = curr ;
+      prev = curr ;
+      curr = next ;
+      }
    return ;
 }
 
