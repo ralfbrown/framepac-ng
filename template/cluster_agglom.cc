@@ -65,10 +65,34 @@ class ClusteringAlgoAgglom : public ClusteringAlgoBrown<IdxT,ValT>
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
+bool agglom_clustering_best_similarity(size_t index, va_list args)
+{
+   typedef VectorMeasure<IdxT,ValT> VM ;
+   const Array* clusters = va_arg(args,const Array*) ;
+   double* similarity = va_arg(args,double*) + index ;
+   size_t* neighbor = va_arg(args,size_t*) + index ;
+   VM* measure = va_arg(args,VM*) ;
+   if (!measure) return false ;
+//!!   auto cluster = clusters->getNth(index) ;
+   double best_sim = -999.99 ;
+   size_t best_neighbor = ~0 ;
+   for (size_t i = 0 ; i < clusters->size() ; ++i)
+      {
+      if (i == index) continue ;
+//!!      auto other_clus = clusters->getNth(i) ;
+      //TODO
+      }
+   *similarity = best_sim ;
+   *neighbor = best_neighbor ;
+   return true ;
+}
+
+template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
 {
    if (!vectors || vectors->size() == 0)
       return ClusterInfo::create() ;
+   size_t num_vectors = vectors->size() ;
    ClusterInfo* clusters = ClusterInfo::createSingletonClusters(vectors) ;
    if (clusters->numSubclusters() <= this->desiredClusters())
       {
@@ -77,21 +101,42 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
       return clusters ;
       }
    this->log(0,"Starting %s clustering using %s measure; %lu vectors to cluster",
-      this->algorithmName(),this->measureName(),vectors->size()) ;
+      this->algorithmName(),this->measureName(),num_vectors) ;
    // until we've reached the desired number of clusters or the best similarity is below the threshold:
    //   merge the two most similar clusters
-   auto prog = this->makeProgressIndicator(vectors->size() - this->desiredClusters()) ;
+   auto prog = this->makeProgressIndicator(num_vectors - this->desiredClusters()) ;
+   auto tp = ThreadPool::defaultPool() ;
+   double* similarities = new double[num_vectors] ;
+   size_t* neighbors = new size_t[num_vectors] ;
    while (clusters->numSubclusters() > this->desiredClusters())
       {
-      double best_sim = -999.99 ;
-      //TODO
+      auto numclus = clusters->numSubclusters() ;
+      ThreadPoolMapFunc* fn = agglom_clustering_best_similarity<IdxT,ValT> ;
+      tp->parallelize(fn,numclus,clusters->subclusters(),similarities,
+	 neighbors,this->m_measure) ;
+      double best_sim = similarities[0] ;
+      size_t best_clus = 0 ;
+      size_t best_neighbor = neighbors[0] ;
+      for (size_t i = 1 ; i < numclus ; ++i)
+	 {
+	 if (similarities[i] > best_sim)
+	    {
+	    best_sim = similarities[i] ;
+	    best_clus = i ;
+	    best_neighbor = neighbors[i] ;
+	    }
+	 }
       prog->incr() ;
       if (best_sim < this->clusterThreshold())
 	 {
 	 this->log(0,"  terminating: best similarity %g is less than threshold %g",best_sim,this->clusterThreshold());
 	 break ;
 	 }
+      //TODO: merge the cluster we found
+      this->log(2,"  merging clusters %lu and %lu (similarity %g)",best_clus,best_neighbor,best_sim) ;
       }
+   delete[] neighbors ;
+   delete[] similarities ;
    delete prog ;
    if (this->m_flatten && clusters->numSubclusters() > 1)
       {
