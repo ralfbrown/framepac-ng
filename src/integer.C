@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-08					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -63,10 +63,9 @@ char* Integer::toCstring_(const Object *obj, char *buffer, size_t buflen,
 
 //----------------------------------------------------------------------------
 
-size_t Integer::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
+size_t Integer::jsonStringLength_(const Object* obj, bool /*wrap*/, size_t indent)
 {
-   (void)obj ; (void)wrap; (void)indent ;
-   return 0 ; //FIXME
+   return cStringLength_(obj,~0,indent,indent) ;
 }
 
 //----------------------------------------------------------------------------
@@ -74,8 +73,7 @@ size_t Integer::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
 bool Integer::toJSONString_(const Object* obj, char* buffer, size_t buflen,
 			    bool /*wrap*/, size_t indent)
 {
-   (void)obj; (void)buffer; (void)buflen; (void)indent;
-   return false ; //FIXME
+   return toCstring_(obj,buffer,buflen,~0,indent,indent) != buffer ;
 }
 
 //----------------------------------------------------------------------------
@@ -104,24 +102,30 @@ size_t Integer::hashValue_(const Object* obj)
 
 bool Integer::equal_(const Object* obj1, const Object* obj2)
 {
-   (void)obj1; (void)obj2;
-   return false ; //FIXME
+   if (obj1 == obj2) return true ;
+   if (!obj1 || !obj2) return false ;
+   return obj1->intValue() == obj2->intValue() ;
 }
 
 //----------------------------------------------------------------------------
 
 int Integer::compare_(const Object* obj1, const Object* obj2)
 {
-   (void)obj1; (void)obj2;
-   return 0 ; //FIXME
+   if (obj1 == obj2) return 0 ;		// identical object, so value must be the  same
+   if (!obj1) return  1 ;
+   if (!obj2 || !obj2->isNumber()) return +1 ;
+   auto val1 = obj1->intValue() ;
+   auto val2 = obj2->intValue() ;
+   if (val1 < val2) return -1 ;
+   else if (val1 > val2) return +1 ;
+   return 0 ;				// values are the same
 }
 
 //----------------------------------------------------------------------------
 
 int Integer::lessThan_(const Object* obj1, const Object* obj2)
 {
-   (void)obj1; (void)obj2;
-   return 0 ; //FIXME
+   return compare_(obj1,obj2) < 0 ;
 }
 
 /************************************************************************/
