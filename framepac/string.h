@@ -31,14 +31,12 @@
 namespace FramepaC
 {
 
-// x86_64 currently only uses 48-bit virtual addresses, so we can
-//   stuff an additional 16-bit value into a 64-bit pointer field.
-//   TODO: For 32-bit architectures and some 64-bit architectures,
-//   we'll need to create a struct with both a pointer and integer
-//   fields instead of packing the two into a single value.
 template <typename T>
 class PointerPlus16
    {
+#if defined(__GNUC__) && defined(__x86_64__) && defined(__LP64__)
+   // x86_64 currently only uses 48-bit virtual addresses, so we can
+   //   stuff an additional 16-bit value into a 64-bit pointer field.
    public:
       PointerPlus16(T* ptr = nullptr) { m_pointer = (uintptr_t)ptr ; }
       PointerPlus16(T* ptr, uint16_t val)
@@ -58,6 +56,24 @@ class PointerPlus16
       static constexpr uintptr_t VALUE_MASK = 0xFFFF000000000000UL ;
       static constexpr unsigned VALUE_SHIFT = 48 ;
       uintptr_t m_pointer ;
+#else
+   // For 32-bit architectures and (most?) non-x86 64-bit architectures,
+   //   we'll need to create a struct with both a pointer and integer
+   //   fields instead of packing the two into a single value.
+   public:
+      PointerPlus16(T* ptr = nullptr, uint16_t val = 0) { m_pointer = ptr ; m_extra = val ; }
+      ~PointerPlus16() {}
+
+      T* pointer() const { return reinterpret_cast<T*>(m_pointer) ; }
+      uint16_t extra() const { return m_extra ; }
+
+      void pointer(T* ptr) { m_pointer = ptr ; }
+      void extra(uint16_t val) { m_extra = val ; }
+
+   protected:
+      void* m_pointer ;
+      uint16_t m_extra ;
+#endif /* GCC 64-bit build */
    } ;
 
 
