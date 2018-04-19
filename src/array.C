@@ -255,9 +255,8 @@ ObjectPtr Array::subseq_int(const Object* obj, size_t start, size_t stop)
 
 ObjectPtr Array::subseq_iter(const Object*,ObjectIter start, ObjectIter stop)
 {
-   (void)start; (void)stop; //FIXME
-
-   return ObjectPtr(nullptr) ; //FIXME
+   const Object* obj = start.baseObject() ;
+   return subseq_int(obj,start.currentIndex(),stop.currentIndex()) ;
 }
 
 //----------------------------------------------------------------------------
@@ -267,7 +266,7 @@ size_t Array::cStringLength_(const Object* obj,size_t wrap_at, size_t indent, si
    const Array* arr = static_cast<const Array*>(obj) ;
    size_t len = indent + 4 + (arr->size() ? arr->size()-1 : 0) ;
    bool wrapped { false } ;
-   (void)wrapped_indent; //FIXME
+   (void)wrapped_indent; //TODO
    for (size_t i = 0 ; i < arr->size() ; ++i)
       {
       const Object* o = arr->at(i) ;
@@ -290,7 +289,7 @@ char* Array::toCstring_(const Object* obj,char* buffer, size_t buflen, size_t wr
    const char* bufend = buffer + buflen ;
    buffer += needed ;
    bool wrapped { false } ;
-   (void)wrapped_indent; //FIXME
+   (void)wrapped_indent; //TODO
    for (size_t i = 0 ; i < arr->size() ; ++i)
       {
       if (i) *buffer++ = ' ' ;
@@ -315,7 +314,7 @@ char* Array::toCstring_(const Object* obj,char* buffer, size_t buflen, size_t wr
 
 size_t Array::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
 {
-   (void)wrap; //FIXME
+   (void)wrap; //TODO
    size_t len = indent + 2 ; // initial and trailing brackets
    size_t items = 0 ;
    for (const Object* o : *static_cast<const Array*>(obj))
@@ -332,7 +331,7 @@ bool Array::toJSONString_(const Object* obj, char* buffer, size_t buflen,
 			 bool /*wrap*/, size_t indent)
 {
    (void)obj; (void)buffer; (void)buflen; (void)indent;
-   return false ; //FIXME
+   return false ; //TODO
 }
 
 //----------------------------------------------------------------------------
@@ -357,8 +356,25 @@ bool Array::equal_(const Object *obj, const Object *other)
 {
    if (obj == other)
       return true ;
-
-   return false ; //FIXME
+   if (!obj || !other)
+      return false ;			// can't be the same if one is null
+   if (!other->isArray())
+      return false ;			// can't be the same if one is Array and other isn't
+   size_t len1 = obj->size() ;
+   size_t len2 = other->size() ;
+   if (len1 != len2)
+      return false ;
+   for (size_t i = 0 ; i < len1 ; ++i)
+      {
+      auto o1 = static_cast<const Array*>(obj)->getNth(i) ;
+      auto o2 = static_cast<const Array*>(other)->getNth(i) ;
+      if (o1 == o2)
+	 continue ;
+      if (!o1 || !o2) return false ;
+      if (!o1->compare(o2))
+	 return false ;
+      }
+   return true ;
 }
 
 //----------------------------------------------------------------------------
