@@ -383,18 +383,28 @@ int Array::compare_(const Object *obj, const Object *other)
 {
    if (obj == other)
       return 0 ;
-
-   return 0 ; //FIXME
+   if (!obj) return -1 ;
+   if (!other || !other->isArray()) return +1 ;
+   size_t len1 = obj->size() ;
+   size_t len2 = other->size() ;
+   for (size_t i = 0 ; i < std::min(len1,len2) ; ++i)
+      {
+      auto o1 = static_cast<const Array*>(obj)->getNth(i) ;
+      auto o2 = static_cast<const Array*>(other)->getNth(i) ;
+      int cmp = o1->compare(o2) ;
+      if (cmp) return cmp ;
+      }
+   // at this point, the smaller of the arrays is known to be a prefix of the longer one
+   if (len1 < len2) return -1 ;
+   else if (len1 > len2) return +1 ;
+   return 0 ;				// the arrays are equal
 }
 
 //----------------------------------------------------------------------------
 
 int Array::lessThan_(const Object *obj, const Object *other)
 {
-   if (obj == other)
-      return 0 ;
-
-   return 0 ; //FIXME
+   return compare_(obj,other) < 0 ;
 }
 
 //----------------------------------------------------------------------------

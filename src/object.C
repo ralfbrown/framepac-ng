@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -59,11 +59,9 @@ ObjectPtr Object::subseq_int(const Object *obj, size_t start, size_t stop)
 
 //----------------------------------------------------------------------------
 
-ObjectPtr Object::subseq_iter(const Object *obj, ObjectIter start, ObjectIter stop)
+ObjectPtr Object::subseq_iter(const Object *, ObjectIter /*start*/, ObjectIter /*stop*/)
 {
-   (void)obj; (void)start; (void)stop; //FIXME
-//   if (start <= stop)
-//      return clone() ;
+   // base objects are not collections, so there is no subsequence to be taken
    return ObjectPtr(nullptr) ;
 }
 
@@ -74,7 +72,7 @@ ostream& Object::print(ostream& out) const
    const Object* o = this ;
    if (o)
       {
-      // FIXME: make a virtual function that dispatches to the proper
+      // TODO: make a virtual function that dispatches to the proper
       //   type so that we don't need to go via a string conversion
       //   first
       char* printed { cString() } ;
@@ -140,21 +138,21 @@ char *Object::jsonString(bool wrap, size_t indent) const
 
 //----------------------------------------------------------------------------
 
-size_t Object::jsonStringLength_(const Object *obj, bool wrap, size_t indent)
+size_t Object::jsonStringLength_(const Object *obj, bool /*wrap*/, size_t indent)
 {
-   (void)obj; (void)wrap; (void)indent; //FIXME
-   return 0 ; //FIXME
+   const char* type = obj ? obj->typeName() : "" ;
+   return snprintf(nullptr,0,"%*s\"#<%s:%lu>\"",(int)indent,"",type,(unsigned long)obj) ;
 }
 
 //----------------------------------------------------------------------------
 
-bool Object::toJSONString_(const Object *obj, char *buffer, size_t buflen, bool wrap, size_t indent)
+bool Object::toJSONString_(const Object *obj, char *buffer, size_t buflen, bool /*wrap*/, size_t indent)
 {
-   (void)obj; (void)buflen; (void)wrap; (void)indent; //FIXME
    if (!buffer)
-      return false ;
-
-   return false ; //FIXME
+      return buffer ;
+   const char* type = obj ? obj->typeName() : "" ;
+   size_t count = snprintf(buffer,buflen,"%*s\"#<%s:%lu>\"%c",(int)indent,"",type,(unsigned long)obj,'\0') ;
+   return (count <= buflen) ;
 }
 
 //----------------------------------------------------------------------------
@@ -175,7 +173,7 @@ mpq_t Object::rationalValue_(const Object *)
 
 size_t Object::hashValue_(const Object *obj)
 {
-   // since base object have no contents, the hash value is actually meaningless,
+   // since base objects have no contents, the hash value is actually meaningless,
    //   but we need this function as the base of inheritance, so just return the
    //   object's address
    return (size_t)obj ;
@@ -185,8 +183,8 @@ size_t Object::hashValue_(const Object *obj)
 
 int Object::compare_(const Object *obj1, const Object *obj2)
 {
-   if (lessThan_(obj1,obj2)) return -1 ;
-   else if (lessThan_(obj2,obj1)) return +1 ;
+   if (obj1 < obj2) return -1 ;
+   else if (obj1 > obj2) return +1 ;
    return 0 ;
 }
 
@@ -194,7 +192,7 @@ int Object::compare_(const Object *obj1, const Object *obj2)
 
 int Object::lessThan_(const Object *obj1, const Object *obj2)
 {
-   return obj1 < obj2 ;
+   return obj1->compare(obj2) < 0 ;
 }
 
 //----------------------------------------------------------------------------
@@ -212,6 +210,7 @@ void Object::_() const
 #if 0
 mpz_t Object::bignumValue_(const Object *)
 {
+   //TODO
 }
 #endif
 
@@ -220,6 +219,7 @@ mpz_t Object::bignumValue_(const Object *)
 #if 0
 mpq_t Object::rationalValue(const Object *)
 {
+   //TODO
 }
 #endif
 
