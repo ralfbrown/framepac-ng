@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -51,21 +51,19 @@ char* NonObject::toCstring_(const Object *obj, char *buffer, size_t buflen, size
 
 //----------------------------------------------------------------------------
 
-size_t NonObject::jsonStringLength_(const Object *obj, bool wrap, size_t indent)
+size_t NonObject::jsonStringLength_(const Object *obj, bool /*wrap*/, size_t indent)
 {
-   (void)obj; (void)wrap; (void)indent; //FIXME
-   return 0 ; //FIXME
+   return snprintf(nullptr,0,"%*s\"#<NonObject:%lu>\"",(int)indent,"",(uintptr_t)obj) ;
 }
 
 //----------------------------------------------------------------------------
 
-bool NonObject::toJSONString_(const Object *obj, char *buffer, size_t buflen, bool wrap, size_t indent)
+bool NonObject::toJSONString_(const Object *obj, char *buffer, size_t buflen, bool /*wrap*/, size_t indent)
 {
-   (void)obj; (void)buflen; (void)wrap; (void)indent; //FIXME
    if (!buffer)
-      return false ;
-
-   return false ; //FIXME
+      return buffer ;
+   size_t count = snprintf(buffer,buflen,"%*s\"#<NonObject:%lu>\"%c",(int)indent,"",(uintptr_t)obj,'\0') ;
+   return (count <= buflen) ;
 }
 
 

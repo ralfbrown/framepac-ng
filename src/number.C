@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -40,7 +40,7 @@ static bool is_rational(const char *numstring)
 static bool is_bignum(const char *numstring)
 {
    (void)numstring;
-   return false ; //FIXME
+   return false ; //TODO
 }
 
 /************************************************************************/
@@ -106,7 +106,7 @@ const Object *Number::front_const(const Object *obj)
 #if 0
 mpz_t Number::bignumValue_(const Object *)
 {
-   //FIXME
+   //TODO
 }
 #endif
 
@@ -115,7 +115,7 @@ mpz_t Number::bignumValue_(const Object *)
 #if 0
 mpq_t Number::rationalValue_(const Object *)
 {
-   //FIXME
+   //TODO
 }
 #endif
 
