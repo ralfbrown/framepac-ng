@@ -26,7 +26,7 @@
 namespace Fr
 {
 
-// request explicit instantiations of TermCountVector
+// request explicit instantiations of the diffent kinds of vector
 template class Vector<uint32_t> ;
 template class DenseVector<uint32_t> ;
 template class SparseVector<uint32_t,uint32_t> ;
@@ -34,14 +34,20 @@ template class SparseVector<uint32_t,uint32_t> ;
 // static data for the instantiated templates
 template <>
 Allocator Vector<uint32_t>::s_allocator(FramepaC::Object_VMT<Vector<uint32_t>>::instance(), sizeof(Vector<uint32_t>)) ;
+template <>
+const char* Vector<uint32_t>::s_typename = "Vector_u32" ;
 
 template <>
 Allocator DenseVector<uint32_t>::s_allocator(FramepaC::Object_VMT<DenseVector<uint32_t>>::instance(),
    sizeof(DenseVector<uint32_t>)) ;
+template <>
+const char* DenseVector<uint32_t>::s_typename = "DenseVector_u32" ;
 
 template <>
 Allocator SparseVector<uint32_t,uint32_t>::s_allocator(FramepaC::Object_VMT<SparseVector<uint32_t,uint32_t>>::instance(),
    sizeof(SparseVector<uint32_t,uint32_t>)) ;
+template <>
+const char* SparseVector<uint32_t,uint32_t>::s_typename = "SparseVector_u32u32" ;
 
 
 } // end namespace Fr

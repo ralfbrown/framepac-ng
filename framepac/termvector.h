@@ -41,17 +41,14 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
 
       static TermVectorT* read(CharGetter& getter, size_t size_hint = 0) ;
 
+      void vectorFreq(size_t f) { m_freq = f ; }
       size_t vectorFreq() const { return m_freq ; }
 
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      TermVectorT(size_t capacity = 1) : SparseVector<uint32_t,ValT>(capacity), m_freq(0)
-	 {
-	 }
+      TermVectorT(size_t capacity = 1) : SparseVector<uint32_t,ValT>(capacity) {}
       ~TermVectorT() {}
-
-      using SparseVector<uint32_t,ValT>::setElement ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<TermVectorT> ;
@@ -69,22 +66,11 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
       // use shallowFree() on a shallowCopy()
       static void shallowFree_(Object* obj) { free_(obj) ; }
 
-      // *** I/O ***
-      // generate printed representation into a buffer
-      using SparseVector<uint32_t,ValT>::cStringLength_ ;
-      using SparseVector<uint32_t,ValT>::toCstring_ ;
-      using SparseVector<uint32_t,ValT>::jsonStringLength_ ;
-      using SparseVector<uint32_t,ValT>::toJSONString_ ;
-
-      // *** standard access functions ***
-      static Object* front_(Object*) { return nullptr ; }
-      static const Object* front_(const Object*) { return nullptr ; }
-
    private: // static members
       static Allocator s_allocator ;
 
    protected:
-      size_t m_freq ;
+      size_t m_freq { 0 } ;
    } ;
 
 //----------------------------------------------------------------------------

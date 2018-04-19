@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-11					*/
+/* Version 0.05, last edit 2018-04-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -31,6 +31,8 @@ template class SparseVector<Object*,double> ;
 template <>
 Allocator SparseVector<Object*,double>::s_allocator(FramepaC::Object_VMT<SparseVector<Object*,double>>::instance(),
    sizeof(SparseVector<Object*,double>)) ;
+template <>
+const char* SparseVector<Object*,double>::s_typename = "SparseVector_objdbl" ;
 
 } // end namespace Fr
 

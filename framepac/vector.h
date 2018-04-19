@@ -84,7 +84,7 @@ class Vector : public Object
 
       // type determination predicates
       static bool isVector_(const Object *) { return true ; }
-      static const char* typeName_(const Object*) { return "Vector" ; }
+      static const char* typeName_(const Object*) { return Vector::s_typename ; }
       static Symbol* label_(const Object* obj) { return static_cast<const Vector*>(obj)->m_label ; }
 
       // *** copying ***
@@ -139,6 +139,7 @@ class Vector : public Object
       
    private:
       static Allocator s_allocator ;
+      static const char* s_typename ;
    protected:
       ValT*   m_values { nullptr } ;
       Symbol* m_key { nullptr } ;	// the vector's name (e.g. word for which this is a context vector)
@@ -290,6 +291,7 @@ class OneHotVector : public Vector<ValT>
 
    private:
       static Allocator s_allocator ;
+      static const char* s_typename ;
    protected:
       IdxT m_index ;
       ValT m_value ;
@@ -341,7 +343,7 @@ class SparseVector : public Vector<ValT>
 
       // type determination predicates
       static bool isSparseVector_(const Object *) { return true ; }
-      static const char* typeName_(const Object*) { return "SparseVector" ; }
+      static const char* typeName_(const Object*) { return SparseVector::s_typename ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object *) ;
@@ -408,6 +410,7 @@ class SparseVector : public Vector<ValT>
 
    private:
       static Allocator s_allocator ;
+      static const char* s_typename ;
    protected:
       IdxT*  m_indices ;
    } ;
@@ -464,7 +467,7 @@ class DenseVector : public Vector<ValT>
       friend class FramepaC::Object_VMT<DenseVector> ;
 
       // type determination predicates
-      static const char* typeName_(const Object*) { return "DenseVector" ; }
+      static const char* typeName_(const Object*) { return DenseVector::s_typename ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object *) ;
@@ -474,6 +477,7 @@ class DenseVector : public Vector<ValT>
 
    private:
       static Allocator s_allocator ;
+      static const char* s_typename ;
    } ;
 
 extern template class DenseVector<uint32_t> ;
