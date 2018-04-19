@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-27					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -431,7 +431,6 @@ size_t List::cStringLength_(const Object* obj, size_t wrap_at, size_t indent, si
    const List* list = static_cast<const List*>(obj) ;
    size_t len = indent + 2 ;
    bool wrapped { false } ;
-   (void)wrapped_indent; //FIXME
    for (size_t i = 0 ; list && list != empty_list ; ++i, list = list->next())
       {
       size_t objlen = list->front()->cStringLength(wrap_at,wrapped?indent+1:(i?1:0),wrapped_indent) ;
@@ -467,7 +466,7 @@ char* List::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t wr
 
 size_t List::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
 {
-   (void)wrap; //FIXME
+   (void)wrap; //TODO
    size_t len = indent + 2 ; // initial and trailing brackets
    size_t items = 0 ;
    for (const Object* o : *static_cast<const List*>(obj))
@@ -483,7 +482,7 @@ bool List::toJSONString_(const Object* obj, char* buffer, size_t buflen,
 			 bool /*wrap*/, size_t indent)
 {
    (void)obj; (void)buffer; (void)buflen; (void)indent;
-   return false ; //FIXME
+   return false ; //TODO
 }
 
 //----------------------------------------------------------------------------
@@ -545,8 +544,20 @@ bool List::equal_(const Object *obj, const Object *other)
 {
    if (obj == other)
       return true ;
-
-   return false ; //FIXME
+   if (!obj || !other || !other->isList())
+      return false ;
+   auto l1 = static_cast<const List*>(obj) ;
+   auto l2 = static_cast<const List*>(other) ;
+   while (l1 && l2)
+      {
+      auto o1 = l1->front() ;
+      auto o2 = l2->front() ;
+      if (o1 != o2 && (!o1 || !o2 || !o1->equal(o2)))
+	 return false ;
+      l1 = l1->next() ;
+      l2 = l2->next() ;
+      }
+   return !l1 && !l2 ;			// lists are equal if we've consumed both in their entirety
 }
 
 //----------------------------------------------------------------------------
@@ -555,18 +566,29 @@ int List::compare_(const Object *obj, const Object *other)
 {
    if (obj == other)
       return 0 ;
-
-   return 0 ; //FIXME
+   if (!obj) return -1 ;
+   if (!other || !other->isList())
+      return +1 ;
+   auto l1 = static_cast<const List*>(obj) ;
+   auto l2 = static_cast<const List*>(other) ;
+   while (l1 && l1 != empty_list && l2 && l2 != empty_list)
+      {
+      auto o1 = l1->front() ;
+      auto o2 = l2->front() ;
+      int cmp = o1->compare(o2) ;
+      if (cmp)
+	 return cmp ;
+      }
+   if (l1 && l1 != empty_list) return +1 ;
+   else if (l2 && l2 != empty_list) return -1 ;
+   return 0 ;				// we got all the way to the end, so they're equal
 }
 
 //----------------------------------------------------------------------------
 
 int List::lessThan_(const Object *obj, const Object *other)
 {
-   if (obj == other)
-      return 0 ;
-
-   return 0 ; //FIXME
+   return compare_(obj,other) < 0 ;
 }
 
 
