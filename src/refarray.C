@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-30					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -86,20 +86,26 @@ ObjectPtr RefArray::clone_(const Object* obj)
 
 //----------------------------------------------------------------------------
 
-ObjectPtr RefArray::subseq_int(const Object*, size_t start, size_t stop)
+ObjectPtr RefArray::subseq_int(const Object* obj, size_t start, size_t stop)
 {
-   (void)start; (void)stop; //FIXME
-
-   return ObjectPtr(nullptr) ; //FIXME
+   auto a = static_cast<const Array*>(obj) ;
+   if (start > stop)
+      start = stop ;
+   RefArray* new_array = RefArray::create(stop-start) ;
+   for (size_t i = start ; i < stop ; ++i)
+      {
+      auto o = a->getNth(i) ;
+      new_array->setNth(i-start,o) ;
+      }
+   return ObjectPtr(new_array) ;
 }
 
 //----------------------------------------------------------------------------
 
 ObjectPtr RefArray::subseq_iter(const Object*,ObjectIter start, ObjectIter stop)
 {
-   (void)start; (void)stop; //FIXME
-
-   return ObjectPtr(nullptr) ; //FIXME
+   const Object* obj = start.baseObject() ;
+   return subseq_int(obj,start.currentIndex(),stop.currentIndex()) ;
 }
 
 //----------------------------------------------------------------------------
