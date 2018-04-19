@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.05, last edit 2018-04-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -21,6 +21,7 @@
 
 #include <cstring>
 #include "template/bufbuilder.cc"
+#include "framepac/fasthash64.h"
 #include "framepac/vector.h"
 
 namespace Fr
@@ -327,6 +328,22 @@ template <typename IdxT, typename ValT>
 ObjectPtr SparseVector<IdxT,ValT>::subseq_iter(const Object*, ObjectIter /*start*/, ObjectIter /*stop*/)
 {
    return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+size_t SparseVector<IdxT,ValT>::hashValue_(const Object* obj)
+{
+   auto tv = static_cast<const SparseVector<IdxT,ValT>*>(obj) ;
+   size_t numelts = tv->numElements() ;
+   FastHash64 hash(numelts) ;
+   for (size_t i = 0 ; i < numelts ; ++i)
+      {
+      hash += tv->elementIndex(i) ;
+      hash += tv->elementValue(i) ;
+      }
+   return *hash ;
 }
 
 //----------------------------------------------------------------------------

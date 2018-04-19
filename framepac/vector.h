@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-10					*/
+/* Version 0.05, last edit 2018-04-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -115,12 +115,17 @@ class Vector : public Object
       static Object *front_(Object *obj) { return obj ; }
       static const Object *front_const(const Object *obj) { return obj ; }
       static const char *stringValue_(const Object *) { return nullptr ; }
+      static double floatValue_(const Object* obj) { return static_cast<const Vector*>(obj)->length() ; }
+      static long int intValue(const Object* obj)
+	 { return (long)(floatValue_(obj) + 0.5) ; }
+
       static long nthInt_(const Object* obj, size_t N)
 	 { return (long)static_cast<const Vector<ValT>*>(obj)->m_values[N] ; }
       static double nthFloat_(const Object* obj, size_t N)
 	 { return (double)static_cast<const Vector<ValT>*>(obj)->m_values[N] ; }
 
       // *** comparison functions ***
+      static size_t hashValue_(const Object*) ;
       static bool equal_(const Object *obj, const Object *other) ;
       static int compare_(const Object *obj, const Object *other) ;
       static int lessThan_(const Object *obj, const Object *other) ;
@@ -368,6 +373,7 @@ class SparseVector : public Vector<ValT>
       static const char *stringValue_(const Object *) { return nullptr ; }
 
       // *** comparison functions ***
+      static size_t hashValue_(const Object*) ;
       static bool equal_(const Object *obj, const Object *other) ;
       static int compare_(const Object *obj, const Object *other) ;
       static int lessThan_(const Object *obj, const Object *other) ;

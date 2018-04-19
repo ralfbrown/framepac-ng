@@ -646,10 +646,10 @@ template/ptrie.cc:	framepac/trie.h
 template/sufarray.cc:	framepac/sufarray.h framepac/bitvector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/sparsevector.cc:	framepac/vector.h template/bufbuilder.cc
+template/sparsevector.cc:	framepac/fasthash64.h framepac/vector.h template/bufbuilder.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/termvector.cc:	framepac/termvector.h framepac/charget.h framepac/fasthash64.h
+template/termvector.cc:	framepac/termvector.h framepac/charget.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/trie.cc:	framepac/trie.h
@@ -667,7 +667,7 @@ template/vecsim_ct.cc:	framepac/vecsim.h
 template/vecsim_factory.cc:	template/vecsim.cc template/vecsim_ct.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/vector.cc:	framepac/vector.h
+template/vector.cc:	framepac/fasthash64.h framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/vector_arith.cc:	template/vector.cc

@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-18					*/
+/* Version 0.05, last edit 2018-04-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -21,29 +21,12 @@
 
 #include "framepac/termvector.h"
 #include "framepac/charget.h"
-#include "framepac/fasthash64.h"
 
 namespace Fr
 {
 
 /************************************************************************/
 /************************************************************************/
-
-template <typename ValT>
-size_t TermVectorT<ValT>::hashValue_(const Object* obj)
-{
-   auto tv = static_cast<const TermVectorT*>(obj) ;
-   size_t numelts = tv->numElements() ;
-   FastHash64 hash(numelts) ;
-   for (size_t i = 0 ; i < numelts ; ++i)
-      {
-      hash += tv->elementIndex(i) ;
-      hash += tv->elementValue(i) ;
-      }
-   return *hash ;
-}
-
-//----------------------------------------------------------------------------
 
 template <typename ValT>
 TermVectorT<ValT>* TermVectorT<ValT>::read(CharGetter& getter, size_t size_hint)

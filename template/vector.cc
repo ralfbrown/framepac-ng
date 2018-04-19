@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-17					*/
+/* Version 0.05, last edit 2018-04-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include <cmath>
+#include "framepac/fasthash64.h"
 #include "framepac/vector.h"
 
 namespace Fr
@@ -146,6 +147,21 @@ template <typename ValT>
 ObjectPtr Vector<ValT>::subseq_iter(const Object*, ObjectIter /*start*/, ObjectIter /*stop*/)
 {
    return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
+size_t Vector<ValT>::hashValue_(const Object* obj)
+{
+   auto tv = static_cast<const Vector<ValT>*>(obj) ;
+   size_t numelts = tv->numElements() ;
+   FastHash64 hash(numelts) ;
+   for (size_t i = 0 ; i < numelts ; ++i)
+      {
+      hash += tv->elementValue(i) ;
+      }
+   return *hash ;
 }
 
 //----------------------------------------------------------------------------

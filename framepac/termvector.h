@@ -78,22 +78,9 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
       using SparseVector<uint32_t,ValT>::jsonStringLength_ ;
       using SparseVector<uint32_t,ValT>::toJSONString_ ;
 
-      // *** standard info functions ***
-      static size_t size_(const Object*) ;
-      //static bool empty_(const Object* obj) : inherited from SparseVector
-
       // *** standard access functions ***
       static Object* front_(Object*) { return nullptr ; }
       static const Object* front_(const Object*) { return nullptr ; }
-      static double floatValue_(const Object* obj) { return static_cast<const TermVectorT*>(obj)->length() ; }
-      static long int intValue(const Object* obj)
-	 { return (long)(floatValue_(obj) + 0.5) ; }
-
-      // *** comparison functions ***
-      static size_t hashValue_(const Object*) ;
-      static bool equal_(const Object* obj, const Object* other) ;
-      static int compare_(const Object* obj, const Object* other) ;
-      static int lessThan_(const Object* obj, const Object* other) ;
 
    private: // static members
       static Allocator s_allocator ;
