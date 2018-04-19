@@ -50,9 +50,26 @@ static Atomic<size_t> next_cluster_ID { 0 } ;
 
 ClusterInfo* ClusterInfo::create(const List* elts, const List* subclus)
 {
-   //TODO
-   (void)elts ; (void)subclus;
-   return nullptr ;
+   size_t num_elts = elts ? elts->size() : 0 ;
+   ClusterInfo* info = new ClusterInfo ;
+   if (num_elts)
+      {
+      info->m_members = RefArray::create(num_elts) ;
+      for (auto obj : *elts)
+	 {
+	 info->m_members->append(obj) ;
+	 }
+      }
+   size_t num_subclus = subclus ? subclus->size() : 0 ;
+   if (num_subclus)
+      {
+      info->m_subclusters = RefArray::create(num_subclus) ;
+      for (auto obj : *subclus)
+	 {
+	 info->m_subclusters->append(obj) ;
+	 }
+      }
+   return info ;
 }
 
 //----------------------------------------------------------------------------
@@ -60,14 +77,20 @@ ClusterInfo* ClusterInfo::create(const List* elts, const List* subclus)
 ClusterInfo* ClusterInfo::create(ClusterInfo** subclus, size_t num_subclus)
 {
    ClusterInfo* info = new ClusterInfo ;
-   if (!subclus) num_subclus = 0 ;
+   if (!subclus || num_subclus == 0)
+      return info ;
+   info->m_subclusters = RefArray::create(num_subclus) ;
+   size_t count { 0 } ;
    for (size_t i = 0 ; i < num_subclus ; ++i)
       {
       if (subclus[i])
 	 {
-	 //TODO
+	 count += subclus[i]->size() ;
+	 info->m_subclusters->append(subclus[i]) ;
 	 }
       }
+   info->m_size = count ;
+   info->setFlag(Flags::group) ;	// subclusters only, no direct members
    return info ;
 }
 
@@ -76,14 +99,20 @@ ClusterInfo* ClusterInfo::create(ClusterInfo** subclus, size_t num_subclus)
 ClusterInfo* ClusterInfo::create(const ClusterInfo** subclus, size_t num_subclus)
 {
    ClusterInfo* info = new ClusterInfo ;
-   if (!subclus) num_subclus = 0 ;
+   if (!subclus || num_subclus == 0)
+      return info ;
+   info->m_subclusters = RefArray::create(num_subclus) ;
+   size_t count { 0 } ;
    for (size_t i = 0 ; i < num_subclus ; ++i)
       {
       if (subclus[i])
 	 {
-	 //TODO
+	 count += subclus[i]->size() ;
+	 info->m_subclusters->append(const_cast<ClusterInfo*>(subclus[i])) ;
 	 }
       }
+   info->m_size = count ;
+   info->setFlag(Flags::group) ;	// subclusters only, no direct members
    return info ;
 }
 
