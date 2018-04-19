@@ -191,19 +191,14 @@ char* String::toCstring_(const Object *obj, char *buffer, size_t buflen,
 
 size_t String::jsonStringLength_(const Object *obj, bool wrap, size_t indent)
 {
-   (void)obj; (void)wrap; (void)indent; //FIXME
-   return 0 ; //FIXME
+   return cStringLength_(obj,wrap,indent,indent) ;
 }
 
 //----------------------------------------------------------------------------
 
-bool String::toJSONString_(const Object *obj, char *buffer, size_t buflen, bool wrap, size_t indent)
+bool String::toJSONString_(const Object *obj, char *buffer, size_t buflen, bool /*wrap*/, size_t indent)
 {
-   (void)obj; (void)buflen; (void)wrap; (void)indent; //FIXME
-   if (!buffer)
-      return false ;
-
-   return false ; //FIXME
+   return toCstring_(obj,buffer,buflen,~0,indent,indent) ;
 }
 
 //----------------------------------------------------------------------------
