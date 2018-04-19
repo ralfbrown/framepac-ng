@@ -85,6 +85,7 @@ class Vector : public Object
       // type determination predicates
       static bool isVector_(const Object *) { return true ; }
       static const char* typeName_(const Object*) { return "Vector" ; }
+      static Symbol* label_(const Object* obj) { return static_cast<const Vector*>(obj)->m_label ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object *) ;

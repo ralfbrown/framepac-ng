@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-17					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -120,6 +120,8 @@ class Object
       // *** dynamic type determination ***
       // name of the actual type of the current object
       FrVIRTFUNC0(const char*,typeName,typeName_,const) ;
+      // get label (if any) applied to the object
+      FrVIRTFUNC0(Symbol*,label,label_,const) ;
       // type determination predicates
       FrVIRTFUNC0(bool,isArray,isArray_,const) ;
       FrVIRTFUNC0(bool,isBigNum,isBigNum_,const) ;
@@ -211,6 +213,7 @@ inline Object* Object::shallowCopy_(const Object* obj) { return clone_(obj) ; }
 inline void Object::free_(Object*) {}
 inline void Object::shallowFree_(Object* obj) { free_(obj) ; }
 inline const char* Object::typeName_(const Object*) { return "Object" ; }
+inline Symbol* Object::label_(const Object*) { return nullptr ; }
 inline bool Object::isArray_(const Object*) { return false ; }
 inline bool Object::isBigNum_(const Object*) { return false ; }
 inline bool Object::isBitVector_(const Object*) { return false ; }

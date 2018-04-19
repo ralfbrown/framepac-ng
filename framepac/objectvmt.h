@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-03					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -92,6 +92,7 @@ namespace Fr
 // forward declarations
 class Object ;
 class ObjectPtr ;
+class Symbol ;
 
 //----------------------------------------------------------------------------
 // this iterator can handle polymorphism, at the cost of making it heavier-weight
@@ -182,6 +183,8 @@ class ObjectVMT
       // *** dynamic type determination ***
       // name of the actual type of the current object
       const char* (*typeName_)(const Fr::Object*) ;
+      // get label (if any) applied to the object
+      Fr::Symbol* (*label_)(const Fr::Object*) ;
       // type determination predicates
       bool (*isArray_)(const Fr::Object*) ;
       bool (*isBigNum_)(const Fr::Object*) ;
@@ -260,6 +263,7 @@ class Object_VMT : public ObjectVMT
 	 nthInt_ = &ObjT::nthInt_ ;
 	 nthFloat_ = &ObjT::nthFloat_ ;
 	 typeName_ = &ObjT::typeName_ ;
+	 label_ = &ObjT::label_ ;
 	 isArray_ = &ObjT::isArray_ ;
 	 isBigNum_ = &ObjT::isBigNum_ ;
 	 isBitVector_ = &ObjT::isBitVector_ ;
