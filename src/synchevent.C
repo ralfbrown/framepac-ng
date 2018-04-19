@@ -1,12 +1,12 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-04-04					*/
+/*  Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File synchevent.C		synchronization events			*/
 /*									*/
-/*  (c) Copyright 2015,2016,2017 Carnegie Mellon University		*/
+/*  (c) Copyright 2015,2016,2017,2018 Carnegie Mellon University	*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -417,7 +417,6 @@ void SynchEvent::isSet() const
 
 void SynchEvent::clear()
 {
-   //FIXME
    pthread_mutex_lock(&m_mutex) ;
    m_set = false ;
    pthread_mutex_unlock(&m_mutex) ;
@@ -428,7 +427,6 @@ void SynchEvent::clear()
 
 void SynchEvent::set()
 {
-   //FIXME
    pthread_mutex_lock(&m_mutex) ;
    m_set = true ;
    pthread_cond_broadcast(&m_condvar) ;
