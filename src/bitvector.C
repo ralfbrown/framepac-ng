@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-14					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -72,6 +72,17 @@ BitVector* BitVector::create(const char* bits)
 
 //----------------------------------------------------------------------------
 
+BitVector::~BitVector()
+{
+   delete[] m_bits ;
+   m_bits = nullptr ;
+   m_size = 0 ;
+   m_capacity = 0 ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 bool BitVector::getBit(size_t N) const
 {
    if (N >= m_size) return false ;
@@ -98,25 +109,31 @@ void BitVector::setBit(size_t N, bool state)
 
 //----------------------------------------------------------------------------
 
-ObjectPtr BitVector::clone_(const Object*)
+ObjectPtr BitVector::clone_(const Object* obj)
 {
-
-   return ObjectPtr(nullptr) ; //FIXME
+   auto bv = static_cast<const BitVector*>(obj) ;
+   size_t len = bv->size() ;
+   auto copy = new BitVector(len) ;
+   for (size_t i = 0 ; i < len ; ++i)
+      {
+      //TODO: make a more efficient version
+      copy->setBit(i,bv->getBit(i)) ;
+      }
+   return ObjectPtr(copy) ;
 }
 
 //----------------------------------------------------------------------------
 
-Object* BitVector::shallowCopy_(const Object*)
+Object* BitVector::shallowCopy_(const Object* obj)
 {
-
-   return nullptr ; //FIXME
+   return clone_(obj).move() ;
 }
 
 //----------------------------------------------------------------------------
 
 void BitVector::free_(Object* obj)
 {
-   (void)obj ; //FIXME
+   delete static_cast<BitVector*>(obj) ;
    return;
 }
 
@@ -124,7 +141,7 @@ void BitVector::free_(Object* obj)
 
 void BitVector::shallowFree_(Object* obj)
 {
-   (void)obj ; //FIXME
+   free_(obj) ;
    return;
 }
 
@@ -141,7 +158,7 @@ BitVector* BitVector::subseq(...)
 
 ObjectPtr BitVector::subseq_int(const Object* obj, size_t start, size_t stop)
 {
-   (void)obj; (void)start; (void)stop ; //FIXME
+   (void)obj; (void)start; (void)stop ; //TODO
    return ObjectPtr(nullptr) ;
 }
 
@@ -149,7 +166,7 @@ ObjectPtr BitVector::subseq_int(const Object* obj, size_t start, size_t stop)
 
 ObjectPtr BitVector::subseq_iter(const Object* obj, ObjectIter start, ObjectIter stop)
 {
-   (void)obj; (void)start; (void)stop ; //FIXME
+   (void)obj; (void)start; (void)stop ; //TODO
    return ObjectPtr(nullptr) ;
 }
 
@@ -168,7 +185,7 @@ char* BitVector::toCstring_(const Object* obj, char* buffer, size_t buflen, size
 {
    const BitVector* bv = static_cast<const BitVector*>(obj) ;
    if (buflen < indent+3+bv->size()) return buffer ;
-   buffer += snprintf(buffer,buflen,"%*s",(int)indent,"#*") ;
+   buffer += snprintf(buffer,buflen,"%*s%s",(int)indent,"","#*") ;
    buflen -= (indent + 2) ;
    for (size_t i = 0 ; i < bv->size() && buflen > 0 ; ++i)
       {
@@ -183,7 +200,7 @@ char* BitVector::toCstring_(const Object* obj, char* buffer, size_t buflen, size
 size_t BitVector::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
 {
    (void)obj ; (void)wrap; (void)indent ;
-   return 0 ; //FIXME
+   return 0 ; //TODO
 }
 
 //----------------------------------------------------------------------------
@@ -192,7 +209,7 @@ bool BitVector::toJSONString_(const Object* obj, char* buffer, size_t buflen,
 			 bool /*wrap*/, size_t indent)
 {
    (void)obj; (void)buffer; (void)buflen; (void)indent;
-   return false ; //FIXME
+   return false ; //TODO
 }
 
 //----------------------------------------------------------------------------
