@@ -101,6 +101,7 @@ class ClusterInfo : public Object
       static ClusterInfo* create(ClusterInfo** subclus, size_t num_subclus) ;
       static ClusterInfo* create(const ClusterInfo** subclus, size_t num_subclus) ;
       static ClusterInfo* createSingletonClusters(const Array* vectors) ;
+      static ClusterInfo* createSingleton(const Object* vector) ;
 
       ClusterInfo* merge(const ClusterInfo* other) const ;
 
@@ -238,11 +239,21 @@ class ClusteringAlgoBase
       ProgressIndicator* makeProgressIndicator(size_t limit) const ;
 
       void useSparseVectors(bool use) { m_use_sparse_vectors = use ; }
+      void clusterThreshold(double thr) { m_threshold = thr ; }
+      void desiredClusters(size_t N) { m_desired_clusters = N ; }
+      void verbosity(int v) { m_verbosity = v ; }
+      void maxIterations(size_t N) { m_max_iterations = N ; }
 
+      double clusterThreshold() const { return m_threshold ; }
+      size_t desiredClusters() const { return m_desired_clusters ; }
+      size_t maxIterations() const { return m_max_iterations ; }
       int verbosity() const { return m_verbosity ; }
       bool usingSparseVectors() const { return m_use_sparse_vectors ; }
 
    protected:
+      double	m_threshold { -999.99 } ;
+      size_t    m_desired_clusters { 2 } ;
+      size_t    m_max_iterations { 5 } ;
       int	m_verbosity { 0 } ;
       bool	m_use_sparse_vectors { false } ;
    } ;

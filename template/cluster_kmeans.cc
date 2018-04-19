@@ -43,11 +43,7 @@ class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
 
       // accessors
       bool usingMedioids() const { return m_use_medioids ; }
-      size_t desiredClusters() const { return m_desired_clusters ; }
-      size_t iterations() const { return m_iterations ; }
    protected:
-      size_t m_desired_clusters { 2 } ;
-      size_t m_iterations { 10 } ;
       bool   m_use_medioids { false } ;
       bool   m_fast_init { false } ;
    } ;
@@ -162,24 +158,26 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       return nullptr ;			// we need a similarity measure
       }
    RefArray* centers ;
-   this->log(0,"Initializing %lu centers",desiredClusters()) ;
+   size_t num_clusters = this->desiredClusters() ;
+   this->log(0,"Initializing %lu centers",num_clusters) ;
    if (this->m_fast_init)
       {
       // do a quick and dirty init -- just randomly select K vectors
-      centers = vectors->randomSample(desiredClusters()) ;
+      this->log(1,"Selecting random sample of vectors as centers") ;
+      centers = vectors->randomSample(num_clusters) ;
       }
    else
       {
       // select K vectors which are (approximately) maximally separated
       centers = RefArray::create() ;
-      RefArray* sample = vectors->randomSample(2*desiredClusters()) ;
+      RefArray* sample = vectors->randomSample(2*num_clusters) ;
       // start by arbitrarily picking the first vector in the sample
       centers->append(sample->getNth(0)) ;
       sample->setNth(0,nullptr) ;
       // until we've accumulated desiredClusters() vectors, search for
       //   the as-yet-unselected vector with the smallest maximal
       //   similarity to any already-selected vector
-      for (size_t i = 1 ; i < this->desiredClusters() ; ++i)
+      for (size_t i = 1 ; i < num_clusters ; ++i)
 	 {
 	 size_t selected = find_least_similar<IdxT,ValT>(sample, centers,this->m_measure) ;
 	 centers->append(sample->getNth(selected)) ;
@@ -201,9 +199,9 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
    //    make the centroids the new centers
    size_t iteration ;
    ClusterInfo** clusters(nullptr) ;
-   size_t num_clusters(0) ;
+   num_clusters = 0 ;
    ThreadPool* tp = ThreadPool::defaultPool() ;
-   for (iteration = 1 ; iteration <= iterations() ; iteration++)
+   for (iteration = 1 ; iteration <= this->maxIterations() ; iteration++)
       {
       this->log(0,"Iteration %lu",iteration) ;
       auto prog = this->makeProgressIndicator(vectors->size()) ;

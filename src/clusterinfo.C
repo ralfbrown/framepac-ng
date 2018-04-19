@@ -89,11 +89,35 @@ ClusterInfo* ClusterInfo::create(const ClusterInfo** subclus, size_t num_subclus
 
 //----------------------------------------------------------------------------
 
+ClusterInfo* ClusterInfo::createSingleton(const Object* vector)
+{
+   ClusterInfo* info = new ClusterInfo ;
+   info->m_members = RefArray::create(1) ;
+   info->m_members->append(const_cast<Object*>(vector)) ;
+   //FIXME: info->setLabel(vector->label()) ;
+   info->m_size = 1 ;
+   info->setFlag(Flags::flat) ;		// no subclusters, only direct members
+   return info  ;
+}
+
+//----------------------------------------------------------------------------
+
 ClusterInfo* ClusterInfo::createSingletonClusters(const Array* vectors)
 {
    ClusterInfo* info = new ClusterInfo ;
-   //TODO
-
+   if (vectors)
+      {
+      size_t num_clusters = vectors->size() ;
+      size_t index = 0 ;
+      info->m_subclusters = Array::create(num_clusters) ;
+      for (auto obj : *vectors)
+	 {
+	 ClusterInfo* subcluster = ClusterInfo::createSingleton(obj) ;
+	 info->m_subclusters->setNth(index++,subcluster) ;
+	 }
+      info->m_size = num_clusters ;
+      info->setFlag(Flags::group) ;	// subclusters only, no direct members
+      }
    return info ;
 }
 

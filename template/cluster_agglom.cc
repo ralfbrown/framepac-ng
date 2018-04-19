@@ -42,8 +42,6 @@ class ClusteringAlgoBrown : public ClusteringAlgo<IdxT,ValT>
       virtual ClusterInfo* cluster(const Array* vectors) const ;
 
    protected:
-      size_t m_desired_clusters ;
-      double m_threshold ;
       bool   m_flatten { false } ;
    } ;
 
