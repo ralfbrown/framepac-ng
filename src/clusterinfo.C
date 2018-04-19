@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-03-30					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -163,7 +163,7 @@ ClusterInfo* ClusterInfo::merge(const ClusterInfo* other) const
       return static_cast<ClusterInfo*>(clone().move()) ;
 
    //TODO
-   return nullptr; //FIXME
+   return nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -218,7 +218,9 @@ bool ClusterInfo::addVectors(const RefArray* vectors)
 
 ObjectPtr ClusterInfo::clone_(const Object*)
 {
-   return nullptr ; //FIXME
+   auto copy = ClusterInfo::create() ;
+   //TODO
+   return copy ;
 }
 
 //----------------------------------------------------------------------------
@@ -237,20 +239,33 @@ ObjectPtr ClusterInfo::subseq_iter(const Object*, ObjectIter /*start*/, ObjectIt
 
 //----------------------------------------------------------------------------
 
-size_t ClusterInfo::cStringLength_(const Object* obj, size_t wrap_at, size_t indent, size_t wrapped_indent)
+size_t ClusterInfo::cStringLength_(const Object* obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   (void)obj; (void)wrap_at; (void)indent; (void)wrapped_indent;
+   size_t len = indent + 4 + strlen(obj->typeName()) ;
    //TODO
-   return 0 ;
+   return len ;
 }
 
 //----------------------------------------------------------------------------
 
-char* ClusterInfo::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t wrap_at, size_t indent,
-   size_t wrapped_indent)
+char* ClusterInfo::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t /*wrap_at*/, size_t indent,
+   size_t /*wrapped_indent*/)
 {
-   (void)obj; (void)buffer; (void)buflen; (void)wrap_at; (void)indent; (void)wrapped_indent;
-   //TODO
+   size_t count = snprintf(buffer,buflen,"%*s#<%s:",(int)indent,"",obj->typeName()) ;
+   buffer += count ;
+   buflen -= count ;
+   while (buflen > 0)
+      {
+      //TODO: print out subclusters and/or direct members
+      buflen=0;
+      }
+   if (buflen > 0)
+      {
+      *buffer++ = '>' ;
+      buflen-- ;
+      }
+   if (buflen > 0)
+      *buffer = '\0' ;
    return buffer ;
 }
 

@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-13					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -327,7 +327,7 @@ bool CFile::close()
 	 // we can now rename the temporary file we've been using to the final name,
 	 //   removing the previous version in the process
 	 rename(m_tempname,m_finalname) ;
-//FIXME: lots of possible error returns from rename, should handle the most important ones...
+//TODO: lots of possible error returns from rename, should handle the most important ones...
 	 }
       else
 	 {
