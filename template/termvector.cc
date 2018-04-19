@@ -29,6 +29,14 @@ namespace Fr
 /************************************************************************/
 
 template <typename ValT>
+ObjectPtr TermVectorT<ValT>::clone_(const Object* obj)
+{
+   return obj ? new TermVectorT<ValT>(*static_cast<const TermVectorT*>(obj)) : nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
 TermVectorT<ValT>* TermVectorT<ValT>::read(CharGetter& getter, size_t size_hint)
 {
    TermVectorT* tv = TermVectorT::create(size_hint) ;

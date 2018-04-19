@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-16					*/
+/* Version 0.05, last edit 2018-04-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -24,8 +24,6 @@
 namespace Fr
 {
 
-#if 0  // instantiation currently results in link errors due to missing standard functions
-
 // request explicit instantiations
 template class TermVectorT<uint32_t> ;
 template class TermVectorT<float> ;
@@ -38,8 +36,6 @@ Allocator TermVectorT<uint32_t>::s_allocator(FramepaC::Object_VMT<TermVectorT<ui
 template <>
 Allocator TermVectorT<float>::s_allocator(FramepaC::Object_VMT<TermVectorT<float>>::instance(),
    sizeof(TermVectorT<float>));
-
-#endif /* 0 */
 
 } // end namespace Fr
 

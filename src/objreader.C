@@ -487,7 +487,7 @@ static Object* read_generic_object(const ObjectReader* /*reader*/, CharGetter& g
    if (nextch == '>')
       return nullptr ;	       // empty object descriptor!
    // check for standard, known type names
-#if FIXME // currently generates link errors due to unimplemented standard functions
+#if 1||FIXME // currently generates link errors due to unimplemented standard functions
    if (strcmp(type_name,"TermVector") == 0)
       {
       return TermVector::read(getter,size_hint) ;

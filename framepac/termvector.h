@@ -49,7 +49,7 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
       TermVectorT(size_t capacity = 1) : SparseVector<uint32_t,ValT>(capacity), m_freq(0)
 	 {
 	 }
-      ~TermVectorT() ;
+      ~TermVectorT() {}
 
       using SparseVector<uint32_t,ValT>::setElement ;
 
@@ -63,8 +63,6 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
       // *** copying ***
       static ObjectPtr clone_(const Object*) ;
       static Object* shallowCopy_(const Object* obj) { return clone_(obj) ; }
-      static ObjectPtr subseq_int(const Object*, size_t start, size_t stop) ;
-      static ObjectPtr subseq_iter(const Object*, ObjectIter start, ObjectIter stop) ;
 
       // *** destroying ***
       static void free_(Object* obj) { delete static_cast<TermVectorT*>(obj) ; }
