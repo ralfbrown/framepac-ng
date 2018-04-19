@@ -91,8 +91,42 @@ namespace Fr
 
 // forward declarations
 class Object ;
-class ObjectPtr ;
 class Symbol ;
+
+//----------------------------------------------------------------------------
+// a smart pointer to <Object> that frees the object when it goes out of scope or has
+//  another <Object> assigned to it
+
+template <typename T>
+class Ptr
+   {
+   private:
+      T *m_object ;
+   public:
+      Ptr(T *o = nullptr) : m_object(o) {}
+      Ptr(const Ptr &o) = delete ; 	// not copyable
+      Ptr(Ptr &&o) : m_object(o.m_object) { o.release() ; }	// grab ownership from other Ptr
+      ~Ptr() { free() ; }
+
+      T& operator* () const { return *m_object ; }
+      T* operator-> () const { return m_object ; }
+      T* operator& () const { return m_object ; }
+      Ptr& operator= (Ptr &o)
+	 {
+	 if (m_object != o.m_object) free() ;
+	 acquire(o) ;
+	 return *this ;
+	 }
+      operator T* () const { return m_object ; }
+      operator bool () const { return m_object != nullptr ; }
+
+      void acquire(Ptr &o) { m_object = o.m_object ; o.release() ; }
+      void release() { m_object = nullptr ; }
+      T* move() { T* o = m_object ; release() ; return o ; }
+      inline void free() { if (m_object) { m_object->free() ; release() ; } }
+   } ;
+
+typedef Ptr<Object> ObjectPtr ;
 
 //----------------------------------------------------------------------------
 // this iterator can handle polymorphism, at the cost of making it heavier-weight

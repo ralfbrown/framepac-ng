@@ -45,40 +45,6 @@ typedef int ObjectOrderingFn(const Object*, const Object*) ;
 /************************************************************************/
 /************************************************************************/
 
-// a smart pointer to Object that frees the object when it goes out of scope or has
-//  another Object assigned to it
-
-class ObjectPtr
-   {
-   private:
-      Object *m_object ;
-   public:
-      ObjectPtr(Object *o = nullptr) : m_object(o) {}
-      ObjectPtr(const ObjectPtr &o) = delete ; 	// not copyable
-      ObjectPtr(ObjectPtr &&o) : m_object(o.m_object) { o.release() ; }	// grab ownership from other ObjectPtr
-      ~ObjectPtr() { free() ; }
-
-      Object& operator* () const { return *m_object ; }
-      Object* operator-> () const { return m_object ; }
-      Object* operator& () const { return m_object ; }
-      ObjectPtr& operator= (ObjectPtr &o)
-	 {
-	 if (m_object != o.m_object) free() ;
-	 acquire(o) ;
-	 return *this ;
-	 }
-      operator Object* () const { return m_object ; }
-      operator bool () const { return m_object != nullptr ; }
-
-      void acquire(ObjectPtr &o) { m_object = o.m_object ; o.release() ; }
-      void release() { m_object = nullptr ; }
-      Object* move() { Object* o = m_object ; release() ; return o ; }
-      inline void free() ; //  forward declaration, see after definition of Object
-   } ;
-
-/************************************************************************/
-/************************************************************************/
-
 // non-polymorphic underlying version of Object
 
 class Object
@@ -250,10 +216,6 @@ inline bool Object::equal_(const Object* obj, const Object* other) { return obj 
 
 inline Object* Object::next_(const Object*) { return nullptr ; }
 inline ObjectIter& Object::next_iter(const Object*,ObjectIter& it) { it.m_object = nullptr ; return it ; }
-
-//----------------------------------------------------------------------------
-
-inline void ObjectPtr::free() { if (m_object) { m_object->free() ; release() ; } }
 
 /************************************************************************/
 /************************************************************************/

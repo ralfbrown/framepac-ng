@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -74,34 +74,10 @@ class String ;
 /************************************************************************/
 /************************************************************************/
 
-// a smart pointer to Object that frees the object when it goes out of scope or has
-//  another Object assigned to it
+// a smart pointer to String that frees the object when it goes out of scope or has
+//  another String assigned to it
 
-class StringPtr
-   {
-   private:
-      String *m_string ;
-   public:
-      StringPtr(String *s = nullptr) : m_string(s) {}
-      StringPtr(const StringPtr &s) = delete ; 	// not copyable
-      StringPtr(StringPtr &&s) : m_string(s.m_string) { s.release() ; }	// grab ownership from other ObjectPtr
-      ~StringPtr() { free() ; }
-
-      String& operator* () const { return *m_string ; }
-      String* operator-> () const { return m_string ; }
-      StringPtr& operator= (StringPtr &s)
-	 {
-	 if (m_string != s.m_string) free() ;
-	 acquire(s) ;
-	 return *this ;
-	 }
-      operator String* () const { return m_string ; }
-      operator bool () const { return m_string != nullptr ; }
-
-      void acquire(StringPtr &s) { m_string = s.m_string ; s.release() ; }
-      void release() { m_string = nullptr ; }
-      inline void free() ; //  forward declaration, see after definition of String
-   } ;
+typedef Ptr<String> StringPtr ;
 
 /************************************************************************/
 /************************************************************************/
@@ -232,10 +208,6 @@ class String : public Object
       static Object* next_(const Object *) { return nullptr ; }
       static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
    } ;
-
-//----------------------------------------------------------------------------
-
-inline void StringPtr::free() { if (m_string) { m_string->free() ; release() ; } }
 
 /************************************************************************/
 /************************************************************************/
