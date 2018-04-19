@@ -348,10 +348,7 @@ int ClusterInfo::compare_(const Object *obj, const Object *other)
 
 int ClusterInfo::lessThan_(const Object *obj, const Object *other)
 {
-   if (obj == other)
-      return 0 ;
-
-   return 0 ; //FIXME
+   return compare_(obj,other) < 0 ;
 }
 
 //----------------------------------------------------------------------------

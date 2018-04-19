@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-12					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -68,21 +68,16 @@ char* Float::toCstring_(const Object *obj, char *buffer, size_t buflen,
 
 //----------------------------------------------------------------------------
 
-size_t Float::jsonStringLength_(const Object *obj, bool wrap, size_t indent)
+size_t Float::jsonStringLength_(const Object *obj, bool /*wrap*/, size_t indent)
 {
-   (void)obj; (void)wrap; (void)indent; //FIXME
-   return 0 ; //FIXME
+   return cStringLength_(obj,~0,indent,indent) ;
 }
 
 //----------------------------------------------------------------------------
 
-bool Float::toJSONString_(const Object *obj, char *buffer, size_t buflen, bool wrap, size_t indent)
+bool Float::toJSONString_(const Object *obj, char *buffer, size_t buflen, bool /*wrap*/, size_t indent)
 {
-   (void)obj; (void)buflen; (void)wrap; (void)indent; //FIXME
-   if (!buffer)
-      return false ;
-
-   return false ; //FIXME
+   return toCstring_(obj,buffer,buflen,~0,indent,indent) != buffer ;
 }
 
 //----------------------------------------------------------------------------
