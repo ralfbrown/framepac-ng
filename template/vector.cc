@@ -198,8 +198,9 @@ size_t Vector<ValT>::cStringLength_(const Object* obj, size_t /*wrap_at*/,
    size_t indent, size_t /*wrapped_indent*/)
 {
    auto v = static_cast<const Vector*>(obj) ;
-   // format of printed rep is #<type:v1 v2 .... vN>
-   size_t len = indent + 4 + strlen(v->typeName()) ;
+   // format of printed rep is #<type:label:v1 v2 .... vN>
+   size_t len = indent + 5 + strlen(v->typeName()) ;
+   if (v->label()) len += v->label()->cStringLength() ;
    if (v->numElements() > 0)
       len += v->numElements() - 1 ;
    for (size_t i = 0 ; i < v->numElements() ; ++i)
@@ -219,25 +220,35 @@ char* Vector<ValT>::toCstring_(const Object* obj, char* buffer, size_t buflen,
    if (buflen < indent + 4 + strlen(v->typeName()))
       return buffer ;
    char* bufend = buffer + buflen ;
-   buffer += snprintf(buffer,buflen,"%*s#<%s:",(int)indent,"",v->typeName()) ;
+   int count = snprintf(buffer,buflen,"%*s#<%s:",(int)indent,"",v->typeName()) ;
+   buffer += count ;
+   buflen -= count ;
+   if (v->label())
+      {
+      buffer += snprintf(buffer,buflen,"%s",v->label()->stringValue()) ;
+      }
+   if (buffer < bufend)
+      *buffer++ = ':' ;
    for (size_t i = 0 ; i < v->numElements() ; ++i)
       {
-      if (i) *buffer++ = ' ' ;
+      if (i && buffer < bufend)
+	 *buffer++ = ' ' ;
       buffer = v->value_c_string(i,buffer,bufend-buffer) ;
       }
-   *buffer++ = '>' ;
-   *buffer = '\0' ;
+   if (buffer < bufend)
+      *buffer++ = '>' ;
+   if (buffer < bufend)
+      *buffer = '\0' ;
    return buffer ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename ValT>
-size_t Vector<ValT>::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
+size_t Vector<ValT>::jsonStringLength_(const Object* obj, bool /*wrap*/, size_t indent)
 {
-   (void)obj ;
-   (void)wrap; (void)indent; //TODO
-   return 0 ;
+   // for now, represent the vector as a JSON string whose value is the C string representation of the vector
+   return 2 + cStringLength_(obj,~0,indent,indent) ;
 }
 
 //----------------------------------------------------------------------------
@@ -246,9 +257,21 @@ template <typename ValT>
 bool Vector<ValT>::toJSONString_(const Object* obj, char* buffer, size_t buflen,
 			 bool /*wrap*/, size_t indent)
 {
-   (void)obj ;
-   (void)buffer; (void)buflen; (void)indent ;
-//TODO
+   if (!buffer || buflen == 0)
+      return false ;
+   // for now, represent the vector as a JSON string whose value is the C string representation of the vector
+   const char* bufend = buffer + buflen ;
+   if (buflen > 0)
+      {
+      *buffer++ = '"' ;
+      buflen-- ;
+      }
+   buffer = toCstring_(obj,buffer,buflen,~0,indent,indent) ;
+   if (buffer < bufend)
+      {
+      *buffer++ = '"' ;
+      return true ;
+      }
    return false ;
 }
 
