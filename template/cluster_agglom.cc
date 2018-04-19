@@ -36,6 +36,7 @@ template <typename IdxT, typename ValT>
 class ClusteringAlgoBrown : public ClusteringAlgo<IdxT,ValT>
    {
    public:
+      ClusteringAlgoBrown() { this->desiredClusters(1) ; }
       virtual ~ClusteringAlgoBrown() { delete this ; }
       virtual const char*algorithmName() const { return "Brown" ; }
 
@@ -54,7 +55,7 @@ class ClusteringAlgoAgglom : public ClusteringAlgoBrown<IdxT,ValT>
       virtual ~ClusteringAlgoAgglom() { delete this ; }
       virtual const char*algorithmName() const { return "Agglomerative" ; }
 
-      virtual ClusterInfo* cluster(const Array* vectors) const ;
+      //virtual ClusterInfo* cluster(const Array* vectors) const ;  // inherited from Brown clustering
 
    protected:
 
@@ -64,23 +65,35 @@ class ClusteringAlgoAgglom : public ClusteringAlgoBrown<IdxT,ValT>
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
-ClusterInfo* ClusteringAlgoAgglom<IdxT,ValT>::cluster(const Array* vectors) const
-{
-   ClusterInfo* clusters = ClusterInfo::createSingletonClusters(vectors) ;
-
-   //TODO   
-   return clusters ;
-}
-
-/************************************************************************/
-/************************************************************************/
-
-template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
 {
+   if (!vectors || vectors->size() == 0)
+      return ClusterInfo::create() ;
    ClusterInfo* clusters = ClusterInfo::createSingletonClusters(vectors) ;
-
-   //TODO   
+   if (clusters->numSubclusters() <= this->desiredClusters())
+      {
+      this->log(0,"Nothing to be clustered - want %lu clusters, have only %lu vectors",
+	 this->desiredClusters(),clusters->numSubclusters()) ;
+      return clusters ;
+      }
+   this->log(0,"Starting %s clustering using %s measure; %lu vectors to cluster",
+      this->algorithmName(),this->measureName(),vectors->size()) ;
+   // until we've reached the desired number of clusters or the best similarity is below the threshold:
+   //   merge the two most similar clusters
+   auto prog = this->makeProgressIndicator(vectors->size() - this->desiredClusters()) ;
+   while (clusters->numSubclusters() > this->desiredClusters())
+      {
+      double best_sim = -999.99 ;
+   //TODO
+      prog->incr() ;
+      if (best_sim < this->clusterThreshold())
+	 {
+	 this->log(0,"  terminating: best similarity %g is less than threshold %g",best_sim,this->clusterThreshold());
+	 break ;
+	 }
+      }
+   delete prog ;
+   this->log(0,"Clustering complete") ;
    return clusters ;
 }
 
