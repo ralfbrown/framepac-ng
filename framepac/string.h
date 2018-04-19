@@ -158,6 +158,8 @@ class String : public Object
       String(const String* s) : String(s->c_str(),s->c_len()) {}
       String(const String& s) : String(s.c_str(), s.c_len()) {}
       String(const Object*) ;
+      void init(const char* s, size_t len) ;
+
       ~String() ;
       String &operator= (const String&) ;
 

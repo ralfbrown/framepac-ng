@@ -42,9 +42,43 @@ static SmallAlloc* allocators[max_small_alloc] ;
 /************************************************************************/
 /************************************************************************/
 
-String::String(const char *s, size_t len)
+String::String(const char* s, size_t len)
    : Object(),
      m_buffer()
+{
+   this->init(s,len) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+String::String(const Object *o)
+   : Object(),
+     m_buffer()
+{
+   if (!o)
+      return  ;
+   if (o->isString())
+      {
+      auto s = static_cast<const String*>(o) ;
+      const char* str = s->c_str() ;
+      size_t len = s->c_len() ;
+      this->init(str,len) ;
+      }
+   else
+      {
+      const char* str = o->stringValue() ;
+      if (!str)
+	 return ;
+      size_t len = strlen(str)+1 ;
+      this->init(str,len) ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void String::init(const char* s, size_t len)
 {
    uint16_t coded_length = len >= 0xFFFF ? 0xFFFF : len ;
    size_t offset = (coded_length == 0xFFFF) ? sizeof(size_t) : 0 ;
@@ -64,19 +98,6 @@ String::String(const char *s, size_t len)
       strbuf[len] = '\0' ;
       }
    new (&m_buffer) FramepaC::PointerPlus16<char>(strbuf,coded_length) ;
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-String::String(const Object *o)
-   : Object(),
-     m_buffer()
-{
-   if (o)
-      {
-   //FIXME
-      }
    return ;
 }
 
