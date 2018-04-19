@@ -216,8 +216,15 @@ bool String::equal_(const Object *obj, const Object *other)
 {
    if (obj == other)
       return true ;
-
-   return false ; //FIXME
+   if (!obj || !other) return false ;
+   auto str1 = static_cast<const String*>(obj) ;
+   auto str2 = static_cast<const String*>(other) ;
+   const char* cstr1 = str1->c_str() ;
+   const char* cstr2 = str2->c_str() ;
+   size_t len1 = str1->c_len() ;
+   size_t len2 = str2->c_len() ;
+   if (!cstr1 || !cstr2 || len1 != len2) return false ;
+   return memcmp(cstr1,cstr2,len1) == 0 ;
 }
 
 //----------------------------------------------------------------------------
@@ -226,18 +233,26 @@ int String::compare_(const Object *obj, const Object *other)
 {
    if (obj == other)
       return 0 ;
-
-   return 0 ; //FIXME
+   if (!other) return +1 ;
+   if (!obj) return -1 ;
+   auto str1 = static_cast<const String*>(obj) ;
+   auto str2 = static_cast<const String*>(other) ;
+   const char* cstr1 = str1->c_str() ;
+   const char* cstr2 = str2->c_str() ;
+   size_t len1 = str1->c_len() ;
+   size_t len2 = str2->c_len() ;
+   int cmp = memcmp(cstr1,cstr2,std::min(len1,len2)) ;
+   if (cmp) return cmp ;
+   else if (len1 < len2) return -1 ;
+   else if (len1 > len2) return +1 ;
+   return 0 ;
 }
 
 //----------------------------------------------------------------------------
 
 int String::lessThan_(const Object *obj, const Object *other)
 {
-   if (obj == other)
-      return 0 ;
-
-   return 0 ; //FIXME
+   return compare_(obj,other) < 0 ;
 }
 
 
