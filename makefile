@@ -542,7 +542,7 @@ build/prefixmatcher$(OBJ):	src/prefixmatcher$(C) framepac/utility.h
 build/printf$(OBJ):		src/printf$(C) framepac/texttransforms.h
 build/progress$(OBJ):		src/progress$(C) framepac/progress.h framepac/timer.h
 build/ptrie_u32$(OBJ):		src/ptrie_u32$(C) template/ptrie.cc
-build/random$(OBJ):		src/random$(C) framepac/random.h
+build/random$(OBJ):		src/random$(C) framepac/message.h framepac/random.h
 build/rational$(OBJ):		src/rational$(C) framepac/rational.h
 build/refarray$(OBJ):		src/refarray$(C) framepac/array.h framepac/fasthash64.h framepac/random.h
 build/set$(OBJ):		src/set$(C) framepac/set.h

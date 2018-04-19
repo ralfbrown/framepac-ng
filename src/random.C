@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.05, last edit 2018-04-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -19,7 +19,9 @@
 /*									*/
 /************************************************************************/
 
+#include "framepac/message.h"
 #include "framepac/random.h"
+
 using namespace std ;
 
 namespace Fr {
@@ -166,7 +168,7 @@ bool* RandomSample(size_t total, size_t sample)
    if (!selected)
       {
       // out of memory
-      //FIXME
+      SystemMessage::no_memory("generating random sample") ;
       return nullptr ;
       }
    bool unsampled = false ;
