@@ -145,6 +145,7 @@ class ObjectIter // : std::iterator<std::input_iterator_tag,Object*,std::ptrdiff
       ~ObjectIter() = default ;
 
       Object *baseObject() const { return m_object ; }
+      size_t currentIndex() const { return m_index ; }
       void incrIndex() { m_index++ ; }
 
       Object* operator* () const { return m_object ; }

@@ -124,20 +124,18 @@ ObjectPtr String::clone_(const Object *obj)
 
 //----------------------------------------------------------------------------
 
-ObjectPtr String::subseq_int(const Object *,size_t start, size_t stop)
+ObjectPtr String::subseq_int(const Object *obj,size_t start, size_t stop)
 {
-   (void)start; (void)stop; //FIXME
-
-   return ObjectPtr(nullptr) ; //FIXME
+   auto str = static_cast<const String*>(obj) ;
+   return ObjectPtr(new String(str->c_str()+start,stop-start)) ;
 }
 
 //----------------------------------------------------------------------------
 
 ObjectPtr String::subseq_iter(const Object *, ObjectIter start, ObjectIter stop)
 {
-   (void)start; (void)stop; //FIXME
-
-   return ObjectPtr(nullptr) ; //FIXME
+   auto str = static_cast<String*>(start.baseObject()) ;
+   return ObjectPtr(new String(str->c_str()+start.currentIndex(),stop.currentIndex()-start.currentIndex())) ;
 }
 
 //----------------------------------------------------------------------------
