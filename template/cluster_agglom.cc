@@ -84,7 +84,7 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
    while (clusters->numSubclusters() > this->desiredClusters())
       {
       double best_sim = -999.99 ;
-   //TODO
+      //TODO
       prog->incr() ;
       if (best_sim < this->clusterThreshold())
 	 {
@@ -93,6 +93,16 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
 	 }
       }
    delete prog ;
+   if (this->m_flatten && clusters->numSubclusters() > 1)
+      {
+      this->log(0,"  flattening clusters") ;
+      clusters->flattenSubclusters() ;
+      }
+   else
+      {
+      this->log(0,"  relabeling vectors with paths") ;
+      //TODO
+      }
    this->log(0,"Clustering complete") ;
    return clusters ;
 }

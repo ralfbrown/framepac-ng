@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.05, last edit 2018-04-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -103,7 +103,9 @@ class ClusterInfo : public Object
       static ClusterInfo* createSingletonClusters(const Array* vectors) ;
       static ClusterInfo* createSingleton(const Object* vector) ;
 
+      // *** cluster manipulation
       ClusterInfo* merge(const ClusterInfo* other) const ;
+      bool flattenSubclusters() ;
 
       static Symbol* genLabel() ;
 

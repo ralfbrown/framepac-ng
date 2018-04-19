@@ -168,6 +168,14 @@ ClusterInfo* ClusterInfo::merge(const ClusterInfo* other) const
 
 //----------------------------------------------------------------------------
 
+bool ClusterInfo::flattenSubclusters()
+{
+   //TODO
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
 Symbol* ClusterInfo::genLabel()
 {
    size_t id = ++next_cluster_ID ;
@@ -271,11 +279,10 @@ char* ClusterInfo::toCstring_(const Object* obj, char* buffer, size_t buflen, si
 
 //----------------------------------------------------------------------------
 
-size_t ClusterInfo::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
+size_t ClusterInfo::jsonStringLength_(const Object* obj, bool /*wrap*/, size_t indent)
 {
-   (void)obj; (void)wrap; (void)indent;
-   //TODO
-   return 0 ;
+   // for now, represent as a JSON string whose content is the C string representation
+   return 2 + cStringLength_(obj,~0,indent,indent) ;
 }
 
 //----------------------------------------------------------------------------
@@ -283,8 +290,19 @@ size_t ClusterInfo::jsonStringLength_(const Object* obj, bool wrap, size_t inden
 bool ClusterInfo::toJSONString_(const Object* obj, char* buffer, size_t buflen,
    bool /*wrap*/, size_t indent)
 {
-   (void)obj; (void)buffer; (void)buflen; (void)indent;
-   return false ; //TODO
+   if (!buffer || buflen == 0)
+      return false ;
+   // for now, represent as a JSON string whose content is the C string representation
+   *buffer++ = '"' ;
+   buflen-- ;
+   const char* bufend = buffer + buflen  ;
+   buffer = toCstring_(obj,buffer,buflen,~0,indent,indent) ;
+   if (buffer < bufend)
+      {
+      *buffer++ = '"' ;
+      return true ;
+      }
+   return false ;
 }
 
 //----------------------------------------------------------------------------
