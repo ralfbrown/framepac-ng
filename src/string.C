@@ -142,23 +142,49 @@ ObjectPtr String::subseq_iter(const Object *, ObjectIter start, ObjectIter stop)
 
 size_t String::cStringLength_(const Object *obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
-   const String *str { reinterpret_cast<const String*>(obj) };
-   //FIXME: need to quote special characters!
-   return snprintf(nullptr,0,"%*s\"%s\"",(int)indent,"",str->stringValue()) ;
+   const String *str { static_cast<const String*>(obj) };
+   const char* cstr = str->c_str() ;
+   size_t len = str->c_len() ;
+   for (size_t i = 0 ; i < len ; ++i)
+      {
+      char c = cstr[i] ;
+      if (c == '\0' || c == '"' || c == '\n' || c == '\r' || c == '\\')
+	 len++ ;			// account for escape characters
+      }
+   len += indent + 2 ;	    // account for indentation and quotes
+   return len ;
 }
 
 //----------------------------------------------------------------------------
 
 char* String::toCstring_(const Object *obj, char *buffer, size_t buflen,
-			size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
+   			 size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
 {
    const String *str { reinterpret_cast<const String*>(obj) };
-   //FIXME: need to quote special characters!
-   size_t needed = snprintf(buffer,buflen,"%*s\"%s\"",(int)indent,"",str->stringValue()) ;
-   if (needed < buflen)
-      return buffer + needed ;
-   else
-      return buffer ;
+   char* dest = buffer ;
+   // print the indentation and opening quote
+   dest += snprintf(buffer,buflen,"%*s\"",(int)indent,"") ;
+   const char* cstr = str->c_str() ;
+   size_t len = str->c_len() ;
+   for (size_t i = 0 ; i < len && dest < buffer + buflen ; ++i)
+      {
+      char c = cstr[i] ;
+      // escape special characters, as well as the escape character itself
+      if (c == '\0' || c == '"' || c == '\n' || c == '\r' || c == '\\')
+	 {
+	 *dest++ = '\\' ;
+	 if (dest >= buffer + buflen) break  ;
+	 if (c == '\0') c = '0' ;
+	 else if (c == '\r') c = 'r' ;
+	 else if (c == '\n') c = 'n' ;
+	 }
+      *dest++ = c ;
+      }
+   if (dest < buffer + buflen)
+      *dest++ = '"' ;
+   if (dest < buffer + buflen)
+      *dest = '\0' ;
+   return dest ;
 }
 
 //----------------------------------------------------------------------------
