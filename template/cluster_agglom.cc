@@ -112,28 +112,57 @@ bool update_nearest_neighbors(size_t index, va_list args)
    VM* measure = va_arg(args,VM*) ;
    size_t clus1 = va_arg(args,size_t) ;
    size_t clus2 = va_arg(args,size_t) ;
-   (void)similarity; (void)measure; //TODO
-   if (*neighbor == clus1 || *neighbor == clus2)
+   auto this_cluster = static_cast<ClusterInfo*>(clusters->getNth(index)) ;
+   auto merged_cluster = static_cast<ClusterInfo*>(clusters->getNth(clus1)) ;
+   if (index == clus1)
       {
-      // the nearest neighbor was one of the two merged clusters, so we need to check whether the merged result
-      //   is closer; if not, we must recompute all similarities
-      //TODO
-      }
-   else if (index == clus1)
-      {
-      // the resulting merged cluster requires recomputing similarities to all other clusters
+      // the new merged cluster requires recomputing similarities to all other clusters
+      *similarity = -999.99 ;
+      *neighbor = ~0 ;
       for (size_t i = 0 ; i < clusters->size() ; ++i)
 	 {
 	 if (i == index) continue ;
-	 //TODO
+	 auto cluster = static_cast<ClusterInfo*>(clusters->getNth(i)) ;
+	 double sim = this_cluster->similarity(cluster,measure) ;
+	 if (sim > *similarity)
+	    {
+	    *similarity = sim ;
+	    *neighbor = i ;
+	    }
 	 }
       }
    else
       {
-      // account for the merged-away cluster
-      if (*neighbor > clus2) (*neighbor)-- ;
       // compare the similarity with the merged cluster against the previous best, and use the better of the two
-      //TODO
+      double sim = this_cluster->similarity(merged_cluster,measure) ;
+      if (sim > *similarity)
+	 {
+	 *similarity = sim  ;
+	 *neighbor = clus1 ;
+	 }
+      else if (*neighbor == clus1 || *neighbor == clus2)
+	 {
+	 // the nearest neighbor was one of the two merged clusters, but the merged result is further away, so
+	 //   we must recompute all similarities
+	 *similarity = -999.99 ;
+	 *neighbor = ~0 ;
+	 for (size_t i = 0 ; i < clusters->size() ; ++i)
+	    {
+	    if (i == index) continue ;
+	    auto cluster = static_cast<ClusterInfo*>(clusters->getNth(i)) ;
+	    sim = this_cluster->similarity(cluster,measure) ;
+	    if (sim > *similarity)
+	       {
+	       *similarity = sim ;
+	       *neighbor = i ;
+	       }
+	    }
+	 }
+      else if (*neighbor > clus2)
+	 {
+	 // account for the merged-away cluster
+	 (*neighbor)-- ;
+	 }
       }
    return true ;
 }
