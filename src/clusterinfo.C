@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.05, last edit 2018-04-20					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -157,18 +157,41 @@ ClusterInfo* ClusterInfo::createSingletonClusters(const Array* vectors)
 
 //----------------------------------------------------------------------------
 
-ClusterInfo* ClusterInfo::merge(const ClusterInfo* other) const
+ClusterInfo* ClusterInfo::merge(const ClusterInfo* other, bool flatten) const
 {
    if (!other)
       return static_cast<ClusterInfo*>(clone().move()) ;
-
-   //TODO
-   return nullptr;
+   ClusterInfo* info = ClusterInfo::create() ;
+   if (flatten)
+      {
+      RefArray* our_vectors = this->allMembers() ;
+      RefArray* other_vectors = other->allMembers() ;
+      info->m_size = our_vectors->size() + other_vectors->size() ;
+      RefArray* vectors = RefArray::create(info->m_size) ;
+      for (size_t i = 0 ; i < our_vectors->size() ; ++i)
+	 {
+	 vectors->append(our_vectors->getNth(i)) ;
+	 }
+      for (size_t i = 0 ; i < other_vectors->size() ; ++i)
+	 {
+	 vectors->append(other_vectors->getNth(i)) ;
+	 }
+      info->m_members = vectors ;
+      }
+   else
+      {
+      Array* subclus = Array::create(2) ;
+      subclus->setNth(0,this) ;
+      subclus->setNth(1,other) ;
+      info->m_subclusters = subclus ;
+      info->m_size = this->m_size + other->m_size ;
+      }
+   return info  ;
 }
 
 //----------------------------------------------------------------------------
 
-bool ClusterInfo::merge(size_t clusternum1, size_t clusternum2)
+bool ClusterInfo::merge(size_t clusternum1, size_t clusternum2, bool flatten)
 {
    if (clusternum1 == clusternum2)
       return false ;			// nothing to be merged
@@ -177,10 +200,19 @@ bool ClusterInfo::merge(size_t clusternum1, size_t clusternum2)
    auto cluster2 = static_cast<ClusterInfo*>(subclusters()->getNth(clusternum2)) ;
    if (!cluster1 || !cluster2)
       return false ;
-   auto merged = cluster1->merge(cluster2) ;
+   auto merged = cluster1->merge(cluster2,flatten) ;
    m_subclusters->setNth(clusternum1,merged) ;
    m_subclusters->elide(clusternum2) ;
    return true;
+}
+
+//----------------------------------------------------------------------------
+
+RefArray* ClusterInfo::allMembers() const
+{
+   RefArray* mem = RefArray::create() ;
+//TODO
+   return mem ;
 }
 
 //----------------------------------------------------------------------------

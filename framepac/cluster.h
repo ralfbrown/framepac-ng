@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-19					*/
+/* Version 0.05, last edit 2018-04-20					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -119,11 +119,12 @@ class ClusterInfo : public Object
       static ClusterInfo* createSingleton(const Object* vector) ;
 
       // *** cluster manipulation
-      ClusterInfo* merge(const ClusterInfo* other) const ;
-      bool merge(size_t clusternum1, size_t clusternum2) ;
+      ClusterInfo* merge(const ClusterInfo* other, bool flatten = false) const ;
+      bool merge(size_t clusternum1, size_t clusternum2, bool flatten = false) ;
       bool flattenSubclusters() ;
       template <typename IdxT, typename ValT>
       double similarity(const ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm) const ;
+      RefArray* allMembers() const ;
 
       static Symbol* genLabel() ;
 
