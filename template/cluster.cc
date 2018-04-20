@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.05, last edit 2018-04-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -65,6 +65,16 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
       }
    centroid->setLabel(this->label()) ;
    return centroid ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+double ClusterInfo::similarity(const ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm) const
+{
+   if (!other || !vm) return -999.99 ;
+   //TODO
+   return 0.0 ;
 }
 
 /************************************************************************/

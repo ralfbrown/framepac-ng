@@ -51,6 +51,21 @@ enum class ClusteringAlgorithm
    } ;
 
 //----------------------------------------------------------------------------
+
+enum class ClusterRep
+   {
+   none,
+   centroid,
+   medioid,
+   prototype,			// first vector in cluster
+   // the following are not a fixed representative, but are relative to some other cluster
+   average,
+   furthest,
+   nearest,
+   rms
+   } ;
+
+//----------------------------------------------------------------------------
 //   due to the circular dependencies, we can't actually define all of
 //   the functions inline in the iterator class definition; the rest
 //   will be defined after the underlying class has been declared
@@ -107,6 +122,8 @@ class ClusterInfo : public Object
       ClusterInfo* merge(const ClusterInfo* other) const ;
       bool merge(size_t clusternum1, size_t clusternum2) ;
       bool flattenSubclusters() ;
+      template <typename IdxT, typename ValT>
+      double similarity(const ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm) const ;
 
       static Symbol* genLabel() ;
 
@@ -151,7 +168,8 @@ class ClusterInfo : public Object
       Object* m_rep { nullptr } ;	// representative element: centroid/mediod/etc.
       Symbol* m_label { nullptr } ;	// cluster label
       uint32_t m_size { 0 } ;		// number of elements in this cluster
-      uint32_t m_flags { 0 } ;
+      uint16_t m_flags { 0 } ;
+      ClusterRep m_cluster_rep ;	// what is the representative element for the cluster?
 
    private: // static members
       static Allocator s_allocator ;

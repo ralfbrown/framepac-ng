@@ -112,6 +112,7 @@ bool update_nearest_neighbors(size_t index, va_list args)
    VM* measure = va_arg(args,VM*) ;
    size_t clus1 = va_arg(args,size_t) ;
    size_t clus2 = va_arg(args,size_t) ;
+   (void)similarity; (void)measure; //TODO
    if (*neighbor == clus1 || *neighbor == clus2)
       {
       // the nearest neighbor was one of the two merged clusters, so we need to check whether the merged result
@@ -121,7 +122,11 @@ bool update_nearest_neighbors(size_t index, va_list args)
    else if (index == clus1)
       {
       // the resulting merged cluster requires recomputing similarities to all other clusters
-      //TODO
+      for (size_t i = 0 ; i < clusters->size() ; ++i)
+	 {
+	 if (i == index) continue ;
+	 //TODO
+	 }
       }
    else
       {
@@ -161,7 +166,7 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
       similarities,neighbors,this->m_measure,prog) ;
    delete prog ;
    prog = this->makeProgressIndicator(num_vectors - this->desiredClusters()) ;
-   while (clusters->numSubclusters() > this->desiredClusters())
+   for ( ; ; )
       {
       auto numclus = clusters->numSubclusters() ;
       double best_sim = similarities[0] ;
@@ -176,20 +181,22 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
 	    best_neighbor = neighbors[i] ;
 	    }
 	 }
-      prog->incr() ;
       if (best_sim < this->clusterThreshold())
 	 {
 	 this->log(0,"  terminating: best similarity %g is less than threshold %g",best_sim,this->clusterThreshold());
 	 break ;
 	 }
-      //TODO: merge the two clusters we found to be nearest neighbors
+      // merge the two clusters we found to be nearest neighbors
       this->log(2,"  merging clusters %lu and %lu (similarity %g)",best_clus,best_neighbor,best_sim) ;
       if (best_clus > best_neighbor) std::swap(best_clus,best_neighbor) ;
       clusters->merge(best_clus,best_neighbor) ;
-      //TODO: update nearest neighbors
+      if (clusters->numSubclusters() <= this->desiredClusters())
+	 break ;
+      // update nearest neighbors
       this->log(2,"  updating nearest neighbors") ;
       tp->parallelize(update_nearest_neighbors<IdxT,ValT>,numclus,clusters->subclusters(),similarities,
 	 neighbors,this->m_measure,best_clus,best_neighbor) ;
+      prog->incr() ;
       }
    delete[] neighbors ;
    delete[] similarities ;
