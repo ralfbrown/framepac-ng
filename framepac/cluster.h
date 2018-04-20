@@ -176,6 +176,9 @@ class ClusterInfo : public Object
       static Allocator s_allocator ;
       static Initializer s_init ;
 
+   protected:
+      bool allMembers(RefArray* mem) const ;
+
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }

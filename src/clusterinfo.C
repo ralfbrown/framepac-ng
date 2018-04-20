@@ -208,10 +208,33 @@ bool ClusterInfo::merge(size_t clusternum1, size_t clusternum2, bool flatten)
 
 //----------------------------------------------------------------------------
 
+bool ClusterInfo::allMembers(RefArray* mem) const
+{
+   if (m_members)
+      {
+      for (size_t i = 0 ; i < m_members->size() ; ++i)
+	 {
+	 mem->append(m_members->getNth(i)) ;
+	 }
+      }
+   if (m_subclusters)
+      {
+      // recursively add members from subclusters
+      for (size_t i = 0 ; i <= m_subclusters->size() ; ++i)
+	 {
+	 auto subclus = static_cast<ClusterInfo*>(m_subclusters->getNth(i)) ;
+	 subclus->allMembers(mem) ;
+	 }
+      }
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
 RefArray* ClusterInfo::allMembers() const
 {
-   RefArray* mem = RefArray::create() ;
-//TODO
+   RefArray* mem = RefArray::create(this->m_size) ;
+   (void)allMembers(mem) ;
    return mem ;
 }
 
