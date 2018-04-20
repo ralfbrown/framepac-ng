@@ -105,6 +105,7 @@ class ClusterInfo : public Object
 
       // *** cluster manipulation
       ClusterInfo* merge(const ClusterInfo* other) const ;
+      bool merge(size_t clusternum1, size_t clusternum2) ;
       bool flattenSubclusters() ;
 
       static Symbol* genLabel() ;

@@ -168,6 +168,23 @@ ClusterInfo* ClusterInfo::merge(const ClusterInfo* other) const
 
 //----------------------------------------------------------------------------
 
+bool ClusterInfo::merge(size_t clusternum1, size_t clusternum2)
+{
+   if (clusternum1 == clusternum2)
+      return false ;			// nothing to be merged
+   if (clusternum1 > clusternum2) std::swap(clusternum1,clusternum2) ;
+   auto cluster1 = static_cast<ClusterInfo*>(subclusters()->getNth(clusternum1)) ;
+   auto cluster2 = static_cast<ClusterInfo*>(subclusters()->getNth(clusternum2)) ;
+   if (!cluster1 || !cluster2)
+      return false ;
+   auto merged = cluster1->merge(cluster2) ;
+   m_subclusters->setNth(clusternum1,merged) ;
+   m_subclusters->elide(clusternum2) ;
+   return true;
+}
+
+//----------------------------------------------------------------------------
+
 bool ClusterInfo::flattenSubclusters()
 {
    //TODO

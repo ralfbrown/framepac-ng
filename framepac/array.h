@@ -63,6 +63,7 @@ class Array : public Object
       bool append(Object*) ;
       Object* getNth(size_t N) const { return N < m_size ? m_array[N] : nullptr ; }
       void setNth(size_t N, const Object* val) ;
+      bool elide(size_t N) ;
 
       // return a reference array containing the given number of elements sampled at random
       //   if size < 1, use the given proportion; if size >= 1, use that number of elements
@@ -187,6 +188,7 @@ class RefArray : public Array
 
       bool append(Object*) ;
       void setNth(size_t N, Object* val) { if (N < m_size) m_array[N] = val ; }
+      bool elide(size_t N) ;
 
       void clearArray(bool free_objects = false) ;
 

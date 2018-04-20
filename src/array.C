@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.05, last edit 2018-04-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -135,6 +135,21 @@ bool Array::append(Object* obj)
    return true ;
 }
 
+//----------------------------------------------------------------------------
+
+bool Array::elide(size_t N)
+{
+   if (N >= m_size)
+      return false ;
+   setNth(N,nullptr) ;
+   for (size_t i = N ; i+1 < m_size ; ++i)
+      {
+      m_array[i] = m_array[i+1] ;
+      }
+   m_size-- ;
+   return true ;
+}
+   
 //----------------------------------------------------------------------------
 
 bool Array::reserve(size_t N)
