@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.05, last edit 2018-04-23					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -20,7 +20,7 @@
 /************************************************************************/
 
 #include "framepac/cluster.h"
-using namespace Fr ;
+#include "framepac/symboltable.h"
 
 namespace Fr
 {
@@ -170,6 +170,19 @@ bool update_nearest_neighbors(size_t index, va_list args)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
+bool set_brown_label(Object* vec, const char* label)
+{
+   if (!vec->isVector()) return false ;
+   auto vector = static_cast<Vector<ValT>*>(vec) ;
+   auto sym = SymbolTable::current()->add(label) ;
+   vector->setLabel(sym) ;
+   return true ;
+}
+
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
 {
    if (!vectors || vectors->size() == 0)
@@ -238,7 +251,7 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
    else
       {
       this->log(0,"  relabeling vectors with paths") ;
-      //TODO
+      clusters->labelSubclusterPaths(set_brown_label<IdxT,ValT>) ;
       }
    this->log(0,"Clustering complete") ;
    return clusters ;

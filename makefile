@@ -593,7 +593,7 @@ template/argopt.cc:	framepac/argparser.h
 template/bufbuilder.cc:	framepac/builder.h framepac/convert.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/cluster_agglom.cc:	framepac/cluster.h
+template/cluster_agglom.cc:	framepac/cluster.h framepac/symboltable.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster_anneal.cc:	framepac/cluster.h

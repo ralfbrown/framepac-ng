@@ -248,6 +248,38 @@ bool ClusterInfo::flattenSubclusters()
 
 //----------------------------------------------------------------------------
 
+bool ClusterInfo::labelSubclusterPaths(bool (*fn)(Object*, const char* label), const char* prefix)
+{
+   if (!fn)
+      return false ;
+   if (!m_subclusters)
+      return true ;
+   if (!prefix)
+      prefix = "" ;
+   bool success { true } ;
+   int count { 0 } ;
+   // apply the current path prefix to all direct members of this cluster
+   for (auto v : *m_members)
+      {
+      success = fn(v,prefix) ;
+      if (!success)
+	 return false ;
+      }
+   // now recurse down the subclusters, extending the given path prefix with the relative subcluster number
+   for (auto sub : *m_subclusters)
+      {
+      char* new_prefix = aprintf("%s%*s%d%c",prefix,*prefix?1:0,"",count++,'\0') ;
+      auto subcluster = static_cast<ClusterInfo*>(sub) ;
+      success = subcluster->labelSubclusterPaths(fn,new_prefix) ;
+      delete[] new_prefix ;
+      if (!success)
+	 break ;
+      }
+   return success ;
+}
+
+//----------------------------------------------------------------------------
+
 Symbol* ClusterInfo::genLabel()
 {
    size_t id = ++next_cluster_ID ;

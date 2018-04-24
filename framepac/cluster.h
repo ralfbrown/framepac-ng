@@ -122,6 +122,7 @@ class ClusterInfo : public Object
       ClusterInfo* merge(const ClusterInfo* other, bool flatten = false) const ;
       bool merge(size_t clusternum1, size_t clusternum2, bool flatten = false) ;
       bool flattenSubclusters() ;
+      bool labelSubclusterPaths(bool (*setlabel_fn)(Object* vec,const char* label), const char* path_prefix = "") ;
       template <typename IdxT, typename ValT>
       double similarity(const ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm) const ;
       RefArray* allMembers() const ;
