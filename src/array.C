@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-19					*/
+/* Version 0.05, last edit 2018-04-23					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -39,7 +39,7 @@ Allocator Array::s_allocator(FramepaC::Object_VMT<Array>::instance(),sizeof(Arra
 
 Array::Array(size_t initial_size)
    : m_array(new Object*[initial_size ? initial_size : 1]),
-     m_size(initial_size),
+     m_size(0),
      m_alloc(initial_size ? initial_size : 1)
 {
    for (size_t i = 0 ; i < initial_size ; i++)
@@ -123,11 +123,11 @@ void Array::setNth(size_t N, const Object* val)
 
 //----------------------------------------------------------------------------
 
-bool Array::append(Object* obj)
+bool Array::append(const Object* obj)
 {
    if (m_size >= m_alloc)
       {
-      size_t newsize = m_alloc < 30 ? 30 : 3 * m_alloc / 2 ;
+      size_t newsize = m_alloc < 14 ? 14 : 3 * m_alloc / 2 ;
       if (!reserve(newsize))
 	 return false ;
       }

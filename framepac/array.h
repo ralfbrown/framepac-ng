@@ -60,7 +60,7 @@ class Array : public Object
       static Array* create(const Object*) ;
       static Array* create(const Array*) ;
 
-      bool append(Object*) ;
+      bool append(const Object*) ;
       Object* getNth(size_t N) const { return N < m_size ? m_array[N] : nullptr ; }
       void setNth(size_t N, const Object* val) ;
       bool elide(size_t N) ;

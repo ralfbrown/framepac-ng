@@ -130,7 +130,7 @@ bool RefArray::append(Object* obj)
 {
    if (m_size >= m_alloc)
       {
-      size_t newsize = m_alloc < 30 ? 30 : 3 * m_alloc / 2 ;
+      size_t newsize = m_alloc < 14 ? 14 : 3 * m_alloc / 2 ;
       if (!reserve(newsize))
 	 return false ;
       }

@@ -410,12 +410,16 @@ bool SparseVector<IdxT,ValT>::reserve(size_t N)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-size_t SparseVector<IdxT,ValT>::cStringLength_(const Object* obj, size_t /*wrap_at*/,
-   size_t indent, size_t /*wrapped_indent*/)
+size_t SparseVector<IdxT,ValT>::cStringLength_(const Object* obj, size_t wrap_at,
+   size_t indent, size_t wrapped_indent)
 {
    auto v = static_cast<const SparseVector*>(obj) ;
    // format of printed rep is #<type:i1:v1 i2:v2 .... iN:vN>
-   size_t len = indent + 4 + strlen(v->typeName()) + v->numElements() ;
+   size_t len = indent + 5 + strlen(v->typeName()) + v->numElements() ;
+   if (v->label())
+      {
+      len += v->label()->cStringLength(wrap_at,0,wrapped_indent) ;
+      }
    if (v->numElements() > 0)
       len += v->numElements() - 1 ;
    for (size_t i = 0 ; i < v->numElements() ; ++i)
@@ -430,13 +434,21 @@ size_t SparseVector<IdxT,ValT>::cStringLength_(const Object* obj, size_t /*wrap_
 
 template <typename IdxT, typename ValT>
 char* SparseVector<IdxT,ValT>::toCstring_(const Object* obj, char* buffer, size_t buflen,
-   size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
+   size_t wrap_at, size_t indent, size_t wrapped_indent)
 {
    auto v = static_cast<const SparseVector*>(obj) ;
-   if (buflen < indent + 4 + strlen(v->typeName()))
+   if (buflen < indent + 5 + strlen(v->typeName()))
       return buffer ;
    char* bufend = buffer + buflen ;
    buffer += snprintf(buffer,buflen,"%*s#<%s:",(int)indent,"",v->typeName()) ;
+   if (v->label())
+      {
+      buffer = v->label()->toCstring(buffer,bufend-buffer,wrap_at,0,wrapped_indent) ;
+      }
+   if (buffer < bufend)
+      {
+      *buffer++ = ':' ;
+      }
    for (size_t i = 0 ; i < v->numElements() ; ++i)
       {
       if (i) *buffer++ = ' ' ;

@@ -114,6 +114,8 @@ int main(int argc, char** argv)
 	<< " similarity" << endl ;
    ClusterInfo* clusters = clusterer->cluster(vectors->begin(),vectors->end()) ;
    //TODO
+   char* printed = clusters->cString() ;
+   cout << printed << endl ;
 
    if (clusters) clusters->free() ;
    delete clusterer ;

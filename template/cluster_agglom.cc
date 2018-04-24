@@ -36,8 +36,8 @@ template <typename IdxT, typename ValT>
 class ClusteringAlgoBrown : public ClusteringAlgo<IdxT,ValT>
    {
    public:
-      ClusteringAlgoBrown() { this->desiredClusters(1) ; }
-      virtual ~ClusteringAlgoBrown() { delete this ; }
+      ClusteringAlgoBrown() { this->desiredClusters(2) ; }
+      //virtual ~ClusteringAlgoBrown() {}
       virtual const char*algorithmName() const { return "Brown" ; }
 
       virtual ClusterInfo* cluster(const Array* vectors) const ;
@@ -52,7 +52,8 @@ template <typename IdxT, typename ValT>
 class ClusteringAlgoAgglom : public ClusteringAlgoBrown<IdxT,ValT>
    {
    public:
-      virtual ~ClusteringAlgoAgglom() { delete this ; }
+      ClusteringAlgoAgglom() : ClusteringAlgoBrown<IdxT,ValT>() { this->m_flatten = true ; }
+      //virtual ~ClusteringAlgoAgglom() {}
       virtual const char*algorithmName() const { return "Agglomerative" ; }
 
       //virtual ClusterInfo* cluster(const Array* vectors) const ;  // inherited from Brown clustering

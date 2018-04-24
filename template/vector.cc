@@ -219,13 +219,13 @@ bool Vector<ValT>::reserve(size_t N)
 //----------------------------------------------------------------------------
 
 template <typename ValT>
-size_t Vector<ValT>::cStringLength_(const Object* obj, size_t /*wrap_at*/,
-   size_t indent, size_t /*wrapped_indent*/)
+size_t Vector<ValT>::cStringLength_(const Object* obj, size_t wrap_at,
+   size_t indent, size_t wrapped_indent)
 {
    auto v = static_cast<const Vector*>(obj) ;
    // format of printed rep is #<type:label:v1 v2 .... vN>
    size_t len = indent + 5 + strlen(v->typeName()) ;
-   if (v->label()) len += v->label()->cStringLength() ;
+   if (v->label()) len += v->label()->cStringLength(wrap_at,0,wrapped_indent) ;
    if (v->numElements() > 0)
       len += v->numElements() - 1 ;
    for (size_t i = 0 ; i < v->numElements() ; ++i)
@@ -239,7 +239,7 @@ size_t Vector<ValT>::cStringLength_(const Object* obj, size_t /*wrap_at*/,
 
 template <typename ValT>
 char* Vector<ValT>::toCstring_(const Object* obj, char* buffer, size_t buflen,
-   size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
+   size_t wrap_at, size_t indent, size_t wrapped_indent)
 {
    auto v = static_cast<const Vector*>(obj) ;
    if (buflen < indent + 4 + strlen(v->typeName()))
@@ -247,10 +247,9 @@ char* Vector<ValT>::toCstring_(const Object* obj, char* buffer, size_t buflen,
    char* bufend = buffer + buflen ;
    int count = snprintf(buffer,buflen,"%*s#<%s:",(int)indent,"",v->typeName()) ;
    buffer += count ;
-   buflen -= count ;
    if (v->label())
       {
-      buffer += snprintf(buffer,buflen,"%s",v->label()->stringValue()) ;
+      buffer =  v->label()->toCstring(buffer,bufend-buffer,wrap_at,0,wrapped_indent) ;
       }
    if (buffer < bufend)
       *buffer++ = ':' ;

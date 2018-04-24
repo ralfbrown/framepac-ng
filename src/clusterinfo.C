@@ -155,7 +155,6 @@ ClusterInfo* ClusterInfo::createSingletonClusters(const Array* vectors)
    if (vectors)
       {
       size_t num_clusters = vectors->size() ;
-      size_t index = 0 ;
       info->m_subclusters = Array::create(num_clusters) ;
       for (auto obj : *vectors)
 	 {
@@ -164,7 +163,7 @@ ClusterInfo* ClusterInfo::createSingletonClusters(const Array* vectors)
 	    {
 	    subcluster->setLabel(genLabel()) ;
 	    }
-	 info->m_subclusters->setNth(index++,subcluster) ;
+	 info->m_subclusters->append(subcluster) ;
 	 }
       info->m_size = num_clusters ;
       info->setFlag(Flags::group) ;	// subclusters only, no direct members
@@ -179,11 +178,12 @@ ClusterInfo* ClusterInfo::merge(const ClusterInfo* other, bool flatten) const
    if (!other)
       return static_cast<ClusterInfo*>(clone().move()) ;
    ClusterInfo* info = ClusterInfo::create() ;
+   info->setLabel(genLabel()) ;
+   info->m_size = this->m_size + other->m_size ;
    if (flatten)
       {
       RefArray* our_vectors = this->allMembers() ;
       RefArray* other_vectors = other->allMembers() ;
-      info->m_size = our_vectors->size() + other_vectors->size() ;
       RefArray* vectors = RefArray::create(info->m_size) ;
       for (size_t i = 0 ; i < our_vectors->size() ; ++i)
 	 {
@@ -198,10 +198,9 @@ ClusterInfo* ClusterInfo::merge(const ClusterInfo* other, bool flatten) const
    else
       {
       Array* subclus = Array::create(2) ;
-      subclus->setNth(0,this) ;
-      subclus->setNth(1,other) ;
+      subclus->append(this) ;
+      subclus->append(other) ;
       info->m_subclusters = subclus ;
-      info->m_size = this->m_size + other->m_size ;
       }
    return info  ;
 }
@@ -227,20 +226,21 @@ bool ClusterInfo::merge(size_t clusternum1, size_t clusternum2, bool flatten)
 
 bool ClusterInfo::allMembers(RefArray* mem) const
 {
-   if (m_members)
+   if (members())
       {
-      for (size_t i = 0 ; i < m_members->size() ; ++i)
+      for (size_t i = 0 ; i < members()->size() ; ++i)
 	 {
-	 mem->append(m_members->getNth(i)) ;
+	 mem->append(members()->getNth(i)) ;
 	 }
       }
-   if (m_subclusters)
+   if (subclusters())
       {
       // recursively add members from subclusters
-      for (size_t i = 0 ; i <= m_subclusters->size() ; ++i)
+      for (size_t i = 0 ; i <= subclusters()->size() ; ++i)
 	 {
-	 auto subclus = static_cast<ClusterInfo*>(m_subclusters->getNth(i)) ;
-	 subclus->allMembers(mem) ;
+	 auto subclus = static_cast<ClusterInfo*>(subclusters()->getNth(i)) ;
+	 if (subclus)
+	    subclus->allMembers(mem) ;
 	 }
       }
    return true ;
@@ -265,7 +265,8 @@ bool ClusterInfo::flattenSubclusters()
       {
       auto subcluster = static_cast<ClusterInfo*>(m_subclusters->getNth(i)) ;
       RefArray* members = subcluster->allMembers() ;
-      subcluster->m_members->free() ;
+      if (subcluster->m_members)
+	 subcluster->m_members->free() ;
       subcluster->m_members = members ;
       if (subcluster->m_subclusters)
 	 {
@@ -282,28 +283,32 @@ bool ClusterInfo::labelSubclusterPaths(bool (*fn)(Object*, const char* label), c
 {
    if (!fn)
       return false ;
-   if (!m_subclusters)
-      return true ;
    if (!prefix)
       prefix = "" ;
    bool success { true } ;
    int count { 0 } ;
    // apply the current path prefix to all direct members of this cluster
-   for (auto v : *m_members)
+   if (members())
       {
-      success = fn(v,prefix) ;
-      if (!success)
-	 return false ;
+      for (auto v : *members())
+	 {
+	 success = fn(v,prefix) ;
+	 if (!success)
+	    return false ;
+	 }
       }
    // now recurse down the subclusters, extending the given path prefix with the relative subcluster number
-   for (auto sub : *m_subclusters)
+   if (subclusters())
       {
-      char* new_prefix = aprintf("%s%*s%d%c",prefix,*prefix?1:0,"",count++,'\0') ;
-      auto subcluster = static_cast<ClusterInfo*>(sub) ;
-      success = subcluster->labelSubclusterPaths(fn,new_prefix) ;
-      delete[] new_prefix ;
-      if (!success)
-	 break ;
+      for (auto sub : *subclusters())
+	 {
+	 char* new_prefix = aprintf("%s%*s%d%c",prefix,*prefix?1:0,"",count++,'\0') ;
+	 auto subcluster = static_cast<ClusterInfo*>(sub) ;
+	 success = subcluster->labelSubclusterPaths(fn,new_prefix) ;
+	 delete[] new_prefix ;
+	 if (!success)
+	    break ;
+	 }
       }
    return success ;
 }
@@ -419,11 +424,15 @@ ObjectPtr ClusterInfo::subseq_iter(const Object*, ObjectIter start, ObjectIter s
 
 size_t ClusterInfo::cStringLength_(const Object* obj, size_t wrap_at, size_t indent, size_t wrapped_indent)
 {
-   size_t len = indent + 4 + strlen(obj->typeName()) ;
+   size_t len = indent + 5 + strlen(obj->typeName()) ;
    auto info = static_cast<const ClusterInfo*>(obj) ;
+   if (info->label())
+      {
+      len += info->label()->cStringLength(wrap_at,0,wrapped_indent) ;
+      }
    if (info->members())
       {
-      len += info->members()->cStringLength(wrap_at,indent,wrapped_indent) ;
+      len += info->members()->cStringLength(wrap_at,0,wrapped_indent) ;
       if (info->subclusters())
 	 len++ ;			// account for separating blank
       }
@@ -447,10 +456,21 @@ char* ClusterInfo::toCstring_(const Object* obj, char* buffer, size_t buflen, si
    buffer += count ;
    buflen -= count ;
    auto info = static_cast<const ClusterInfo*>(obj) ;
-   // print out the direct members
-   if (info->members())
+   if (info->label())
       {
-      char* rest = info->members()->toCstring(buffer,buflen,wrap_at,indent,wrapped_indent) ;
+      char* rest = info->label()->toCstring(buffer,buflen,wrap_at,0,wrapped_indent) ;
+      buflen -= (rest - buffer) ;
+      buffer = rest ;
+      }
+   if (buflen > 0)
+      {
+      *buffer++ = ':' ;
+      buflen-- ;
+      }
+   // print out the direct members
+   if (info->members() && info->members()->size() > 0)
+      {
+      char* rest = info->members()->toCstring(buffer,buflen,wrap_at,0,wrapped_indent) ;
       buflen -= (rest - buffer) ;
       buffer = rest ;
       if (buflen > 0 && info->subclusters())
