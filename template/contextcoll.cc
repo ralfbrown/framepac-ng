@@ -50,14 +50,14 @@ ContextVectorCollection<KeyT,IdxT,ValT,sparse>::~ContextVectorCollection()
 template <typename KeyT, typename IdxT, typename ValT, bool sparse>
 bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::setTermVector(const KeyT term, typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type* vector)
 {
-   m_term_map->add(term,vector) ;
-   return true ;
+   return m_term_map->add(term,vector) ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename IdxT, typename ValT, bool sparse>
-bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::setOneHotVector(const KeyT term, IdxT index, ValT value)
+bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::setOneHotVector(const KeyT term, IdxT index, ValT value,
+   double weight)
 {
    typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type* vector;
    if (sparse)
@@ -69,7 +69,16 @@ bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::setOneHotVector(const KeyT 
       vector = DenseVector<ValT>::create(m_dimensions) ;
       vector->setElement(index,value) ;
       }
+   vector->setWeight(weight) ;
    return this->setTermVector(term,vector) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename IdxT, typename ValT, bool sparse>
+bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::haveTermVector(const KeyT term) const
+{
+   return m_term_map->contains(term) ;
 }
 
 //----------------------------------------------------------------------------
@@ -94,7 +103,7 @@ bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::updateContextVector(const K
       }
    context_type* termvec = getTermVector(term) ;
    if (termvec)
-      context->incr(termvec,wt) ;
+      context->incr(termvec,wt*termvec->weight()) ;
    return true;
 }
 

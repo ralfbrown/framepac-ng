@@ -49,8 +49,9 @@ class ContextVectorCollection
       void setDimensions(size_t dim) { if (!m_sparse_vectors) m_dimensions = dim ; }
       size_t dimensions() const { return m_dimensions ; }
 
+      bool haveTermVector(const KeyT term) const ;
       bool setTermVector(const KeyT term, context_type* vector) ;
-      bool setOneHotVector(const KeyT term, IdxT index, ValT value) ;
+      bool setOneHotVector(const KeyT term, IdxT index, ValT value, double weight = 1.0) ;
       context_type* getTermVector(const KeyT term) const ;
 
       bool updateContextVector(const KeyT key, const KeyT term, double weight = 1.0) ;
@@ -68,10 +69,10 @@ class ContextVectorCollection
 // the typical application for this class uses either Symbol or
 //  uint32_t as the term type and SparseVector<uint32_t,float> as the
 //  context vectors, so predefine those instantiations
-extern template class ContextVectorCollection<Symbol*,uint32_t,float> ;
+extern template class ContextVectorCollection<Symbol*,uint32_t,float,true> ;
 typedef ContextVectorCollection<Symbol*,uint32_t,float> ContextVectorCollSym ;
 
-extern template class ContextVectorCollection<uint32_t,uint32_t,float> ;
+extern template class ContextVectorCollection<uint32_t,uint32_t,float,true> ;
 typedef ContextVectorCollection<uint32_t,uint32_t,float> ContextVectorCollU32 ;
 
 } // end of namespace Fr

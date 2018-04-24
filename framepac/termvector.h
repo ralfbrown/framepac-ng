@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-16					*/
+/* Version 0.05, last edit 2018-04-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -41,8 +41,8 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
 
       static TermVectorT* read(CharGetter& getter, size_t size_hint = 0) ;
 
-      void vectorFreq(size_t f) { m_freq = f ; }
-      size_t vectorFreq() const { return m_freq ; }
+      void vectorFreq(size_t f) { this->setWeight((float)f) ; }
+      size_t vectorFreq() const { return (size_t)this->weight() ; }
 
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
@@ -69,8 +69,6 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
    private: // static members
       static Allocator s_allocator ;
 
-   protected:
-      size_t m_freq { 0 } ;
    } ;
 
 //----------------------------------------------------------------------------

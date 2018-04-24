@@ -223,8 +223,8 @@ size_t Vector<ValT>::cStringLength_(const Object* obj, size_t wrap_at,
    size_t indent, size_t wrapped_indent)
 {
    auto v = static_cast<const Vector*>(obj) ;
-   // format of printed rep is #<type:label:v1 v2 .... vN>
-   size_t len = indent + 5 + strlen(v->typeName()) ;
+   // format of printed rep is #<type:weight:label:v1 v2 .... vN>
+   size_t len = snprintf(nullptr,0,"%*s#<%s:%g:",(int)indent,"",v->typeName(),v->weight()) ;
    if (v->label()) len += v->label()->cStringLength(wrap_at,0,wrapped_indent) ;
    if (v->numElements() > 0)
       len += v->numElements() - 1 ;
@@ -245,7 +245,7 @@ char* Vector<ValT>::toCstring_(const Object* obj, char* buffer, size_t buflen,
    if (buflen < indent + 4 + strlen(v->typeName()))
       return buffer ;
    char* bufend = buffer + buflen ;
-   int count = snprintf(buffer,buflen,"%*s#<%s:",(int)indent,"",v->typeName()) ;
+   int count = snprintf(buffer,buflen,"%*s#<%s:%g:",(int)indent,"",v->typeName(),v->weight()) ;
    buffer += count ;
    if (v->label())
       {

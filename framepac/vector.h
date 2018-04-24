@@ -43,9 +43,12 @@ class Vector : public Object
 
       Symbol* key() const { return m_key ; }
       Symbol* label() const { return m_label ; }
+      float weight() const { return m_weight ; }
 
       void setKey(Symbol* key) { m_key = key ; }
       void setLabel(Symbol* label) { m_label = label ; }
+      void setWeight(float wt) { m_weight = wt ; }
+      void setWeight(double wt) { m_weight = (float)wt ; }
 
       void setElement(size_t N, ValT value)
 	 {
@@ -54,7 +57,7 @@ class Vector : public Object
 	 if (N >= this->m_size) this->m_size = N+1 ;
 	 this->m_values[N] = value ;
 	 }
-
+      
       double length() const { return m_length >= 0.0 ? m_length : vectorLength() ; }
 
       // support for iterating through elements for e.g. vector similarity functions
@@ -149,12 +152,13 @@ class Vector : public Object
       static Allocator s_allocator ;
       static const char* s_typename ;
    protected:
-      ValT*   m_values { nullptr } ;
-      Symbol* m_key { nullptr } ;	// the vector's name (e.g. word for which this is a context vector)
-      Symbol* m_label { nullptr } ;	// user label applied to vector (e.g. cluster name)
+      ValT*    m_values { nullptr } ;
+      Symbol*  m_key { nullptr } ;	// the vector's name (e.g. word for which this is a context vector)
+      Symbol*  m_label { nullptr } ;	// user label applied to vector (e.g. cluster name)
       mutable double m_length { -1 } ;	// cached vector length (L2-norm)
-      uint32_t  m_size { 0 } ;	  	// number of elements in vector
-      uint32_t  m_capacity { 0 } ;	// number of elements allocated (may be greater than m_size)
+      uint32_t m_size { 0 } ;	  	// number of elements in vector
+      uint32_t m_capacity { 0 } ;	// number of elements allocated (may be greater than m_size)
+      float    m_weight { 1.0f } ; 
       mutable CriticalSection m_critsect ;
 
    protected:
