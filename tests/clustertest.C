@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.05, last edit 2018-04-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -31,6 +31,53 @@ using namespace Fr ;
 /************************************************************************/
 /*	Types for this module						*/
 /************************************************************************/
+
+static void indent_to(size_t level, ostream& out)
+{
+   for (size_t i = 0 ; i < 2*level ; ++i)
+      out << ' ' ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+static void show_clusters(const ClusterInfo* clusters, size_t level)
+{
+   indent_to(level,cout) ;
+   if (clusters->label())
+      {
+      cout << "Cluster " << clusters->label() << ':' << endl ;
+      }
+   else
+      {
+      cout << "Cluster:" << endl ;
+      }
+   if (clusters->members())
+      {
+      indent_to(level+1,cout) ;
+      cout << "Direct members:" << endl ;
+      size_t indent = 2*(level+2) ;
+      for (auto v : *clusters->members())
+	 {
+	 auto vector = static_cast<Vector<float>*>(v) ;
+	 char* printed = vector->cString(0,indent,indent+1) ;
+	 cout << printed << endl ;
+	 delete[] printed ;
+	 }
+      }
+   if (clusters->subclusters())
+      {
+      indent_to(level+1,cout) ;
+      cout << "Subclusters:" << endl ;
+      for (auto sub : *clusters->subclusters())
+	 {
+	 show_clusters(static_cast<const ClusterInfo*>(sub),level+2) ;
+	 }
+      }
+   return  ;
+}
+
+//----------------------------------------------------------------------------
 
 int main(int argc, char** argv)
 {
@@ -113,21 +160,30 @@ int main(int argc, char** argv)
    cout << "Starting " << clusterer->algorithmName() << " clustering using " << clusterer->measureName()
 	<< " similarity" << endl ;
    ClusterInfo* clusters = clusterer->cluster(vectors->begin(),vectors->end()) ;
-   //TODO
-   char* printed = clusters->cString() ;
-   cout << printed << endl ;
-   cout << endl ;
-   RefArray* members = clusters->allMembers() ;
-   if (members)
-      {
-      for (auto v : *members)
-	 {
-	 cout << v << endl ;
-	 }
-      members->free() ;
-      }
-   if (clusters) clusters->free() ;
    delete clusterer ;
+   if (!clusters)
+      {
+      cout << "Clustering FAILED!" << endl ;
+      clusters = ClusterInfo::create() ;
+      }
+   if (dump_vectors)
+      {
+      char* printed = clusters->cString() ;
+      cout << "Resulting ClusterInfo structure: " << endl << printed << endl << endl ;
+      delete[] printed ;
+      RefArray* members = clusters->allMembers() ;
+      if (members)
+	 {
+	 for (auto v : *members)
+	    {
+	    cout << v << endl ;
+	    }
+	 members->free() ;
+	 }
+      }
+   show_clusters(clusters,0) ;
+   clusters->free() ;
+   vectors->free() ;
    return 0 ;
 }
 
