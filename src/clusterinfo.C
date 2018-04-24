@@ -242,8 +242,21 @@ RefArray* ClusterInfo::allMembers() const
 
 bool ClusterInfo::flattenSubclusters()
 {
-   //TODO
-   return false ;
+   if (!m_subclusters)
+      return true ;			// trivially successful
+   for (size_t i = 0 ; i < m_subclusters->size() ; ++i)
+      {
+      auto subcluster = static_cast<ClusterInfo*>(m_subclusters->getNth(i)) ;
+      RefArray* members = subcluster->allMembers() ;
+      subcluster->m_members->free() ;
+      subcluster->m_members = members ;
+      if (subcluster->m_subclusters)
+	 {
+	 subcluster->m_subclusters->free() ;
+	 subcluster->m_subclusters = nullptr ;
+	 }
+      }
+   return true ;
 }
 
 //----------------------------------------------------------------------------
