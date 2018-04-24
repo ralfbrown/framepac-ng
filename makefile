@@ -327,6 +327,7 @@ OBJS = \
 	build/sufarray_u32u32$(OBJ) \
 	build/sufarray_u32u40$(OBJ) \
 	build/symbol$(OBJ) \
+	build/symbolprop$(OBJ) \
 	build/symboltable$(OBJ) \
 	build/synchevent$(OBJ) \
 	build/termvector$(OBJ) \
@@ -556,6 +557,7 @@ build/stringbuilder$(OBJ):	src/stringbuilder$(C) framepac/stringbuilder.h framep
 build/sufarray_u32u32$(OBJ):	src/sufarray_u32u32$(C) template/sufarray.cc
 build/sufarray_u32u40$(OBJ):	src/sufarray_u32u40$(C) template/sufarray.cc framepac/byteorder.h
 build/symbol$(OBJ):		src/symbol$(C) framepac/symbol.h framepac/nonobject.h framepac/fasthash64.h
+build/symbolprop$(OBJ):		src/symbolprop$(C) framepac/frame.h framepac/list.h framepac/symbol.h
 build/symboltable$(OBJ):	src/symboltable$(C) framepac/symboltable.h framepac/fasthash64.h \
 			framepac/texttransforms.h
 build/synchevent$(OBJ):		src/synchevent$(C) framepac/synchevent.h

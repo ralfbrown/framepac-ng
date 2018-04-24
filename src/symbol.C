@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-12					*/
+/* Version 0.05, last edit 2018-04-23					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -79,10 +79,47 @@ size_t Symbol::hashValue(const char* name, size_t* len)
 
 //----------------------------------------------------------------------------
 
-void Symbol::binding(Object*)
+void Symbol::binding(Object* b)
 {
-//FIXME
+   SymbolProperties* prop = properties() ;
+   if (!prop)
+      {
+      // instantiate the properties struct for this symbol
+      prop = SymbolProperties::create() ;
+      m_properties.pointer(prop) ;
+      }
+   prop->binding(b) ;
    return  ;
+}
+
+//----------------------------------------------------------------------------
+
+bool Symbol::frame(Frame* f)
+{
+   SymbolProperties* prop = properties() ;
+   if (!prop)
+      {
+      // instantiate the properties struct for this symbol
+      prop = SymbolProperties::create() ;
+      m_properties.pointer(prop) ;
+      }
+   prop->frame(f) ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+bool Symbol::setProperty(Symbol* key, Object* value)
+{
+   SymbolProperties* prop = properties() ;
+   if (!prop)
+      {
+      // instantiate the properties struct for this symbol
+      prop = SymbolProperties::create() ;
+      m_properties.pointer(prop) ;
+      }
+   prop->setProperty(key,value) ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
@@ -109,20 +146,22 @@ bool Symbol::nameNeedsQuoting(const char* name)
 
 //----------------------------------------------------------------------------
 
-ObjectPtr Symbol::subseq_int(const Object *, size_t start, size_t stop)
+ObjectPtr Symbol::subseq_int(const Object* obj, size_t start, size_t stop)
 {
-   (void)start; (void)stop; //FIXME
-
-   return ObjectPtr(nullptr) ; //FIXME
+   auto sym = static_cast<const Symbol*>(obj) ;
+   Symbol* new_sym = new Symbol(sym->c_str()+start,stop-start) ;
+   //TODO? if original symbol is interned, do we want to add new one to same symbol table?
+   return ObjectPtr(new_sym) ;
 }
 
 //----------------------------------------------------------------------------
 
 ObjectPtr Symbol::subseq_iter(const Object*, ObjectIter start, ObjectIter stop)
 {
-   (void)start; (void)stop; //FIXME
-
-   return ObjectPtr(nullptr) ; //FIXME
+   auto sym = static_cast<Symbol*>(start.baseObject()) ;
+   Symbol* new_sym = new Symbol(sym->c_str()+start.currentIndex(),stop.currentIndex()-start.currentIndex()) ;
+   //TODO? if original symbol is interned, do we want to add new one to same symbol table?
+   return ObjectPtr(new_sym) ;
 }
 
 //----------------------------------------------------------------------------

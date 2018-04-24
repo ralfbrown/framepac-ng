@@ -61,7 +61,7 @@ class SymbolIter
 class SymbolProperties
    {
    public:
-      static SymbolProperties* create() ;
+      static SymbolProperties* create() { return new SymbolProperties ; }
       void free() { delete this ; }
 
       Object* binding() const { return m_binding ; }
@@ -69,7 +69,7 @@ class SymbolProperties
       Object* getProperty(Symbol* key) const ;
       List* plist() const { return m_plist ; }
 
-      void binding(Object* b) ;
+      void binding(Object* b) { if (m_binding) m_binding->free() ; m_binding = b ; }
       void frame(Frame* f) ;
       void setProperty(Symbol* key, Object* value) ;
 
@@ -152,6 +152,7 @@ class Symbol : public String
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       Symbol(const char* nm) : String(nm), m_properties() {}
+      Symbol(const char* nm, size_t len) : String(nm,len), m_properties() {}
       Symbol(const String* nm) : String(nm), m_properties() {}
       Symbol(const Symbol& nm) : String(nm), m_properties() {}
       ~Symbol() ;
