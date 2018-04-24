@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-12					*/
+/* Version 0.05, last edit 2018-04-23					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -328,7 +328,6 @@ size_t WorkQueue::pushMultiple(ThreadPool* pool, ThreadPoolWorkFunc* fn, size_t 
 
 void WorkQueue::clear()
 {
-//FIXME
    m_tail = 0 ;
    m_head = 0 ;
    return ;
@@ -531,9 +530,7 @@ bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* outpu
 	    return true ;
 	    }
          } while (threadnum != start_thread) ;
-      // if all of the queues are full, go to sleep until a request is completed
-//FIXME: (Q&D: just sleep for a millisecond)
-//      this_thread::sleep_for(std::chrono::milliseconds(1)) ;
+      // if all of the queues are full, go to sleep to allow time for a request to complete
       this_thread::yield() ;
       }
    return true ;
@@ -643,7 +640,6 @@ void ThreadPool::waitUntilIdle()
       {
       m_ack.wait() ;
       }
-//FIXME
    return ;
 }
 
@@ -708,8 +704,7 @@ void ThreadPool::ack(unsigned /*index*/)
 void ThreadPool::threadExiting(unsigned index)
 {
    assert(index < numThreads()) ;
-
-//FIXME
+   //TODO: log exit?
    return ;
 }
 
