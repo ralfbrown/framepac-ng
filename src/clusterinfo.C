@@ -74,6 +74,23 @@ ClusterInfo* ClusterInfo::create(const List* elts, const List* subclus)
 
 //----------------------------------------------------------------------------
 
+ClusterInfo* ClusterInfo::create(Object** vectors, size_t num_vectors)
+{
+   ClusterInfo* info = new ClusterInfo ;
+   if (!vectors || num_vectors == 0)
+      return info ;
+   info->m_members = RefArray::create(num_vectors) ;
+   for (size_t i = 0 ; i < num_vectors ; ++i)
+      {
+      info->m_members->append(vectors[i]) ;
+      }
+   info->m_size = num_vectors ;
+   info->setFlag(Flags::flat) ;		// direct members only, no subclusters
+   return info ;
+}
+
+//----------------------------------------------------------------------------
+
 ClusterInfo* ClusterInfo::create(ClusterInfo** subclus, size_t num_subclus)
 {
    ClusterInfo* info = new ClusterInfo ;
@@ -357,39 +374,111 @@ ObjectPtr ClusterInfo::clone_(const Object* orig)
 
 //----------------------------------------------------------------------------
 
-ObjectPtr ClusterInfo::subseq_int(const Object*,size_t /*start*/, size_t /*stop*/)
+ObjectPtr ClusterInfo::subseq_int(const Object* obj,size_t start, size_t stop)
 {
-   return nullptr ; //FIXME
+   if (!obj || start > stop)
+      return nullptr ;
+   auto clus = static_cast<const ClusterInfo*>(obj) ;
+   if (clus->m_members && !clus->m_subclusters)
+      {
+      Object** vectors = new Object*[stop-start] ;
+      for (size_t i = start ; i < stop ; ++i)
+	 {
+	 vectors[i-start] = clus->m_members->getNth(i) ;
+	 }
+      auto copy = ClusterInfo::create(vectors,stop-start) ;
+      delete[] vectors ;
+      return copy ;
+      }
+   else if (clus->m_subclusters && !clus->m_members)
+      {
+      ClusterInfo** orig = new ClusterInfo*[stop-start] ;
+      for (size_t i = start ; i < stop ; ++i)
+	 {
+	 orig[i-start] = static_cast<ClusterInfo*>(clus->m_subclusters->getNth(i)) ;
+	 }
+      auto copy = ClusterInfo::create(orig,stop-start) ;
+      delete[] orig ;
+      return copy ;
+      }
+   else
+      {
+      //TODO
+      }
+   return nullptr ;
 }
 
 //----------------------------------------------------------------------------
 
-ObjectPtr ClusterInfo::subseq_iter(const Object*, ObjectIter /*start*/, ObjectIter /*stop*/)
+ObjectPtr ClusterInfo::subseq_iter(const Object*, ObjectIter start, ObjectIter stop)
 {
-   return nullptr ; //FIXME
+   return subseq_int(start.baseObject(),start.currentIndex(),stop.currentIndex()) ;
 }
 
 //----------------------------------------------------------------------------
 
-size_t ClusterInfo::cStringLength_(const Object* obj, size_t /*wrap_at*/, size_t indent, size_t /*wrapped_indent*/)
+size_t ClusterInfo::cStringLength_(const Object* obj, size_t wrap_at, size_t indent, size_t wrapped_indent)
 {
    size_t len = indent + 4 + strlen(obj->typeName()) ;
-   //TODO
+   auto info = static_cast<const ClusterInfo*>(obj) ;
+   if (info->members())
+      {
+      len += info->members()->cStringLength(wrap_at,indent,wrapped_indent) ;
+      if (info->subclusters())
+	 len++ ;			// account for separating blank
+      }
+   if (info->subclusters() && info->subclusters()->size() > 0)
+      {
+      len += info->subclusters()->size() - 1 ; // account for separating blanks
+      for (auto sub : *info->subclusters())
+	 {
+	 len += sub->cStringLength(wrap_at,indent,wrapped_indent) ;
+	 }
+      }
    return len ;
 }
 
 //----------------------------------------------------------------------------
 
-char* ClusterInfo::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t /*wrap_at*/, size_t indent,
-   size_t /*wrapped_indent*/)
+char* ClusterInfo::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t wrap_at, size_t indent,
+   size_t wrapped_indent)
 {
    size_t count = snprintf(buffer,buflen,"%*s#<%s:",(int)indent,"",obj->typeName()) ;
    buffer += count ;
    buflen -= count ;
-   while (buflen > 0)
+   auto info = static_cast<const ClusterInfo*>(obj) ;
+   // print out the direct members
+   if (info->members())
       {
-      //TODO: print out subclusters and/or direct members
-      buflen=0;
+      char* rest = info->members()->toCstring(buffer,buflen,wrap_at,indent,wrapped_indent) ;
+      buflen -= (rest - buffer) ;
+      buffer = rest ;
+      if (buflen > 0 && info->subclusters())
+	 {
+	 *buffer++ = ' ' ;
+	 buflen-- ;
+	 }
+      }
+   if (info->subclusters())
+      {
+      bool first = true ;
+      for (auto sub : *info->subclusters())
+	 {
+	 if (buflen == 0)
+	    break ;
+	 // print out a separating blank if needed
+	 if (first)
+	    first = false ;
+	 else
+	    {
+	    *buffer++ = ' ' ;
+	    buflen-- ;
+	    }
+	 // print out the subcluster
+	 char* rest = sub->toCstring(buffer,buflen,wrap_at,indent,wrapped_indent) ;
+	 buflen -= (rest - buffer) ;
+	 buffer = rest ;
+	 }
       }
    if (buflen > 0)
       {

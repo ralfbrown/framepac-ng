@@ -113,6 +113,7 @@ class ClusterInfo : public Object
       // *** object factories ***
       static ClusterInfo* create() { return new ClusterInfo ; }
       static ClusterInfo* create(const List* members, const List* subclusters = nullptr) ;
+      static ClusterInfo* create(Object** vectors, size_t num_vectors) ;
       static ClusterInfo* create(ClusterInfo** subclus, size_t num_subclus) ;
       static ClusterInfo* create(const ClusterInfo** subclus, size_t num_subclus) ;
       static ClusterInfo* createSingletonClusters(const Array* vectors) ;
