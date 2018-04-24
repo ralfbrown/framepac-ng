@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-09-18					*/
+/* Version 0.05, last edit 2018-04-23					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -487,7 +487,6 @@ static Object* read_generic_object(const ObjectReader* /*reader*/, CharGetter& g
    if (nextch == '>')
       return nullptr ;	       // empty object descriptor!
    // check for standard, known type names
-#if 1||FIXME // currently generates link errors due to unimplemented standard functions
    if (strcmp(type_name,"TermVector") == 0)
       {
       return TermVector::read(getter,size_hint) ;
@@ -496,9 +495,6 @@ static Object* read_generic_object(const ObjectReader* /*reader*/, CharGetter& g
       {
       return TermCountVector::read(getter,size_hint) ;
       }
-#else
-   (void)size_hint; //suppress unused-arg warning
-#endif /* FIXME */
    //TODO: check list of registered readers for any additional user-defined types
 
    // nothing matched, so this is an unknown type.  Skip to the terminating right bracket
@@ -703,7 +699,7 @@ static Object* rdhash(const ObjectReader* reader, CharGetter& getter)
 	    // TODO: read queue
 	    if (getter.peek() == '(')
 	       {
-	       //FIXME
+	       //TODO
 	       }
 	    break ;
 	 case 'r':
@@ -713,7 +709,7 @@ static Object* rdhash(const ObjectReader* reader, CharGetter& getter)
 	    // TODO: read struct, ???simulated as a hashtable?
 	    if (getter.peek() == '(')
 	       {
-	       //FIXME
+	       //TODO
 	       }
 	    break ;
 	 case 'x':
@@ -740,7 +736,7 @@ static Object* rdframe(const ObjectReader* reader, CharGetter& getter)
    (void)reader;
    *getter ;			// consume the opening left bracket
 
-   //FIXME
+   //TODO
    return nullptr ;
 }
 
@@ -1033,7 +1029,7 @@ bool read_value(CharGetter& getter, double& value)
 bool read_value(CharGetter& getter, Object*& value)
 {
    (void)getter; (void)value ;
-//FIXME
+//TODO
    return false ;
 }
 

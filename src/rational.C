@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-09					*/
+/* Version 0.05, last edit 2018-04-23					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -35,8 +35,8 @@ Allocator Rational::s_allocator(FramepaC::Object_VMT<Rational>::instance(),sizeo
 /************************************************************************/
 
 Rational::Rational()
+   : m_value(0)
 {
-   //FIXME
    return ;
 }
 
@@ -52,9 +52,28 @@ Rational::Rational(const char *value)
 
 //----------------------------------------------------------------------------
 
-Rational::Rational(const Rational&)
+Rational::Rational(const Rational& orig)
 {
-   //FIXME
+   m_value = orig.m_value ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+Rational::Rational(const Object* obj)
+   : m_value(0)
+{
+   if (obj)
+      {
+      if (obj->isRational())
+	 {
+	 m_value = static_cast<const Rational*>(obj)->m_value ;
+	 }
+      else
+	 {
+	 //TODO
+	 }
+      }
    return ;
 }
 
@@ -67,16 +86,16 @@ Rational* Rational::create()
 
 //----------------------------------------------------------------------------
 
-Rational* Rational::create(const Object*)
+Rational* Rational::create(const Object* orig)
 {
-   return nullptr ;  //FIXME
+   return (orig) ? new Rational(orig) : new Rational ;
 }
 
 //----------------------------------------------------------------------------
 
-Rational* Rational::create(const Rational*)
+Rational* Rational::create(const Rational* orig)
 {
-   return nullptr ;  //FIXME
+   return orig ? new Rational(*orig) : new Rational ;
 }
 
 //----------------------------------------------------------------------------
@@ -90,7 +109,6 @@ Rational* Rational::create(const char*)
 
 Rational::~Rational()
 {
-   //FIXME
    return ;
 }
 
