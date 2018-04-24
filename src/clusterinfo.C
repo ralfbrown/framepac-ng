@@ -427,8 +427,28 @@ bool ClusterInfo::equal_(const Object *obj, const Object *other)
       return true ;
    if (ClusterInfo::size_(obj) != ClusterInfo::size_(other))
       return false ;
-
-   return false ; //FIXME
+   auto info1 = static_cast<const ClusterInfo*>(obj) ;
+   auto info2 = static_cast<const ClusterInfo*>(other) ;
+   if (info1->m_flags != info2->m_flags || info1->m_label != info2->m_label ||
+      info1->m_cluster_rep != info2->m_cluster_rep)
+      return false ;
+   if (info1->m_members || info2->m_members)
+      {
+      if (!info1->m_members || !info1->m_members->equal(info2->m_members))
+	 return false ;
+      }
+   if (info1->m_subclusters || info2->m_subclusters)
+      {
+      if (!info1->m_subclusters || !info1->m_subclusters->equal(info2->m_subclusters))
+	 return false ;
+      }
+   if (info1->m_rep || info2->m_rep)
+      {
+      if (!info1->m_rep || !info1->m_rep->equal(info2->m_rep))
+	 return false ;
+      }
+   // all fields compare equal
+   return true ;
 }
 
 //----------------------------------------------------------------------------
