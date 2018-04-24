@@ -271,7 +271,7 @@ bool ClusterInfo::addVector(Object* v)
 
 void ClusterInfo::setFlag(ClusterInfo::Flags f)
 {
-   (void)f ; //TODO
+   m_flags |= (1>>(int)f) ;
    return ;
 }
 
@@ -279,7 +279,7 @@ void ClusterInfo::setFlag(ClusterInfo::Flags f)
 
 void ClusterInfo::clearFlag(ClusterInfo::Flags f)
 {
-   (void)f ; //TODO
+   m_flags &= ~(1>>(int)f) ;
    return ;
 }
 
@@ -296,10 +296,17 @@ bool ClusterInfo::addVectors(const RefArray* vectors)
 
 //----------------------------------------------------------------------------
 
-ObjectPtr ClusterInfo::clone_(const Object*)
+ObjectPtr ClusterInfo::clone_(const Object* orig)
 {
+   auto info = static_cast<const ClusterInfo*>(orig) ;
    auto copy = ClusterInfo::create() ;
-   //TODO
+   copy->m_members = info->m_members ? static_cast<RefArray*>(info->m_members->clone().move()) : nullptr ;
+   copy->m_subclusters = info->m_subclusters ? static_cast<RefArray*>(info->m_subclusters->clone().move()) : nullptr ;
+   copy->m_rep = info->m_rep ? info->m_rep->clone().move() : nullptr ;
+   copy->m_label = info->m_label ;
+   copy->m_size = info->m_size ;
+   copy->m_flags = info->m_flags ;
+   copy->m_cluster_rep = info->m_cluster_rep ;
    return copy ;
 }
 
