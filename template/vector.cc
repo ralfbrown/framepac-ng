@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-19					*/
+/* Version 0.05, last edit 2018-04-23					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -136,17 +136,20 @@ ObjectPtr Vector<ValT>::clone_(const Object* obj)
 //----------------------------------------------------------------------------
 
 template <typename ValT>
-ObjectPtr Vector<ValT>::subseq_int(const Object*, size_t /*start*/, size_t /*stop*/)
+ObjectPtr Vector<ValT>::subseq_int(const Object* obj, size_t start, size_t stop)
 {
-   return nullptr ; //FIXME
+   if (!obj || start > stop)
+      return nullptr ;
+   //TODO
+   return nullptr ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename ValT>
-ObjectPtr Vector<ValT>::subseq_iter(const Object*, ObjectIter /*start*/, ObjectIter /*stop*/)
+ObjectPtr Vector<ValT>::subseq_iter(const Object*, ObjectIter start, ObjectIter stop)
 {
-   return nullptr ; //FIXME
+   return subseq_int(start.baseObject(),start.currentIndex(),stop.currentIndex()) ;
 }
 
 //----------------------------------------------------------------------------
@@ -167,25 +170,31 @@ size_t Vector<ValT>::hashValue_(const Object* obj)
 //----------------------------------------------------------------------------
 
 template <typename ValT>
-bool Vector<ValT>::equal_(const Object*, const Object*)
+bool Vector<ValT>::equal_(const Object* obj1, const Object* obj2)
 {
-   return false ; //FIXME
+   if (obj1 == obj2)
+      return true ;			// identity implies equal values
+   //TODO
+   return false ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename ValT>
-int Vector<ValT>::compare_(const Object*, const Object*)
+int Vector<ValT>::compare_(const Object* obj1, const Object* obj2)
 {
-   return 0 ; //FIXME
+   if (obj1 == obj2)
+      return 0 ;			// identity implies equal values
+   //TODO
+   return 0 ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename ValT>
-int Vector<ValT>::lessThan_(const Object*, const Object*)
+int Vector<ValT>::lessThan_(const Object* obj1, const Object* obj2)
 {
-   return 0 ; //FIXME
+   return compare_(obj1,obj2) <  0 ;
 }
 
 //----------------------------------------------------------------------------
