@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-19					*/
+/* Version 0.05, last edit 2018-04-23					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -317,17 +317,20 @@ ObjectPtr SparseVector<IdxT,ValT>::clone_(const Object* obj)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-ObjectPtr SparseVector<IdxT,ValT>::subseq_int(const Object*, size_t /*start*/, size_t /*stop*/)
+ObjectPtr SparseVector<IdxT,ValT>::subseq_int(const Object* obj, size_t start, size_t stop)
 {
-   return nullptr ; //FIXME
+   if (!obj || start > stop)
+      return nullptr ;
+   //TODO
+   return nullptr ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-ObjectPtr SparseVector<IdxT,ValT>::subseq_iter(const Object*, ObjectIter /*start*/, ObjectIter /*stop*/)
+ObjectPtr SparseVector<IdxT,ValT>::subseq_iter(const Object*, ObjectIter start, ObjectIter stop)
 {
-   return nullptr ; //FIXME
+   return subseq_int(start.baseObject(),start.currentIndex(),stop.currentIndex()) ;
 }
 
 //----------------------------------------------------------------------------
@@ -365,17 +368,20 @@ bool SparseVector<IdxT,ValT>::equal_(const Object* obj1, const Object* obj2)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-int SparseVector<IdxT,ValT>::lessThan_(const Object*, const Object*)
+int SparseVector<IdxT,ValT>::lessThan_(const Object* obj1, const Object* obj2)
 {
-   return 0 ; //FIXME
+   return compare_(obj1,obj2) < 0 ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-int SparseVector<IdxT,ValT>::compare_(const Object*, const Object*)
+int SparseVector<IdxT,ValT>::compare_(const Object* obj1, const Object* obj2)
 {
-   return 0 ; //FIXME
+   if (obj1 == obj2)
+      return 0 ;			// identical objects implies equal values
+   //TODO
+   return 0 ;
 }
 
 //----------------------------------------------------------------------------
