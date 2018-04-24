@@ -55,17 +55,25 @@ ObjectPtr DenseVector<ValT>::clone_(const Object* obj)
 //----------------------------------------------------------------------------
 
 template <typename ValT>
-ObjectPtr DenseVector<ValT>::subseq_int(const Object*, size_t /*start*/, size_t /*stop*/)
+ObjectPtr DenseVector<ValT>::subseq_int(const Object* obj, size_t start, size_t stop)
 {
-   return nullptr ; //FIXME
+   if (start > stop || !obj)
+      return nullptr ;
+   auto orig = static_cast<const DenseVector<ValT>*>(obj) ;
+   auto copy = DenseVector<ValT>::create(stop-start) ;
+   for (size_t i = start ; i < stop ; ++i)
+      {
+      copy->m_values[i-start] = orig->m_values[i] ;
+      }
+   return copy ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename ValT>
-ObjectPtr DenseVector<ValT>::subseq_iter(const Object*, ObjectIter /*start*/, ObjectIter /*stop*/)
+ObjectPtr DenseVector<ValT>::subseq_iter(const Object*, ObjectIter start, ObjectIter stop)
 {
-   return nullptr ; //FIXME
+   return subseq_int(start.baseObject(),start.currentIndex(),stop.currentIndex()) ;
 }
 
 //----------------------------------------------------------------------------
