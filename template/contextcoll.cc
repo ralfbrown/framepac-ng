@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-06					*/
+/* Version 0.05, last edit 2018-04-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -52,6 +52,24 @@ bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::setTermVector(const KeyT te
 {
    m_term_map->add(term,vector) ;
    return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename IdxT, typename ValT, bool sparse>
+bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::setOneHotVector(const KeyT term, IdxT index, ValT value)
+{
+   typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type* vector;
+   if (sparse)
+      {
+      vector = OneHotVector<IdxT,ValT>::create(index,value) ;
+      }
+   else
+      {
+      vector = DenseVector<ValT>::create(m_dimensions) ;
+      vector->setElement(index,value) ;
+      }
+   return this->setTermVector(term,vector) ;
 }
 
 //----------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-06					*/
+/* Version 0.05, last edit 2018-04-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -47,8 +47,10 @@ class ContextVectorCollection
 	 { return static_cast<RetT>(getContextVector(key)) ; }
 
       void setDimensions(size_t dim) { if (!m_sparse_vectors) m_dimensions = dim ; }
+      size_t dimensions() const { return m_dimensions ; }
 
       bool setTermVector(const KeyT term, context_type* vector) ;
+      bool setOneHotVector(const KeyT term, IdxT index, ValT value) ;
       context_type* getTermVector(const KeyT term) const ;
 
       bool updateContextVector(const KeyT key, const KeyT term, double weight = 1.0) ;

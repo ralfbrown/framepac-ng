@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-19					*/
+/* Version 0.05, last edit 2018-04-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -46,6 +46,14 @@ class Vector : public Object
 
       void setKey(Symbol* key) { m_key = key ; }
       void setLabel(Symbol* label) { m_label = label ; }
+
+      void setElement(size_t N, ValT value)
+	 {
+	 if (N >= Vector<ValT>::m_capacity && !this->reserve(std::max(N+1,2*Vector<ValT>::capacity())))
+	    return ;
+	 if (N >= this->m_size) this->m_size = N+1 ;
+	 this->m_values[N] = value ;
+	 }
 
       double length() const { return m_length >= 0.0 ? m_length : vectorLength() ; }
 
@@ -232,7 +240,7 @@ class OneHotVector : public Vector<ValT>
       typedef IdxT index_type ;
 
    public: // methods
-      static OneHotVector* create(size_t numelts) ;
+      static OneHotVector* create(IdxT index, ValT value) { return new OneHotVector(index,value) ; }
 
       // support for iterating through elements for e.g. vector similarity functions
       size_t elementIndex(size_t /*N*/) const { return (size_t)m_index ; }
@@ -241,7 +249,7 @@ class OneHotVector : public Vector<ValT>
    protected:
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      OneHotVector(IdxT index, ValT value = (ValT)1) ;
+      OneHotVector(IdxT index, ValT value = (ValT)1) : m_index(index), m_value(value) {}
       OneHotVector(const OneHotVector&) ;
       ~OneHotVector() { m_value = (ValT)0 ; }
       OneHotVector& operator= (const OneHotVector&) ;
