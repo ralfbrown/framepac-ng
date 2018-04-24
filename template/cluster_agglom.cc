@@ -132,7 +132,7 @@ bool update_nearest_neighbors(size_t index, va_list args)
 	    }
 	 }
       }
-   else
+   else if (this_cluster)
       {
       // compare the similarity with the merged cluster against the previous best, and use the better of the two
       double sim = this_cluster->similarity(merged_cluster,measure) ;
@@ -252,7 +252,7 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
    else
       {
       this->log(0,"  relabeling vectors with paths") ;
-      clusters->labelSubclusterPaths(set_brown_label<IdxT,ValT>) ;
+      clusters->labelSubclusterPaths(set_brown_label<IdxT,ValT>,"B","") ;
       }
    this->log(0,"Clustering complete") ;
    return clusters ;

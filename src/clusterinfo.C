@@ -279,12 +279,15 @@ bool ClusterInfo::flattenSubclusters()
 
 //----------------------------------------------------------------------------
 
-bool ClusterInfo::labelSubclusterPaths(bool (*fn)(Object*, const char* label), const char* prefix)
+bool ClusterInfo::labelSubclusterPaths(bool (*fn)(Object*, const char* label), const char* prefix,
+   const char* sep)
 {
    if (!fn)
       return false ;
    if (!prefix)
       prefix = "" ;
+   if (!sep)
+      sep = " " ;
    bool success { true } ;
    int count { 0 } ;
    // apply the current path prefix to all direct members of this cluster
@@ -302,9 +305,9 @@ bool ClusterInfo::labelSubclusterPaths(bool (*fn)(Object*, const char* label), c
       {
       for (auto sub : *subclusters())
 	 {
-	 char* new_prefix = aprintf("%s%*s%d%c",prefix,*prefix?1:0,"",count++,'\0') ;
+	 char* new_prefix = aprintf("%s%s%d%c",prefix,*prefix?sep:"",count++,'\0') ;
 	 auto subcluster = static_cast<ClusterInfo*>(sub) ;
-	 success = subcluster->labelSubclusterPaths(fn,new_prefix) ;
+	 success = subcluster->labelSubclusterPaths(fn,new_prefix,sep) ;
 	 delete[] new_prefix ;
 	 if (!success)
 	    break ;

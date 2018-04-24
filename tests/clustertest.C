@@ -116,7 +116,16 @@ int main(int argc, char** argv)
    //TODO
    char* printed = clusters->cString() ;
    cout << printed << endl ;
-
+   cout << endl ;
+   RefArray* members = clusters->allMembers() ;
+   if (members)
+      {
+      for (auto v : *members)
+	 {
+	 cout << v << endl ;
+	 }
+      members->free() ;
+      }
    if (clusters) clusters->free() ;
    delete clusterer ;
    return 0 ;

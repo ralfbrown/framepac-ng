@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-19					*/
+/* Version 0.05, last edit 2018-04-23					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -48,6 +48,22 @@ SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid() const
 
 //----------------------------------------------------------------------------
 
+template <typename IdxT, typename ValT>
+SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid(const Array* vectors) const
+{
+   auto centroid = SparseVector<IdxT,ValT>::create() ;
+   for (size_t i = 0 ; i < vectors->size() ; i++)
+      {
+      auto vec = static_cast<SparseVector<IdxT,ValT>*>(vectors->getNth(i)) ;
+      if (!vec) continue ;
+      centroid->incr(vec) ;
+      }
+   centroid->setLabel(this->label()) ;
+   return centroid ;
+}
+
+//----------------------------------------------------------------------------
+
 template <typename ValT>
 DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
 {
@@ -69,11 +85,97 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
 
 //----------------------------------------------------------------------------
 
+template <typename ValT>
+DenseVector<ValT>* ClusterInfo::createDenseCentroid(const Array* vectors) const
+{
+   typedef DenseVector<ValT> DV ;
+   auto sz = vectors->size() ;
+   if (sz == 0)
+      return DV::create() ;
+   auto centroid = DV::create(static_cast<DV*>(vectors->getNth(0))) ;
+   for (size_t i = 1 ; i < sz ; i++)
+      {
+      auto vec = static_cast<DV*>(vectors->getNth(i)) ;
+      if (!vec) continue ;
+      centroid->incr(vec) ;
+      }
+   centroid->setLabel(this->label()) ;
+   return centroid ;
+}
+
+//----------------------------------------------------------------------------
+
 template <typename IdxT, typename ValT>
-double ClusterInfo::similarity(const ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm) const
+void ClusterInfo::setRepresentative()
+{
+   if (!representative())
+      {
+      switch (this->repType())
+	 {
+	 case ClusterRep::centroid:
+	    {
+	    auto vectors = this->allMembers() ;
+	    if (vectors->getNth(0)->isSparseVector())
+	       this->m_rep = this->createSparseCentroid<IdxT,ValT>(vectors) ;
+	    else
+	       this->m_rep = this->createDenseCentroid<ValT>(vectors) ;
+	    vectors->free() ;
+	    }
+	    break ;
+	 case ClusterRep::medioid:
+	    //TODO
+	    break ;
+	 case ClusterRep::prototype:
+	    if (this->members())
+	       {
+	       auto rep = this->members()->getNth(0) ;
+	       this->m_rep = rep ? rep->clone().move() : nullptr ;
+	       }
+	    else if (this->subclusters())
+	       {
+	       auto sub = static_cast<ClusterInfo*>(this->subclusters()->getNth(0)) ;
+	       if (sub) sub->setRepresentative<IdxT,ValT>() ;
+	       auto rep = sub->representative() ;
+	       this->m_rep = rep? rep->clone().move() : nullptr ;
+	       }
+	    break ;
+	 default:
+	    // do nothing, the representative is context-dependent
+	    break ;
+	 }
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 {
    if (!other || !vm) return -999.99 ;
-   //TODO
+   switch (this->repType())
+      {
+      case ClusterRep::none:
+	 break ;
+      case ClusterRep::centroid:
+      case ClusterRep::medioid:
+      case ClusterRep::prototype:
+	 this->setRepresentative<IdxT,ValT>() ;
+	 other->setRepresentative<IdxT,ValT>() ;
+	 return vm->similarity(static_cast<Vector<ValT>*>(this->representative()),
+	    static_cast<Vector<ValT>*>(other->representative())) ;
+      case ClusterRep::average:
+	 //TODO
+	 break ;
+      case ClusterRep::furthest:
+	 break ;
+      case ClusterRep::nearest:
+	 break ;
+      case ClusterRep::rms:
+	 break ;
+      default:
+	 cerr << "missed case" << endl;
+      }
    return 0.0 ;
 }
 

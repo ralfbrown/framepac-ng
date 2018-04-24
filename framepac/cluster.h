@@ -123,9 +123,12 @@ class ClusterInfo : public Object
       ClusterInfo* merge(const ClusterInfo* other, bool flatten = false) const ;
       bool merge(size_t clusternum1, size_t clusternum2, bool flatten = false) ;
       bool flattenSubclusters() ;
-      bool labelSubclusterPaths(bool (*setlabel_fn)(Object* vec,const char* label), const char* path_prefix = "") ;
+      bool labelSubclusterPaths(bool (*setlabel_fn)(Object* vec,const char* label),
+	 const char* path_prefix = "", const char* sep = " ") ;
       template <typename IdxT, typename ValT>
-      double similarity(const ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm) const ;
+      double similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm) ;
+      template <typename IdxT, typename ValT>
+      void setRepresentative() ;
       RefArray* allMembers() const ;
 
       static Symbol* genLabel() ;
@@ -145,6 +148,8 @@ class ClusterInfo : public Object
       bool contains(const Object*) const ; // is Object a member of the cluster?
 
       // *** access to internal state ***
+      Object* representative() const { return m_rep ; }
+      ClusterRep repType() const { return  m_cluster_rep ; }
       const Array* members() const { return m_members ; }
       const Array* subclusters() const { return m_subclusters ; }
       size_t numSubclusters() const { return m_subclusters->size() ; }
@@ -161,9 +166,13 @@ class ClusterInfo : public Object
 
       template <typename IdxT, typename ValT>
       SparseVector<IdxT,ValT>* createSparseCentroid() const ;
+      template <typename IdxT, typename ValT>
+      SparseVector<IdxT,ValT>* createSparseCentroid(const Array* vectors) const ;
 
       template <typename ValT>
       DenseVector<ValT>* createDenseCentroid() const ;
+      template <typename ValT>
+      DenseVector<ValT>* createDenseCentroid(const Array* vectors) const ;
       
    protected:
       RefArray* m_members { nullptr } ;	// individual vectors in this cluster
@@ -172,7 +181,7 @@ class ClusterInfo : public Object
       Symbol* m_label { nullptr } ;	// cluster label
       uint32_t m_size { 0 } ;		// number of elements in this cluster
       uint16_t m_flags { 0 } ;
-      ClusterRep m_cluster_rep ;	// what is the representative element for the cluster?
+      ClusterRep m_cluster_rep { ClusterRep::centroid } ; // what is the representative element for the cluster?
 
    private: // static members
       static Allocator s_allocator ;
