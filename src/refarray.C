@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-19					*/
+/* Version 0.05, last edit 2018-04-23					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -59,7 +59,6 @@ RefArray::RefArray(const Array* orig)
 RefArray::RefArray(const Object* obj, size_t repeat)
    : RefArray(repeat)
 {
-   (void)obj;//FIXME
    for (size_t i = 0 ; i < repeat ; i++)
       {
       m_array[i] = const_cast<Object*>(obj) ;
