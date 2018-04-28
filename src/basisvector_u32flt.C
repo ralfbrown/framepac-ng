@@ -26,6 +26,9 @@ namespace Fr
 
 // request explicit instantiation
 template class BasisVector<uint32_t,float> ;
+template <>
+Allocator BasisVector<uint32_t,float>::s_allocator(FramepaC::Object_VMT<BasisVector<uint32_t,float>>::instance(),
+   sizeof(BasisVector<uint32_t,float>)) ;
 
 } // end namespace Fr
 

@@ -35,10 +35,15 @@ class BasisVector : public SparseVector<IdxT,ValT>
    public:
       static BasisVector* create(size_t numelts, size_t num_plus, size_t num_minus = (size_t)~0) ;
 
-   protected:
+   protected: // creation/destruction
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       BasisVector(size_t numelts, size_t num_plus, size_t num_minus) ;
       BasisVector(const BasisVector&) ;
       ~BasisVector() {}
+
+   private:
+      static Allocator s_allocator ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<BasisVector> ;
