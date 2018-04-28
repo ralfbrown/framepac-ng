@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.06, last edit 2018-04-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -259,71 +259,75 @@ class Object_VMT : public ObjectVMT
    {
    public:
       // since this is a Singleton class, we have a function to return the single instance of the class
-      static const Object_VMT* instance()
-	 {
-	 static const Object_VMT single_instance ;
-	 return &single_instance ;
-	 }
+      static const ObjectVMT* instance() { return &s_instance ;  }
 
+   private:
+      // the singleton instance
+      static constexpr ObjectVMT s_instance
+	 {
+	    &ObjT::free_,
+	    &ObjT::shallowFree_,
+	    &ObjT::size_,
+	    &ObjT::empty_,
+	    &ObjT::next_,
+	    &ObjT::next_iter,
+	    &ObjT::clone_,
+	    &ObjT::shallowCopy_,
+	    &ObjT::subseq_int,
+	    &ObjT::subseq_iter,
+	    &ObjT::hashValue_,
+	    &ObjT::equal_,
+	    &ObjT::compare_,
+	    &ObjT::lessThan_,
+	    &ObjT::front_,
+	    &ObjT::front_const,
+	    &ObjT::stringValue_,
+	    &ObjT::floatValue_,
+	    &ObjT::imagValue_,
+	    &ObjT::intValue_,
+	    &ObjT::bignumValue_,
+	    &ObjT::rationalValue_,
+	    &ObjT::nthInt_,
+	    &ObjT::nthFloat_,
+	    &ObjT::typeName_,
+	    &ObjT::label_,
+	    &ObjT::isArray_,
+	    &ObjT::isBigNum_,
+	    &ObjT::isBitVector_,
+	    &ObjT::isCluster_,
+	    &ObjT::isComplex_,
+	    &ObjT::isFloat_,
+	    &ObjT::isInteger_,
+	    &ObjT::isList_,
+	    &ObjT::isMap_,
+	    &ObjT::isNumber_,
+	    &ObjT::isObject_,
+	    &ObjT::isOneHotVector_,
+	    &ObjT::isRational_,
+	    &ObjT::isSet_,
+	    &ObjT::isSparseVector_,
+	    &ObjT::isString_,
+	    &ObjT::isSymbolTable_,
+	    &ObjT::isSymbol_,
+	    &ObjT::isTermVector_,
+	    &ObjT::isVector_,
+	    &ObjT::cStringLength_,
+	    &ObjT::jsonStringLength_,
+	    &ObjT::toCstring_,
+	    &ObjT::toJSONString_
+	    } ;
    private:
       // don't allow allocation on the heap
       void *operator new(size_t) = delete ;
       void *operator new(size_t,void*) = delete ;
       void operator delete(void*) = delete ;
       // don't allow user to instantiate -- must go through instance()
-      Object_VMT() : ObjectVMT()
-	 {
-	 free_ = &ObjT::free_ ;
-	 shallowFree_ = &ObjT::shallowFree_ ;
-	 size_ = &ObjT::size_ ;
-	 empty_ = &ObjT::empty_ ;
-	 next_ = &ObjT::next_ ;
-	 next_iter = &ObjT::next_iter ;
-	 clone_ = &ObjT::clone_ ;
-	 shallowCopy_ = &ObjT::shallowCopy_ ;
-	 subseq_int = &ObjT::subseq_int ;
-	 subseq_iter = &ObjT::subseq_iter ;
-	 hashValue_ = &ObjT::hashValue_ ;
-	 equal_ = &ObjT::equal_ ;
-	 compare_ = &ObjT::compare_ ;
-	 lessThan_ = &ObjT::lessThan_ ;
-	 front_ = &ObjT::front_ ;
-	 front_const = &ObjT::front_const ;
-	 stringValue_ = &ObjT::stringValue_ ;
-	 floatValue_ = &ObjT::floatValue_ ;
-	 imagValue_ = &ObjT::imagValue_ ;
-	 intValue_ = &ObjT::intValue_ ;
-	 bignumValue_ = &ObjT::bignumValue_ ;
-	 rationalValue_ = &ObjT::rationalValue_ ;
-	 nthInt_ = &ObjT::nthInt_ ;
-	 nthFloat_ = &ObjT::nthFloat_ ;
-	 typeName_ = &ObjT::typeName_ ;
-	 label_ = &ObjT::label_ ;
-	 isArray_ = &ObjT::isArray_ ;
-	 isBigNum_ = &ObjT::isBigNum_ ;
-	 isBitVector_ = &ObjT::isBitVector_ ;
-	 isComplex_ = &ObjT::isComplex_ ;
-	 isFloat_ = &ObjT::isFloat_ ;
-	 isInteger_ = &ObjT::isInteger_ ;
-	 isMap_ = &ObjT::isMap_ ;
-	 isNumber_ = &ObjT::isNumber_ ;
-	 isObject_ = &ObjT::isObject_ ;
-	 isOneHotVector_ = &ObjT::isOneHotVector_ ;
-	 isRational_ = &ObjT::isRational_ ;
-	 isSet_ = &ObjT::isSet_ ;
-	 isSparseVector_ = &ObjT::isSparseVector_ ;
-	 isString_ = &ObjT::isString_ ;
-	 isSymbolTable_ = &ObjT::isSymbolTable_ ;
-	 isSymbol_ = &ObjT::isSymbol_ ;
-	 isTermVector_ = &ObjT::isTermVector_ ;
-	 isVector_ = &ObjT::isVector_ ;
-	 cStringLength_ = &ObjT::cStringLength_ ;
-	 jsonStringLength_ = &ObjT::jsonStringLength_ ;
-	 toCstring_ = &ObjT::toCstring_ ;
-	 toJSONString_ = &ObjT::toJSONString_ ;
-	 }
-      ~Object_VMT() = default ;
+      Object_VMT() = delete ;
+      ~Object_VMT() = delete ;
    } ;
+
+template <typename T>
+constexpr ObjectVMT Object_VMT<T>::s_instance ;
 
 } // end namespace FramepaC
 

@@ -255,6 +255,7 @@ OBJS = \
 	build/argparser$(OBJ) \
 	build/array$(OBJ) \
 	build/basisvector_u32$(OBJ) \
+	build/basisvector_u32flt$(OBJ) \
 	build/bidindex_cstr$(OBJ) \
 	build/bignum$(OBJ) \
 	build/bitvector$(OBJ) \
@@ -479,6 +480,7 @@ build/argopt_real$(OBJ):	src/argopt_real$(C) template/argopt.cc
 build/argparser$(OBJ):		src/argparser$(C) framepac/argparser.h
 build/array$(OBJ):		src/array$(C) framepac/array.h framepac/fasthash64.h
 build/basisvector_u32$(OBJ):	src/basisvector_u32$(C) template/basisvector.cc
+build/basisvector_u32flt$(OBJ):	src/basisvector_u32flt$(C) template/basisvector.cc
 build/bidindex_cstr$(OBJ):	src/bidindex_cstr$(C) framepac/bidindex.h
 build/bignum$(OBJ):		src/bignum$(C) framepac/bignum.h
 build/bitvector$(OBJ):		src/bitvector$(C) framepac/bitvector.h framepac/number.h framepac/fasthash64.h

@@ -25,7 +25,7 @@ namespace Fr
 {
 
 // request explicit instantiation
-template class BasisVector<uint32_t> ;
+template class BasisVector<uint32_t,float> ;
 
 } // end namespace Fr
 
@@ -36,7 +36,7 @@ template class BasisVector<uint32_t> ;
 namespace FramepaC
 {
 // request an explicit instantiation of the template
-template class Object_VMT<Fr::BasisVector<uint32_t>> ;
+template class Object_VMT<Fr::BasisVector<uint32_t,float>> ;
 
 } // end namespace FramepaCC
 

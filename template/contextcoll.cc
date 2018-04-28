@@ -93,10 +93,12 @@ ContextVectorCollection<KeyT,IdxT,ValT,sparse>::makeTermVector(const KeyT term)
       return termvec ;
    if (this->dimensions() == 0)
       {
+      //TODO: ensure that we don't re-use an ID when there are concurrent processes creating term vectors
       termvec = OneHotVector<IdxT,ValT>::create(m_term_map->size(),1) ;
       }
    else
       {
+      // generate a random basis vector
       termvec = BasisVector<IdxT,ValT>::create(this->dimensions(),this->plusDimensions(),this->minusDimensions()) ;
       }
    if (!this->setTermVector(term,termvec))

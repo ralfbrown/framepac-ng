@@ -32,20 +32,30 @@ template <typename IdxT, typename ValT>
 BasisVector<IdxT,ValT>::BasisVector(size_t numelts, size_t num_plus, size_t num_minus)
    : SparseVector<IdxT,ValT>(num_plus+num_minus)
 {
-   if (num_plus + num_minus >= numelts)
+   // enforce that at most half of the dimensions are nonzero
+   if (num_plus + num_minus > numelts / 2)
       {
-      double scale = numelts / (double)(num_plus + num_minus) ;
+      double scale = (numelts / 2) / (double)(num_plus + num_minus) ;
       num_plus = (size_t)(num_plus * scale) ;
       num_minus = (size_t)(num_minus * scale) ;
       }
    RandomInteger rand(numelts) ;
+   rand.randomize() ;
+   // randomly pick dimensions to have value +1
    for (size_t i = 0 ; i < num_plus ; ++i)
       {
-
+      size_t idx ;
+      do {
+         idx = rand() ;
+	 } while (!this->newElement(idx,1)) ;
       }
+   // randomly pick as-yet unused dimensions to have value -1
    for (size_t i = 0 ; i < num_minus ; ++i)
       {
-
+      size_t idx ;
+      do {
+         idx = rand() ;
+	 } while (!this->newElement(idx,-1)) ;
       }
    return ;
 }
