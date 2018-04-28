@@ -48,22 +48,30 @@ class ContextVectorCollection
 
       void setDimensions(size_t dim) { if (!m_sparse_vectors) m_dimensions = dim ; }
       size_t dimensions() const { return m_dimensions ; }
+      void setBasisDimensions(size_t plus, size_t minus) { m_plusdim = plus ; m_minusdim = minus ; }
+      size_t plusDimensions() const { return m_plusdim ; }
+      size_t minusDimensions() const { return m_minusdim ; }
 
       bool haveTermVector(const KeyT term) const ;
       bool setTermVector(const KeyT term, context_type* vector) ;
       bool setOneHotVector(const KeyT term, IdxT index, ValT value, double weight = 1.0) ;
+      context_type* makeTermVector(const KeyT term) ;
       context_type* getTermVector(const KeyT term) const ;
 
+      bool addTerm(const KeyT key, const KeyT term, double weight = 1.0) ;
       bool updateContextVector(const KeyT key, const KeyT term, double weight = 1.0) ;
 
    protected: // data
       map_type* m_term_map ;
       map_type* m_context_map ;
-      size_t m_dimensions { 0 } ;
+      unsigned m_dimensions { 0 } ;
+      unsigned m_plusdim { 4 } ;
+      unsigned m_minusdim { 4 } ;
       bool m_sparse_vectors { sparse } ;
 
    protected: // methods
       context_type* getContextVector(const KeyT key) const ;
+      context_type* makeContextVector(const KeyT key) ;
    } ;
 
 // the typical application for this class uses either Symbol or

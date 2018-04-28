@@ -29,8 +29,8 @@ namespace Fr {
 /************************************************************************/
 /************************************************************************/
 
-template <typename IdxT>
-class BasisVector : public SparseVector<IdxT,int8_t>
+template <typename IdxT, typename ValT = int8_t>
+class BasisVector : public SparseVector<IdxT,ValT>
    {
    public:
       static BasisVector* create(size_t numelts, size_t num_plus, size_t num_minus = (size_t)~0) ;

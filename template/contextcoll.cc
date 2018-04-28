@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-24					*/
+/* Version 0.06, last edit 2018-04-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include "framepac/contextcoll.h"
+#include "framepac/basisvector.h"
 
 namespace Fr
 {
@@ -85,6 +86,32 @@ bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::haveTermVector(const KeyT t
 
 template <typename KeyT, typename IdxT, typename ValT, bool sparse>
 typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type*
+ContextVectorCollection<KeyT,IdxT,ValT,sparse>::makeTermVector(const KeyT term)
+{
+   auto termvec = getTermVector(term) ;
+   if (termvec)
+      return termvec ;
+   if (this->dimensions() == 0)
+      {
+      termvec = OneHotVector<IdxT,ValT>::create(m_term_map->size(),1) ;
+      }
+   else
+      {
+      termvec = BasisVector<IdxT,ValT>::create(this->dimensions(),this->plusDimensions(),this->minusDimensions()) ;
+      }
+   if (!this->setTermVector(term,termvec))
+      {
+      // a concurrent process added the term before we got to it, so retrieve the vector the other process set
+      termvec->free() ;
+      termvec = getTermVector(term) ;
+      }
+   return termvec ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename IdxT, typename ValT, bool sparse>
+typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type*
 ContextVectorCollection<KeyT,IdxT,ValT,sparse>::getTermVector(const KeyT term) const
 {
    return static_cast<context_type*>(m_term_map->lookup(term)) ;
@@ -93,18 +120,24 @@ ContextVectorCollection<KeyT,IdxT,ValT,sparse>::getTermVector(const KeyT term) c
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename IdxT, typename ValT, bool sparse>
+bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::addTerm(const KeyT key, const KeyT term, double wt)
+{
+   auto context = makeContextVector(key) ;
+   auto termvec = makeTermVector(term) ;
+   context->incr(termvec,wt*termvec->weight()) ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename IdxT, typename ValT, bool sparse>
 bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::updateContextVector(const KeyT key, const KeyT term, double wt)
 {
-   context_type* context = getContextVector(key) ;
-   if (!context)
-      {
-      context = static_cast<context_type*>(context_type::create(m_dimensions)) ;
-      m_context_map->add(key,context) ;
-      }
-   context_type* termvec = getTermVector(term) ;
+   auto context = makeContextVector(key) ;
+   auto termvec = getTermVector(term) ;
    if (termvec)
       context->incr(termvec,wt*termvec->weight()) ;
-   return true;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
@@ -114,6 +147,27 @@ typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type*
 ContextVectorCollection<KeyT,IdxT,ValT,sparse>::getContextVector(const KeyT key) const
 {
    return static_cast<context_type*>(m_context_map->lookup(key)) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename IdxT, typename ValT, bool sparse>
+typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type*
+ContextVectorCollection<KeyT,IdxT,ValT,sparse>::makeContextVector(const KeyT key)
+{
+   auto context = getContextVector(key) ;
+   if (!context)
+      {
+      context = static_cast<context_type*>(context_type::create(m_dimensions)) ;
+      if (!m_context_map->add(key,context))
+	 {
+	 // another process snuck in and created a context vector for this term, so retrieve the vector which
+	 //  is already in the map
+	 context->free() ;
+	 context = getContextVector(key) ;
+	 }
+      }
+   return context ;
 }
 
 //----------------------------------------------------------------------------

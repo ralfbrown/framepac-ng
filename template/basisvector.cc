@@ -28,9 +28,9 @@
 namespace Fr
 {
 
-template <typename IdxT>
-BasisVector<IdxT>::BasisVector(size_t numelts, size_t num_plus, size_t num_minus)
-   : SparseVector<IdxT,int8_t>(num_plus+num_minus)
+template <typename IdxT, typename ValT>
+BasisVector<IdxT,ValT>::BasisVector(size_t numelts, size_t num_plus, size_t num_minus)
+   : SparseVector<IdxT,ValT>(num_plus+num_minus)
 {
    if (num_plus + num_minus >= numelts)
       {
@@ -52,8 +52,8 @@ BasisVector<IdxT>::BasisVector(size_t numelts, size_t num_plus, size_t num_minus
 
 //----------------------------------------------------------------------------
 
-template <typename IdxT>
-BasisVector<IdxT>::BasisVector(const BasisVector& orig) : SparseVector<IdxT,int8_t>(orig)
+template <typename IdxT, typename ValT>
+BasisVector<IdxT,ValT>::BasisVector(const BasisVector& orig) : SparseVector<IdxT,ValT>(orig)
 {
    //TODO
    return ;
