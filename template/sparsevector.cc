@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-23					*/
+/* Version 0.06, last edit 2018-04-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -133,6 +133,43 @@ size_t SparseVector<IdxT,ValT>::totalElements(const SparseVector<IdxT,ValT>* v1,
       }
    total += (elts1 - pos1) + (elts2 - pos2) ;
    return total ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+bool SparseVector<IdxT,ValT>::newElement(IdxT index, ValT value)
+{
+   // perform a binary search for the requested index
+   size_t lo = 0 ;
+   size_t hi = this->size() ;
+   while (hi > lo)
+      {
+      size_t mid = lo + (hi-lo)/2 ;
+      IdxT mid_idx = (IdxT)this->elementIndex(mid) ;
+      if (mid_idx == index)
+	 return false ;			// failed, the element is already present
+      else if (mid_idx > index)
+	 lo = mid+1 ;
+      else // if (mid_idx < index)
+	 hi = mid ;
+      }
+   // if we didn't find the element, shift the following elements to
+   //   make a gap, then put the new element in the gap
+   // first, expand the vector's backing store if necessary
+   if (this->size() >= this->capacity() && !this->reserve(std::max(14UL,3*this->capacity()/2)))
+      {
+      return false ;			// unable to insert the element because we couldn't expand the vector
+      }
+   for (size_t i = this->size() ; i > lo ; --i)
+      {
+      this->m_indices[i] = this->m_indices[i-1] ;
+      this->m_values[i] = this->m_values[i-1] ;
+      }
+   this->m_indices[lo] = index ;
+   this->m_values[lo] = value ;
+   this->m_size++ ;
+   return true ;			// we successfully added the element
 }
 
 //----------------------------------------------------------------------------

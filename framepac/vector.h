@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-24					*/
+/* Version 0.06, last edit 2018-04-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -322,6 +322,8 @@ class SparseVector : public Vector<ValT>
    public: // methods
       static SparseVector* create(size_t numelts = 0) { return new SparseVector(numelts) ; }
       static SparseVector* create(const char* rep) { return new SparseVector(rep) ; }
+
+      bool newElement(IdxT index, ValT value) ;
 
       // retrieve elements of the vector
       IdxT keyAt(size_t N) const { return  m_indices[N] ; }

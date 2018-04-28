@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-29					*/
+/* Version 0.06, last edit 2018-04-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include "framepac/basisvector.h"
+#include "framepac/random.h"
 
 /************************************************************************/
 /************************************************************************/
@@ -28,12 +29,34 @@ namespace Fr
 {
 
 template <typename IdxT>
-bool BasisVector<IdxT>::generateRandomBasis(size_t num_plus, size_t num_minus)
+BasisVector<IdxT>::BasisVector(size_t numelts, size_t num_plus, size_t num_minus)
+   : SparseVector<IdxT,int8_t>(num_plus+num_minus)
 {
-   if (num_plus + num_minus > this->size())
-      return false ;
+   if (num_plus + num_minus >= numelts)
+      {
+      double scale = numelts / (double)(num_plus + num_minus) ;
+      num_plus = (size_t)(num_plus * scale) ;
+      num_minus = (size_t)(num_minus * scale) ;
+      }
+   RandomInteger rand(numelts) ;
+   for (size_t i = 0 ; i < num_plus ; ++i)
+      {
 
-   return true ;
+      }
+   for (size_t i = 0 ; i < num_minus ; ++i)
+      {
+
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT>
+BasisVector<IdxT>::BasisVector(const BasisVector& orig) : SparseVector<IdxT,int8_t>(orig)
+{
+   //TODO
+   return ;
 }
 
 

@@ -592,6 +592,9 @@ globaldata$(C):
 template/argopt.cc:	framepac/argparser.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+template/basisvector.cc: framepac/random.h framepac/vector.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 template/bufbuilder.cc:	framepac/builder.h framepac/convert.h
 	$(TOUCH) $@ $(BITBUCKET)
 
