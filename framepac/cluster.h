@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-20					*/
+/* Version 0.06, last edit 2018-04-28					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -264,11 +264,38 @@ inline ClusterInfoIter::ClusterInfoIter(const ClusterInfo* inf)
 
 //----------------------------------------------------------------------------
 
+class ClusteringAlgoOption
+   {
+   public:
+      ClusteringAlgoOption() : m_optname(nullptr), m_optvalue(nullptr) {}
+      ClusteringAlgoOption(const char* name, const char* value)
+	 {
+	    m_optname = String::create(name) ;
+	    m_optvalue = String::create(value) ;
+	 }
+      ~ClusteringAlgoOption()
+	 {
+	    if (m_optname) m_optname->free() ;
+	    if (m_optvalue) m_optvalue->free() ;
+	 }
+      const String* name() const { return m_optname ; }
+      const String* value() const { return m_optvalue ; }
+
+   protected:
+      String* m_optname ;
+      String* m_optvalue ;
+   } ;
+
+//----------------------------------------------------------------------------
+
 class ClusteringAlgoBase
    {
    public:
       ClusteringAlgoBase() {}
       ~ClusteringAlgoBase() {}
+
+      ClusteringAlgoOption* parseOptions(const char* opt) ;
+      static void freeOptions(ClusteringAlgoOption* options) ;
 
       static bool checkSparseOrDense(const Array* vectors) ;
       static void freeClusters(ClusterInfo** clusters, size_t num_clusters) ;

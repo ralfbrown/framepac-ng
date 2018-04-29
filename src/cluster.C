@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-19					*/
+/* Version 0.06, last edit 2018-04-28					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -22,13 +22,41 @@
 #include "framepac/cluster.h"
 #include "framepac/message.h"
 #include "framepac/progress.h"
+#include "template/bufbuilder.cc"
 
 namespace Fr
 {
 
+// explicitly instantiate
+bool convert_string(const char*&,ClusteringAlgoOption)
+{ return false ; }
+template class BufferBuilder<ClusteringAlgoOption> ;
+
 /************************************************************************/
 /*	Methods for class ClusteringAlgoBase				*/
 /************************************************************************/
+
+ClusteringAlgoOption* ClusteringAlgoBase::parseOptions(const char* opt)
+{
+   BufferBuilder<ClusteringAlgoOption> options ;
+   while (opt && *opt)
+      {
+
+      //FIXME
+      opt++;
+      }
+   return options.finalize() ;
+}
+
+//----------------------------------------------------------------------------
+
+void ClusteringAlgoBase::freeOptions(ClusteringAlgoOption* options)
+{
+   delete[] options ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
 
 bool ClusteringAlgoBase::checkSparseOrDense(const Array* vectors)
 {
