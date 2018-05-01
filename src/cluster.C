@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-04-28					*/
+/* Version 0.06, last edit 2018-04-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -20,40 +20,87 @@
 /************************************************************************/
 
 #include "framepac/cluster.h"
+#include "framepac/convert.h"
 #include "framepac/message.h"
 #include "framepac/progress.h"
-#include "template/bufbuilder.cc"
+#include "framepac/texttransforms.h"
 
 namespace Fr
 {
-
-// explicitly instantiate
-bool convert_string(const char*&,ClusteringAlgoOption)
-{ return false ; }
-template class BufferBuilder<ClusteringAlgoOption> ;
 
 /************************************************************************/
 /*	Methods for class ClusteringAlgoBase				*/
 /************************************************************************/
 
-ClusteringAlgoOption* ClusteringAlgoBase::parseOptions(const char* opt)
+bool ClusteringAlgoBase::parseOptions(const char* opt)
 {
-   BufferBuilder<ClusteringAlgoOption> options ;
-   while (opt && *opt)
+   if (!opt)
+      return true ;
+   bool all_parsed = true ;
+   while (*opt)
       {
-
-      //FIXME
-      opt++;
+      opt = skip_whitespace(opt) ;
+      size_t len = 0 ;
+      while (opt[len] && opt[len] != '=' && opt[len] != ':')
+	 len++ ;
+      char* optname = dup_string_n(opt,len) ;
+      lowercase_string(optname) ;
+      opt += len ;
+      char* optvalue_orig ;
+      if (*opt == '=')
+	 {
+	 opt = skip_whitespace(opt+1) ;
+	 len = 0 ;
+	 while (opt[len] && opt[len] != ':')
+	    len++ ;
+	 optvalue_orig = dup_string_n(opt,len) ;
+	 opt += len ;
+	 }
+      else
+	 optvalue_orig = dup_string("") ;
+      const char* optvalue = optvalue_orig ;
+      if (strcmp(optname,"a") == 0 || strcmp(optname,"alpha") == 0)
+	 {
+	 all_parsed &= convert_string(optvalue,m_alpha) ;
+	 }
+      else if (strcmp(optname,"b") == 0 || strcmp(optname,"beta") == 0)
+	 {
+	 all_parsed &= convert_string(optvalue,m_beta) ;
+	 }
+      else if (strcmp(optname,"gamma") == 0)
+	 {
+	 all_parsed &= convert_string(optvalue,m_gamma) ;
+	 }
+      else if (strcmp(optname,"k") == 0 || strcmp(optname,"numclusters") == 0)
+	 {
+	 all_parsed &= convert_string(optvalue,m_desired_clusters) ;
+	 }
+      else if (strcmp(optname,"it") == 0 || strcmp(optname,"iter") == 0)
+	 {
+	 all_parsed &= convert_string(optvalue,m_max_iterations) ;
+	 }
+      else if (strcmp(optname,"eps") == 0 || strcmp(optname,"thr") == 0 || strcmp(optname,"threshold") == 0)
+	 {
+	 all_parsed &= convert_string(optvalue,m_threshold) ;
+	 }
+      else if (strcmp(optname,"minpts") == 0 || strcmp(optname,"pts") == 0)
+	 {
+	 all_parsed &= convert_string(optvalue,m_min_points) ;
+	 }
+      else if (strcmp(optname,"v") == 0 || strcmp(optname,"verbosity") == 0)
+	 {
+	 all_parsed &= convert_string(optvalue,m_verbosity) ;
+	 }
+      //TODO: any other standard options to be parsed?
+      // pass the option name and value down to the actual clustering algorithm to be used as it sees fit
+      if (!applyOption(optname,optvalue))
+	 all_parsed = false ;
+      delete[] optname ;
+      delete[] optvalue_orig ;
+      if (*opt == ':')
+	 opt++ ;
       }
-   return options.finalize() ;
-}
-
-//----------------------------------------------------------------------------
-
-void ClusteringAlgoBase::freeOptions(ClusteringAlgoOption* options)
-{
-   delete[] options ;
-   return ;
+   return all_parsed ;
 }
 
 //----------------------------------------------------------------------------

@@ -489,8 +489,8 @@ build/bwt$(OBJ):		src/bwt$(C) framepac/config.h
 build/canonsent$(OBJ):		src/canonsent$(C) framepac/stringbuilder.h framepac/texttransforms.h
 build/charget$(OBJ):		src/charget$(C) framepac/charget.h
 build/cfile$(OBJ):		src/cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
-build/cluster$(OBJ):		src/cluster$(C) template/bufbuilder.cc framepac/cluster.h framepac/message.h \
-				framepac/progress.h
+build/cluster$(OBJ):		src/cluster$(C) framepac/cluster.h framepac/message.h framepac/progress.h \
+				framepac/texttransforms.h framepac/convert.h
 build/clusterinfo$(OBJ):	src/clusterinfo$(C) framepac/atomic.h framepac/cluster.h framepac/texttransforms.h
 build/cluster_name$(OBJ):	src/cluster_name$(C) framepac/cluster.h
 build/cluster_u32_dbl$(OBJ):	src/cluster_u32_dbl$(C) template/cluster_factory.cc

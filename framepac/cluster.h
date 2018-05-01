@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-04-28					*/
+/* Version 0.06, last edit 2018-04-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -264,38 +264,14 @@ inline ClusterInfoIter::ClusterInfoIter(const ClusterInfo* inf)
 
 //----------------------------------------------------------------------------
 
-class ClusteringAlgoOption
-   {
-   public:
-      ClusteringAlgoOption() : m_optname(nullptr), m_optvalue(nullptr) {}
-      ClusteringAlgoOption(const char* name, const char* value)
-	 {
-	    m_optname = String::create(name) ;
-	    m_optvalue = String::create(value) ;
-	 }
-      ~ClusteringAlgoOption()
-	 {
-	    if (m_optname) m_optname->free() ;
-	    if (m_optvalue) m_optvalue->free() ;
-	 }
-      const String* name() const { return m_optname ; }
-      const String* value() const { return m_optvalue ; }
-
-   protected:
-      String* m_optname ;
-      String* m_optvalue ;
-   } ;
-
-//----------------------------------------------------------------------------
-
 class ClusteringAlgoBase
    {
    public:
       ClusteringAlgoBase() {}
       ~ClusteringAlgoBase() {}
 
-      ClusteringAlgoOption* parseOptions(const char* opt) ;
-      static void freeOptions(ClusteringAlgoOption* options) ;
+      bool parseOptions(const char* opt) ;
+      virtual bool applyOption(const char* /*optname*/, const char* /*optvalue*/) { return true ; }
 
       static bool checkSparseOrDense(const Array* vectors) ;
       static void freeClusters(ClusterInfo** clusters, size_t num_clusters) ;
@@ -315,8 +291,12 @@ class ClusteringAlgoBase
       bool usingSparseVectors() const { return m_use_sparse_vectors ; }
 
    protected:
+      double    m_alpha { 0 } ;
+      double    m_beta { 0 } ;
+      double    m_gamma { 0 } ;
       double	m_threshold { -999.99 } ;
       size_t    m_desired_clusters { 2 } ;
+      size_t    m_min_points { 0 } ;
       size_t    m_max_iterations { 5 } ;
       int	m_verbosity { 0 } ;
       bool	m_use_sparse_vectors { false } ;
