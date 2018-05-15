@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.03, last edit 2018-03-12					*/
+/*  Version 0.06, last edit 2018-05-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File atomic.h		atomic operations on simple variables	*/
@@ -606,67 +606,75 @@ class Atomic
       T operator^= (const T mask) volatile noexcept { return ref().fetch_xor(mask) ^ mask ; } 
 
       // additional operations beyond those for std::atomic
-#if __GNUC__ >= 4 && (defined(__i386__) || defined(__x86_64__)) && 0
-      bool test_and_set_bit( unsigned bitnum )
+#if __GNUC__ >= 4 && (defined(__i386__) || defined(__x86_64__))
+      bool test_and_set_bit( unsigned bitnum ) noexcept
 	 {
+	    // atomically set the numbered bit; return true if we were the one to flip it from 0 to 1
 	    bool origbit ;
 	    __asm__(
-	       "lock bts %[bit], %[var]; setb %[flag]"
-	       : [flag] "=q" (origbit), [var] "+m" (v)
+	       "lock bts %[bit], %[var]\n\t"
+	       "setnc %[flag]"
+	       : [flag] "=a" (origbit), [var] "+m" (v)
 	       : [bit] "Ir" (bitnum)
 	       ) ;
 	    return origbit ;
 	 }
-      bool test_and_set_bit( unsigned bitnum ) volatile
+      bool test_and_set_bit( unsigned bitnum ) volatile noexcept
 	 {
+	    // atomically set the numbered bit; return true if we were the one to flip it from 0 to 1
 	    bool origbit ;
 	    __asm__(
-	       "lock bts %[bit], %[var]; setb %[flag]"
-	       : [flag] "=q" (origbit), [var] "+m" (v)
+	       "lock bts %[bit], %[var]\n\t"
+	       "setnc %[flag]"
+	       : [flag] "=a" (origbit), [var] "+m" (v)
 	       : [bit] "Ir" (bitnum)
 	       ) ;
 	    return origbit ;
 	 }
 #else
-      bool test_and_set_bit( unsigned bitnum )
+      bool test_and_set_bit( unsigned bitnum ) noexcept
 	 {
 	 T mask = (T)(1L << bitnum) ;
 	 return test_and_set_mask(mask) == 0 ;
 	 }
-      bool test_and_set_bit( unsigned bitnum ) volatile
+      bool test_and_set_bit( unsigned bitnum ) volatile noexcept
 	 {
 	 T mask = (T)(1L << bitnum) ;
 	 return test_and_set_mask(mask) == 0 ;
 	 }
 #endif /* GCC inline-assembler for x86 */
-#if __GNUC__ >= 4 && (defined(__i386__) || defined(__x86_64__)) && 0
-      bool test_and_clear_bit( unsigned bitnum )
+#if __GNUC__ >= 4 && (defined(__i386__) || defined(__x86_64__))
+      bool test_and_clear_bit( unsigned bitnum ) noexcept
 	 {
+	    // atomically clear the numbered bit; return true if we were the one to flip it from 1 to 0
 	    bool origbit ;
 	    __asm__(
-	       "lock btr %[bit], %[var]; setb %[flag]"
-	       : [flag] "=q" (origbit), [var] "+m" (v)
+	       "lock btr %[bit], %[var]\n\t"
+	       "setc %[flag]"
+	       : [flag] "=a" (origbit), [var] "+m" (v)
 	       : [bit] "Ir" (bitnum)
 	       ) ;
 	    return origbit ;
 	 }
-      bool test_and_clear_bit( unsigned bitnum ) volatile
+      bool test_and_clear_bit( unsigned bitnum ) volatile noexcept
 	 {
+	    // atomically clear the numbered bit; return true if we were the one to flip it from 1 to 0
 	    bool origbit ;
 	    __asm__(
-	       "lock btr %[bit], %[var]; setb %[flag]"
-	       : [flag] "=q" (origbit), [var] "+m" (v)
+	       "lock btr %[bit], %[var]\n\t"
+	       "setc %[flag]"
+	       : [flag] "=a" (origbit), [var] "+m" (v)
 	       : [bit] "Ir" (bitnum)
 	       ) ;
 	    return origbit ;
 	 }
 #else
-      bool test_and_clear_bit( unsigned bitnum )
+      bool test_and_clear_bit( unsigned bitnum ) noexcept
 	 {
 	 T mask = (T)(1L << bitnum) ;
 	 return test_and_clear_mask(mask) != 0 ;
 	 }
-      bool test_and_clear_bit( unsigned bitnum ) volatile
+      bool test_and_clear_bit( unsigned bitnum ) volatile noexcept
 	 {
 	 T mask = (T)(1L << bitnum) ;
 	 return test_and_clear_mask(mask) != 0 ;

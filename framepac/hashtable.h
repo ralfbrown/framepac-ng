@@ -224,11 +224,11 @@ class HashPtr
 	 }
       bool markStale() { return m_first.test_and_set_bit(stale_bit) ; }
       bool markUsed() { return m_first.test_and_set_bit(inuse_bit) ; }
-      bool markFree() { return m_first.test_and_clear_bit(inuse_bit) ; }
+      void markFree() { (void)m_first.fetch_and_relax(~inuse_mask) ; }
       bool markReclaiming() { return m_first.test_and_set_bit(reclaim_bit) ; }
       void markReclaimed() { m_first.fetch_and_relax(~reclaim_mask) ; }
       Link markStaleGetStatus() { return m_first.fetch_or(stale_mask) & ~link_mask ; }
-      bool markCopyDone() { return m_first.test_and_set_bit(copied_bit) ; }
+      void markCopyDone() { (void)m_first.fetch_or(copied_mask) ; }
 
       
    protected:

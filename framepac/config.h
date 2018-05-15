@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-04-27					*/
+/* Version 0.06, last edit 2018-05-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -36,6 +36,12 @@ using namespace std ;
 // uncomment the following to remove thread-local storage and synchronization
 //   primitives; FramepaC will no longer have any thread safety
 //#define FrSINGLE_THREADED
+
+// uncomment the following to enable inclusion of GPL'ed libraries for some
+//   optional features.  If you uncomment the line, you MUST distribute under
+//   the terms of the GPL, and MUST remove any non-GPL alternate license from
+//   the file LICENSE.
+//#define FRAMEPAC_GPL
 
 /************************************************************************/
 /*	Compile-Time Configuration					*/
@@ -110,6 +116,8 @@ constexpr int SLAB_GROUP_SIZE = 4095 ;
 /************************************************************************/
 
 #ifdef FRAMEPAC_GPL
+  // enable BigNum and Rational types using the GNU multi-precision math library.  This will make the program
+  //   fall under the terms of the GPL
 #  include <gmp.h>
 #elif defined(FRAMEPAC_LGPL) && defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 60))
   // emulate BigNum with 128-bit integers and Rational with 128-bit floats from quadmath.h (dist with GCC but LGPL)

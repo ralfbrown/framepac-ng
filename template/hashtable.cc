@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-08					*/
+/* Version 0.06, last edit 2018-05-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -399,6 +399,7 @@ FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, Li
    for (size_t i = hint ; i < max ; ++i)
       {
       HashPtr* hp = bucketPtr(bucketnum + i) ;
+      // check whether the entry is already known to be in use; if not, try to grab it
       if (!hp->inUse() && hp->markUsed())
 	 return i ;
       }
