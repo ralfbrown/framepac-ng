@@ -112,7 +112,7 @@ bool ClusteringAlgoBase::checkSparseOrDense(const Array* vectors)
    bool sparse = o && o->isSparseVector() ;
    for (size_t i = 1 ; i < vectors->size() ; ++i)
       {
-      /*Object* */o = vectors->getNth(i) ;
+      o = vectors->getNth(i) ;
       if (o && o->isSparseVector() != sparse)
 	 return false ;			// array contains both sparse and dense vectors
       }
