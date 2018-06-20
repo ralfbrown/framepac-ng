@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-11					*/
+/* Version 0.06, last edit 2018-06-20					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -24,6 +24,7 @@
 
 #include "framepac/hashtable.h"
 #include "framepac/texttransforms.h"
+#include "framepac/trie.h"
 
 namespace Fr
 {
@@ -111,6 +112,7 @@ class CognateData
       void casefold(bool fold) { m_casefold = fold ; }
       bool casefold() const { return m_casefold ; }
       bool setCognateScoring(const char* cognates) ;
+      bool setCognateScoring(const List* cognates) ;
       bool setOne2ManyScore(char source, const char* targets) ;
       bool setMany2OneScore(const char* sources, char target) ;
       
@@ -126,17 +128,20 @@ class CognateData
 	 CognateAlignment** align = nullptr) const ;
 
       // access to internal state
-      size_t longestSource() const { return m_longest_source ; }
+      size_t longestSource() const { return m_mappings ? m_mappings->longestKey() : 1 ; }
+
+   protected:
+      double score_single_byte(const char* word1, size_t len1, const char* word2, size_t len2,
+	 double** score_buf, CognateAlignment** align) const ;
+      double score_general(const char* word1, size_t len1, const char* word2, size_t len2,
+	 double** score_buf, CognateAlignment** align) const ;
+      double scaledScore(double rawscore, const char* word1, const char* word2) const ;
       
    protected:
-      uint8_t m_one2one[256][256] ;	// similarity scores for all single-char X->Y mappings
-      char* m_one2many[256] ;		// pointers to X->YY mappings for each X
-      char* m_many2one[256] ;		// pointers to XX->Y mappings for each Y
-      char** m_many2many ;		// info about XX->YY mappings
-      size_t m_many2many_count ;	// how many XX->YY mappings we have
-      size_t m_longest_source ;		// longest many-to-X mapping, determines how much buffer we need
-      char* m_fwdbuffer ;
-      char* m_revbuffer ;
+      float m_one2one[256][256] ;	// similarity scores for all single-char X->Y mappings
+      float m_insertion[256] ;		// similarity scores for a single-char insertion
+      float m_deletion[256] ;		// similarity scores for a single-char deletion
+      Trie<List*>* m_mappings ;		// info about multi-char X->Y mappings
       bool  m_casefold ;
       bool  m_rel_to_shorter ;
       bool  m_rel_to_average ;
