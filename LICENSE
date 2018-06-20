@@ -5,7 +5,9 @@ http:///www.gnu.org/licenses/.
 
 Alternatively, if a negotiated license has been included below, you
 may redistribute the software under its terms even if those conflict
-with the GPL.
+with the GPL.  However, you MUST NOT enable the optional features
+which rely on third-party GPL or LGPL code if you choose to distribute
+under GPL-incompatible terms (see framepac/config.h for details).
 
 You are always free to distribute this software under the terms of the
 GPL rather than relying on a negotiated license, but if you do so, you
