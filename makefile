@@ -369,6 +369,7 @@ LIBRARY = $(PACKAGE)$(LIB)
 TESTPROGS = \
 	$(BINDIR)/argparser$(EXE) \
 	$(BINDIR)/clustertest$(EXE) \
+	$(BINDIR)/cogscore$(EXE) \
 	$(BINDIR)/membench$(EXE) \
 	$(BINDIR)/objtest$(EXE) \
 	$(BINDIR)/parhash$(EXE) \
@@ -451,6 +452,10 @@ $(BINDIR)/argparser$(EXE):	tests/argparser$(OBJ) $(LIBRARY)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
 $(BINDIR)/clustertest$(EXE):	tests/clustertest$(OBJ) $(LIBRARY)
+		@ mkdir -p $(BINDIR)
+		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
+
+$(BINDIR)/cogscore$(EXE):	tests/cogscore$(OBJ) $(LIBRARY)
 		@ mkdir -p $(BINDIR)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
@@ -775,7 +780,7 @@ framepac/semaphore.h:	framepac/config.h
 framepac/set.h:	framepac/hashtable.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/spelling.h:	framepac/hashtable.h framepac/texttransforms.h
+framepac/spelling.h:	framepac/hashtable.h framepac/texttransforms.h framepac/trie.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/string.h:	framepac/object.h
@@ -825,6 +830,7 @@ FramepaC.h:		framepac/config.h framepac/argparser.h framepac/hashtable.h framepa
 tests/argparser$(OBJ):	tests/argparser$(C) framepac/argparser.h
 tests/clustertest$(OBJ): tests/clustertest$(C) framepac/argparser.h framepac/cluster.h framepac/file.h \
 			framepac/message.h framepac/threadpool.h framepac/timer.h
+tests/cogscore$(OBJ):	tests/cogscore$(C) framepac/argparser.h framepac/spelling.h
 tests/membench$(OBJ):	tests/membench$(C) framepac/argparser.h framepac/memory.h framepac/threadpool.h \
 			framepac/timer.h
 tests/objtest$(OBJ):	tests/objtest$(C) framepac/objreader.h framepac/symboltable.h
