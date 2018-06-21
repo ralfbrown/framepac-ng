@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-06-20					*/
+/* Version 0.06, last edit 2018-06-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -95,6 +95,8 @@ class CognateAlignment
 
 //----------------------------------------------------------------------------
 
+struct CogScoreInfo ;  // opaque except inside CognateData implementation
+
 class CognateData
    {
    public:
@@ -113,8 +115,6 @@ class CognateData
       bool casefold() const { return m_casefold ; }
       bool setCognateScoring(const char* cognates) ;
       bool setCognateScoring(const List* cognates) ;
-      bool setOne2ManyScore(char source, const char* targets) ;
-      bool setMany2OneScore(const char* sources, char target) ;
       
       void relativeToShorter(bool rel) { m_rel_to_shorter = rel ; m_rel_to_average = false ; }
       void relativeToAverage(bool rel) { m_rel_to_average = rel ; m_rel_to_shorter = false ; }
@@ -131,10 +131,13 @@ class CognateData
       size_t longestSource() const { return m_mappings ? m_mappings->longestKey() : 1 ; }
 
    protected:
-      double score_single_byte(const char* word1, size_t len1, const char* word2, size_t len2,
-	 double** score_buf, CognateAlignment** align) const ;
-      double score_general(const char* word1, size_t len1, const char* word2, size_t len2,
-	 double** score_buf, CognateAlignment** align) const ;
+      float scale_match(size_t srcmatch, size_t trgmatch, size_t srclen, size_t trglen) const ;
+      float best_match(const char* word1, size_t len1, size_t index1, const char* word2, size_t len2, size_t index2,
+	 size_t& srclen, size_t& trglen) const ;
+      float score_single_byte(const char* word1, size_t len1, const char* word2, size_t len2,
+	 CogScoreInfo** score_buf, size_t rows) const ;
+      float score_general(const char* word1, size_t len1, const char* word2, size_t len2,
+	 CogScoreInfo** score_buf, size_t rows) const ;
       double scaledScore(double rawscore, const char* word1, const char* word2) const ;
       
    protected:
