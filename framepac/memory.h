@@ -420,6 +420,14 @@ class LocalAlloc
       operator T* () { return m_buffer ; }
    } ;
 
+//----------------------------------------------------------------------------
+
+// perform memory reclamation on all memory pools
+void gc() ;
+
+// print memory usage statistics
+void memory_stats(std::ostream&) ;
+
 } ; // end namespace Fr
 
 #endif /* !__Fr_MEMORY_H_INCLUDED */
