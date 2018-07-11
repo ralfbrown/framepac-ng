@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-06-21					*/
+/* Version 0.06, last edit 2018-07-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -85,12 +85,14 @@ class CognateAlignment
    public:
       CognateAlignment() : m_srclen(0), m_trglen(0) {}
 
+      void init(size_t srclen, size_t trglen) { m_srclen = (uint16_t)srclen ; m_trglen = (uint16_t)trglen ; }
+
       size_t sourceLength() const { return m_srclen ; }
       size_t targetLength() const { return m_trglen ; }
 
    protected:
-      size_t m_srclen ;
-      size_t m_trglen ;
+      uint16_t m_srclen ;
+      uint16_t m_trglen ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -113,6 +115,9 @@ class CognateData
       // configuration
       void casefold(bool fold) { m_casefold = fold ; }
       bool casefold() const { return m_casefold ; }
+      bool setDoublings(const char* allowable_letters, double score, bool reverse = false) ;
+      bool setTranspositions(const char* allowable_letters, double score) ;
+      bool setCognateScoring(const char* src, const char* trg, double score) ;
       bool setCognateScoring(const char* cognates) ;
       bool setCognateScoring(const List* cognates) ;
       
@@ -209,3 +214,5 @@ class SpellCorrectionData
 #endif /* !__Fr_SPELLING_H_INCLUDED */
 
 // end of file spelling.h //
+
+

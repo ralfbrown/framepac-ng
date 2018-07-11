@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-06-21					*/
+/* Version 0.06, last edit 2018-07-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -134,10 +134,124 @@ bool CognateData::save(const char* /*filename*/)
 
 //----------------------------------------------------------------------------
 
-bool CognateData::setCognateScoring(const char* /*cognates*/)
+bool CognateData::setDoublings(const char* allowable_letters, double score, bool reverse)
 {
+   if (!allowable_letters)
+      return true ;			// trivially successful
+   char src[2] ;
+   char trg[3] ;
+   src[1] = '\0' ;
+   trg[2] = '\0' ;
+   for ( ; *allowable_letters ; ++allowable_letters)
+      {
+      src[0] = trg[0] = trg[1] = *allowable_letters ;
+      if (reverse)
+	 {
+	 if (!setCognateScoring(trg,src,score))
+	    return false ;
+	 }
+      else if (!setCognateScoring(src,trg,score))
+	 return false ;
+      }
+   return true ;
+}
 
-   return false ; //FIXME
+//----------------------------------------------------------------------------
+
+bool CognateData::setTranspositions(const char* allowable_letters, double score)
+{
+   if (!allowable_letters)
+      return true ;			// trivially successful
+   for ( ; *allowable_letters ; ++allowable_letters)
+      {
+      char src[3] ;
+      char trg[3] ;
+      src[0] = *allowable_letters ;
+      src[2] = '\0' ;
+      trg[1] = *allowable_letters ;
+      trg[2] = '\0' ;
+      for (size_t i = 1 ; allowable_letters[i] ; ++i)
+	 {
+	 src[1] = allowable_letters[i] ;
+	 trg[0] = allowable_letters[i] ;
+	 if (!setCognateScoring(src,trg,score)
+	    || !setCognateScoring(trg,src,score))
+	    return false ;
+	 }
+      }
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+bool CognateData::setCognateScoring(const char* src, const char* trg, double sc)
+{
+   size_t srclen = strlen(src) ;
+   size_t trglen = strlen(trg) ;
+   if (srclen == 1 && trglen == 0)
+      {
+      // this is a single-char deletion
+      m_deletion[(unsigned)src[0]] = (float)sc ;
+      return true ;
+      }
+   else if (srclen == 0 && trglen == 1)
+      {
+      // this is a single-char insertion
+      m_insertion[(unsigned)trg[0]] = (float)sc ;
+      return true ;
+      }
+   else if (srclen == 1 && trglen == 1)
+      {
+      // this is a single-char substitution
+      m_one2one[(unsigned)src[0]][(unsigned)trg[0]] = (float)sc ;
+      return true ;
+      }
+   else
+      {
+      // add to generic M-to-N substitutions
+
+      return false; //FIXME
+      }
+}
+
+//----------------------------------------------------------------------------
+
+bool CognateData::setCognateScoring(const List* cognates)
+{
+   if (!cognates)
+      return true ;			// trivially successful
+   for (const Object* cog : *cognates)
+      {
+      // each element of 'cognates' is of the form
+      //    ("src" ("trg1" sc1) ("trg2" sc2) ...)
+      auto src = cog->front() ;
+      if (!src) continue ;
+      const char* srcstr = src->stringValue() ;
+      if (!srcstr) continue ;
+      auto targets = cog->next() ;
+      for (auto target : *targets)
+	 {
+	 auto trg = target->front() ;
+	 if (!trg) continue ;
+	 const char* trgstr = trg->stringValue() ;
+	 if (!trgstr) continue ;
+	 auto sc = target->nthFloat(1) ;
+	 setCognateScoring(srcstr,trgstr,sc) ;
+	 }
+      }
+   return false; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+bool CognateData::setCognateScoring(const char* cognates)
+{
+   if (!cognates || !*cognates)
+      return true ;			// trivially successful
+   Object* cogdata = Object::create(cognates) ;
+   if (cogdata == nullptr || !cogdata->isList())
+      return false ;			// couldn't parse string into a list
+   return setCognateScoring(reinterpret_cast<List*>(cogdata)) ;
 }
 
 //----------------------------------------------------------------------------
@@ -380,6 +494,36 @@ double CognateData::scaledScore(double rawscore, const char* word1, const char* 
 
 //----------------------------------------------------------------------------
 
+static CognateAlignment* extract_alignment(const CogScoreInfo* const* score_buf, size_t srclen, size_t trglen)
+{
+   // first, count the number of segments
+   size_t cur_src { srclen }, cur_trg { trglen } ;
+   size_t count { 0 } ;
+   while (cur_src > 0 && cur_trg > 0)
+      {
+      ++count ;
+      const CogScoreInfo &info = score_buf[cur_src][cur_trg] ;
+      cur_src -= info.srclen ;
+      cur_trg -= info.trglen ;
+      }
+   // allocate the alignment array
+   CognateAlignment* align = new CognateAlignment[count+1] ;
+   align[count].init(0,0) ;		// add the terminating sentinel
+   if (count > 0)
+      {
+      cur_src = srclen ;
+      cur_trg = trglen ;
+      while (cur_src > 0 && cur_trg > 0)
+	 {
+	 const CogScoreInfo &info = score_buf[cur_src][cur_trg] ;
+	 align[--count].init(info.srclen,info.trglen) ;
+	 }
+      }
+   return align ;
+}
+
+//----------------------------------------------------------------------------
+
 double CognateData::score(const char* word1, const char* word2, bool exact_letter_match_only,
    CognateAlignment** align) const
 {
@@ -405,7 +549,7 @@ double CognateData::score(const char* word1, const char* word2, bool exact_lette
    if (align)
       {
       // accumulate alignment info from the source/target lengths recorded in score_buf
-      *align = nullptr ;  //FIXME
+      *align = extract_alignment(score_buf,len1,len2) ;
       }
    free_score_buffer(score_buf,rows) ;
    return scaledScore(cogscore,word1,word2) ;
