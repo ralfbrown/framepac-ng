@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-05-14					*/
+/* Version 0.06, last edit 2018-07-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -67,6 +67,14 @@ using namespace std ;
 // uncomment the following line to pass integer keys through FastHash64
 //   instead of using them as-is
 //#define FrHASHTABLE_USE_FASTHASH64
+
+/************************************************************************/
+/************************************************************************/
+
+// default limit for text processing
+#ifndef FrMAX_LINE
+# define FrMAX_LINE 65500
+#endif
 
 /************************************************************************/
 /************************************************************************/
@@ -198,7 +206,11 @@ inline T* NewR(T* old, size_t N = 1) { return (T*)std::realloc(old,sizeof(T)*N) 
 inline void Free(void* p) { std::free(p) ; }
 
 #ifndef unlikely
-#define unlikely(X) (X)
+# if defined(__GNUC__)
+#  define unlikely(X) __builtin_expect(X,0)
+# else
+#  define unlikely(X) (X)
+# endif
 #endif
 
 } // end namespace Fr

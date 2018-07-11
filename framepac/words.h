@@ -48,7 +48,11 @@ class WordSplitter
       virtual ~WordSplitter() ;
       WordSplitter& operator= (const WordSplitter&) = default ;
 
+      // return the next word in the stream of characters provided by the CharGetter
       StringPtr nextWord() ;
+      // return a single string containing all of the words, separated by the given character
+      StringPtr delimitedString(char delim = ' ') ;
+
       operator bool () const ;  // did we successfully init?
       bool eof() const ;
    public:
@@ -72,6 +76,38 @@ class WordSplitterWhitespace : public WordSplitter
       WordSplitterWhitespace(const WordSplitterWhitespace&) = default ;
       virtual ~WordSplitterWhitespace() {}
       WordSplitterWhitespace& operator= (const WordSplitterWhitespace&) = default ;
+
+   protected:
+      virtual boundary boundaryType(const char* window_start, const char* currpos,
+				    const char* window_end) const ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+class WordSplitterDelimiter : public WordSplitter
+   {
+   public:
+      WordSplitterDelimiter(class CharGetter& getter, char delim = ' ') : WordSplitter(getter), m_delim(delim) {}
+      WordSplitterDelimiter(const WordSplitterDelimiter&) = default ;
+      virtual ~WordSplitterDelimiter() {}
+      WordSplitterDelimiter& operator= (const WordSplitterDelimiter&) = default ;
+
+   protected:
+      virtual boundary boundaryType(const char* window_start, const char* currpos,
+				    const char* window_end) const ;
+   protected:
+      char m_delim ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+class WordSplitterEnglish : public WordSplitter
+   {
+   public:
+      WordSplitterEnglish(class CharGetter& getter) : WordSplitter(getter) {}
+      WordSplitterEnglish(const WordSplitterEnglish&) = default ;
+      virtual ~WordSplitterEnglish() {}
+      WordSplitterEnglish& operator= (const WordSplitterEnglish&) = default ;
 
    protected:
       virtual boundary boundaryType(const char* window_start, const char* currpos,

@@ -592,7 +592,7 @@ build/vector_u32_u32$(OBJ):	src/vector_u32_u32$(C) template/vector.cc template/d
 			template/sparsevector.cc
 build/wordcorpus_u32u32$(OBJ): 	src/wordcorpus_u32u32$(C) template/wordcorpus.cc
 build/wordcorpus_u32u40$(OBJ): 	src/wordcorpus_u32u40$(C) template/wordcorpus.cc
-build/wordsplit$(OBJ):		src/wordsplit$(C) framepac/words.h
+build/wordsplit$(OBJ):		src/wordsplit$(C) framepac/charget.h framepac/stringbuilder.h framepac/words.h
 
 globaldata$(C):
 	@mkdir -p build
