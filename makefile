@@ -351,7 +351,8 @@ OBJS = \
 	build/vector_u32_u32$(OBJ) \
 	build/wordcorpus_u32u32$(OBJ) \
 	build/wordcorpus_u32u40$(OBJ) \
-	build/wordsplit$(OBJ)
+	build/wordsplit$(OBJ) \
+	build/wordsplit_eng$(OBJ)
 
 TESTS = bin/argparser$(EXE)
 
@@ -593,6 +594,7 @@ build/vector_u32_u32$(OBJ):	src/vector_u32_u32$(C) template/vector.cc template/d
 build/wordcorpus_u32u32$(OBJ): 	src/wordcorpus_u32u32$(C) template/wordcorpus.cc
 build/wordcorpus_u32u40$(OBJ): 	src/wordcorpus_u32u40$(C) template/wordcorpus.cc
 build/wordsplit$(OBJ):		src/wordsplit$(C) framepac/charget.h framepac/stringbuilder.h framepac/words.h
+build/wordsplit_eng$(OBJ):	src/wordsplit_eng$(C) framepac/words.h
 
 globaldata$(C):
 	@mkdir -p build
