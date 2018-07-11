@@ -54,7 +54,7 @@ StringPtr WordSplitter::nextWord()
 
 //----------------------------------------------------------------------------
 
-StringPtr WordSplitter::delimitedString(char delim)
+StringPtr WordSplitter::delimitedWords(char delim)
 {
    StringBuilder sb ;
    bool first = true ;

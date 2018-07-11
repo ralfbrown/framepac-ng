@@ -51,7 +51,7 @@ class WordSplitter
       // return the next word in the stream of characters provided by the CharGetter
       StringPtr nextWord() ;
       // return a single string containing all of the words, separated by the given character
-      StringPtr delimitedString(char delim = ' ') ;
+      StringPtr delimitedWords(char delim = ' ') ;
 
       operator bool () const ;  // did we successfully init?
       bool eof() const ;
