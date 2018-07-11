@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-12					*/
+/* Version 0.06, last edit 2018-07-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -96,6 +96,13 @@ class Trie
       // construct an empty trie, optionally pre-allocating nodes
       Trie(IdxT cap = 0) { init(cap) ; }
       ~Trie() ;
+
+      template <typename RetT = T>
+      constexpr static typename std::enable_if<std::is_pointer<T>::value, RetT>::type
+      nullVal() { return nullptr ; }
+      template <typename RetT = T>
+      constexpr static typename std::enable_if<!std::is_pointer<T>::value, RetT>::type
+      nullVal() { return (RetT)0 ; }
 
       bool insert(const uint8_t* key, unsigned keylength, T value) ;
       bool extendKey(IdxT& index, uint8_t keybyte) const ;

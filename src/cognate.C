@@ -25,6 +25,9 @@
 namespace Fr
 {
 
+// request explicit instantiation
+template class Trie<List*> ;
+
 /************************************************************************/
 /*	Local types for this module					*/
 /************************************************************************/
@@ -209,6 +212,8 @@ bool CognateData::setCognateScoring(const char* src, const char* trg, double sc)
    else
       {
       // add to generic M-to-N substitutions
+      if (!m_mappings)
+	 m_mappings = new Fr::Trie<List*> ;
 
       return false; //FIXME
       }

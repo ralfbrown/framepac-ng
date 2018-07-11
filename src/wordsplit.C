@@ -112,22 +112,6 @@ WordSplitter::boundary WordSplitterDelimiter::boundaryType(const char* window_st
    return no_boundary ; //FIXME
 }
 
-/************************************************************************/
-/*	Methods for class List						*/
-/************************************************************************/
-
-List* List::createWordList(const char* s, char delim)
-{
-   CharGetterCString getter(s) ;
-   WordSplitterDelimiter splitter(getter,delim) ;
-   List* words = List::create() ;
-   while (!splitter.eof())
-      {
-      words = words->push(splitter.nextWord()) ;
-      }
-   return words->reverse() ;
-}
-
 //----------------------------------------------------------------------------
 
 } // end of namespace Fr

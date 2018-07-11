@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-12					*/
+/* Version 0.06, last edit 2018-07-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -271,7 +271,7 @@ T Trie<T,IdxT,bits>::find(const uint8_t* key, unsigned keylength) const
    IdxT n = findNode(key,keylength) ;
    if (n != ROOT_INDEX || node(n)->leaf())
       return node(n)->value() ;
-   return T(0) ;
+   return nullVal() ;
 }
 
 //----------------------------------------------------------------------------
