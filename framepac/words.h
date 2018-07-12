@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-03					*/
+/* Version 0.06, last edit 2018-07-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -121,38 +121,6 @@ class WordSplitterEnglish : public WordSplitter
 
 /************************************************************************/
 /************************************************************************/
-
-template <typename ID>
-class WordCorpus
-   {
-   public:
-      WordCorpus() ;
-      WordCorpus(const WordCorpus&) = delete ;
-      WordCorpus(const char* filename, bool readonly) ;
-      WordCorpus(CFile& fp, bool readonly) ;
-      ~WordCorpus() ;
-      void operator= (const WordCorpus&) = delete ;
-
-      const char* word(size_t id) { return m_wordstrings[id] ; }
-      ID& operator [] (size_t N) { return m_wordIDs[N] ; }
-      const ID& operator [] (size_t N) const { return m_wordIDs[N] ; }
-
-      bool save(CFile& fp) ;
-      bool save(const char* filename) ;
-   private:
-      char **m_wordstrings ;
-      ID    *m_wordIDs ;
-      size_t m_numwords ;
-      size_t m_numIDs ;
-      size_t m_allocwords ;
-      size_t m_allocIDs ;
-   } ;
-
-//----------------------------------------------------------------------------
-
-extern template class WordCorpus<WordID> ;
-
-//----------------------------------------------------------------------------
 
 } ; // end namespace Fr
 
