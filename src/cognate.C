@@ -21,6 +21,7 @@
 
 #include "framepac/file.h"
 #include "framepac/spelling.h"
+#include "framepac/stringbuilder.h"
 
 namespace Fr
 {
@@ -55,18 +56,7 @@ struct CogScoreInfo
 
 CognateData::CognateData()
 {
-   for (size_t row = 0; row < 256 ; ++row)
-      {
-      // by default, no benefit from any insertions/deletions/substitutions
-      m_insertion[row] = 0.0f ;
-      m_deletion[row] = 0.0f ;
-      for (size_t col = 0; col < 256 ; ++col)
-	 {
-	 m_one2one[row][col] = 0.0f ;
-	 }
-      // but "substituting" a byte for itself gets full weight
-      m_one2one[row][row] = 1.0f ;
-      }
+   reset() ;
    return ;
 }
 
@@ -96,7 +86,7 @@ CognateData::CognateData(const List* cognates, size_t fuzzy_match_score)
 
 CognateData::~CognateData()
 {
-
+   delete m_mappings ;
    return ;
 }
 
@@ -111,13 +101,77 @@ CognateData* CognateData::defaultInstance()
 
 //----------------------------------------------------------------------------
 
+void CognateData::reset()
+{
+   for (size_t row = 0; row < 256 ; ++row)
+      {
+      // by default, no benefit from any insertions/deletions/substitutions
+      m_insertion[row] = 0.0f ;
+      m_deletion[row] = 0.0f ;
+      for (size_t col = 0; col < 256 ; ++col)
+	 {
+	 m_one2one[row][col] = 0.0f ;
+	 }
+      // but "substituting" a byte for itself gets full weight
+      m_one2one[row][row] = 1.0f ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 CognateData* CognateData::load(const char* filename, size_t fuzzy_match_score)
 {
    CInputFile f(filename) ;
    List* cognates = nullptr ;
    if (f)
       {
-      cognates = nullptr ; //FIXME
+      // determine the format of the data in the file
+      // first, skip blank and comment lines
+      while (!f.eof())
+	 {
+	 f.skipBlankLines() ;
+	 int c = f.getc_nonws() ;	// check the first non-whitespace char
+	 if (c == ';' || c == '#')	// is it a comment?
+	    f.skipLines() ;		// consume the comment line
+	 else
+	    {
+	    f.ungetc(c) ;
+	    break ;			// not a comment, so this is the start of data
+	    }
+	 }
+      // now check the first character; it should be either an open paren or a double quote
+      int c = f.getc() ;
+      f.ungetc(c) ;
+      if (c == '(')
+	 {
+	 // the file contains a single FramepaC list
+	 StringBuilder sb ;
+	 while (!f.eof())
+	    {
+	    char* line = f.getCLine() ;
+	    sb.append(line) ;
+	    Free(line) ;
+	    }
+	 const char* cogstring = sb.c_str() ;
+	 cognates = List::create(cogstring) ;
+	 }
+      else if (c == '"')
+	 {
+	 // the file contains one line per substitution, in the format
+	 //   "src" "trg" score
+	 while (!f.eof())
+	    {
+	    char* line = f.getCLine() ;
+	    //TODO
+	    Free(line) ;
+	    }
+	 }
+      else
+	 {
+	 // error, wrong format
+	 //TODO
+	 }
       }
    CognateData* cog = nullptr ;
    if (!filename || !*filename || f)

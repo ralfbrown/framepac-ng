@@ -109,6 +109,7 @@ class CognateData
 
       static CognateData* defaultInstance() ;
 
+      void reset() ;
       static CognateData* load(const char* filename, size_t fuzzy_match_score = 0) ; // 0 = don't change
       bool save(const char* filename) ;
 

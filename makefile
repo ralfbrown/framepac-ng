@@ -503,7 +503,7 @@ build/cluster_name$(OBJ):	src/cluster_name$(C) framepac/cluster.h
 build/cluster_u32_dbl$(OBJ):	src/cluster_u32_dbl$(C) template/cluster_factory.cc
 build/cluster_u32_flt$(OBJ):	src/cluster_u32_flt$(C) template/cluster_factory.cc
 build/cluster_u32_u32$(OBJ):	src/cluster_u32_u32$(C) template/cluster_factory.cc
-build/cognate$(OBJ):		src/cognate$(C) framepac/spelling.h
+build/cognate$(OBJ):		src/cognate$(C) framepac/file.h framepac/spelling.h framepac/stringbuilder.h
 build/complex$(OBJ):		src/complex$(C) framepac/complex.h framepac/fasthash64.h
 build/confmatrix$(OBJ):		src/confmatrix$(C) framepac/spelling.h
 build/contextcoll_sym$(OBJ):	src/contextcoll_sym$(C) template/contextcoll.cc
