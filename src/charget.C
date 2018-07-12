@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.06, last edit 2018-07-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -51,7 +51,29 @@ int CharGetter::getNonWhite()
 }
 
 /************************************************************************/
+/*	Methods for class CharGetterStream				*/
 /************************************************************************/
+
+bool CharGetterStream::rewind()
+{
+   // clear eof flag, otherwise the seek will fail
+   m_stream.clear(m_stream.eofbit) ;
+   // set the stream 'get' pointer back to zero
+   m_stream.seekg(0) ;
+   // let caller know whether the seek was successful
+   return !m_stream.fail() ;
+}
+
+/************************************************************************/
+/*	Methods for class CharGetterFILE				*/
+/************************************************************************/
+
+bool CharGetterFILE::rewind()
+{
+   return fseek(m_stream,0,SEEK_SET) == 0 ;
+}
+
+//----------------------------------------------------------------------------
 
 int CharGetterFILE::peekNonWhite()
 {

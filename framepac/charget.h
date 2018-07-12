@@ -45,6 +45,7 @@ class CharGetter
    public:
       virtual ~CharGetter() = default ;
       virtual bool eof() const = 0 ;
+      virtual bool rewind() = 0 ;
       virtual int peek() = 0 ;
       virtual int peekNonWhite() ;
       virtual int get() = 0 ;
@@ -61,6 +62,7 @@ class CharGetterStream : public CharGetter
       CharGetterStream(istream &in) : m_stream(in) {}
       CharGetterStream(const CharGetterStream &orig) : m_stream(orig.m_stream) {}
       virtual ~CharGetterStream() {}
+      virtual bool rewind() ;
       virtual int peek() { return m_stream.peek() ; }
       virtual int get() { return m_stream.get() ; }
       virtual bool eof() const { return m_stream.eof() ; }
@@ -79,6 +81,7 @@ class CharGetterFILE : public CharGetter
       CharGetterFILE(const CharGetterFILE &orig) : m_stream(orig.m_stream) {}
       virtual ~CharGetterFILE() {}
       CharGetterFILE& operator= (const CharGetterFILE &orig) { m_stream = orig.m_stream ; return *this ; }
+      virtual bool rewind() ;
       virtual int peek() ;
       virtual int peekNonWhite() ;
       virtual int get() { return fgetc(m_stream) ; }
@@ -93,10 +96,11 @@ class CharGetterFILE : public CharGetter
 class CharGetterCString : public CharGetter
    {
    public:
-      CharGetterCString(const char *s) : m_stream(s?s:"") {}
-      CharGetterCString(const CharGetterCString &orig) : m_stream(orig.m_stream) {}
+      CharGetterCString(const char *s) : m_stream(s?s:""), m_stream_start(m_stream) {}
+      CharGetterCString(const CharGetterCString &orig) : m_stream(orig.m_stream), m_stream_start(orig.m_stream_start) {}
       virtual ~CharGetterCString() {}
       CharGetterCString& operator= (const CharGetterCString &orig) { m_stream = orig.m_stream ; return *this ; }
+      virtual bool rewind() { m_stream = m_stream_start ; return true ; }
       virtual int peek() { return *m_stream ? *m_stream : EOF ; }
       using CharGetter::peekNonWhite ; //virtual int peekNonWhite() ;
       virtual int get() { return *m_stream ? *m_stream++ : EOF ; }
@@ -106,6 +110,7 @@ class CharGetterCString : public CharGetter
 
    private:
       const char *m_stream ;
+      const char *m_stream_start ;
 } ;
 
 //----------------------------------------------------------------------------
@@ -113,8 +118,9 @@ class CharGetterCString : public CharGetter
 class CharGetterStdString : public CharGetter
    {
    public:
-      CharGetterStdString(const std::string &s) : m_currpos(s.begin()), m_endpos(s.end()) {}
-      CharGetterStdString(const CharGetterStdString &orig) : m_currpos(orig.m_currpos), m_endpos(orig.m_endpos) {}
+      CharGetterStdString(const std::string &s) : m_currpos(s.begin()), m_endpos(s.end()), m_startpos(s.begin()) {}
+      CharGetterStdString(const CharGetterStdString &orig)
+	 : m_currpos(orig.m_currpos), m_endpos(orig.m_endpos), m_startpos(orig.m_startpos) {}
       virtual ~CharGetterStdString() {}
       CharGetterStdString& operator= (const CharGetterStdString &orig)
 	 {
@@ -122,6 +128,7 @@ class CharGetterStdString : public CharGetter
 	 m_endpos = orig.m_endpos ;
 	 return *this ;
 	 }
+      virtual bool rewind() { m_currpos = m_startpos ; return true ; }
       virtual int peek() { return eof() ? EOF : *m_currpos ; }
       using CharGetter::peekNonWhite ; //virtual int peekNonWhite() ;
       virtual int get() { return eof() ? EOF : *m_currpos++ ; }
@@ -130,6 +137,7 @@ class CharGetterStdString : public CharGetter
    private:
       std::string::const_iterator m_currpos ;
       std::string::const_iterator m_endpos ;
+      std::string::const_iterator m_startpos ;
    } ;
 
 //----------------------------------------------------------------------------
