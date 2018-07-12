@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 18apr2018
+# Last change: 12jul2018
 
 #########################################################################
 # define the locations of all the files
@@ -262,6 +262,7 @@ OBJS = \
 	build/bufbuilder_char$(OBJ) \
 	build/bwt$(OBJ) \
 	build/canonsent$(OBJ) \
+	build/cfgfile$(OBJ) \
 	build/cfile$(OBJ) \
 	build/charget$(OBJ) \
 	build/cluster_name$(OBJ) \
@@ -495,6 +496,7 @@ build/bufbuilder_char$(OBJ):	src/bufbuilder_char$(C) template/bufbuilder.cc
 build/bwt$(OBJ):		src/bwt$(C) framepac/config.h
 build/canonsent$(OBJ):		src/canonsent$(C) framepac/stringbuilder.h framepac/texttransforms.h
 build/charget$(OBJ):		src/charget$(C) framepac/charget.h
+build/cfgfile$(OBJ):		src/cfgfile$(C) framepac/configfile.h framepac/charget.h
 build/cfile$(OBJ):		src/cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
 build/cluster$(OBJ):		src/cluster$(C) framepac/cluster.h framepac/message.h framepac/progress.h \
 				framepac/texttransforms.h framepac/convert.h
