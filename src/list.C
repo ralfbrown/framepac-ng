@@ -127,10 +127,33 @@ List* List::create(Object* obj1, Object* obj2, Object* obj3, Object* obj4, Objec
 
 //----------------------------------------------------------------------------
 
-List* List::create(const char* /*string_rep*/)
+List* List::create(const char*& string_rep)
 {
-
-   return empty_list ; //FIXME
+   if (!string_rep || string_rep[0] != '(')
+      {
+      return empty_list ;
+      }
+   ++string_rep ;			// consume the opening paren
+   ListBuilder lb ;
+   // until we hit the closing paren or end of string, convert items to Objects
+   //   and add to the list builder
+   while (*string_rep)
+      {
+      // skip leading whitespace
+      while (*string_rep && isspace(*string_rep))
+	 ++string_rep ;
+      // check for end of list
+      if (*string_rep == ')')
+	 {
+	 ++string_rep ;
+	 break ;
+	 }
+      else if (!*string_rep)
+	 break ;
+      // convert the next object in the list
+      lb += Object::create(string_rep) ;
+      }
+   return lb.move() ;
 }
 
 //----------------------------------------------------------------------------

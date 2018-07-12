@@ -69,7 +69,7 @@ class List : public Object
       static List* create(Object*, Object*, Object*) ;
       static List* create(Object*, Object*, Object*, Object*) ;
       static List* create(Object*, Object*, Object*, Object*, Object*) ;
-      static List* create(const char*) ;
+      static List* create(const char*&) ;
       static List* create(istream&) ;
 
       // generate a list of strings from a 'sentence' with single blanks delimiting tokens
