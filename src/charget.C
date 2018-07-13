@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include "framepac/builder.h"
 #include "framepac/charget.h"
 
 namespace Fr
@@ -49,6 +50,21 @@ int CharGetter::getNonWhite()
       }
    return nextch ;
 }
+
+//----------------------------------------------------------------------------
+
+char* CharGetter::getLine()
+{
+   BufferBuilder<char> buf ;
+
+   int nextch ;
+   while ((nextch = get()) != EOF && nextch != '\n')
+      {
+      buf += (char)nextch ;
+      }
+   return buf.move() ;
+}
+
 
 /************************************************************************/
 /*	Methods for class CharGetterStream				*/
