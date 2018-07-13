@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-12					*/
+/* Version 0.06, last edit 2018-07-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -21,13 +21,16 @@
 
 #include "framepac/charget.h"
 #include "framepac/configfile.h"
+#include "framepac/list.h"
 
 namespace Fr
 {
 
 /************************************************************************/
+/*	Global Data							*/
 /************************************************************************/
 
+bool Configuration::s_instartup = true ;
 
 /************************************************************************/
 /************************************************************************/
@@ -58,8 +61,11 @@ bool Configuration::load(CharGetter& stream, const char* section, bool reset)
 
 bool Configuration::load(const char* filename, const char* section, bool reset)
 {
-   (void)filename; (void)section; (void)reset;
-   return false ; //FIXME
+   CInputFile file(filename) ;
+   if (!file)
+      return false ;
+   CharGetterFILE getter(file) ;
+   return getter ? load(getter,section,reset) : false ;
 }
 
 //----------------------------------------------------------------------------
@@ -82,8 +88,11 @@ bool Configuration::loadRaw(CharGetter& stream, const char* section, List*& para
 
 bool Configuration::loadRaw(const char* filename, const char* section, List*& params)
 {
-   (void)filename; (void)section; (void)params;
-   return false ; //FIXME
+   CInputFile file(filename) ;
+   if (!file)
+      return false ;
+   CharGetterFILE getter(file) ;
+   return getter ? loadRaw(getter,section,params) : false ;
 }
 
 //----------------------------------------------------------------------------
@@ -98,7 +107,51 @@ bool Configuration::loadRaw(std::istream& instream, const char* section, List*& 
 
 void Configuration::freeValues()
 {
-   //TODO
+   if (!m_currstate)
+      return ;
+   for (size_t i = 0 ; m_currstate[i].m_keyword ; ++i)
+      {
+      void* loc = nullptr; //FIXME
+      if (!loc)
+	 continue ;
+      switch (m_currstate[i].m_vartype)
+	 {
+	 case integer:
+	 case cardinal:
+	 case real:
+	 case bitflags:
+	 case symbol:
+	 case yesno:
+	 case keyword:
+	 case invalid:
+	    // do nothing: these are stored directly in the configuration table
+	    break  ;
+	 case basedir:
+	 case filename:
+	 case cstring:
+	    {
+	    // allocated C-style string, so free the memory
+	    char** str = reinterpret_cast<char**>(loc) ;
+	    Free(*str) ;
+	    *str = nullptr ;
+	    }
+	    break ;
+	 case list:
+	 case assoclist:
+	 case symlist:
+	 case filelist:
+	    {
+	    // FramepaC List object
+	    Object** obj = reinterpret_cast<Object**>(loc) ;
+	    if (*obj) (*obj)->free() ;
+	    *obj = nullptr ;
+	    }
+	    break ;
+	 default:
+	    // TODO: free user type
+	    break ;
+	 }
+      }
    return ;
 }
 
@@ -106,7 +159,7 @@ void Configuration::freeValues()
 
 void Configuration::startupComplete()
 {
-   //TODO
+   s_instartup = false ;
    return  ;
 }
 
@@ -114,7 +167,7 @@ void Configuration::startupComplete()
 
 void Configuration::beginningShutdown()
 {
-   //TODO
+   s_instartup = true ;
    return  ;
 }
 
@@ -122,15 +175,27 @@ void Configuration::beginningShutdown()
 
 List* Configuration::listParameters() const
 {
-   return nullptr ; //TODO
+   ListBuilder lb ;
+   for (ConfigurationTable* tbl = m_currstate ; tbl && tbl->m_keyword ; ++tbl)
+      {
+      if (*tbl->m_keyword)
+	 lb += tbl->m_keyword ;
+      }
+   return lb.move() ;
 }
 
 //----------------------------------------------------------------------------
 
 List* Configuration::listFlags(const char* param_name) const
 {
-   (void)param_name; //FIXME
-   return nullptr ;
+   ListBuilder lb ;
+   const ConfigurationTable* tbl = findParameter(param_name,bitflags) ;
+   if (tbl)
+      {
+      //TODO
+
+      }
+   return lb.move() ;
 }
 
 //----------------------------------------------------------------------------
@@ -185,9 +250,27 @@ bool Configuration::setParameter(const char* new_value, const ConfigurationTable
 
 //----------------------------------------------------------------------------
 
-//----------------------------------------------------------------------------
+bool Configuration::skipToSection(CharGetter& stream, const char* section_name, bool from_start)
+{
+   (void)stream; (void)section_name; (void)from_start;
+   return false ; //FIXME
+}
 
 //----------------------------------------------------------------------------
+
+const ConfigurationTable* Configuration::findParameter(const char* param_name) const
+{
+   (void)param_name ;
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+const ConfigurationTable* Configuration::findParameter(const char* param_name, ConfigVariableType type) const
+{
+   const ConfigurationTable* tbl = findParameter(param_name) ;
+   return (tbl && tbl->m_vartype == type) ? tbl : nullptr ;
+}
 
 //----------------------------------------------------------------------------
 

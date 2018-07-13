@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-12					*/
+/* Version 0.06, last edit 2018-07-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -53,7 +53,7 @@ class CommandBit
    
 //----------------------------------------------------------------------------
 
-enum class ConfigVariableType
+enum ConfigVariableType
    {
    integer, cardinal, real, basedir, filename, filelist, cstring, bitflags, list,
    assoclist, symbol, symlist, yesno, keyword, invalid, user
@@ -100,6 +100,8 @@ class Configuration
 
    protected: // methods
       bool skipToSection(CharGetter& stream, const char* section_name, bool from_start = true) ;
+      const ConfigurationTable* findParameter(const char* param_name) const ;
+      const ConfigurationTable* findParameter(const char* param_name, ConfigVariableType type) const ;
    protected: // data
       static bool s_instartup ;
       ConfigurationTable* m_currstate ;
