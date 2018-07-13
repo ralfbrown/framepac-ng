@@ -45,10 +45,10 @@ enum class Settable
 class CommandBit
    {
    public:
-      const char*   name ;
-      std::uint32_t bitmask ;
-      bool          is_default ;
-      const char*   description ;
+      const char*   m_name ;
+      std::uint32_t m_bitmask ;
+      bool          m_default ;
+      const char*   m_description ;
    } ;
    
 //----------------------------------------------------------------------------
@@ -99,7 +99,9 @@ class Configuration
 	 std::ostream* err = nullptr) ;
 
    protected: // methods
+      char* currentValue(const ConfigurationTable* param) const ;
       bool skipToSection(CharGetter& stream, const char* section_name, bool from_start = true) ;
+      ConfigurationTable* findParameter(const char* param_name) ;
       const ConfigurationTable* findParameter(const char* param_name) const ;
       const ConfigurationTable* findParameter(const char* param_name, ConfigVariableType type) const ;
    protected: // data

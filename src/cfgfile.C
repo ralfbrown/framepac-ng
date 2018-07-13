@@ -22,6 +22,7 @@
 #include "framepac/charget.h"
 #include "framepac/configfile.h"
 #include "framepac/list.h"
+#include "framepac/string.h"
 
 namespace Fr
 {
@@ -192,8 +193,18 @@ List* Configuration::listFlags(const char* param_name) const
    const ConfigurationTable* tbl = findParameter(param_name,bitflags) ;
    if (tbl)
       {
-      //TODO
-
+      const CommandBit* bits = reinterpret_cast<const CommandBit*>(tbl->m_extra_args) ;
+      for ( ; bits && bits->m_name ; ++bits)
+	 {
+	 if (bits->m_description)
+	    {
+	    lb += List::create(String::create(bits->m_name),String::create(bits->m_description)) ;
+	    }
+	 else
+	    {
+	    lb += List::create(String::create(bits->m_name)) ;
+	    }
+	 }
       }
    return lb.move() ;
 }
@@ -202,8 +213,23 @@ List* Configuration::listFlags(const char* param_name) const
 
 List* Configuration::describeParameter(const char* param_name) const
 {
-   (void)param_name; //FIXME
-   return nullptr ;
+   ListBuilder lb ;
+   const ConfigurationTable* tbl = findParameter(param_name) ;
+   if (!tbl)
+      return lb.move() ;
+   if (tbl->m_keyword)
+      lb += List::create(String::create("NAME:"),String::create(tbl->m_keyword)) ;
+   //TODO
+   
+   if (tbl->m_default_value)
+      lb += List::create(String::create("DEFAULT:"),String::create(tbl->m_default_value)) ;
+   if (tbl->m_min_value)
+      lb += List::create(String::create("MIN:"),String::create(tbl->m_min_value)) ;
+   if (tbl->m_max_value)
+      lb += List::create(String::create("MAX:"),String::create(tbl->m_max_value)) ;
+   if (tbl->m_description)
+      lb += List::create(String::create("DESCRIPTION:"),String::create(tbl->m_description)) ;
+   return lb.move() ;
 }
 
 //----------------------------------------------------------------------------
@@ -211,16 +237,33 @@ List* Configuration::describeParameter(const char* param_name) const
 bool Configuration::validValues(const char* param_name, const char*& min_value, const char*& max_value,
    const char*& default_value) const
 {
-   (void)param_name; (void)min_value; (void)max_value; (void)default_value; //FIXME
+   const ConfigurationTable* tbl = findParameter(param_name) ;
+   if (tbl && tbl->m_keyword)
+      {
+      min_value = tbl->m_min_value ;
+      max_value = tbl->m_max_value ;
+      default_value = tbl->m_default_value ;
+      return true ;
+      }
+   min_value = max_value = default_value = nullptr ;
    return false ;
+}
+
+//----------------------------------------------------------------------------
+
+char* Configuration::currentValue(const ConfigurationTable* param) const
+{
+   if (!param || !param->m_keyword)
+      return nullptr ;
+
+   return nullptr ; //FIXME
 }
 
 //----------------------------------------------------------------------------
 
 char* Configuration::currentValue(const char* param_name)
 {
-   (void)param_name; //FIXME
-   return nullptr ;
+   return currentValue(findParameter(param_name)) ;
 }
 
 //----------------------------------------------------------------------------
@@ -254,6 +297,14 @@ bool Configuration::skipToSection(CharGetter& stream, const char* section_name, 
 {
    (void)stream; (void)section_name; (void)from_start;
    return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+ConfigurationTable* Configuration::findParameter(const char* param_name)
+{
+   (void)param_name ;
+   return nullptr ; //FIXME
 }
 
 //----------------------------------------------------------------------------
