@@ -28,13 +28,23 @@ namespace Fr
 /************************************************************************/
 
 template <typename IdT, typename IdxT>
+WordCorpusT<IdT,IdxT>::WordCorpusT()
+   : m_wordmap(),
+     m_wordbuf(),
+     m_fwdindex(),
+     m_revindex()
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
 WordCorpusT<IdT,IdxT>::WordCorpusT(const char *filename, bool readonly)
    : m_wordmap(),
      m_wordbuf(),
      m_fwdindex(),
-     m_revindex(),
-     m_attributes(nullptr),
-     m_numwords(0)
+     m_revindex()
 {
    (void)filename; (void)readonly ;
 
@@ -48,9 +58,7 @@ WordCorpusT<IdT,IdxT>::WordCorpusT(CFile &fp, bool readonly)
    : m_wordmap(),
      m_wordbuf(),
      m_fwdindex(),
-     m_revindex(),
-     m_attributes(nullptr),
-     m_numwords(0)
+     m_revindex()
 {
    (void)fp; (void)readonly ;
 
@@ -64,6 +72,16 @@ WordCorpusT<IdT,IdxT>::~WordCorpusT()
 {
    //TODO
    return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::isCorpusFile(const char* filename)
+{
+   (void)filename ;
+
+   return false ;//FIXME
 }
 
 //----------------------------------------------------------------------------
@@ -153,26 +171,13 @@ bool WordCorpusT<IdT,IdxT>::discardContextEquivs()
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-IdxT WordCorpusT<IdT,IdxT>::corpusSize() const
-{
-   return 0UL ;//FIXME
-}
-
-//----------------------------------------------------------------------------
-
-template <typename IdT, typename IdxT>
-IdT WordCorpusT<IdT,IdxT>::vocabSize() const
-{
-   return 0 ;//FIXME
-}
-
-//----------------------------------------------------------------------------
-
-template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::findID(const char* word) const
 {
-   (void)word;
-   return 0 ;//FIXME
+   if (!word || !*word)
+      return ErrorID ;
+   CString key(word) ;
+   IdT id ;
+   return m_wordmap.findKey(key,&id) ? id : ErrorID ;
 }
 
 //----------------------------------------------------------------------------
@@ -180,8 +185,8 @@ IdT WordCorpusT<IdT,IdxT>::findID(const char* word) const
 template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::findOrAddID(const char* word)
 {
-   (void)word;
-   return 0 ;//FIXME
+   CString key(word) ;
+   return m_wordmap.addKey(key) ;
 }
 
 //----------------------------------------------------------------------------
@@ -189,8 +194,9 @@ IdT WordCorpusT<IdT,IdxT>::findOrAddID(const char* word)
 template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::addWord(const char* word)
 {
-   (void)word;
-   return 0 ;//FIXME
+   IdT id = findOrAddID(word) ;
+   m_wordbuf += id ;
+   return id ;
 }
 
 //----------------------------------------------------------------------------
@@ -198,8 +204,9 @@ IdT WordCorpusT<IdT,IdxT>::addWord(const char* word)
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::addWord(IdT word)
 {
-   (void)word;
-   return 0 ;//FIXME
+   //FIXME?
+   m_wordbuf += word ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
@@ -207,7 +214,132 @@ bool WordCorpusT<IdT,IdxT>::addWord(IdT word)
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::addNewline()
 {
-   return 0 ;//FIXME
+   return addWord(newlineID()) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::rareWordThreshold(IdxT thresh,  const char* token)
+{
+   m_rare_thresh = thresh ;
+   if (m_rare == (IdT)~0)
+      {
+      m_rare = findOrAddID(token) ;
+      }
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdT WordCorpusT<IdT,IdxT>::getID(IdxT N) const
+{
+   (void)N;
+   return ErrorID ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdT WordCorpusT<IdT,IdxT>::getContextID(IdxT N) const
+{
+   (void)N;
+   return ErrorID ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdT WordCorpusT<IdT,IdxT>::getContextID(const char* word) const
+{
+   (void)word;
+   return ErrorID ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdxT WordCorpusT<IdT,IdxT>::getFreq(IdT N) const
+{
+   (void)N;
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdxT WordCorpusT<IdT,IdxT>::getFreq(const char* word) const
+{
+   (void)word;
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+const char* WordCorpusT<IdT,IdxT>::getWord(IdT N) const
+{
+   (void)N;
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+const char* WordCorpusT<IdT,IdxT>::getNormalizedWord(IdT N) const
+{
+   (void)N;
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+const char* WordCorpusT<IdT,IdxT>::newlineWord() const
+{
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+const char* WordCorpusT<IdT,IdxT>::rareWord() const
+{
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+const char* WordCorpusT<IdT,IdxT>::getWordForLoc(IdxT N) const
+{
+   (void)N;
+   return nullptr ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+void WordCorpusT<IdT,IdxT>::setAttributes(IdT word, uint8_t mask) const
+{
+   size_t cap = vocabSize() ;
+   if (cap > m_attributes_alloc)
+      {
+      uint8_t* new_attr = new uint8_t[cap] { 0 } ;
+      if (new_attr)
+	 {
+	 if (m_attributes_alloc)
+	    memcpy(new_attr,m_attributes,m_attributes_alloc*sizeof(uint8_t)) ;
+	 m_attributes = new_attr ;
+	 m_attributes_alloc = cap ;
+	 }
+      }
+   if (word < m_attributes_alloc)
+      {
+      m_attributes[word] |= mask ;
+      }
+   return ;
 }
 
 //----------------------------------------------------------------------------
@@ -226,6 +358,162 @@ bool WordCorpusT<IdT,IdxT>::setAttributeIf(unsigned attr_bit, WordCorpusT<IdT,Id
       }
    return set_any ;
 }
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::createIndex(bool bidirectional)
+{
+   (void)bidirectional;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::lookup(const IdT *key, unsigned keylen, IdxT& first_match, IdxT& last_match) const
+{
+   (void)key; (void)keylen; (void)first_match; (void)last_match;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::enumerateForward(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc* fn, void* user)
+{
+   (void)minlen; (void)maxlen; (void)minfreq; (void)fn; (void)user;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::enumerateForwardParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
+   SAEnumFunc* fn, void* user)
+{
+   (void)minlen; (void)maxlen; (void)minfreq; (void)fn; (void)user;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::enumerateReverse(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc* fn, void* user)
+{
+   (void)minlen; (void)maxlen; (void)minfreq; (void)fn; (void)user;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::enumerateReverseParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
+   SAEnumFunc* fn, void* user)
+{
+   (void)minlen; (void)maxlen; (void)minfreq; (void)fn; (void)user;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdxT WordCorpusT<IdT,IdxT>::getForwardPosition(IdxT N) const
+{
+   (void)N;
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdxT WordCorpusT<IdT,IdxT>::getReversePosition(IdxT N) const
+{
+   (void)N;
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+void WordCorpusT<IdT,IdxT>::setContextSizes(unsigned lcontext, unsigned rcontext)
+{
+   m_left_context = lcontext ;
+   m_right_context = rcontext ;
+   m_total_context = lcontext + rcontext + (lcontext+rcontext==0) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdT WordCorpusT<IdT,IdxT>::positionalID(IdT word, int offset) const
+{
+   return (word * m_total_context) + offset + m_left_context - (offset > 0) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+int WordCorpusT<IdT,IdxT>::offsetOfPosition(IdT pos) const
+{
+   int offset = (int)(pos % m_total_context) - m_left_context ;
+   return offset + (offset >= 0) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdT WordCorpusT<IdT,IdxT>::wordForPositionalID(IdT pos) const
+{
+   return pos / m_total_context ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::printVocab(CFile&) const
+{
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::printWords(CFile&, size_t max) const
+{
+   (void)max;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::printSuffixes(CFile&, bool by_ID, size_t max) const
+{
+   (void)by_ID; (void)max;
+   return false ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdxT WordCorpusT<IdT,IdxT>::reserveIDs(IdxT count, IdT* newline)
+{
+   (void)count; (void)newline;
+   return 0 ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+void WordCorpusT<IdT,IdxT>::setID(IdxT N, IdT id)
+{
+   (void)N; (void)id;
+   return ; //FIXME
+}
+
+//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 

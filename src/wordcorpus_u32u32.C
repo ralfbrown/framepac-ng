@@ -19,12 +19,16 @@
 /*									*/
 /************************************************************************/
 
+#include "template/bufbuilder.cc"
+#include "template/hashtable.cc"
 #include "template/wordcorpus.cc"
 
 namespace Fr
 {
 
-// request an explicit instantiation
+// request explicit instantiation
+template class HashTable<CString,uint32_t> ;
+template class BufferBuilder<uint32_t,1> ;
 template class WordCorpusT<uint32_t,uint32_t> ;
 
 } // end of namespace Fr

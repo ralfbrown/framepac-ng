@@ -34,13 +34,33 @@
 
 namespace Fr {
 
+/************************************************************************/
+/************************************************************************/
+
+template <> template <>
+inline bool Fr::HashTable<Fr::CString, uint32_t>::isEqual(Fr::CString s1, Fr::CString s2) const
+{
+   const char *str1 = s1.str() ;
+   const char *str2 = s2.str() ;
+   return str1 == str2 || (str1 && str2 && strcmp(str1,str2) == 0) ;
+}
+
+/************************************************************************/
+/************************************************************************/
+
 template <typename IdT, typename IdxT>
 class WordCorpusT
    {
    public: // types
       typedef IdT ID ;
       typedef IdxT Index ;
+      typedef bool SAEnumFunc(const IdT* key, unsigned keylen, size_t freq,
+	 		      const Fr::SuffixArray<ID,IdxT>*, IdxT first_match,
+			      void *user_arg) ;
       typedef bool AttrCheckFunc(const char *word) ;
+
+      static const ID ErrorID = ~0 ;
+
    public:
       WordCorpusT() ;
       WordCorpusT(const WordCorpusT&) = delete ;
@@ -48,6 +68,8 @@ class WordCorpusT
       WordCorpusT(CFile& fp, bool readonly) ;
       void operator= (const WordCorpusT&) = delete ;
       ~WordCorpusT() ;
+
+      static bool isCorpusFile(const char *filename) ;
 
       bool load(const char* filename) ;
       bool load(CFile&) ;
@@ -59,8 +81,8 @@ class WordCorpusT
       bool discardAttributes() ;
       bool discardContextEquivs() ;
 
-      IdxT corpusSize() const ; //FIXME
-      IdT vocabSize() const ; //FIXME
+      IdxT corpusSize() const { return m_wordbuf.size() ; }
+      IdT vocabSize() const { return m_wordmap.indexSize() ; }
 
       IdT findID(const char* word) const ;
       IdT findOrAddID(const char* word) ;
@@ -68,25 +90,39 @@ class WordCorpusT
       bool addWord(IdT word) ;
       bool addNewline() ;
 
+      bool rareWordThreshold(IdxT thresh, const char* token) ;
+
       bool setAttributeIf(unsigned attr_bit, AttrCheckFunc* fn) ;
       void setAttributes(IdT word, uint8_t mask) const ;
       void setAttribute(IdT word, unsigned bit) const { setAttributes(word,1<<bit) ; }
       void clearAttributes(uint8_t mask) const ;
       void clearAttributes(IdT word, uint8_t mask) const
-	 { if (m_attributes && word < m_numwords) m_attributes[word] &= ~mask ; } //FIXME
+	 { if (word < m_attributes_alloc) m_attributes[word] &= ~mask ; }
       void clearAttribute(IdT word, unsigned bit) const { clearAttributes(word,1<<bit) ; }
       void clearAttribute(unsigned bit) const { clearAttribute(1<<bit) ; }
 
-      IdT getID(IdxT N) const ; //FIXME
+      bool createIndex(bool bidirectional = false) ;
+      bool lookup(const ID *key, unsigned keylen, Index &first_match, Index &last_match) const ;
+      bool enumerateForward(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc *fn, void *user_arg) ;
+      bool enumerateForwardParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
+				    SAEnumFunc *fn, void *user_arg) ;
+      bool enumerateReverse(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc *fn, void *user_arg) ;
+      bool enumerateReverseParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
+				    SAEnumFunc *fn, void *user_arg) ;
+
+      IdxT rareWordThreshold() const { return  m_rare_thresh ; }
+      size_t numContextEquivs() const { return 0 ; } //FIXME
+
+      IdT getID(IdxT N) const ;
       IdT getContextID(IdxT N) const ;
       IdT getContextID(const char* word) const ;
-      IdT newlineID() const ;
-      IdT rareID() const ;
+      IdT newlineID() const { return m_newline ; }
+      IdT rareID() const { return m_rare ; }
 
-      IdxT getFreq(IdT N) ; //FIXME
-      IdxT getFreq(const char* word) ;
+      IdxT getFreq(IdT N) const ;
+      IdxT getFreq(const char* word) const ;
 
-      const char* getWord(IdT N) const ;//FIXME
+      const char* getWord(IdT N) const ;
       const char* getNormalizedWord(IdT N) const ;
       const char* newlineWord() const ;
       const char* rareWord() const ;
@@ -95,8 +131,18 @@ class WordCorpusT
       IdxT getForwardPosition(IdxT N) const ;
       IdxT getReversePosition(IdxT N) const ;
 
-      uint8_t attributes(IdT word) const ;
-      bool hasAttribute(IdT word, unsigned bit) const ;
+      uint8_t attributes(IdT word) const
+	 { return word < m_attributes_alloc ? m_attributes[word] : 0 ; }
+      bool hasAttribute(IdT word, unsigned bit) const
+	 { return (attributes(word) & (1<<bit)) != 0 ; }
+
+      void setContextSizes(unsigned lcontext, unsigned rcontext) ;
+      unsigned totalContextSize() const { return m_total_context ; }
+      IdT positionalID(IdT word, int offset) const ;
+      int offsetOfPosition(IdT position) const ;
+      IdT wordForPositionalID(IdT position) const ;
+
+      size_t longestContextEquiv() const { return m_max_context ; }
 
       bool printVocab(CFile&) const ;
       bool printWords(CFile&, size_t max = ~0) const ;
@@ -108,13 +154,19 @@ class WordCorpusT
 
    protected:
       BidirIndex<CString,IdT> m_wordmap ;
-      BufferBuilder<IdT,1>    m_wordbuf ;
+      BufferBuilder<IdT,1>    m_wordbuf ;	// contains array of word IDs
       SuffixArray<IdT,IdxT>   m_fwdindex ;
       SuffixArray<IdT,IdxT>   m_revindex ;
-//      IdT*                    m_wordIDs ;
-      uint8_t*                m_attributes ;
-      size_t		      m_numwords ; //FIXME
-
+      mutable uint8_t*        m_attributes { nullptr } ;
+      IdT		      m_rare ;
+      IdT		      m_newline ;
+      IdxT		      m_rare_thresh ;
+      mutable IdxT	      m_attributes_alloc { 0 } ;
+      unsigned		      m_max_context { 0 } ;
+      unsigned		      m_left_context { 0 } ;
+      unsigned		      m_right_context { 0 } ;
+      unsigned		      m_total_context { 1 } ;
+      bool		      m_keep_linenumbers { false } ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -133,4 +185,3 @@ typedef WordCorpusT<uint32_t,UInt40> WordCorpusXL ;
 #endif /* !_Fr_WORDCORPUS_H_INCLUDED */
 
 // end of file wordcorpus.h //
-

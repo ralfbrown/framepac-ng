@@ -22,13 +22,6 @@
 #ifndef _Fr_BIDINDEX_H_INCLUDED
 #define _Fr_BIDINDEX_H_INCLUDED
 
-// FIX to allow old and new FramepaC to co-exist
-#undef FrHASHTABLE_MIN_SIZE
-#undef FrHASHTABLE_SEARCHRANGE
-#undef INCR_COUNT
-#undef DECR_COUNT
-#undef FrMAKE_SYMBOL_HASHTABLE_CLASS
-
 #include "framepac/hashtable.h"
 
 namespace Fr
@@ -52,9 +45,12 @@ class BidirIndex : public HashTable<keyT,idxT>
       ~BidirIndex() { delete [] m_reverse_index ; }
       BidirIndex& operator= (const BidirIndex&) = delete ;
 
+      bool findKey(keyT key, idxT* id) const { return lookup(key,id) ; }
       idxT addKey(keyT key) ;
       void addKeySilent(keyT key) ;
       bool finalize() ; // generate the reverse index from the hash table
+
+      idxT indexSize() const { return m_max_index ; }
 
       idxT getIndex(keyT key) { idxT index ; return lookup(key,&index) ? index : m_errorID ; }
       keyT getKey(idxT index) { return index < m_max_index ? m_reverse_index[index] : (keyT)0 ; }

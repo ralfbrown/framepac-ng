@@ -22,6 +22,8 @@
 #ifndef _Fr_CSTRING_H_INCLUDED
 #define _Fr_CSTRING_H_INCLUDED
 
+#include <iostream>
+
 /************************************************************************/
 /************************************************************************/
 
@@ -31,6 +33,7 @@ class CString
    {
    public:
       CString() noexcept : _s(nullptr) {}
+      CString(int) noexcept : _s(nullptr) {} ;
       CString(const char *string) noexcept : _s(string) {}
       CString(const CString& other) = default ;
       ~CString() = default ;
@@ -45,6 +48,14 @@ class CString
       int compare(const CString* s) const ;
       int compare(const CString& s) const ;
       CString clone() const { return CString(_s) ; }
+      char* toCstring(char* buf, size_t buflen) const
+	 {
+	    if (!buf || !_s || buflen == 0) return buf ;
+	    if (buflen > cStringLength()+1) buflen = cStringLength()+1 ;
+	    memcpy(buf,_s,buflen-1) ;
+	    buf[buflen] = '\0' ;
+	    return buf+buflen ;
+	 }
 
       // accessors
       const char *str() const { return _s ; }
@@ -53,11 +64,15 @@ class CString
       CString& operator= (const char *string) { _s = string ; return *this ; }
       const char *operator* () const { return _s ; }
       operator const char* () const { return _s ; }
+      operator bool () const { return _s != nullptr ; }
 
       // functions needed by HashTable template
+      friend std::ostream& operator << (std::ostream&, CString& ) ;
+      operator class Object* () const { return nullptr ; }
       CString(unsigned long v) noexcept : _s((const char*)v) {}
       const CString* operator-> () const { return this ; }
       CString* operator-> () { return this ; }
+      size_t cStringLength() const { return _s ? strlen(_s) : 0 ; }
       unsigned displayLength() const { return 0 ; }
       char *displayValue(char *buf) { return buf ; }
 
@@ -68,6 +83,13 @@ class CString
    } ;
 
 //----------------------------------------------------------------------------
+
+inline std::ostream& operator<< (std::ostream& out, Fr::CString& s)
+{
+   if (s.str())
+      out << s.str() ;
+   return out ;
+}
 
 // end of namespace Fr
 } ;
