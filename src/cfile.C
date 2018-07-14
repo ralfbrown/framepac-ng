@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.07, last edit 2018-07-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -250,7 +250,17 @@ bool CFile::openRead(const char *filename, int options)
 
 bool CFile::openWrite(const char *filename, int options)
 {
-(void)options;
+   if ((options & fail_if_exists) != 0)
+      {
+      //TODO: check whether the output file exists
+      // if it does, set m_errcode
+
+      }
+   if ((options & safe_rewrite) != 0)
+      {
+      //TODO: set up m_tempname
+
+      }
    m_piped = false ;
    if (!filename || !*filename)
       {
@@ -339,6 +349,20 @@ bool CFile::close()
    delete [] m_tempname ;
    delete [] m_finalname ;
    return success && errno == 0 ;
+}
+
+//----------------------------------------------------------------------------
+
+bool CFile::good() const
+{
+   return m_errcode != 0 && m_file != nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+int CFile::error() const
+{
+   return m_errcode ;
 }
 
 //----------------------------------------------------------------------------
