@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 12jul2018
+# Last change: 13jul2018
 
 #########################################################################
 # define the locations of all the files
@@ -254,6 +254,7 @@ OBJS = \
 	build/argopt_real$(OBJ) \
 	build/argparser$(OBJ) \
 	build/array$(OBJ) \
+	build/as_string$(OBJ) \
 	build/basisvector_u32$(OBJ) \
 	build/basisvector_u32flt$(OBJ) \
 	build/bidindex_cstr$(OBJ) \
@@ -487,6 +488,7 @@ build/argopt$(OBJ):		src/argopt$(C) template/argopt.cc
 build/argopt_real$(OBJ):	src/argopt_real$(C) template/argopt.cc
 build/argparser$(OBJ):		src/argparser$(C) framepac/argparser.h
 build/array$(OBJ):		src/array$(C) framepac/array.h framepac/fasthash64.h
+build/as_string$(OBJ):		src/as_string$(C) framepac/as_string.h framepac/object.h framepac/texttransforms.h
 build/basisvector_u32$(OBJ):	src/basisvector_u32$(C) template/basisvector.cc
 build/basisvector_u32flt$(OBJ):	src/basisvector_u32flt$(C) template/basisvector.cc
 build/bidindex_cstr$(OBJ):	src/bidindex_cstr$(C) framepac/bidindex.h

@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-14					*/
+/* Version 0.06, last edit 2018-07-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -51,7 +51,7 @@ LineBatch::~LineBatch()
 {
    for (size_t i = 0 ; i < size() ; ++i)
       {
-      Free(m_lines[i]) ;
+      delete[] m_lines[i] ;
       }
    m_count = 0 ;
    Free(m_lines) ;
@@ -66,7 +66,7 @@ void LineBatch::clear()
 {
    for (auto ln : *this)
       {
-      Free((char*)ln) ;
+      delete[] ((char*)ln) ;
       }
    m_count = 0 ;
    return ;

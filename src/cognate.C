@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-11					*/
+/* Version 0.06, last edit 2018-07-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -151,7 +151,7 @@ CognateData* CognateData::load(const char* filename, size_t fuzzy_match_score)
 	    {
 	    char* line = f.getCLine() ;
 	    sb.append(line) ;
-	    Free(line) ;
+	    delete[] line ;
 	    }
 	 const char* cogstring = sb.c_str() ;
 	 cognates = List::create(cogstring) ;
@@ -164,7 +164,7 @@ CognateData* CognateData::load(const char* filename, size_t fuzzy_match_score)
 	    {
 	    char* line = f.getCLine() ;
 	    //TODO
-	    Free(line) ;
+	    delete[] line ;
 	    }
 	 }
       else

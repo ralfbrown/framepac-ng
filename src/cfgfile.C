@@ -22,10 +22,13 @@
 #include "framepac/charget.h"
 #include "framepac/configfile.h"
 #include "framepac/list.h"
+#include "framepac/message.h"
 #include "framepac/string.h"
 
 namespace Fr
 {
+
+typedef SystemMessage SM ;
 
 /************************************************************************/
 /*	Global Data							*/
@@ -34,6 +37,17 @@ namespace Fr
 bool Configuration::s_instartup = true ;
 
 /************************************************************************/
+/*	Helper functions						*/
+/************************************************************************/
+
+static char* find_delimiter(const char* str, char delimiter = ' ')
+{
+   char* delim = (char*)strchr(str,delimiter) ;
+   return delim ? delim : (char*)strchr(str,'\0') ;
+}
+
+/************************************************************************/
+/*	Methods for class Configuration					*/
 /************************************************************************/
 
 Configuration::Configuration()
@@ -133,7 +147,7 @@ void Configuration::freeValues()
 	    {
 	    // allocated C-style string, so free the memory
 	    char** str = reinterpret_cast<char**>(loc) ;
-	    Free(*str) ;
+	    delete[] *str ;
 	    *str = nullptr ;
 	    }
 	    break ;
@@ -303,8 +317,15 @@ bool Configuration::skipToSection(CharGetter& stream, const char* section_name, 
 
 ConfigurationTable* Configuration::findParameter(const char* param_name)
 {
-   (void)param_name ;
-   return nullptr ; //FIXME
+   ConfigurationTable* tbl = m_currstate ;
+   for ( ; tbl->m_keyword ; ++tbl)
+      {
+      if (param_name && strcasecmp(param_name,tbl->m_keyword) == 0)
+	 return tbl ;
+      }
+   // If we get here, there was no match.  If no parameter name was given, we want the terminating
+   //   sentinel in the array, else return a failure indication
+   return param_name ? nullptr : tbl ;
 }
 
 //----------------------------------------------------------------------------
@@ -322,6 +343,33 @@ const ConfigurationTable* Configuration::findParameter(const char* param_name, C
    const ConfigurationTable* tbl = findParameter(param_name) ;
    return (tbl && tbl->m_vartype == type) ? tbl : nullptr ;
 }
+
+//----------------------------------------------------------------------------
+
+void Configuration::warn(const char* msg) const
+{
+   SM::warning("Configuration error (%s line %d): %s",
+      m_infile_name?m_infile_name:"",m_currline,msg) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T>
+void Configuration::warn(const char* msg, const char* where, T value) const
+{
+   char* strvalue = as_string(value) ;
+   SM::warning("Configuration error (%s line %d, %s): %s %s",
+      m_infile_name?m_infile_name:"",m_currline,where,msg,strvalue) ;
+   delete[] strvalue ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 

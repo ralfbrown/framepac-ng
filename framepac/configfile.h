@@ -80,6 +80,10 @@ class Configuration
       bool loadRaw(const char* filename, const char* section, List*& params) ;
       bool loadRaw(std::istream& instream, const char* section, List*& params) ;
 
+      void warn(const char* msg) const ;
+      template <typename T>
+      void warn(const char* msg, const char* where, T value) const ;
+
       void freeValues() ;
 
       static void startupComplete() ;
