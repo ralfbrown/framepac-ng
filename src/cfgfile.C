@@ -94,11 +94,23 @@ Configuration::Configuration(const char* basedir)
 
 //----------------------------------------------------------------------------
 
+Configuration::~Configuration()
+{
+   m_valid = false ;
+   delete[] m_basedir ;
+   m_basedir = nullptr ;
+   delete[] m_infile_name ;
+   m_infile_name = nullptr ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 void Configuration::init()
 {
    // set current config table to be initial table
    resetState() ;
-   if (!m_currstate)
+   if (!currentState())
       return ;
    // reset all data members to default values
    for (size_t i = 0 ; m_currstate[i].m_keyword ; ++i)
@@ -169,7 +181,7 @@ bool Configuration::loadRaw(std::istream& instream, const char* section, List*& 
 
 void Configuration::freeValues()
 {
-   if (!m_currstate)
+   if (!currentState())
       return ;
    for (size_t i = 0 ; m_currstate[i].m_keyword ; ++i)
       {
@@ -244,7 +256,7 @@ void Configuration::beginningShutdown()
 List* Configuration::listParameters() const
 {
    ListBuilder lb ;
-   for (ConfigurationTable* tbl = m_currstate ; tbl && tbl->m_keyword ; ++tbl)
+   for (ConfigurationTable* tbl = currentState() ; tbl && tbl->m_keyword ; ++tbl)
       {
       if (*tbl->m_keyword)
 	 lb += tbl->m_keyword ;
@@ -454,7 +466,7 @@ bool Configuration::skipToSection(CharGetter& stream, const char* section_name, 
 
 ConfigurationTable* Configuration::findParameter(const char* param_name)
 {
-   ConfigurationTable* tbl = m_currstate ;
+   ConfigurationTable* tbl = currentState() ;
    for ( ; tbl->m_keyword ; ++tbl)
       {
       if (param_name && strcasecmp(param_name,tbl->m_keyword) == 0)
@@ -504,9 +516,27 @@ void Configuration::warn(const char* msg, const char* where, T value) const
 
 //----------------------------------------------------------------------------
 
-//----------------------------------------------------------------------------
+ostream& Configuration::dumpFlags(const char* heading, unsigned long flags, CommandBit* bits, ostream& out) const
+{
+   (void)heading; (void)flags; (void)bits ; //TODO
+   return out ;
+}
 
 //----------------------------------------------------------------------------
+
+ostream& Configuration::dumpValues(const char* heading, ostream& out) const
+{
+   (void)heading; //TODO
+   return out ;
+}
+
+//----------------------------------------------------------------------------
+
+ostream& Configuration::dump(ostream& out) const
+{
+   //TODO
+   return out ;
+}
 
 //----------------------------------------------------------------------------
 

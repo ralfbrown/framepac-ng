@@ -45,10 +45,10 @@ enum class Settable
 class CommandBit
    {
    public:
-      const char*   m_name ;
-      std::uint32_t m_bitmask ;
-      bool          m_default ;
-      const char*   m_description ;
+      const char*  m_name ;
+      std::size_t  m_bitmask ;
+      bool         m_default ;
+      const char*  m_description ;
    } ;
    
 //----------------------------------------------------------------------------
@@ -103,6 +103,12 @@ class Configuration
 	 std::ostream* err = nullptr) ;
 
       // access to internal state
+      bool good() const { return m_valid ; }
+      int lineNumber() const { return m_currline  ; }
+      ConfigurationTable* currentState() const { return m_currstate ; }
+      ostream& dumpFlags(const char* heading, unsigned long flags, CommandBit* bits, ostream& out) const ;
+      ostream& dumpValues(const char* heading, ostream& out) const ;
+      virtual ostream& dump(ostream&  out) const ;
 
       // methods which must be provided by each derived class
       virtual void init() ;
