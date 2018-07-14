@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-27					*/
+/* Version 0.06, last edit 2018-07-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -126,30 +126,44 @@ class CFile
       void putlines(const LineBatch* batch) ;
       [[gnu::format(gnu_printf,2,0)]] bool printf(const char* fmt, ...) const ;
       off_t tell() const { return ftell(m_file) ; }
-      off_t seek(off_t loc, int whence) { return fseek(m_file,loc,whence) ; }
+      bool seek(off_t loc, int whence) { return fseek(m_file,loc,whence) == 0 ; }
       void flush() { fflush(m_file) ; }
       bool close() ;
 
       void writeJSON(const class List*, int indent, bool recursive) ;
 
       template <typename T>
-      bool readValue(T* val, size_t count = 1)
+      bool readValue(T* val)
+	 {
+	    if (!val) return true ; // trivially successful
+	    return read(val,sizeof(T),1) == 1 ;
+	 }
+
+      // on success, updated first argument to point at allocated array of values read; array must be
+      //   released with Fr::Free()
+      template <typename T>
+      bool readValues(T** val, size_t count)
 	 {
 	    if (!val || count == 0) return true ; // trivially successful
-	    val = Fr::New<T>(count) ;
-	    if (!val) return false ;
-	    return read(val,sizeof(T),count) == count ;
+	    *val = Fr::New<T>(count) ;
+	    if (!*val) return false ;
+	    if (read(*val,sizeof(T),count) == count)
+	       return true ;
+	    else
+	       {
+	       Fr::Free(*val) ;
+	       *val = nullptr ;
+	       return false ;
+	       }
 	 }
 
       template <typename T>
-      bool readVarsAt(T* val, size_t count = 1)
+      bool readVarsAt(uint64_t offset, T** val, size_t count = 1)
 	 {
 	    if (!val || count == 0) return true ; // trivially successful
-	    uint64_t offset = (uint64_t)val ;
-	    val = Fr::New<T>(count) ;
-	    if (!val) return false ;
-	    seek(offset,SEEK_SET) ;
-	    return read(val,sizeof(T),count) == count ;
+	    if (!seek(offset,SEEK_SET))
+	       return false ;
+	    return readValues(val,count) ;
 	 }
 
       template <typename T>
