@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-13					*/
+/* Version 0.07, last edit 2018-07-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -126,7 +126,7 @@ class CFile
       void putlines(const LineBatch* batch) ;
       [[gnu::format(gnu_printf,2,0)]] bool printf(const char* fmt, ...) const ;
       off_t tell() const { return ftell(m_file) ; }
-      bool seek(off_t loc, int whence) { return fseek(m_file,loc,whence) == 0 ; }
+      bool seek(off_t loc, int whence = SEEK_SET) { return fseek(m_file,loc,whence) == 0 ; }
       void flush() { fflush(m_file) ; }
       bool close() ;
 
@@ -278,6 +278,9 @@ class FilePath
 
 List* load_file_list(bool use_stdin, const char* listfile, const char* what = nullptr,
    bool terminate_on_error = true) ;
+
+bool copy_file(const char* srcname, const char* destname) ;
+bool copy_file(const char* srcname, FILE* dest) ;
 
 } // end namespace Fr
 

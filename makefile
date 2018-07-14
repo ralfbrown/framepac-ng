@@ -278,6 +278,7 @@ OBJS = \
 	build/contextcoll_sym$(OBJ) \
 	build/contextcoll_u32$(OBJ) \
 	build/convert$(OBJ) \
+	build/copyfile$(OBJ) \
 	build/critsect$(OBJ) \
 	build/cstring$(OBJ) \
 	build/fasthash64$(OBJ) \
@@ -515,6 +516,7 @@ build/confmatrix$(OBJ):		src/confmatrix$(C) framepac/spelling.h
 build/contextcoll_sym$(OBJ):	src/contextcoll_sym$(C) template/contextcoll.cc
 build/contextcoll_u32$(OBJ):	src/contextcoll_u32$(C) template/contextcoll.cc
 build/convert$(OBJ):		src/convert$(C) framepac/convert.h
+build/copyfile$(OBJ):		src/copyfile$(C) framepac/file.h
 build/critsect$(OBJ):		src/critsect$(C) framepac/critsect.h
 build/cstring$(OBJ):		src/cstring$(C) framepac/cstring.h framepac/fasthash64.h
 build/fasthash64$(OBJ):		src/fasthash64$(C) framepac/fasthash64.h
