@@ -102,12 +102,32 @@ class Configuration
       bool setParameter(const char* new_value, const ConfigurationTable* param, bool initializing,
 	 std::ostream* err = nullptr) ;
 
+      // access to internal state
+
+      // methods which must be provided by each derived class
+      virtual void init() ;
+      virtual void resetState() = 0 ;
+
+      // methods allowing derived classes to modify behavior
+
+      //   number of bytes of configuration values stored as member variables in class instance
+      virtual size_t localVarSize() const ;
+
+      //   action to take whenever a variable is about to be retrieved
+      virtual bool onRead(ConfigVariableType, void* where) ;
+
+      //   action to take whenever a variable is modified
+      virtual bool onChange(ConfigVariableType, void* where) ;
+      
    protected: // methods
-      char* currentValue(const ConfigurationTable* param) const ;
+      char* currentValue(const ConfigurationTable* param) ;
       bool skipToSection(CharGetter& stream, const char* section_name, bool from_start = true) ;
       ConfigurationTable* findParameter(const char* param_name) ;
       const ConfigurationTable* findParameter(const char* param_name) const ;
       const ConfigurationTable* findParameter(const char* param_name, ConfigVariableType type) const ;
+
+      bool parseParameter(const char* line, const ConfigurationTable* tbl, bool initializing) ;
+
    protected: // data
       static bool s_instartup ;
       ConfigurationTable* m_currstate ;

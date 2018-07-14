@@ -19,11 +19,13 @@
 /*									*/
 /************************************************************************/
 
+#include "framepac/as_string.h"
 #include "framepac/charget.h"
 #include "framepac/configfile.h"
 #include "framepac/list.h"
 #include "framepac/message.h"
 #include "framepac/string.h"
+#include "framepac/symbol.h"
 #include "framepac/texttransforms.h"
 
 namespace Fr
@@ -61,6 +63,17 @@ static bool comment_line(const char* s)
    return s ? comment_start(*skip_whitespace(s)) : false ;
 }
 
+//----------------------------------------------------------------------------
+
+void* config_loc(const Configuration* cfg, const ConfigurationTable* tbl)
+{
+   if ((size_t)tbl->m_location >= cfg->localVarSize())
+      return tbl->m_location ;
+   else if (!tbl->m_location)
+      return nullptr ;
+   return ((char*)cfg) + (size_t)tbl->m_location ;
+}
+
 /************************************************************************/
 /*	Methods for class Configuration					*/
 /************************************************************************/
@@ -76,6 +89,25 @@ Configuration::Configuration()
 Configuration::Configuration(const char* basedir)
 {
    (void)basedir; //FIXME
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void Configuration::init()
+{
+   // set current config table to be initial table
+   resetState() ;
+   if (!m_currstate)
+      return ;
+   // reset all data members to default values
+   for (size_t i = 0 ; m_currstate[i].m_keyword ; ++i)
+      {
+      void* loc = config_loc(this,&m_currstate[i]) ;
+      if (!loc)
+	 continue ;
+//TODO
+      }
    return ;
 }
 
@@ -162,8 +194,11 @@ void Configuration::freeValues()
 	    {
 	    // allocated C-style string, so free the memory
 	    char** str = reinterpret_cast<char**>(loc) ;
-	    delete[] *str ;
-	    *str = nullptr ;
+	    if (str)
+	       {
+	       delete[] *str ;
+	       *str = nullptr ;
+	       }
 	    }
 	    break ;
 	 case list:
@@ -173,8 +208,11 @@ void Configuration::freeValues()
 	    {
 	    // FramepaC List object
 	    Object** obj = reinterpret_cast<Object**>(loc) ;
-	    if (*obj) (*obj)->free() ;
-	    *obj = nullptr ;
+	    if (obj && *obj)
+	       {
+	       (*obj)->free() ;
+	       *obj = nullptr ;
+	       }
 	    }
 	    break ;
 	 default:
@@ -280,12 +318,77 @@ bool Configuration::validValues(const char* param_name, const char*& min_value, 
 
 //----------------------------------------------------------------------------
 
-char* Configuration::currentValue(const ConfigurationTable* param) const
+size_t Configuration::localVarSize() const
+{
+   // no configuration values stored as member variables in this class
+   return 0 ;
+}
+
+//----------------------------------------------------------------------------
+
+bool Configuration::onRead(ConfigVariableType, void*)
+{
+   // nothing to be done, trivially successful
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+bool Configuration::onChange(ConfigVariableType, void*)
+{
+   // nothing to be done, trivially successful
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+char* Configuration::currentValue(const ConfigurationTable* param)
 {
    if (!param || !param->m_keyword)
       return nullptr ;
-
-   return nullptr ; //FIXME
+   void* where = config_loc(this,param) ;
+   if (!where)
+      return nullptr ;
+   // let derived class do whatever is needed to prepare for reading the value
+   onRead(param->m_vartype,where) ;
+   switch (param->m_vartype)
+      {
+      case integer:
+	 return as_string(*reinterpret_cast<long*>(where)) ;
+      case cardinal:
+	 return as_string(*reinterpret_cast<unsigned long*>(where)) ;
+      case real:
+	 return as_string(*reinterpret_cast<double*>(where)) ;
+      case basedir:
+      case filename:
+      case cstring:
+         {
+	 char* str = *reinterpret_cast<char**>(where) ;
+	 return aprintf("\"%s\"",str?str:"") ;
+	 }
+      case symbol:
+         {
+	 Symbol* sym = *reinterpret_cast<Symbol**>(where) ;
+	 return dup_string(sym ? sym->stringValue() : "<NONE>") ;
+	 }
+      case filelist:
+      case list:
+      case assoclist:
+      case symlist:
+         {
+	 List* l = *reinterpret_cast<List**>(where) ;
+	 return l ? l->cString() : dup_string("()") ;
+	 }
+      case yesno:
+	 return dup_string(*reinterpret_cast<char*>(where) ? "Yes" : "No") ;
+      case bitflags:
+	 //FIXME
+      case keyword:
+	 //FIXME
+      default:
+	 SM::missed_case("vartype in Configuration::currentValue") ;
+	 return dup_string("<invalid>") ;
+      }
 }
 
 //----------------------------------------------------------------------------
@@ -299,7 +402,26 @@ char* Configuration::currentValue(const char* param_name)
 
 char* Configuration::currentValue(const char* param_name, const char* bit_name)
 {
-   (void)param_name; (void)bit_name; //FIXME
+   ConfigurationTable* tbl = findParameter(param_name) ;
+   if (!tbl || !tbl->m_keyword)
+      return nullptr ;
+   const CommandBit* bits = reinterpret_cast<const CommandBit*>(tbl->m_extra_args) ;
+   for ( ; bits && bits->m_name ; ++bits)
+      {
+      if (strcasecmp(bit_name,bits->m_name) == 0)
+	 {
+	 unsigned long flags = *reinterpret_cast<unsigned long*>(config_loc(this,tbl)) ;
+	 size_t len = strlen(bits->m_name) ;
+	 char* value = new char[len+2] ;
+	 if (value)
+	    {
+	    value[0] = (bits->m_bitmask & flags) != 0 ? '+' : '-' ;
+	    memcpy(value+1,bits->m_name,len+1) ;
+	    return value ;
+	    }
+	 break ;
+	 }
+      }
    return nullptr ;
 }
 

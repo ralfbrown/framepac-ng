@@ -499,7 +499,8 @@ build/bwt$(OBJ):		src/bwt$(C) framepac/config.h
 build/canonsent$(OBJ):		src/canonsent$(C) framepac/stringbuilder.h framepac/texttransforms.h
 build/charget$(OBJ):		src/charget$(C) framepac/charget.h framepac/builder.h
 build/cfgfile$(OBJ):		src/cfgfile$(C) framepac/configfile.h framepac/charget.h framepac/list.h \
-				framepac/message.h framepac/string.h framepac/texttransforms.h
+				framepac/as_string.h framepac/message.h framepac/string.h framepac/symbol.h \
+				framepac/texttransforms.h
 build/cfile$(OBJ):		src/cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
 build/cluster$(OBJ):		src/cluster$(C) framepac/cluster.h framepac/message.h framepac/progress.h \
 				framepac/texttransforms.h framepac/convert.h
