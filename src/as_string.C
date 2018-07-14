@@ -19,9 +19,12 @@
 /*									*/
 /************************************************************************/
 
+#include <cstdlib>
 #include "framepac/as_string.h"
 #include "framepac/object.h"
 #include "framepac/texttransforms.h"
+
+using namespace std ;
 
 /************************************************************************/
 /************************************************************************/
@@ -70,6 +73,94 @@ char* as_string(const Object* value)
 {
    return value ? value->cString() : dup_string("#N<>") ;
 }
+
+//----------------------------------------------------------------------------
+
+template <>
+int string_as(const char* s, bool& success)
+{
+   char* endptr = const_cast<char*>(s) ;
+   int value = (int)strtol(s,&endptr,0) ;
+   success = endptr != s ;
+   return value ;
+}
+
+//----------------------------------------------------------------------------
+
+template <>
+unsigned string_as(const char* s, bool& success)
+{
+   char* endptr = const_cast<char*>(s) ;
+   unsigned value = (unsigned)strtoul(s,&endptr,0) ;
+   success = endptr != s ;
+   return value ;
+}
+
+//----------------------------------------------------------------------------
+
+template <>
+long string_as(const char* s, bool& success)
+{
+   char* endptr = const_cast<char*>(s) ;
+   long value = strtol(s,&endptr,0) ;
+   success = endptr != s ;
+   return value ;
+}
+
+//----------------------------------------------------------------------------
+
+template <>
+unsigned long string_as(const char* s, bool& success)
+{
+   char* endptr = const_cast<char*>(s) ;
+   unsigned long value = strtoul(s,&endptr,0) ;
+   success = endptr != s ;
+   return value ;
+}
+
+//----------------------------------------------------------------------------
+
+template <>
+float string_as(const char* s, bool& success)
+{
+   char* endptr = const_cast<char*>(s) ;
+   float value = strtof(s,&endptr) ;
+   success = endptr != s ;
+   return value ;
+}
+
+//----------------------------------------------------------------------------
+
+template <>
+double string_as(const char* s, bool& success)
+{
+   char* endptr = const_cast<char*>(s) ;
+   double value = strtod(s,&endptr) ;
+   success = endptr != s ;
+   return value ;
+}
+
+//----------------------------------------------------------------------------
+
+template <>
+long double string_as(const char* s, bool& success)
+{
+   char* endptr = const_cast<char*>(s) ;
+   long double value = strtold(s,&endptr) ;
+   success = endptr != s ;
+   return value ;
+}
+
+//----------------------------------------------------------------------------
+
+template <>
+const char* string_as(const char* s, bool& success)
+{
+   success = true ;
+   return s ;
+}
+
+//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 

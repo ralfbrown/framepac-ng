@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-01					*/
+/* Version 0.07, last edit 2018-07-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -23,6 +23,7 @@
 #define _Fr_ARGPARSER_H_INCLUDED
 
 #include <iostream>
+#include "framepac/as_string.h"
 
 namespace Fr
 {
@@ -146,7 +147,13 @@ class ArgOpt : public ArgOptBase
 	 }
 
    protected:
-      virtual bool convert(const char* arg) ;
+      virtual bool convert(const char* arg)
+	 {
+	 // default instantiation uses string_as<> conversion
+	 bool success ;
+	 m_value = string_as<T>(arg,success) ;
+	 return success ;
+	 }
       virtual bool setDefaultValue() ;
       virtual bool validateValue() ;
       virtual bool optional() const { return m_have_defvalue ; }
@@ -166,19 +173,12 @@ template<> bool ArgOpt<bool>::optional() const ;
 template<> bool ArgOpt<bool>::setDefaultValue() ;
 template<> bool ArgOpt<bool>::validateValue() ;
 extern template class ArgOpt<bool> ;
-template<> bool ArgOpt<int>::convert(const char*) ;
 extern template class ArgOpt<int> ;
-template<> bool ArgOpt<long>::convert(const char*) ;
 extern template class ArgOpt<long> ;
-template<> bool ArgOpt<unsigned>::convert(const char*) ;
 extern template class ArgOpt<unsigned> ;
-template<> bool ArgOpt<size_t>::convert(const char*) ;
 extern template class ArgOpt<size_t> ;
-template<> bool ArgOpt<float>::convert(const char*) ;
 extern template class ArgOpt<float> ;
-template<> bool ArgOpt<double>::convert(const char*) ;
 extern template class ArgOpt<double> ;
-template<> bool ArgOpt<const char*>::convert(const char*) ;
 extern template class ArgOpt<const char*> ;
 
 //----------------------------------------------------------------------------

@@ -49,7 +49,7 @@ class CharGetter
       virtual int peek() = 0 ;
       virtual int peekNonWhite() ;
       virtual int get() = 0 ;
-      int getLine() ;
+      char* getLine() ;
       int getNonWhite() ;
       int operator * () { return get() ; }
       operator bool () const { return !eof() ; }

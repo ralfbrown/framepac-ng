@@ -49,7 +49,7 @@ int main(int argc, char** argv)
    double double_option = 0.1 ;
    bool bool_option = false ;
    cmdline
-      .add(long_option,"l","long","set long variable, default = 7, min = -6, max = 12",7L,-6L,12L)
+      .add(long_option,"l","long","set long variable, min = -6, max = 12",-6L,12L)
       .add(sizet_option,"L","ulong","set size_t variable, default = 9, min = 1, max = 17",9UL,1UL,17UL)
       .add(double_option,"d","double","set double variable, no default, min = -12.8, max = 19.01",
 	   -12.8,19.01)

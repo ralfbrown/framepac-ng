@@ -33,6 +33,10 @@ char* as_string(char value) ;
 char* as_string(const char* value) ;
 char* as_string(const class Object* value) ;
 
+// conversion from string to a given type
+template <typename T>
+T string_as(const char* s, bool& success) ;
+
 } // end namespace Fr
 
 #endif /* !_Fr_AS_STRING_H_INCLUDED */

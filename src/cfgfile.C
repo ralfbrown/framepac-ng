@@ -24,6 +24,7 @@
 #include "framepac/list.h"
 #include "framepac/message.h"
 #include "framepac/string.h"
+#include "framepac/texttransforms.h"
 
 namespace Fr
 {
@@ -44,6 +45,20 @@ static char* find_delimiter(const char* str, char delimiter = ' ')
 {
    char* delim = (char*)strchr(str,delimiter) ;
    return delim ? delim : (char*)strchr(str,'\0') ;
+}
+
+//----------------------------------------------------------------------------
+
+static bool comment_start(char c)
+{
+   return c == ';' || c == '#' ;
+}
+
+//----------------------------------------------------------------------------
+
+static bool comment_line(const char* s)
+{
+   return s ? comment_start(*skip_whitespace(s)) : false ;
 }
 
 /************************************************************************/
