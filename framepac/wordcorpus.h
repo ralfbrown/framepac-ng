@@ -54,6 +54,8 @@ class WordCorpusT
    public: // types
       typedef IdT ID ;
       typedef IdxT Index ;
+      typedef BufferBuilder<IdT,1> IDBufferBuilder ;
+      //typedef ConcurrentBufferBuilder<IdT,1> IDBufferBuilder ;
       typedef bool SAEnumFunc(const IdT* key, unsigned keylen, size_t freq,
 	 		      const Fr::SuffixArray<ID,IdxT>*, IdxT first_match,
 			      void *user_arg) ;
@@ -154,7 +156,7 @@ class WordCorpusT
 
    protected:
       BidirIndex<CString,IdT> m_wordmap ;
-      BufferBuilder<IdT,1>    m_wordbuf ;	// contains array of word IDs
+      IDBufferBuilder         m_wordbuf ;	// contains array of word IDs
       SuffixArray<IdT,IdxT>   m_fwdindex ;
       SuffixArray<IdT,IdxT>   m_revindex ;
       mutable uint8_t*        m_attributes { nullptr } ;

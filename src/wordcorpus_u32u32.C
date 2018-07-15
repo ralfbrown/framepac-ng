@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.07, last edit 2018-07-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -19,7 +19,7 @@
 /*									*/
 /************************************************************************/
 
-#include "template/bufbuilder.cc"
+#include "template/concbuilder.cc"
 #include "template/hashtable.cc"
 #include "template/wordcorpus.cc"
 
@@ -29,6 +29,7 @@ namespace Fr
 // request explicit instantiation
 template class HashTable<CString,uint32_t> ;
 template class BufferBuilder<uint32_t,1> ;
+template class ConcurrentBufferBuilder<uint32_t,1> ;
 template class WordCorpusT<uint32_t,uint32_t> ;
 
 } // end of namespace Fr

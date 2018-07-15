@@ -4,7 +4,7 @@
 /* Version 0.07, last edit 2018-07-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
+/* (c) Copyright 2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -19,52 +19,45 @@
 /*									*/
 /************************************************************************/
 
-#ifndef _Fr_BUILDER_H_INCLUDED
-#define _Fr_BUILDER_H_INCLUDED
+#ifndef _Fr_CONCBUILDER_H_INCLUDED
+#define _Fr_CONCBUILDER_H_INCLUDED
 
-#include "framepac/config.h"
+#include <mutex>
+#include "framepac/builder.h"
 
 /************************************************************************/
 /************************************************************************/
 
 namespace Fr {
 
+// a buffer builder that can be used concurrently by multiple threads
+//   this has the same interface as BufferBuilder, but adds
+//   serialization to the update functions (which naturally slows
+//   things down, so use only when multiple threads are needed)
 template <typename T, size_t minsize = 200>
-class BufferBuilder
+class ConcurrentBufferBuilder : public BufferBuilder<T,minsize>
    {
    public:
-      BufferBuilder() {}
-      BufferBuilder(const BufferBuilder&) = delete ;
-      ~BufferBuilder() ;
-      void operator= (const BufferBuilder&) = delete ;
-
-      bool preallocate(size_t newsize) ;
-      void clear() ;
+      typedef BufferBuilder<T,minsize> super ;
+   public:
+      ConcurrentBufferBuilder() : super() {}
+      ConcurrentBufferBuilder(const ConcurrentBufferBuilder&) = delete ;
+      ~ConcurrentBufferBuilder() {}
+      void operator= (const ConcurrentBufferBuilder&) = delete ;
 
       bool read(const char*&) ;
       bool read(char*& input) { return read(const_cast<char*&>(input)) ; }
       void append(T value) ;
-      void append(const BufferBuilder& value) ;
-      void remove() { if (m_currsize > 0) --m_currsize ; } // remove last-added item
-
-      size_t currentLength() const { return m_currsize ; }
-      size_t size() const { return m_currsize ; }
-      size_t capacity() const { return m_alloc ; }
-      T* currentBuffer() const { return m_buffer ; }
-      T* finalize() const ;
-      T* move() ;
+      void append(const super& value) ;
+      void remove() ;
 
       // operator overloads
-      T *operator * () const { return m_buffer ; }
-      T operator [] (size_t N) const { return m_buffer[N] ; }
-      BufferBuilder &operator += (T value) { append(value) ; return *this ; }
-      BufferBuilder &operator += (const BufferBuilder& buf) { append(buf) ; return *this ; }
+      T *operator * () const { return this->m_buffer ; }
+      ConcurrentBufferBuilder &operator += (T value) { append(value) ; return *this ; }
+      ConcurrentBufferBuilder &operator += (const super& buf) { append(buf) ; return *this ; }
 
    protected:
-      T        *m_buffer = m_localbuf ;
-      size_t	m_alloc = minsize ;
-      size_t	m_currsize = 0 ;
-      T		m_localbuf[minsize] ;
+      std::mutex m_mutex ;
    } ;
 
 extern template class BufferBuilder<char> ;

@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 13jul2018
+# Last change: 15jul2018
 
 #########################################################################
 # define the locations of all the files
@@ -601,7 +601,8 @@ build/vector_u32_flt$(OBJ):	src/vector_u32_flt$(C) template/vector.cc template/d
 			template/sparsevector.cc
 build/vector_u32_u32$(OBJ):	src/vector_u32_u32$(C) template/vector.cc template/densevector.cc \
 			template/sparsevector.cc
-build/wordcorpus_u32u32$(OBJ): 	src/wordcorpus_u32u32$(C) template/wordcorpus.cc
+build/wordcorpus_u32u32$(OBJ): 	src/wordcorpus_u32u32$(C) template/wordcorpus.cc template/hashtable.cc \
+			template/concbuilder.cc
 build/wordcorpus_u32u40$(OBJ): 	src/wordcorpus_u32u40$(C) template/wordcorpus.cc
 build/wordsplit$(OBJ):		src/wordsplit$(C) framepac/charget.h framepac/stringbuilder.h framepac/words.h
 build/wordsplit_eng$(OBJ):	src/wordsplit_eng$(C) framepac/words.h
@@ -648,6 +649,9 @@ template/cluster_factory.cc: template/cluster.cc template/cluster_agglom.cc temp
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster.cc:	framepac/cluster.h framepac/hashtable.h framepac/progress.h framepac/threadpool.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/concbuilder.cc:	framepac/concbuilder.h template/bufbuilder.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/contextcoll.cc:	framepac/contextcoll.h
@@ -732,6 +736,9 @@ framepac/cluster.h:	framepac/array.h framepac/list.h framepac/symbol.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/complex.h:	framepac/number.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/concbuilder.h:	framepac/builder.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/contextcoll.h:	framepac/hashtable.h framepac/vector.h

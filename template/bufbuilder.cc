@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-11					*/
+/* Version 0.07, last edit 2018-07-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -96,6 +96,33 @@ void BufferBuilder<T,minsize>::append(T value)
 	    }
       }
    m_buffer[m_currsize++] = value ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, size_t minsize>
+void BufferBuilder<T,minsize>::append(const BufferBuilder<T,minsize>& addbuf)
+{
+   size_t grow = addbuf.size() ;
+   if (m_currsize + grow > m_alloc)
+      {
+      size_t newalloc = (grow > m_currsize) ? 2 * (m_currsize + grow) : (2 * m_currsize) ;
+      T *newbuf { new T[newalloc] };
+      if (newbuf)
+	 {
+	 for (size_t i = 0 ; i < m_currsize ; i++)
+	    {
+	    newbuf[i] = m_buffer[i] ;
+	    }
+	 m_buffer = newbuf ;
+	 m_alloc = newalloc ;
+	 }
+      }
+   for (size_t i = 0 ; i < grow ; ++i)
+      {
+      m_buffer[m_currsize++] = addbuf[i] ;
+      }
    return ;
 }
 
