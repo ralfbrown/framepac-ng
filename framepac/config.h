@@ -136,8 +136,13 @@ constexpr int SLAB_GROUP_SIZE = 4095 ;
 # define mpq_zero() 0.0Q
 #else
   // emulate BigNum with the biggest integer type available and Rational with double-precision floating point
-  typedef intmax_t mpz_t ;
-  typedef double mpq_t ;
+  #if defined(__GNUC__) && __GNUC__ >= 7
+    typedef __int128 mpz_t ;
+    typedef long double mpq_t ;
+  #else
+    typedef intmax_t mpz_t ;
+    typedef double mpq_t ;
+  #endif
 # define mpz_zero() 0
 # define mpq_zero() 0.0
 #endif /* FRAMEPAC_GPL */
