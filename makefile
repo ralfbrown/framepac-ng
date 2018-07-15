@@ -701,6 +701,9 @@ template/vector_arith.cc:	template/vector.cc
 template/wordcorpus.cc:	framepac/wordcorpus.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+framepac/argparser.h:	framepac/as_string.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 framepac/array.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
