@@ -22,6 +22,7 @@
 #ifndef Fr_VECTOR_H_INCLUDED
 #define Fr_VECTOR_H_INCLUDED
 
+#include "framepac/as_string.h"
 #include "framepac/critsect.h"
 #include "framepac/list.h"
 #include "framepac/symbol.h"
@@ -163,73 +164,13 @@ class Vector : public Object
 
    protected:
       // helper functions, needed to properly output various index and value types
-      static size_t item_c_len(intmax_t value)
-	 {
-	 return snprintf(nullptr,0,"%jd",value) ;
-	 }
-      static size_t item_c_len(uintmax_t value)
-	 {
-	 return snprintf(nullptr,0,"%ju",value) ;
-	 }
-      static size_t item_c_len(unsigned value)
-	 {
-	 return snprintf(nullptr,0,"%u",value) ;
-	 }
-      static size_t item_c_len(long double value)
-	 {
-	 return snprintf(nullptr,0,"%LG",value) ;
-	 }
-      static size_t item_c_len(double value)
-	 {
-	 return snprintf(nullptr,0,"%G",value) ;
-	 }
-      static size_t item_c_len(const Object* o)
-	 {
-	 return o ? o->cStringLength() : 4 ; // will print #N<> for nullptr
-	 }
-      static size_t item_c_len(const void*)
-	 {
-	 return 3 ; // will print ???
-	 }
-
-      static char* item_c_string(intmax_t value, char* buffer, size_t buflen)
-	 {
-	 return buffer + snprintf(buffer,buflen,"%jd",value) ;
-	 }
-      static char* item_c_string(uintmax_t value, char* buffer, size_t buflen)
-	 {
-	 return buffer + snprintf(buffer,buflen,"%ju",value) ;
-	 }
-      static char* item_c_string(unsigned value, char* buffer, size_t buflen)
-	 {
-	 return buffer + snprintf(buffer,buflen,"%u",value) ;
-	 }
-      static char* item_c_string(long double value, char* buffer, size_t buflen)
-	 {
-	 return buffer + snprintf(buffer,buflen,"%LG",value) ;
-	 }
-      static char* item_c_string(double value, char* buffer, size_t buflen)
-	 {
-	 return buffer + snprintf(buffer,buflen,"%G",value) ;
-	 }
-      static char* item_c_string(const Object* o, char* buffer, size_t buflen)
-	 {
-	 if (o)
-	    return o->toCstring(buffer,buflen,0,0,0) ;
-	 return buffer + snprintf(buffer,buflen,"#N<>") ;
-	 }
-      static char* item_c_string(const void*, char* buffer, size_t buflen)
-	 {
-	 return buffer + snprintf(buffer,buflen,"???") ;
-	 }
-
       size_t value_c_len(size_t N) const
 	 {
-	 return item_c_len(elementValue(N)) ;
+	 return len_as_string(elementValue(N)) ;
 	 }
       char* value_c_string(size_t N, char* buffer, size_t buflen) const
 	 {
-	 return item_c_string(elementValue(N),buffer,buflen) ;
+	 return as_string(elementValue(N),buffer,buflen) ;
 	 }
    } ;
 
@@ -414,11 +355,11 @@ class SparseVector : public Vector<ValT>
       // helper functions, needed to properly output various index and value types
       size_t index_c_len(size_t N) const
 	 {
-	 return this->item_c_len(keyAt(N)) ;
+	 return len_as_string(keyAt(N)) ;
 	 }
       char* index_c_string(size_t N, char* buffer, size_t buflen) const
 	 {
-	 return this->item_c_string(keyAt(N),buffer,buflen) ;
+	 return as_string(keyAt(N),buffer,buflen) ;
 	 }
 
 

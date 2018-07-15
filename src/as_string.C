@@ -56,6 +56,27 @@ char* as_string(long value, char* buf, size_t buflen)
 
 //----------------------------------------------------------------------------
 
+unsigned len_as_string(unsigned int value)
+{
+   return snprintf(nullptr,0,"%u",value) ;
+}
+
+//----------------------------------------------------------------------------
+
+char* as_string(unsigned int value)
+{
+   return Fr::aprintf("%u",value) ;
+}
+
+//----------------------------------------------------------------------------
+
+char* as_string(unsigned int value, char* buf, size_t buflen)
+{
+   return buf + snprintf(buf,buflen,"%u",value) ;
+}
+
+//----------------------------------------------------------------------------
+
 unsigned len_as_string(unsigned long value)
 {
    return snprintf(nullptr,0,"%lu",value) ;
@@ -225,6 +246,27 @@ char* as_string(const Object* /*value*/, char* buf, size_t /*buflen*/)
 {
 //FIXME   return buf + snprintf(buf,buflen,"%ld",value) ;
    return buf ;
+}
+
+//----------------------------------------------------------------------------
+
+unsigned len_as_string(const void* /*value*/)
+{
+   return 3 ; // will print "???"
+}
+
+//----------------------------------------------------------------------------
+
+char* as_string(const void* /*value*/)
+{
+   return dup_string("???") ;
+}
+
+//----------------------------------------------------------------------------
+
+char* as_string(const void* /*value*/, char* buf, size_t buflen)
+{
+   return buf + snprintf(buf,buflen,"%s","???") ;
 }
 
 /************************************************************************/

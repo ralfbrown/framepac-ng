@@ -29,6 +29,7 @@ namespace Fr
 
 // each of the following fills in the given buffer and returns a pointer to the char following the last one filled
 char* as_string(long value, char* buf, std::size_t buflen) ;
+char* as_string(unsigned int value, char* buf, std::size_t buflen) ;
 char* as_string(unsigned long value, char* buf, std::size_t buflen) ;
 char* as_string(std::intmax_t value, char* buf, std::size_t buflen) ;
 char* as_string(std::uintmax_t value, char* buf, std::size_t buflen) ;
@@ -37,9 +38,11 @@ char* as_string(long double value, char* buf, std::size_t buflen) ;
 char* as_string(char value, char* buf, std::size_t buflen) ;
 char* as_string(const char* value, char* buf, std::size_t buflen) ;
 char* as_string(const class Object* value, char* buf, std::size_t buflen) ;
+char* as_string(const void*, char* buf, std::size_t buflen) ;
 
 // each of the following returns an allocated string which must be released with delete[]
 char* as_string(long value) ;
+char* as_string(unsigned int value) ;
 char* as_string(unsigned long value) ;
 char* as_string(std::intmax_t value) ;
 char* as_string(std::uintmax_t value) ;
@@ -48,8 +51,10 @@ char* as_string(long double value) ;
 char* as_string(char value) ;
 char* as_string(const char* value) ;
 char* as_string(const class Object* value) ;
+char* as_string(const void* value) ;
 
 unsigned len_as_string(long value) ;
+unsigned len_as_string(unsigned int value) ;
 unsigned len_as_string(unsigned long value) ;
 unsigned len_as_string(std::intmax_t value) ;
 unsigned len_as_string(std::uintmax_t value) ;
@@ -58,6 +63,7 @@ unsigned len_as_string(long double value) ;
 unsigned len_as_string(char value) ;
 unsigned len_as_string(const char* value) ;
 unsigned len_as_string(const class Object* value) ;
+unsigned len_as_string(const void* value) ;
 
 // conversion from string to a given type
 template <typename T>
