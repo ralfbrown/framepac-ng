@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-09					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -279,6 +279,8 @@ template <typename KeyT, typename ValT, typename RetT> class HashTableLocalIter 
 
 class HashTableBase : public Object
    {
+   public: // types
+      typedef Object super ;
    public:
       HashTableBase() : m_active_resizes(0) {}
       ~HashTableBase() ;
@@ -326,6 +328,7 @@ template <typename KeyT, typename ValT>
 class HashTable : public HashTableBase
    {
    public:
+      typedef HashTableBase super ;
       // typedefs for compatibility with C++ STL
       typedef KeyT key_type ;
       typedef ValT mappped_type ;
@@ -1234,17 +1237,16 @@ template <typename KeyT, typename ValT, typename RetT>
 class HashTableIter : public HashTableIterBase<KeyT,ValT>
    {
    public:
-      HashTableIter(typename HashTable<KeyT,ValT>::Table* table, size_t index = 0)
-	 : HashTableIterBase<KeyT,ValT>(table,index)
+      typedef HashTableIterBase<KeyT,ValT> super ;
+   public:
+      HashTableIter(typename HashTable<KeyT,ValT>::Table* table, size_t index = 0) : super(table,index)
 	 {}
-      using HashTableIterBase<KeyT,ValT>::m_table ;
-      using HashTableIterBase<KeyT,ValT>::m_index ;
       
       std::pair<KeyT,RetT&> operator* () const
 	 {
-	 size_t idx = m_index ;
-	 KeyT key = m_table->getKey(idx) ;
-	 ValT* valptr = m_table->getValuePtr(idx) ;
+	 size_t idx = this->m_index ;
+	 KeyT key = this->m_table->getKey(idx) ;
+	 ValT* valptr = this->m_table->getValuePtr(idx) ;
 	 return std::pair<KeyT,RetT&>(key,*valptr) ;
 	 }
    } ;
@@ -1299,21 +1301,20 @@ template <typename KeyT, typename ValT, typename RetT>
 class HashTableLocalIter : public HashTableLocalIterBase<KeyT,ValT>
    {
    public:
+      typedef HashTableLocalIterBase<KeyT,ValT> super ;
+   public:
       HashTableLocalIter(typename HashTable<KeyT,ValT>::Table* table, size_t bucket, FramepaC::Link index)
-	 : HashTableLocalIterBase<KeyT,ValT>(table,bucket,index)
+	 : super(table,bucket,index)
 	 {}
       HashTableLocalIter(typename HashTable<KeyT,ValT>::Table* table, size_t bucket)
-	 : HashTableLocalIterBase<KeyT,ValT>(table,bucket)
+	 : super(table,bucket)
 	 {}
-      using HashTableLocalIterBase<KeyT,ValT>::m_table ;
-      using HashTableLocalIterBase<KeyT,ValT>::m_bucket ;
-      using HashTableLocalIterBase<KeyT,ValT>::m_index ;
 
       std::pair<KeyT,RetT&> operator* () const
 	 {
-	 size_t idx = (m_bucket + m_index) % m_table->bucket_count() ;
-	 KeyT key = m_table->getKey(idx) ;
-	 ValT* valptr = m_table->getValuePtr(idx) ;
+	 size_t idx = (this->m_bucket + this->m_index) % this->m_table->bucket_count() ;
+	 KeyT key = this->m_table->getKey(idx) ;
+	 ValT* valptr = this->m_table->getValuePtr(idx) ;
 	 return std::pair<KeyT,RetT&>(key,*valptr) ;
 	 }
    } ;

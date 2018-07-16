@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -30,6 +30,8 @@ namespace Fr {
 
 class Number : public Object
    {
+   public: // types
+      typedef Object super ;
    public:
       static Number *create(long) ;
       static Number *create(uint32_t) ;
@@ -37,8 +39,6 @@ class Number : public Object
       static Number *create(const Number *) ;
       static Number *create(const char *) ;
 
-   private:
-      // no data members //
    protected: // creation/destruction
       Number() {}
       ~Number() {}
@@ -85,6 +85,9 @@ class Number : public Object
       using Object::equal_ ;
       using Object::compare_ ;
       using Object::lessThan_ ;
+
+   private:
+      // no data members //
    } ;
 
 /************************************************************************/
@@ -92,6 +95,8 @@ class Number : public Object
 
 class Integer : public Number
    {
+   public: // types
+      typedef Number super ;
    public:
       static Integer *create(long val = 0) { return new Integer(val) ; }
       static Number *create(uint32_t val) { return new Integer((long)val) ; }
@@ -103,10 +108,7 @@ class Integer : public Number
 
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
-   private: // static members
-      static Allocator s_allocator ;
-   private:
-      long int m_value ;
+
    protected: // creation/destruction
       Integer(long value = 0) : m_value(value) {}
       Integer(const char *value, unsigned radix = 0) ;
@@ -160,6 +162,11 @@ class Integer : public Number
       static ObjectIter cbegin_(const Object *) ;
       static ObjectIter end_(const Object *) ;
       static ObjectIter cend_(const Object *) ;
+
+   private: // static members
+      static Allocator s_allocator ;
+   protected:
+      long int m_value ;
    } ;
 
 /************************************************************************/
@@ -167,6 +174,8 @@ class Integer : public Number
 
 class Float : public Number
    {
+   public: // types
+      typedef Number super ;
    public:
       static Float *create(long val = 0) { return new Float(val) ; }
       static Float *create(double val) { return new Float(val) ; }
@@ -174,10 +183,6 @@ class Float : public Number
       static Float *create(const Float *obj) { return new Float(obj->m_value) ; }
       static Float *create(const char *) ;
 
-   private: // static members
-      static Allocator s_allocator ;
-   private:
-      double m_value ;
    protected: // creation/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
@@ -233,6 +238,11 @@ class Float : public Number
       static ObjectIter cbegin_(const Object *) ;
       static ObjectIter end_(const Object *) ;
       static ObjectIter cend_(const Object *) ;
+
+   private: // static members
+      static Allocator s_allocator ;
+   protected:
+      double m_value ;
    } ;
 
 } ; // end namespace Fr

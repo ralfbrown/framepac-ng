@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-24					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -36,6 +36,8 @@ class CharGetter ;
 template <typename ValT>
 class TermVectorT : public SparseVector<uint32_t,ValT>
    {
+   public: // types
+      typedef SparseVector<uint32_t,ValT> super ;
    public:
       static TermVectorT* create(size_t capacity = 0) { return new TermVectorT(capacity) ; }
 
@@ -47,7 +49,7 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      TermVectorT(size_t capacity = 1) : SparseVector<uint32_t,ValT>(capacity) {}
+      TermVectorT(size_t capacity = 1) : super(capacity) {}
       ~TermVectorT() {}
 
    protected: // implementation functions for virtual methods

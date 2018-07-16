@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-13					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -60,6 +60,8 @@ class CharGetter
 class CharGetterStream : public CharGetter
    {
    public:
+      typedef CharGetter super ;
+   public:
       CharGetterStream(istream &in) : m_stream(in) {}
       CharGetterStream(const CharGetterStream &orig) : m_stream(orig.m_stream) {}
       virtual ~CharGetterStream() {}
@@ -76,6 +78,8 @@ class CharGetterStream : public CharGetter
 
 class CharGetterFILE : public CharGetter
    {
+   public:
+      typedef CharGetter super ;
    public:
       CharGetterFILE(FILE *fp) : m_stream(fp) {}
       CharGetterFILE(Fr::CFile& file) : m_stream(file.fp()) {}
@@ -96,6 +100,8 @@ class CharGetterFILE : public CharGetter
 
 class CharGetterCString : public CharGetter
    {
+   public:
+      typedef CharGetter super ;
    public:
       CharGetterCString(const char *s) : m_stream(s?s:""), m_stream_start(m_stream) {}
       CharGetterCString(const CharGetterCString &orig) : m_stream(orig.m_stream), m_stream_start(orig.m_stream_start) {}
@@ -118,6 +124,8 @@ class CharGetterCString : public CharGetter
 
 class CharGetterStdString : public CharGetter
    {
+   public:
+      typedef CharGetter super ;
    public:
       CharGetterStdString(const std::string &s) : m_currpos(s.begin()), m_endpos(s.end()), m_startpos(s.begin()) {}
       CharGetterStdString(const CharGetterStdString &orig)

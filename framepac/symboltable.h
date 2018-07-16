@@ -35,9 +35,8 @@ namespace Fr
 
 class SymbolTable : public Object
    {
-   protected:
-      typedef Fr::Initializer<SymbolTable> Initializer ;
-
+   public: // types
+      typedef Object super ;
    public:
       static SymbolTable* create(size_t capacity = 0) ;
       static SymbolTable* current() ;
@@ -60,14 +59,10 @@ class SymbolTable : public Object
       void tableName(const char* name) ;
       const char* tableName() const { return m_name ; }
 
-   private: // static members
-      static Allocator s_allocator ;
-      static Initializer s_init ;
-   protected:
-      SymHashSet m_symbols ;
-      unsigned   m_table_id ;
-      char*      m_name { nullptr } ;
-      
+      // *** startup/shutdown functions ***
+      static void StaticInitialization() ;
+      //static void StaticCleanup() ;
+
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
@@ -118,10 +113,16 @@ class SymbolTable : public Object
       // *** iterator support ***
       static Object* next_(const Object*) { return nullptr ; }
       static ObjectIter& next_iter(const Object*, ObjectIter& it) { it.incrIndex() ; return it ; }
-   public:
-      // *** startup/shutdown functions ***
-      static void StaticInitialization() ;
-      //static void StaticCleanup() ;
+   protected:
+      typedef Fr::Initializer<SymbolTable> Initializer ;
+
+   private: // static members
+      static Allocator s_allocator ;
+      static Initializer s_init ;
+   protected:
+      SymHashSet m_symbols ;
+      unsigned   m_table_id ;
+      char*      m_name { nullptr } ;
    } ;
 
 

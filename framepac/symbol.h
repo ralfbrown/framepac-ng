@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-24					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -91,6 +91,8 @@ class SymbolProperties
 
 class Symbol : public String
    {
+   public: // types
+      typedef String super ;
    public:
       static Symbol* create(const char* name) { return new Symbol(name) ; }
       static Symbol* create(const String* str) { return new Symbol(str) ; }
@@ -137,16 +139,6 @@ class Symbol : public String
       SymbolIter end() const { return SymbolIter(name()+size()) ; }
       SymbolIter cend() const { return SymbolIter(name()+size()) ; }
       Symbol *next() const { return nullptr ; }
-
-   private: // static members
-      static Allocator s_allocator ;
-   protected:
-      // we pack a pointer to the symbol's properties, its symboltable
-      //   ID, and some bitflags, into a single 64-bit field to save
-      //   memory
-      FramepaC::PointerPlus16<SymbolProperties> m_properties ;
-
-      static constexpr uint8_t RELATION_FLAG = 1 ;
 
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
@@ -217,6 +209,16 @@ class Symbol : public String
       // *** iterator support ***
       static Object* next_(const Object*) { return nullptr ; }
       static ObjectIter& next_iter(const Object*, ObjectIter& it) { it.incrIndex() ; return it ; }
+
+   private: // static members
+      static Allocator s_allocator ;
+   protected:
+      // we pack a pointer to the symbol's properties, its symboltable
+      //   ID, and some bitflags, into a single 64-bit field to save
+      //   memory
+      FramepaC::PointerPlus16<SymbolProperties> m_properties ;
+
+      static constexpr uint8_t RELATION_FLAG = 1 ;
    } ;
 
 /************************************************************************/

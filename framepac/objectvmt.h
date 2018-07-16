@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-04-27					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -257,6 +257,8 @@ class ObjectVMT
 template <class ObjT>
 class Object_VMT : public ObjectVMT
    {
+   public: // types
+      typedef ObjectVMT super ;
    public:
       // since this is a Singleton class, we have a function to return the single instance of the class
       static const ObjectVMT* instance() { return &s_instance ;  }

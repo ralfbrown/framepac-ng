@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -26,9 +26,12 @@ namespace Fr
 
 class Frame : public Object
    {
-   private: // static members
-      static Allocator s_allocator ;
-   private:
+   public:
+      typedef Object super ;
+   public:
+      // object factories
+      static Frame *create() ;
+      static Frame *create(const char *) ;
 
    protected:
       void *operator new(size_t) { return s_allocator.allocate() ; }
@@ -37,10 +40,6 @@ class Frame : public Object
       Frame(const Frame *) ;
       Frame(const Frame &) ;
       ~Frame() ;
-
-   public:
-      static Frame *create() ;
-      static Frame *create(const char *) ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<Frame> ;
@@ -83,6 +82,10 @@ class Frame : public Object
       static ObjectIter cbegin_(const Object *obj) ;
       static ObjectIter end_(const Object *obj) ;
       static ObjectIter cend_(const Object *obj) ;
+
+   private: // static members
+      static Allocator s_allocator ;
+
    } ;
 
 //----------------------------------------------------------------------------

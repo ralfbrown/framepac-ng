@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-07-16					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -46,7 +46,7 @@ class BidirIndex : public HashTable<keyT,idxT>
       typedef HashTable<keyT,idxT> super ;
 
    public:
-      BidirIndex(size_t initial_size = 1000) : HashTable<keyT,idxT>(initial_size) {}
+      BidirIndex(size_t initial_size = 1000) : super(initial_size) {}
       BidirIndex(const BidirIndex&) = delete ;
       ~BidirIndex() { delete [] m_reverse_index ; }
       BidirIndex& operator= (const BidirIndex&) = delete ;

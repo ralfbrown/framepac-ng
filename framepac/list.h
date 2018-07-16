@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-03					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -58,9 +58,8 @@ class ListIter
 
 class List : public Object
    {
-   protected:
-      typedef Fr::Initializer<List> Initializer ;
-
+   public: // types
+      typedef Object super ;
    public:
       // *** object factories ***
       static List* create() ;
@@ -119,13 +118,9 @@ class List : public Object
       List* const * nextPtr() const { return &m_next ; }
       static List* emptyList() { return empty_list ; }
 
-   private: // static members
-      static Allocator s_allocator ;
-      static Initializer s_init ;
-      static List* empty_list ;
-   private:
-      List*   m_next ;
-      Object* m_item ;
+      // *** startup/shutdown functions ***
+      static void StaticInitialization() ;
+      static void StaticCleanup() ;
 
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
@@ -190,10 +185,16 @@ class List : public Object
       static int compare_(const Object* obj, const Object* other) ;
       static int lessThan_(const Object* obj, const Object* other) ;
 
-   public:
-      // *** startup/shutdown functions ***
-      static void StaticInitialization() ;
-      static void StaticCleanup() ;
+   protected: // types
+      typedef Fr::Initializer<List> Initializer ;
+
+   private: // static members
+      static Allocator s_allocator ;
+      static Initializer s_init ;
+      static List* empty_list ;
+   private:
+      List*   m_next ;
+      Object* m_item ;
    } ;
 
 /************************************************************************/

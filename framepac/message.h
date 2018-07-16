@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-17					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -78,8 +78,10 @@ class SystemMessage
 
 class ConsoleSystemMessage : public SystemMessage
    {
+   public: // types
+      typedef SystemMessage super ;
    public:
-      ConsoleSystemMessage() : SystemMessage() {}
+      ConsoleSystemMessage() : super() {}
       virtual ~ConsoleSystemMessage() {}
    protected:
       virtual bool showModal(const char *msg) ;

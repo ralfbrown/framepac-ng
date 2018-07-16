@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-28					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -271,6 +271,8 @@ extern template class VectorMeasure<uint32_t, double> ;
 template <typename IdxT, typename ValT>
 class SimilarityMeasure : public VectorMeasure<IdxT, ValT>
    {
+   public: // types
+      typedef VectorMeasure<IdxT,ValT> super ;
    public:
       virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
@@ -278,8 +280,8 @@ class SimilarityMeasure : public VectorMeasure<IdxT, ValT>
 	 }
 
    protected:
-      SimilarityMeasure() : VectorMeasure<IdxT,ValT>() {}
-      SimilarityMeasure(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
+      SimilarityMeasure() : super() {}
+      SimilarityMeasure(const VectorSimilarityOptions& opt) : super(opt) {}
    } ;
 
 //----------------------------------------------------------------------------
@@ -288,6 +290,8 @@ class SimilarityMeasure : public VectorMeasure<IdxT, ValT>
 template <typename IdxT, typename ValT>
 class SimilarityMeasureReciprocal : public VectorMeasure<IdxT, ValT>
    {
+   public: // types
+      typedef VectorMeasure<IdxT,ValT> super ;
    public:
       virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
@@ -296,8 +300,8 @@ class SimilarityMeasureReciprocal : public VectorMeasure<IdxT, ValT>
 	 }
 
    protected:
-      SimilarityMeasureReciprocal() : VectorMeasure<IdxT,ValT>() {}
-      SimilarityMeasureReciprocal(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
+      SimilarityMeasureReciprocal() : super() {}
+      SimilarityMeasureReciprocal(const VectorSimilarityOptions& opt) : super(opt) {}
    } ;
 
 //----------------------------------------------------------------------------
@@ -306,6 +310,8 @@ class SimilarityMeasureReciprocal : public VectorMeasure<IdxT, ValT>
 template <typename IdxT, typename ValT>
 class DistanceMeasure : public VectorMeasure<IdxT, ValT>
    {
+   public: // types
+      typedef VectorMeasure<IdxT,ValT> super ;
    public:
       virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
@@ -313,8 +319,8 @@ class DistanceMeasure : public VectorMeasure<IdxT, ValT>
 	 }
 
    protected:
-      DistanceMeasure() : VectorMeasure<IdxT,ValT>() {}
-      DistanceMeasure(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
+      DistanceMeasure() : super() {}
+      DistanceMeasure(const VectorSimilarityOptions& opt) : super(opt) {}
    } ;
 
 //----------------------------------------------------------------------------
@@ -323,6 +329,8 @@ class DistanceMeasure : public VectorMeasure<IdxT, ValT>
 template <typename IdxT, typename ValT>
 class DistanceMeasureReciprocal : public VectorMeasure<IdxT, ValT>
    {
+   public: // types
+      typedef VectorMeasure<IdxT,ValT> super ;
    public:
       virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
 	 {
@@ -331,8 +339,8 @@ class DistanceMeasureReciprocal : public VectorMeasure<IdxT, ValT>
 	 }
 
    protected:
-      DistanceMeasureReciprocal() : VectorMeasure<IdxT,ValT>() {}
-      DistanceMeasureReciprocal(const VectorSimilarityOptions& opt) : VectorMeasure<IdxT,ValT>(opt) {}
+      DistanceMeasureReciprocal() : super() {}
+      DistanceMeasureReciprocal(const VectorSimilarityOptions& opt) : super(opt) {}
    } ;
 
 /*

@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-15					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -58,6 +58,8 @@ class SetIter
 
 class Set : public Object
    {
+   public: // types
+      typedef Object super ;
    public:
       static Set *create(size_t capacity = 0) { return new Set(capacity) ; }
       static Set *create(const List *) ;
@@ -82,11 +84,6 @@ class Set : public Object
       // STL compatibility
       bool reserve(size_t n) ;
       
-   private: // static members
-      static Allocator s_allocator ;
-   private:
-      size_t     m_size ;
-      ObjHashSet m_set ;
    protected: // construction/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
@@ -134,6 +131,12 @@ class Set : public Object
       static int lessThan_(const Object* obj, const Object* other) ;
 
       // *** iterator support ***
+
+   private: // static members
+      static Allocator s_allocator ;
+   protected:
+      size_t     m_size ;
+      ObjHashSet m_set ;
    } ;
 
 //----------------------------------------------------------------------------

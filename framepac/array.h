@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-03					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -55,6 +55,8 @@ class RefArray ;
 
 class Array : public Object
    {
+   public:
+      typedef Object super ;
    public:
       static Array* create(size_t initial_size = 0) { return new Array(initial_size) ; }
       static Array* create(const Object*) ;
@@ -182,6 +184,8 @@ class Array : public Object
 class RefArray : public Array
    {
    public:
+      typedef Array super ;
+   public:
       static RefArray* create(size_t initial_size = 0) { return new RefArray(initial_size) ; }
       static RefArray* create(const Object*) ;
       static RefArray* create(const Array* a) { return new RefArray(a) ; }
@@ -200,7 +204,7 @@ class RefArray : public Array
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      RefArray(size_t initial_size) : Array(initial_size) {}
+      RefArray(size_t initial_size) : super(initial_size) {}
       RefArray(const Array*) ;
       RefArray(const Array& a) : RefArray(&a) {}
       RefArray(const Object *, size_t repeat = 1) ;

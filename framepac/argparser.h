@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-13					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -83,6 +83,8 @@ template <typename Callable>
 class ArgOptFunc : public ArgOptBase
    {
    public:
+      typedef ArgOptBase super ;
+   public:
       ArgOptFunc(ArgParser& parser, Callable& fn, const char* shortname, const char* fullname, const char* desc)
 	 : ArgOptBase(parser,shortname,fullname,desc), m_func(fn)
 	 {
@@ -108,6 +110,8 @@ class ArgOptFunc : public ArgOptBase
 template <typename T>
 class ArgOpt : public ArgOptBase
    {
+   public:
+      typedef ArgOptBase super ;
    public:
       ArgOpt(T& var, const char* shortname, const char* fullname, const char* desc)
 	 : ArgOptBase(shortname,fullname,desc), m_value(var)
@@ -185,6 +189,8 @@ extern template class ArgOpt<const char*> ;
 
 class ArgHelp : public ArgOptBase
    {
+   public:
+      typedef ArgOptBase super ;
    public:
       ArgHelp(const char* shortname, const char* fullname, const char* desc, bool longhelp = false) ;
       ArgHelp(ArgParser&, const char* shortname, const char* fullname, const char* desc, bool longhelp = false) ;

@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -34,16 +34,14 @@ namespace Fr
 
 class Rational : public Number
    {
+   public: // types
+      typedef Number super ;
    public:
       static Rational* create() ;
       static Rational* create(const Object*) ;
       static Rational* create(const Rational*) ;
       static Rational* create(const char*) ;
 
-   private: // static members
-      static Allocator s_allocator ;
-   private:
-      mpq_t m_value ;
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
@@ -93,6 +91,11 @@ class Rational : public Number
       static bool equal_(const Object* obj, const Object* other) ;
       static int compare_(const Object* obj, const Object* other) ;
       static int lessThan_(const Object* obj, const Object* other) ;
+
+   private: // static members
+      static Allocator s_allocator ;
+   protected:
+      mpq_t m_value ;
 } ;
 
 } ; // end namespace Fr

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-11					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -65,9 +65,11 @@ class TrieNodeValueless
 template <typename T, typename IdxT, unsigned bits>
 class TrieNode : public TrieNodeValueless<IdxT,bits>
    {
+   public: // types
+      typedef TrieNodeValueless<IdxT,bits> super ;
    public:
-      TrieNode() : TrieNodeValueless<IdxT,bits>(), m_leaf(false) {}
-      TrieNode(T v, bool lf = false) : TrieNodeValueless<IdxT,bits>(), m_value(v), m_leaf(lf) {}
+      TrieNode() : super(), m_leaf(false) {}
+      TrieNode(T v, bool lf = false) : super(), m_value(v), m_leaf(lf) {}
       TrieNode(const TrieNode&) = default ;
       ~TrieNode() {}
 
@@ -195,6 +197,8 @@ class PackedTrie
       // a full node can contain both a value and child pointers
       class Node : public ValuelessNode
          {
+	 public: // types
+	    typedef ValuelessNode super ;
 	 public:
 	    Node() ;
 	    ~Node() ;
@@ -255,6 +259,8 @@ class PackedTrie
 template <typename T, typename IdxT = std::uint32_t, typename ValIdxT = std::uint32_t>
 class PackedMultiTrie : public PackedTrie<IdxT,ValIdxT>
    {
+   public: // types
+      typedef PackedTrie<IdxT,ValIdxT> super ;
    public:
       PackedMultiTrie() ;
       ~PackedMultiTrie() ;

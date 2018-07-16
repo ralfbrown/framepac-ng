@@ -1,12 +1,13 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.01, last edit 2017-03-31					*/
+/*  Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File critsect.h		short-duration critical section mutex	*/
 /*									*/
-/*  (c) Copyright 2010,2013,2015,2016,2017 Carnegie Mellon University	*/
+/*  (c) Copyright 2010,2013,2015,2016,2017,2018				*/
+/*		Carnegie Mellon University				*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -89,6 +90,8 @@ class CriticalSection
 
 class ScopeCriticalSection : public CriticalSection
    {
+   public:
+      typedef CriticalSection super ;
    public:
       ScopeCriticalSection() { lock() ; }
       ~ScopeCriticalSection() { unlock() ; }

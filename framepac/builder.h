@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-15					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -53,6 +53,12 @@ class BufferBuilder
       T* currentBuffer() const { return m_buffer ; }
       T* finalize() const ;
       T* move() ;
+
+      // iterator support
+      T* begin() const { return currentBuffer() ; }
+      T* end() const { return currentBuffer() + size() ; }
+      const T* cbegin() const { return begin() ; }
+      const T* cend() const { return end() ; }
 
       // operator overloads
       T *operator * () const { return m_buffer ; }

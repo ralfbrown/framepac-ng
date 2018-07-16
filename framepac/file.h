@@ -229,8 +229,10 @@ class CFile
 class CInputFile : public CFile
    {
    public:
-      CInputFile(const char *filename, int options = default_options) : CFile(filename,false,options) {}
-      CInputFile(String *filename, int options = default_options) : CFile(filename,false,options) {}
+      typedef CFile super ;
+   public:
+      CInputFile(const char *filename, int options = default_options) : super(filename,false,options) {}
+      CInputFile(String *filename, int options = default_options) : super(filename,false,options) {}
       ~CInputFile() = default ;
    } ;
 
@@ -239,8 +241,10 @@ class CInputFile : public CFile
 class COutputFile : public CFile
    {
    public:
-      COutputFile(const char *filename, int options = default_options) : CFile(filename,true,options) {}
-      COutputFile(String *filename, int options = default_options) : CFile(filename,true,options) {}
+      typedef CFile super ;
+   public:
+      COutputFile(const char *filename, int options = default_options) : super(filename,true,options) {}
+      COutputFile(String *filename, int options = default_options) : super(filename,true,options) {}
       ~COutputFile() = default ;
    } ;
 

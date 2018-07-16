@@ -92,8 +92,18 @@ class InitializerBase
 //    https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Member_Detector
 
 template <class C>
-class Initializer : InitializerBase
+class Initializer : public InitializerBase
    {
+   public: // types
+      typedef InitializerBase super ;
+   public:
+      Initializer() : super()
+	 {
+	 registerInit<hasInit>(nullptr) ;
+	 registerCleanup<hasCleanup>(nullptr) ; 
+	 }
+      ~Initializer() {}
+
    private:
       struct addInit { int StaticInitialization ; } ;
       struct addCleanup { int StaticCleanup ; } ;
@@ -111,13 +121,6 @@ class Initializer : InitializerBase
       template <class T>
       char registerCleanup( T* )
 	 { m_cleanup = C::StaticCleanup ; RegisterStaticCleanup(this) ; return 0 ; }
-   public:
-      Initializer() : InitializerBase()
-	 {
-	 registerInit<hasInit>(nullptr) ;
-	 registerCleanup<hasCleanup>(nullptr) ; 
-	 }
-      ~Initializer() {}
    } ;
 
 /************************************************************************/
@@ -155,8 +158,21 @@ class ThreadInitializerBase
 //    https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Member_Detector
 
 template <class C>
-class ThreadInitializer : ThreadInitializerBase
+class ThreadInitializer : public ThreadInitializerBase
    {
+   public: // types
+      typedef ThreadInitializerBase super ;
+   public:
+      ThreadInitializer() : super()
+	 {
+	    registerInit<hasInit>(nullptr) ;
+	    registerCleanup<hasCleanup>(nullptr) ;
+	 }
+      ~ThreadInitializer()
+	 {
+	    UnregisterThreadInit(this) ;
+	    UnregisterThreadCleanup(this) ;
+	 }
    private:
       struct addInit { int threadInit ; } ;
       struct addCleanup { int threadCleanup ; } ;
@@ -174,17 +190,6 @@ class ThreadInitializer : ThreadInitializerBase
       template <class T>
       char registerCleanup( T* )
 	 { m_cleanup = C::threadCleanup ; RegisterThreadCleanup(this) ; return 0 ; }
-   public:
-      ThreadInitializer() : ThreadInitializerBase()
-	 {
-	    registerInit<hasInit>(nullptr) ;
-	    registerCleanup<hasCleanup>(nullptr) ;
-	 }
-      ~ThreadInitializer()
-	 {
-	    UnregisterThreadInit(this) ;
-	    UnregisterThreadCleanup(this) ;
-	 }
    } ;
 
 //----------------------------------------------------------------------------

@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-29					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -44,6 +44,8 @@ class TimerBase
 
 class CpuTimer : public TimerBase
    {
+   public: // types
+      typedef TimerBase super ;
    public:
       CpuTimer() : m_start_time(currTime()) {}
       ~CpuTimer() {}
@@ -69,7 +71,9 @@ class CpuTimer : public TimerBase
 
 class ElapsedTimer : public TimerBase
    {
-   typedef std::chrono::steady_clock Clock ;
+   public: // types
+      typedef TimerBase super ;
+      typedef std::chrono::steady_clock Clock ;
    public:
       ElapsedTimer() : m_start(currTime()) {}
       ~ElapsedTimer() {}

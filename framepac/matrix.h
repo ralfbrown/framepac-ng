@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -33,7 +33,14 @@ namespace Fr
 template <typename T>
 class Matrix : public Object
    {
+   public: // types
+      typedef Object super ;
+
    public:
+      // object factories
+      static Matrix* create(size_t rows, size_t cols) ;
+      
+   protected:
       Matrix(size_t rows, size_t cols) : m_rows(rows), m_cols(cols) {}
       Matrix(const Matrix &) = default ;
       ~Matrix() = default ;
@@ -49,9 +56,15 @@ class Matrix : public Object
 template <typename T>
 class FullMatrix : public Matrix<T>
    {
+   public: // types
+      typedef Matrix<T> super ;
 
    public:
-      FullMatrix(size_t rows, size_t cols) : Matrix<T>(rows,cols) {} //FIXME
+      // object factories
+      static FullMatrix* create(size_t rows, size_t cols) ;
+      
+   protected:
+      FullMatrix(size_t rows, size_t cols) : super(rows,cols) {} //FIXME
       ~FullMatrix() ;
 
    } ;
@@ -62,9 +75,15 @@ class FullMatrix : public Matrix<T>
 template <typename T>
 class SparseMatrix : public Matrix<T>
    {
+   public: // types
+      typedef Matrix<T> super ;
 
    public:
-      SparseMatrix(size_t rows, size_t cols) : Matrix<T>(rows,cols) {} //FIXME
+      // object factories
+      static SparseMatrix* create(size_t rows, size_t cols) ;
+      
+   protected:
+      SparseMatrix(size_t rows, size_t cols) : super(rows,cols) {} //FIXME
       ~SparseMatrix() ;
 
    } ;
@@ -75,9 +94,17 @@ class SparseMatrix : public Matrix<T>
 template <typename T>
 class UpperTriangMatrix : public Matrix<T>
    {
+   public: // types
+      typedef Matrix<T> super ;
 
    public:
-      UpperTriangMatrix(size_t rows, size_t cols) : Matrix<T>(rows,cols) {} //FIXME
+      // object factories
+      static UpperTriangMatrix* create(size_t rows, size_t cols) ;
+      
+   protected:
+
+   public:
+      UpperTriangMatrix(size_t rows, size_t cols) : super(rows,cols) {} //FIXME
       ~UpperTriangMatrix() ;
 
    } ;
@@ -90,9 +117,15 @@ class LowerTriangMatrix : public Matrix<T>
    {
    // it's tempting to just swap the coordinates on UpperTriangMatrix, but that
    //   would lead to poor cache behavior in many cases
+   public: // types
+      typedef Matrix<T> super ;
 
    public:
-      LowerTriangMatrix(size_t rows, size_t cols) : Matrix<T>(rows,cols) {} //FIXME
+      // object factories
+      static LowerTriangMatrix* create(size_t rows, size_t cols) ;
+      
+   protected:
+      LowerTriangMatrix(size_t rows, size_t cols) : super(rows,cols) {} //FIXME
       ~LowerTriangMatrix() ;
 
    } ;
@@ -103,9 +136,15 @@ class LowerTriangMatrix : public Matrix<T>
 template <typename T>
 class SymmetricMatrix : public UpperTriangMatrix<T>
    {
+   public: // types
+      typedef UpperTriangMatrix<T> super ;
 
    public:
-      SymmetricMatrix(size_t rows, size_t cols) : Matrix<T>(rows,cols) {} //FIXME
+      // object factories
+      static SymmetricMatrix* create(size_t rows, size_t cols) ;
+      
+   protected:
+      SymmetricMatrix(size_t rows, size_t cols) : super(rows,cols) {} //FIXME
       ~SymmetricMatrix() ;
 
    } ;
@@ -116,13 +155,20 @@ class SymmetricMatrix : public UpperTriangMatrix<T>
 template <typename T>
 class DiagonalMatrix : public Matrix<T>
    {
+   public: // types
+      typedef Matrix<T> super ;
+
+   public:
+      // object factories
+      static DiagonalMatrix* create(size_t rows, size_t cols) ;
+      
+   protected:
+      DiagonalMatrix(size_t rows, size_t cols, size_t width) : super(rows,cols) {} //FIXME
+      ~DiagonalMatrix() ;
+
    protected:
       size_t m_width ;   // width of the band around the diagonal which is non-zero
 			 // m_width=0 is just the diagonal, m_width=1 is diag plus one on each side, etc.
-   public:
-      DiagonalMatrix(size_t rows, size_t cols, size_t width) : Matrix<T>(rows,cols) {} //FIXME
-      ~DiagonalMatrix() ;
-
    } ;
 
 //----------------------------------------------------------------------------

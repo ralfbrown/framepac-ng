@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-12					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -72,7 +72,9 @@ class WordSplitter
 class WordSplitterWhitespace : public WordSplitter
    {
    public:
-      WordSplitterWhitespace(class CharGetter& getter) : WordSplitter(getter) {}
+      typedef WordSplitter super ;
+   public:
+      WordSplitterWhitespace(class CharGetter& getter) : super(getter) {}
       WordSplitterWhitespace(const WordSplitterWhitespace&) = default ;
       virtual ~WordSplitterWhitespace() {}
       WordSplitterWhitespace& operator= (const WordSplitterWhitespace&) = default ;
@@ -87,7 +89,9 @@ class WordSplitterWhitespace : public WordSplitter
 class WordSplitterDelimiter : public WordSplitter
    {
    public:
-      WordSplitterDelimiter(class CharGetter& getter, char delim = ' ') : WordSplitter(getter), m_delim(delim) {}
+      typedef WordSplitter super ;
+   public:
+      WordSplitterDelimiter(class CharGetter& getter, char delim = ' ') : super(getter), m_delim(delim) {}
       WordSplitterDelimiter(const WordSplitterDelimiter&) = default ;
       virtual ~WordSplitterDelimiter() {}
       WordSplitterDelimiter& operator= (const WordSplitterDelimiter&) = default ;
@@ -104,8 +108,10 @@ class WordSplitterDelimiter : public WordSplitter
 class WordSplitterEnglish : public WordSplitter
    {
    public:
+      typedef WordSplitter super ;
+   public:
       WordSplitterEnglish(class CharGetter& getter, bool force_lower = false)
-	 : WordSplitter(getter), m_force_lower(force_lower) {}
+	 : super(getter), m_force_lower(force_lower) {}
       WordSplitterEnglish(const WordSplitterEnglish&) = default ;
       virtual ~WordSplitterEnglish() {}
       WordSplitterEnglish& operator= (const WordSplitterEnglish&) = default ;

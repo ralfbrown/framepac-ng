@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-06-22					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -32,12 +32,16 @@ namespace Fr {
 
 class NonObject : public Object
    {
-   private:
-      // no data members
-   protected:
-      NonObject() {}
+   public: // types
+      typedef Object super ;
    public:
       ~NonObject() {}
+
+   protected: // construction/destruction
+      NonObject() {}
+
+   protected: //implementation functions for virtual methods
+      friend class FramepaC::Object_VMT<NonObject> ;
 
       // *** copying ***
       static ObjectPtr clone_(const Object*) { return ObjectPtr(nullptr) ; }
@@ -61,6 +65,9 @@ class NonObject : public Object
       // determine length of buffer required for string representation of object
       static size_t cStringLength_(const Object* obj,size_t wrap_at,size_t indent, size_t wrapped_indent) ;
       static size_t jsonStringLength_(const Object* obj,bool wrap,size_t indent) ;
+
+   private:
+      // no data members
 } ;
 
 

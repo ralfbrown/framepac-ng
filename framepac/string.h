@@ -126,6 +126,8 @@ typedef StringIter_<const char> ConstStringIter ;
 
 class String : public Object
    {
+   public: // types
+      typedef Object super ;
    public:
       static String* create() { return new String ; }
       static String* create(const char* s) { return new String(s) ; }
@@ -160,14 +162,6 @@ class String : public Object
       operator const char* () const { return c_str() ; }
 
       static void StaticInitialization() ;
-
-   private: // static members
-      static Allocator s_allocator ;
-      static Initializer<String> s_initializer ;
-   protected: // data members
-      // pack pointer to the actual string plus 16 bits of length into a single 64-bit value.  If the stored
-      //   length is 0xFFFF, then the initial size_t of the buffer is the actual length of the string.
-      FramepaC::PointerPlus16<char> m_buffer ;
 
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
@@ -229,6 +223,14 @@ class String : public Object
       // *** iterator support ***
       static Object* next_(const Object *) { return nullptr ; }
       static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
+
+   private: // static members
+      static Allocator s_allocator ;
+      static Initializer<String> s_initializer ;
+   protected: // data members
+      // pack pointer to the actual string plus 16 bits of length into a single 64-bit value.  If the stored
+      //   length is 0xFFFF, then the initial size_t of the buffer is the actual length of the string.
+      FramepaC::PointerPlus16<char> m_buffer ;
    } ;
 
 /************************************************************************/

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -67,7 +67,9 @@ class ProgressIndicator
 class NullProgressIndicator : public ProgressIndicator
    {
    public:
-      NullProgressIndicator() : ProgressIndicator(0,0)
+      typedef ProgressIndicator super ;
+   public:
+      NullProgressIndicator() : super(0,0)
 	 {
 	    showElapsedTime(false) ;
 	    showRemainingTime(false) ;
@@ -91,6 +93,8 @@ class NullProgressIndicator : public ProgressIndicator
 
 class ConsoleProgressIndicator : public ProgressIndicator
    {
+   public:
+      typedef ProgressIndicator super ;
    public:
       ConsoleProgressIndicator(size_t interval, size_t limit, size_t per_line,
 			       const char *first_prefix, const char *rest_prefix) ;

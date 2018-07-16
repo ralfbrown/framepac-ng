@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-04-27					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -35,11 +35,13 @@ namespace Fr {
 template <typename ValT>
 class Vector : public Object
    {
-   public:
+   public: // types
+      typedef Object super ;
       // export the template type parameter for use in other templates that may not have
       //   an explicit parameter giving this type because they inferred the vector type
       typedef ValT value_type ;
 
+   public:
       static Vector* create(size_t numelts) ;
 
       Symbol* key() const { return m_key ; }
@@ -149,6 +151,17 @@ class Vector : public Object
       // STL compatibility
       bool reserve(size_t n) ;
       
+   protected:
+      // helper functions, needed to properly output various index and value types
+      size_t value_c_len(size_t N) const
+	 {
+	 return len_as_string(elementValue(N)) ;
+	 }
+      char* value_c_string(size_t N, char* buffer, size_t buflen) const
+	 {
+	 return as_string(elementValue(N),buffer,buflen) ;
+	 }
+
    private:
       static Allocator s_allocator ;
       static const char* s_typename ;
@@ -161,17 +174,6 @@ class Vector : public Object
       uint32_t m_capacity { 0 } ;	// number of elements allocated (may be greater than m_size)
       float    m_weight { 1.0f } ; 
       mutable CriticalSection m_critsect ;
-
-   protected:
-      // helper functions, needed to properly output various index and value types
-      size_t value_c_len(size_t N) const
-	 {
-	 return len_as_string(elementValue(N)) ;
-	 }
-      char* value_c_string(size_t N, char* buffer, size_t buflen) const
-	 {
-	 return as_string(elementValue(N),buffer,buflen) ;
-	 }
    } ;
 
 //----------------------------------------------------------------------------
@@ -389,6 +391,8 @@ extern template class SparseVector<Object*,double> ;
 template <typename ValT>
 class DenseVector : public Vector<ValT>
    {
+   public: // types
+      typedef Vector<ValT> super ;
    public:
       static DenseVector* create(size_t capacity = 0) { return new DenseVector(capacity) ; }
       static DenseVector* create(const char* rep) { return new DenseVector(rep) ; }
@@ -412,9 +416,9 @@ class DenseVector : public Vector<ValT>
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      DenseVector(size_t capacity = 0) : Vector<ValT>(capacity) {}
+      DenseVector(size_t capacity = 0) : super(capacity) {}
       DenseVector(const char* rep) ;
-      DenseVector(const Vector<ValT>&v) : Vector<ValT>(v) {}
+      DenseVector(const Vector<ValT>&v) : super(v) {}
       ~DenseVector() {}
       DenseVector& operator= (const DenseVector&) ;
 

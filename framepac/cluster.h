@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-04-30					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -95,19 +95,13 @@ class ClusterInfoIter
 
 class ClusterInfo : public Object
    {
-   protected:
-      typedef Fr::Initializer<ClusterInfo> Initializer ;
-
-   public:
+   public:	// types
+      typedef Object super ;
       enum Flags
 	 {
 	 flat,				// no subclusters
 	 group				// no direct members, subclusters only
 	 } ;
-
-   public:
-      void setLabel(Symbol* label) { m_label = label ; }
-      Symbol* label() const { return m_label ; }
 
    public:
       // *** object factories ***
@@ -132,6 +126,8 @@ class ClusterInfo : public Object
       RefArray* allMembers() const ;
 
       static Symbol* genLabel() ;
+      void setLabel(Symbol* label) { m_label = label ; }
+      Symbol* label() const { return m_label ; }
 
       // *** standard info functions ***
       //inherited: size_t size() const ;
@@ -174,6 +170,9 @@ class ClusterInfo : public Object
       template <typename ValT>
       DenseVector<ValT>* createDenseCentroid(const Array* vectors) const ;
       
+   protected:
+      typedef Fr::Initializer<ClusterInfo> Initializer ;
+
    protected:
       RefArray* m_members { nullptr } ;	// individual vectors in this cluster
       Array* m_subclusters { nullptr };	// sub-clusters (if any) of this cluster

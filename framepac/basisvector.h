@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-04-27					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -32,6 +32,8 @@ namespace Fr {
 template <typename IdxT, typename ValT = int8_t>
 class BasisVector : public SparseVector<IdxT,ValT>
    {
+   public:
+      typedef SparseVector<IdxT,ValT> super ;
    public:
       static BasisVector* create(size_t numelts, size_t num_plus, size_t num_minus = (size_t)~0) ;
 

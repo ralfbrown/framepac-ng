@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-09					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -58,7 +58,8 @@ class MapIter
 
 class Map : public Object
    {
-   public:
+   public: // types
+      typedef Object super ;
       typedef bool remove_fn(Object*,Object*) ;
    public:
       static Map *create(size_t capacity = 0) { return new Map(capacity) ; }
@@ -87,11 +88,6 @@ class Map : public Object
       // STL compatibility
       bool reserve(size_t n) ;
       
-   private: // static members
-      static Allocator s_allocator ;
-   private:
-      size_t       m_size ;
-      ObjHashTable m_map ;
    protected: // construction/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
@@ -139,6 +135,12 @@ class Map : public Object
       static int lessThan_(const Object* obj, const Object* other) ;
 
       // *** iterator support ***
+
+   private: // static members
+      static Allocator s_allocator ;
+   protected:
+      size_t       m_size ;
+      ObjHashTable m_map ;
    } ;
 
 //----------------------------------------------------------------------------
