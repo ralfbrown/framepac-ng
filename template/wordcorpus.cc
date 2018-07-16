@@ -70,6 +70,9 @@ WordCorpusT<IdT,IdxT>::WordCorpusT(CFile &fp, bool readonly)
 template <typename IdT, typename IdxT>
 WordCorpusT<IdT,IdxT>::~WordCorpusT()
 {
+   discardAttributes() ;
+   discardContextEquivs() ;
+   discardText() ;
    //TODO
    return ;
 }

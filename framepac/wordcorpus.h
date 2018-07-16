@@ -162,7 +162,8 @@ class WordCorpusT
       mutable uint8_t*        m_attributes { nullptr } ;
       IdT		      m_rare ;
       IdT		      m_newline ;
-      IdxT		      m_rare_thresh ;
+      IdxT		      m_rare_thresh { 0 } ;
+      IdxT		      m_last_linenum { (IdxT)~0 } ;
       mutable IdxT	      m_attributes_alloc { 0 } ;
       unsigned		      m_max_context { 0 } ;
       unsigned		      m_left_context { 0 } ;

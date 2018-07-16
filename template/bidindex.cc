@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-31					*/
+/* Version 0.07, last edit 2018-07-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -21,12 +21,92 @@
 
 #include <stdarg.h>
 #include "framepac/bidindex.h"
+#include "framepac/file.h"
 
 namespace Fr
 {
 
 /************************************************************************/
 /************************************************************************/
+
+template <class keyT, typename idxT>
+bool BidirIndex<keyT,idxT>::load(const char* filename, bool allow_mmap)
+{
+   if (allow_mmap && loadMapped(filename))
+      return true ;
+   CInputFile file(filename,CFile::binary) ;
+   return file ? load(file) : false ;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+bool BidirIndex<keyT,idxT>::load(CFile& file)
+{
+   if (!file || file.eof())
+      return false ;
+   //TODO
+   return false;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+bool BidirIndex<keyT,idxT>::loadMapped(const char* filename)
+{
+   if (!filename || !*filename)
+      return false;
+   //TODO
+   m_readonly = true ;			// can't modify if we're pointing into a memory-mapped file
+   return false;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+bool BidirIndex<keyT,idxT>::loadFromMmap(void* mmap_base, size_t mmap_len)
+{
+   if (!mmap_base || mmap_len == 0)
+      return false;
+   //TODO
+   return false;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+bool BidirIndex<keyT,idxT>::save(const char* filename) const
+{
+   COutputFile file(filename,CFile::binary) ;
+   return file ? save(file) : false ;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+bool BidirIndex<keyT,idxT>::save(CFile& file) const
+{
+   if (!file)
+      return false ;
+   //TODO
+   return false;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+void BidirIndex<keyT,idxT>::clear()
+{
+   delete[] m_reverse_index ;
+   m_reverse_index = nullptr ;
+   m_max_index = 0 ;
+   m_next_index = 0 ;
+   super::clear() ;
+   m_readonly = false ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
 
 template <class keyT, typename idxT>
 idxT BidirIndex<keyT,idxT>::addKey(keyT key)
