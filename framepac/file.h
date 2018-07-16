@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-13					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -30,6 +30,7 @@ namespace Fr
 {
 
 // forward declaration
+class CString ;
 class List ;
 class String ;
 
@@ -166,6 +167,8 @@ class CFile
 	    return readValues(val,count) ;
 	 }
 
+      bool readStringArray(CString*& strings, size_t& count) ;
+
       template <typename T>
       bool readOffset(T** var)
 	 {
@@ -187,6 +190,8 @@ class CFile
 	    if (!val || count == 0) return true ; // trivially successful
 	    return write(val,sizeof(T),count) == count ;
 	 }
+
+      bool writeStringArray(const CString* strings, size_t count) ;
 
       template <typename T>
       bool writeOffset(T* array, size_t count, uint64_t& offset)

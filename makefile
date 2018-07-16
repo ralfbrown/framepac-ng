@@ -281,6 +281,7 @@ OBJS = \
 	build/copyfile$(OBJ) \
 	build/critsect$(OBJ) \
 	build/cstring$(OBJ) \
+	build/cstring_file$(OBJ) \
 	build/fasthash64$(OBJ) \
 	build/filename$(OBJ) \
 	build/float$(OBJ) \
@@ -519,6 +520,7 @@ build/convert$(OBJ):		src/convert$(C) framepac/convert.h
 build/copyfile$(OBJ):		src/copyfile$(C) framepac/file.h
 build/critsect$(OBJ):		src/critsect$(C) framepac/critsect.h
 build/cstring$(OBJ):		src/cstring$(C) framepac/cstring.h framepac/fasthash64.h
+build/cstring_file$(OBJ):	src/cstring_file$(C) framepac/cstring.h framepac/file.h
 build/fasthash64$(OBJ):		src/fasthash64$(C) framepac/fasthash64.h
 build/filename$(OBJ):		src/filename$(C) framepac/file.h framepac/texttransforms.h
 build/float$(OBJ):		src/float$(C) framepac/number.h framepac/fasthash64.h
