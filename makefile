@@ -601,6 +601,7 @@ build/vector_u32_flt$(OBJ):	src/vector_u32_flt$(C) template/vector.cc template/d
 			template/sparsevector.cc
 build/vector_u32_u32$(OBJ):	src/vector_u32_u32$(C) template/vector.cc template/densevector.cc \
 			template/sparsevector.cc
+build/wordcorpus_u24u32$(OBJ): 	src/wordcorpus_u32u40$(C) template/wordcorpus.cc template/concbuilder.cc
 build/wordcorpus_u32u32$(OBJ): 	src/wordcorpus_u32u32$(C) template/wordcorpus.cc template/hashtable.cc \
 			template/concbuilder.cc
 build/wordcorpus_u32u40$(OBJ): 	src/wordcorpus_u32u40$(C) template/wordcorpus.cc

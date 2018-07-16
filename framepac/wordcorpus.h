@@ -56,12 +56,15 @@ class WordCorpusT
       typedef IdxT Index ;
       typedef BufferBuilder<IdT,1> IDBufferBuilder ;
       //typedef ConcurrentBufferBuilder<IdT,1> IDBufferBuilder ;
+      typedef Fr::SuffixArray<IdT,IdxT> SufArr ;
+      typedef Fr::HashTable<Fr::CString,IdT> Map ;
+      typedef Fr::BidirIndex<Fr::CString,IdT> BiMap ;
       typedef bool SAEnumFunc(const IdT* key, unsigned keylen, size_t freq,
-	 		      const Fr::SuffixArray<ID,IdxT>*, IdxT first_match,
+	 		      const SufArr*, IdxT first_match,
 			      void *user_arg) ;
       typedef bool AttrCheckFunc(const char *word) ;
 
-      static const ID ErrorID = ~0 ;
+      static constexpr ID ErrorID { ID(~0) } ;
 
    public:
       WordCorpusT() ;
@@ -155,30 +158,38 @@ class WordCorpusT
       void setID(IdxT N, IdT id) ;
 
    protected:
-      BidirIndex<CString,IdT> m_wordmap ;
-      IDBufferBuilder         m_wordbuf ;	// contains array of word IDs
-      SuffixArray<IdT,IdxT>   m_fwdindex ;
-      SuffixArray<IdT,IdxT>   m_revindex ;
-      mutable uint8_t*        m_attributes { nullptr } ;
-      IdT		      m_rare ;
-      IdT		      m_newline ;
-      IdxT		      m_rare_thresh { 0 } ;
-      IdxT		      m_last_linenum { (IdxT)~0 } ;
-      mutable IdxT	      m_attributes_alloc { 0 } ;
-      unsigned		      m_max_context { 0 } ;
-      unsigned		      m_left_context { 0 } ;
-      unsigned		      m_right_context { 0 } ;
-      unsigned		      m_total_context { 1 } ;
-      bool		      m_keep_linenumbers { false } ;
+      BiMap		 m_wordmap ;
+      IDBufferBuilder    m_wordbuf ;	// contains array of word IDs
+      Map		 m_contextmap ;
+      SufArr   		 m_fwdindex ;
+      SufArr   		 m_revindex ;
+      mutable uint8_t*   m_attributes { nullptr } ;
+      IdT		 m_rare ;
+      IdT		 m_newline ;
+      IdxT		 m_rare_thresh { 0 } ;
+      IdxT		 m_last_linenum { (IdxT)~0 } ;
+      mutable IdxT	 m_attributes_alloc { 0 } ;
+      unsigned		 m_max_context { 0 } ;
+      unsigned		 m_left_context { 0 } ;
+      unsigned		 m_right_context { 0 } ;
+      unsigned		 m_total_context { 1 } ;
+      bool		 m_keep_linenumbers { false } ;
    } ;
 
 //----------------------------------------------------------------------------
 
+// the standard version, for corpora with up to 4 billion types and up to 4 billion tokens
 extern template class WordCorpusT<uint32_t,uint32_t> ;
 typedef WordCorpusT<uint32_t,uint32_t> WordCorpus ;
 
+// an extra-large version for corpora with more than 4 billion tokens
 extern template class WordCorpusT<uint32_t,UInt40> ;
 typedef WordCorpusT<uint32_t,UInt40> WordCorpusXL ;
+
+// save some space if the corpus vocabulary is less than 16 million types, at the
+//   cost of a little slower processing
+extern template class WordCorpusT<UInt24,uint32_t> ;
+typedef WordCorpusT<UInt24,uint32_t> WordCorpusCompact ;
 
 //----------------------------------------------------------------------------
 

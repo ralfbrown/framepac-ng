@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-13					*/
+/* Version 0.07, last edit 2018-07-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -56,10 +56,10 @@ class ByteOrdered
       constexpr unsigned byteswap(unsigned index) { return bytes - 1 - index ; }
 #endif
    public:
-      ByteOrdered() {}
+      ByteOrdered() = default ;
       ByteOrdered(numtype v) { store(v) ; }
       ByteOrdered(const ByteOrdered &old) = default ;
-      ~ByteOrdered() {}
+      ~ByteOrdered() = default ;
 
       numtype load() const ;
       void store(const void *v) ;
