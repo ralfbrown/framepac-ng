@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -154,6 +154,10 @@ class String : public Object
       StringIter end() { return StringIter(c_str()+c_len()) ; }
       ConstStringIter cend() const { return ConstStringIter(c_str()+c_len()) ; }
       String *next() const { return nullptr ; }
+
+      // *** operator/typecast overloads ***
+      operator bool () const { return c_str() != nullptr ; }
+      operator const char* () const { return c_str() ; }
 
       static void StaticInitialization() ;
 

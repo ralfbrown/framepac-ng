@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -139,9 +139,6 @@ class Object
       // *** standard info functions ***
       FrVIRTFUNC0(size_t,size,size_,const) ;
       FrVIRTFUNC0(bool,empty,empty_,const) ;
-      operator bool () const
-	 { const void* v = this ; // work around "non-null pointer compared against null" warning
-           return v != nullptr && !this->empty() ; }
 
       // *** standard access functions ***
       FrVIRTFUNC0(Object*,front,front_,) ;
@@ -173,6 +170,11 @@ class Object
       FrVIRTFUNC0(Object*,next,next_,const) ;
       FrVIRTFUNC1(ObjectIter&,next,next_iter,const,ObjectIter&,it) ;
 
+      // *** operator/typecast overloads ***
+      operator bool () const
+	 { const void* v = this ; // work around "non-null pointer compared against null" warning
+           return v != nullptr && !this->empty() ; }
+      operator const char* () const { return stringValue() ; }
    } ;
 
 inline Object* Object::shallowCopy_(const Object* obj) { return clone_(obj) ; }
