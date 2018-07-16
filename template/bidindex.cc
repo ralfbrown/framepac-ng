@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-15					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -45,7 +45,17 @@ bool BidirIndex<keyT,idxT>::load(CFile& file)
 {
    if (!file || file.eof())
       return false ;
-   //TODO
+   //TODO: check file signature
+
+   size_t count ;
+   //FIXME: the following line will currently only instantiate for keyT=CString
+   if (!file.readStringArray(m_reverse_index,count))
+      return false ;
+   m_common_buffer = count ;
+   for (idxT i = 0 ; i < count ; ++i)
+      {
+      this->add(m_reverse_index[i],i) ;
+      }
    return false;
 }
 
@@ -95,9 +105,47 @@ bool BidirIndex<keyT,idxT>::save(CFile& file) const
 //----------------------------------------------------------------------------
 
 template <class keyT, typename idxT>
+void BidirIndex<keyT,idxT>::clearReverseElement(keyT*)
+{
+   // default action is to do nothing, as deleting the reverse-index array will invoke dtors and clean up;
+   //   but for keyT=CString, we'll need to override and explicitly release storage
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+void BidirIndex<keyT,idxT>::releaseCommonBuffer(keyT*)
+{
+   // default action is to do nothing, as deleting the reverse-index array will invoke dtors and clean up;
+   //   but for keyT=CString, we'll need to override and explicitly release storage
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+void BidirIndex<keyT,idxT>::clearReverseIndex(keyT* index, idxT common, idxT total)
+{
+   for (size_t i = common ; i < total ; ++i)
+      {
+      clearReverseElement(&index[i]) ;
+      }
+   if (common > 0)
+      {
+      // delete the underlying buffer that the first N elements of m_reverse_index all point at
+      releaseCommonBuffer(index) ;
+      }
+   delete[] index ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
 void BidirIndex<keyT,idxT>::clear()
 {
-   delete[] m_reverse_index ;
+   clearReverseIndex(m_reverse_index,m_common_buffer,m_max_index) ;
    m_reverse_index = nullptr ;
    m_max_index = 0 ;
    m_next_index = 0 ;

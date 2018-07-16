@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-09					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -30,6 +30,20 @@ template <>
 CString BidirIndex<CString,uint32_t>::getKey(uint32_t index)
 {
    return index < m_max_index ? m_reverse_index[index] : CString(nullptr) ;
+}
+
+template <>
+void BidirIndex<CString,uint32_t>::clearReverseElement(CString* elt)
+{
+   elt->release() ;
+   return ;
+}
+
+template <>
+void BidirIndex<CString,uint32_t>::releaseCommonBuffer(CString* elt0)
+{
+   elt0->release() ;
+   return ;
 }
 
 // request explicit instantiation

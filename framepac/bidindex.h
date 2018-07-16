@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.05, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -76,11 +76,15 @@ class BidirIndex : public HashTable<keyT,idxT>
       idxT         m_max_index { 0 } ;
       idxT         m_errorID { (idxT)-1 } ;
       keyT*        m_reverse_index { nullptr } ;
+      idxT	   m_common_buffer { 0 } ;	// the first N elts of m_reverse_index share storage
       bool	   m_readonly { false } ;
 
    protected:
       using HashTable<keyT,idxT>::lookup ;
       using HashTable<keyT,idxT>::contains ;
+      static void clearReverseIndex(keyT*, idxT common, idxT total) ;
+      static void clearReverseElement(keyT*) ;
+      static void releaseCommonBuffer(keyT*) ;
    } ;
 
 } // end namespace Fr

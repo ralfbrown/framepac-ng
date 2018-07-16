@@ -39,7 +39,13 @@ class CString
       ~CString() = default ;
       CString& operator= (const CString& other) = default ;
 
+      // this class is normally used to point at a C-style string
+      //   allocated by someone else, but in some cases the same
+      //   function that allocated the original string also made the
+      //   CString point at it, so we also provide a method to free
+      //   the pointed-at string while clearing the pointer to it.
       void clear() { _s = nullptr ; }
+      void release() { delete[] _s ; _s = nullptr ; }
 
       // methods to support use in HashTable
       unsigned long hashValue() const ;
