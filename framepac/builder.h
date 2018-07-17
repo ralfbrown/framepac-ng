@@ -29,6 +29,8 @@
 
 namespace Fr {
 
+class CFile ;
+
 template <typename T, size_t minsize = 200>
 class BufferBuilder
    {
@@ -41,6 +43,8 @@ class BufferBuilder
       bool preallocate(size_t newsize) ;
       void clear() ;
 
+      bool load(CFile&) ;
+      bool load(void* mmap_base, size_t mmap_len) ;
       bool read(const char*&) ;
       bool read(char*& input) { return read(const_cast<char*&>(input)) ; }
       void append(T value) ;

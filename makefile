@@ -620,7 +620,7 @@ template/argopt.cc:	framepac/argparser.h
 template/basisvector.cc: framepac/random.h framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/bufbuilder.cc:	framepac/builder.h framepac/convert.h
+template/bufbuilder.cc:	framepac/builder.h framepac/convert.h framepac/file.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster_agglom.cc:	framepac/cluster.h framepac/symboltable.h

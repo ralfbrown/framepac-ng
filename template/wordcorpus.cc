@@ -96,6 +96,9 @@ bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mma
    int version = file_format ;
    if (!fp.verifySignature(signature,filename,version,min_file_format))
       return false ;
+   WordCorpusHeader header ;
+   if (!fp.readValue(&header))
+      return false ;
    if (version < file_format)
       {
       // this is an older but still supported format and needs some conversion/adjustment
@@ -110,7 +113,38 @@ bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mma
    if (!allow_mmap || !loadMapped(filename))
       {
       // we couldn't memory-map the data, so read it into allocated memory
-
+      if (header.m_wordmap)
+	 {
+	 fp.seek(header.m_wordmap) ;
+	 m_wordmap.load(fp) ;
+	 }
+      if (header.m_wordbuf)
+	 {
+	 fp.seek(header.m_wordbuf) ;
+	 m_wordbuf.load(fp) ;
+	 }
+      if (header.m_fwdindex)
+	 {
+	 fp.seek(header.m_fwdindex) ;
+	 m_fwdindex.load(fp) ;
+	 }
+      if (header.m_revindex)
+	 {
+	 fp.seek(header.m_revindex) ;
+	 m_revindex.load(fp) ;
+	 }
+      if (header.m_freq)
+	 {
+	 fp.seek(header.m_freq) ;
+	 m_freq = new IdxT[header.m_vocabsize] ;
+	 fp.readValues(&m_freq,header.m_vocabsize) ;
+	 }
+      if (header.m_attributes)
+	 {
+	 m_attributes = new uint8_t[header.m_numwords] ;
+	 m_attributes_alloc = header.m_numwords ;
+	 fp.readValues(&m_attributes,m_attributes_alloc) ;
+	 }
       }
    if (success)
       {
