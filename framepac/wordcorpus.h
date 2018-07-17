@@ -64,9 +64,13 @@ class WordCorpusT
 			      void *user_arg) ;
       typedef bool AttrCheckFunc(const char *word) ;
 
+   public: // constants
       static constexpr ID ErrorID { ID(~0) } ;
+      static constexpr char signature[] { "\x7FWordCorp" } ;
+      static constexpr int file_format { 2 } ;
+      static constexpr int min_file_format { 2 } ;
 
-   public:
+   public: // methods
       WordCorpusT() ;
       WordCorpusT(const WordCorpusT&) = delete ;
       WordCorpusT(const char* filename, bool readonly) ;
@@ -77,7 +81,7 @@ class WordCorpusT
       static bool isCorpusFile(const char *filename) ;
 
       bool load(const char* filename) ;
-      bool load(CFile&) ;
+      bool load(CFile&, const char* filename) ;
       bool loadContextEquivs(const char* filename, bool force_lowercase = true) ;
       size_t loadAttribute(const char* filename, unsigned attr_bit, bool add_words = false) ;
       bool save(const char* filename) const ;

@@ -503,7 +503,8 @@ build/charget$(OBJ):		src/charget$(C) framepac/charget.h framepac/builder.h
 build/cfgfile$(OBJ):		src/cfgfile$(C) framepac/configfile.h framepac/charget.h framepac/list.h \
 				framepac/as_string.h framepac/message.h framepac/string.h framepac/symbol.h \
 				framepac/texttransforms.h
-build/cfile$(OBJ):		src/cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
+build/cfile$(OBJ):		src/cfile$(C) framepac/file.h framepac/message.h framepac/stringbuilder.h \
+				framepac/texttransforms.h
 build/cluster$(OBJ):		src/cluster$(C) framepac/cluster.h framepac/message.h framepac/progress.h \
 				framepac/texttransforms.h framepac/convert.h
 build/clusterinfo$(OBJ):	src/clusterinfo$(C) framepac/atomic.h framepac/cluster.h framepac/texttransforms.h

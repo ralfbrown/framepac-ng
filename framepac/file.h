@@ -135,6 +135,7 @@ class CFile
 
       int verifySignature(const char* sigstring) ;
       // returns format version stored in header, -1 on read error, -2 if wrong signature, -3 if wrong endianness
+      bool verifySignature(const char* sigstring, const char* filename, int& currver, int minver) ;
       bool writeSignature(const char* sigstring, int version) ;
 
       template <typename T>

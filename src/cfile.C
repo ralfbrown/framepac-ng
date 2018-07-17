@@ -26,6 +26,7 @@
 #include <string>
 #include <unistd.h>
 #include "framepac/file.h"
+#include "framepac/message.h"
 #include "framepac/stringbuilder.h"
 #include "framepac/texttransforms.h"
 
@@ -536,6 +537,40 @@ int CFile::verifySignature(const char* sigstring)
    if (byteorder != 0x12345678)
       return -3 ;
    return version ;
+}
+
+//----------------------------------------------------------------------------
+
+bool CFile::verifySignature(const char* sigstring, const char* filename, int &currver, int minver)
+{
+   int ver = verifySignature(sigstring) ;
+   if (ver == -1)
+      {
+      SystemMessage::error("read error on %s",filename) ;
+      return false ;
+      }
+   else if (ver == -2)
+      {
+      SystemMessage::error("wrong file type for %s",filename) ;
+      return false ;
+      }
+   else if (ver == -3)
+      {
+      SystemMessage::error("file '%s' was written by a system with a different byte order",filename) ;
+      return false ;
+      }
+   else if (ver < minver)
+      {
+      SystemMessage::error("file '%s': format unsupported (too old)",filename) ;
+      return false ;
+      }
+   else if (ver > currver)
+      {
+      SystemMessage::error("file '%s' is from a newer version of the program",filename) ;
+      return false ;
+      }
+   currver = ver ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------

@@ -90,9 +90,15 @@ bool WordCorpusT<IdT,IdxT>::isCorpusFile(const char* filename)
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::load(CFile &fp)
+bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename)
 {
-   (void)fp ;
+   int version = file_format ;
+   if (!fp.verifySignature(signature,filename,version,min_file_format))
+      return false ;
+   if (version < file_format)
+      {
+      // this is an older but still supported format and needs some conversion/adjustment
+      }
 
    return false ;//FIXME
 }
@@ -103,7 +109,7 @@ template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::load(const char *filename)
 {
    CInputFile fp(filename) ;
-   return fp ? load(fp) : false ;
+   return fp ? load(fp,filename) : false ;
 }
 
 //----------------------------------------------------------------------------
@@ -131,7 +137,9 @@ size_t WordCorpusT<IdT,IdxT>::loadAttribute(const char* filename, unsigned attr_
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::save(CFile &fp) const
 {
-   (void)fp ;
+   if (!fp.writeSignature(signature,file_format))
+      return false ;
+   //TODO
 
    return false ;//FIXME
 }
