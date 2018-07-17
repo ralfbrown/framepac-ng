@@ -875,6 +875,10 @@ class HashTable : public HashTableBase
       HashTable(const HashTable &ht) ;
       virtual ~HashTable() ;
 
+      bool load(CFile&) ;
+      bool load(void* mmap_base, size_t mmap_len) ;
+      bool save(CFile&) const ;
+
       // *** object factories ***
       static HashTable* create(size_t initial_size = 257)
 	 { return new HashTable(initial_size) ; }

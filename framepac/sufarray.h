@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.07, last edit 2018-07-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -51,11 +51,13 @@ class SuffixArray
 	 }
       SuffixArray& operator= (const SuffixArray&) = delete ;
 
+      bool load(const char* filename) ;
+      bool load(CFile&) ; 		       	    // load from open file starting at current file position
+      bool load(void* mmap_base, size_t mmap_len) ; // load starting from specified position in mmap'ed file
+      bool save(CFile&) const ;
+
       bool generate(const IdT* ids, IdxT num_ids, IdT num_types,
 		    IdT mapped_newline, const IdxT* freqs = nullptr) ;
-      bool load(const char* filename) ;
-      bool load(CFile& file) ; // load from open file starting at current file position
-      bool load(void*& mmap) ; // load starting from specified position in mmap'ed file
 
       IdxT indexSize() const { return m_numids ; }
       IdT vocabSize() const { return  m_types ; }

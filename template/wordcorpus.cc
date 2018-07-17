@@ -241,11 +241,11 @@ bool WordCorpusT<IdT,IdxT>::save(CFile &fp) const
    header.m_wordbuf = fp.tell() ;
    m_wordbuf.save(fp) ;
    header.m_contextmap = fp.tell() ;
-//!!!   m_contextmap.save(fp) ;
+   m_contextmap.save(fp) ;
    header.m_fwdindex = fp.tell() ;
-//!!!   m_fwdindex.save(fp) ;
+   m_fwdindex.save(fp) ;
    header.m_revindex = fp.tell() ;
-//!!!   m_revindex.save(fp) ;
+   m_revindex.save(fp) ;
    if (m_freq)
       {
       header.m_freq = fp.tell() ;

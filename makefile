@@ -669,6 +669,9 @@ template/densevector.cc:	framepac/vector.h template/bufbuilder.cc
 template/hashtable.cc:	framepac/hashtable.h framepac/message.h framepac/fasthash64.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+template/hashtable_file.cc:	framepac/hashtable.h framepac/file.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 template/mtrie.cc:	framepac/trie.h
 	$(TOUCH) $@ $(BITBUCKET)
 
@@ -679,6 +682,9 @@ template/ptrie.cc:	framepac/trie.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/sufarray.cc:	framepac/sufarray.h framepac/bitvector.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/sufarray_file.cc:	framepac/sufarray.h framepac/file.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/sparsevector.cc:	framepac/fasthash64.h framepac/vector.h template/bufbuilder.cc

@@ -69,7 +69,7 @@ class Map : public Object
 
       bool load(CFile&) ;
       bool load(void* mmap_base, size_t mmap_len) ;
-      bool save(CFile&) ;
+      bool save(CFile&) const ;
 
       bool add(Object* key, Object* value = nullptr) { return m_map.add(key,value) ; }
       Object* lookup(const Object* key) const { return m_map.lookup(const_cast<Object*>(key)) ; }
