@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-13					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -522,6 +522,24 @@ char* CFile::getTrimmedLine(size_t maxline)
 
 //----------------------------------------------------------------------------
 
+int CFile::verifySignature(const char* sigstring)
+{
+   if (!sigstring || !*sigstring) return -1 ;
+   size_t len = strlen(sigstring) + 1 ;
+   LocalAlloc<char> buf(len) ;
+   uint16_t version ;
+   uint32_t byteorder ;
+   if (read(buf,sizeof(char),len) < len || !readValue(&version) || !readValue(&byteorder))
+      return -1 ;
+   if (memcmp(sigstring,buf,len) != 0)
+      return -2 ;
+   if (byteorder != 0x12345678)
+      return -3 ;
+   return version ;
+}
+
+//----------------------------------------------------------------------------
+
 size_t CFile::write(const char *buf, size_t buflen)
 {
    if (m_file)
@@ -538,6 +556,22 @@ size_t CFile::write(const void *buf, size_t itemcount, size_t itemsize)
       return fwrite(buf,itemsize,itemcount,m_file) ;
    else
       return 0 ;
+}
+
+//----------------------------------------------------------------------------
+
+bool CFile::writeSignature(const char* sigstring, int version)
+{
+   if (!sigstring || !*sigstring || version < 1)
+      return false ;
+   size_t len = strlen(sigstring) + 1 ;
+   if (write(sigstring,sizeof(char),len) < len)
+      return false ;
+   uint32_t byteorder { 0x12345678 } ;
+   uint16_t ver { (uint16_t)version } ;
+   if (!writeValue(ver) || !writeValue(byteorder))
+      return false ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------

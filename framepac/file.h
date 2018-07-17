@@ -133,6 +133,10 @@ class CFile
 
       void writeJSON(const class List*, int indent, bool recursive) ;
 
+      int verifySignature(const char* sigstring) ;
+      // returns format version stored in header, -1 on read error, -2 if wrong signature, -3 if wrong endianness
+      bool writeSignature(const char* sigstring, int version) ;
+
       template <typename T>
       bool readValue(T* val)
 	 {
