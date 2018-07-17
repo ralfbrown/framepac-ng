@@ -561,7 +561,7 @@ bool CFile::verifySignature(const char* sigstring, const char* filename, int &cu
       }
    else if (ver < minver)
       {
-      SystemMessage::error("file '%s': format unsupported (too old)",filename) ;
+      SystemMessage::error("file '%s' is in an obsolete format",filename) ;
       return false ;
       }
    else if (ver > currver)

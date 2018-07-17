@@ -34,6 +34,9 @@ WordCorpusT<IdT,IdxT>::WordCorpusT()
      m_fwdindex(),
      m_revindex()
 {
+   m_sentinel = findOrAddID("<end_of_data>") ;
+   m_newline = findOrAddID("<newline>") ;
+   setContextSizes(0,0) ;
    return ;
 }
 
@@ -41,13 +44,13 @@ WordCorpusT<IdT,IdxT>::WordCorpusT()
 
 template <typename IdT, typename IdxT>
 WordCorpusT<IdT,IdxT>::WordCorpusT(const char *filename, bool readonly)
-   : m_wordmap(),
-     m_wordbuf(),
-     m_fwdindex(),
-     m_revindex()
+   : WordCorpusT<IdT,IdxT>()
 {
-   (void)filename; (void)readonly ;
-
+   m_readonly = readonly ;
+   if (isCorpusFile(filename))
+      {
+      //TODO
+      }
    return ;
 }
 
@@ -55,12 +58,10 @@ WordCorpusT<IdT,IdxT>::WordCorpusT(const char *filename, bool readonly)
 
 template <typename IdT, typename IdxT>
 WordCorpusT<IdT,IdxT>::WordCorpusT(CFile &fp, bool readonly)
-   : m_wordmap(),
-     m_wordbuf(),
-     m_fwdindex(),
-     m_revindex()
+   : WordCorpusT<IdT,IdxT>()
 {
-   (void)fp; (void)readonly ;
+   m_readonly = readonly ;
+   (void)fp; 
 
    return ;
 }
@@ -82,15 +83,15 @@ WordCorpusT<IdT,IdxT>::~WordCorpusT()
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::isCorpusFile(const char* filename)
 {
-   (void)filename ;
-
-   return false ;//FIXME
+   CInputFile fp(filename,CFile::binary) ;
+   int version = file_format ;
+   return fp && fp.verifySignature(signature,filename,version,min_file_format) ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename)
+bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mmap)
 {
    int version = file_format ;
    if (!fp.verifySignature(signature,filename,version,min_file_format))
@@ -98,18 +99,56 @@ bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename)
    if (version < file_format)
       {
       // this is an older but still supported format and needs some conversion/adjustment
+      return false ; //FIXME
       }
+   else
+      {
+      // get the header values
 
-   return false ;//FIXME
+      }
+   bool success = true ;
+   if (!allow_mmap || !loadMapped(filename))
+      {
+      // we couldn't memory-map the data, so read it into allocated memory
+
+      }
+   if (success)
+      {
+
+      }
+   return success ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::load(const char *filename)
+bool WordCorpusT<IdT,IdxT>::load(const char *filename, bool allow_mmap)
 {
    CInputFile fp(filename) ;
-   return fp ? load(fp,filename) : false ;
+   return fp ? load(fp,filename,allow_mmap) : false ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::readHeader(CFile& fp)
+{
+   uint64_t id_offset ;
+   if (!fp.readValue(&id_offset))
+      return false ;
+   //FIXME / TODO
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::loadMapped(const char *filename)
+{
+   if (!filename || !*filename)
+      return false ;
+   //TODO
+   return false ;
 }
 
 //----------------------------------------------------------------------------
@@ -206,8 +245,7 @@ template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::addWord(const char* word)
 {
    IdT id = findOrAddID(word) ;
-   m_wordbuf += id ;
-   return id ;
+   return addWord(id) ? id : ErrorID ;
 }
 
 //----------------------------------------------------------------------------
@@ -215,8 +253,11 @@ IdT WordCorpusT<IdT,IdxT>::addWord(const char* word)
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::addWord(IdT word)
 {
-   //FIXME?
+   if (m_wordbuf.size() >= m_last_linenum)
+      return false ;			// collision with IDs used for recording line numbers
    m_wordbuf += word ;
+   incrFreq(word) ;
+   freeIndices() ;
    return true ;
 }
 
@@ -225,7 +266,11 @@ bool WordCorpusT<IdT,IdxT>::addWord(IdT word)
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::addNewline()
 {
-   return addWord(newlineID()) ;
+   if (!addWord(m_last_linenum))
+      return false ;
+   if (m_keep_linenumbers)
+      --m_last_linenum ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
@@ -373,6 +418,20 @@ bool WordCorpusT<IdT,IdxT>::setAttributeIf(unsigned attr_bit, WordCorpusT<IdT,Id
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
+void WordCorpusT<IdT,IdxT>::clearAttributes(uint8_t mask) const
+{
+   if (!m_attributes)
+      return ;
+   for (size_t i = 0 ; i < vocabSize() ; ++i)
+      {
+      clearAttributes(i,mask) ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::createIndex(bool bidirectional)
 {
    (void)bidirectional;
@@ -393,8 +452,22 @@ bool WordCorpusT<IdT,IdxT>::lookup(const IdT *key, unsigned keylen, IdxT& first_
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::enumerateForward(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc* fn, void* user)
 {
-   (void)minlen; (void)maxlen; (void)minfreq; (void)fn; (void)user;
-   return false ; //FIXME
+   if (!createForwardIndex())
+      return false ;			// didn't have an index and couldn't create it, so fail
+   if (!fn)
+      return false ;			// can't enumerate without a function to call!
+   return m_fwdindex.enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,minfreq,fn,user) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::enumerateForward(IdxT start, IdxT stop, unsigned minlen, unsigned maxlen, size_t minfreq,
+   SAEnumFunc* fn, void* user) const
+{
+   if (!m_fwdindex)
+      return false ;
+   return m_fwdindex.enumerate(start,stop,minlen,maxlen,minfreq,fn,user) ;
 }
 
 //----------------------------------------------------------------------------
@@ -403,8 +476,11 @@ template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::enumerateForwardParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
    SAEnumFunc* fn, void* user)
 {
-   (void)minlen; (void)maxlen; (void)minfreq; (void)fn; (void)user;
-   return false ; //FIXME
+   if (!createForwardIndex())
+      return false ;			// didn't have an index and couldn't create it, so fail
+   if (!fn)
+      return false ;			// can't enumerate without a function to call!
+   return m_fwdindex.enumerateParallel(minlen,maxlen,minfreq,fn,user) ;
 }
 
 //----------------------------------------------------------------------------
@@ -412,8 +488,22 @@ bool WordCorpusT<IdT,IdxT>::enumerateForwardParallel(unsigned minlen, unsigned m
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::enumerateReverse(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc* fn, void* user)
 {
-   (void)minlen; (void)maxlen; (void)minfreq; (void)fn; (void)user;
-   return false ; //FIXME
+   if (!createReverseIndex())
+      return false ;			// didn't have an index and couldn't create it, so fail
+   if (!fn)
+      return false ;			// can't enumerate without a function to call!
+   return m_revindex.enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,minfreq,fn,user) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::enumerateReverse(IdxT start, IdxT stop, unsigned minlen, unsigned maxlen, size_t minfreq,
+   SAEnumFunc* fn, void* user) const
+{
+   if (!m_revindex)
+      return false ;
+   return m_revindex.enumerate(start,stop,minlen,maxlen,minfreq,fn,user) ;
 }
 
 //----------------------------------------------------------------------------
@@ -422,8 +512,57 @@ template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::enumerateReverseParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
    SAEnumFunc* fn, void* user)
 {
-   (void)minlen; (void)maxlen; (void)minfreq; (void)fn; (void)user;
-   return false ; //FIXME
+   if (!createReverseIndex())
+      return false ;			// didn't have an index and couldn't create it, so fail
+   if (!fn)
+      return false ;			// can't enumerate without a function to call!
+   return m_revindex.enumerateParallel(minlen,maxlen,minfreq,fn,user) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::createForwardIndex()
+{
+   if (m_fwdindex)
+      return true ;
+   if (!corpusSize() || m_wordbuf[corpusSize()-1] != m_sentinel)
+      {
+      // add the end-of-data sentinel
+      addWord(m_sentinel) ;
+      }
+   //TODO: m_fwdindex.generate()
+   // m_fwdindex.setFreqTable
+   // m_fwdindex.setSentinel
+   return false; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::createReverseIndex()
+{
+   if (m_revindex)
+      return true ;
+   if (!corpusSize() || m_wordbuf[corpusSize()-1] != m_sentinel)
+      {
+      // add the end-of-data sentinel
+      addWord(m_sentinel) ;
+      }
+   //TODO: m_revindex.generate()
+   // m_revindex.setFreqTable
+   // m_revindex.setSentinel
+   return false; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::freeIndices()
+{
+   m_fwdindex.clear() ;
+   m_revindex.clear() ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
@@ -431,8 +570,7 @@ bool WordCorpusT<IdT,IdxT>::enumerateReverseParallel(unsigned minlen, unsigned m
 template <typename IdT, typename IdxT>
 IdxT WordCorpusT<IdT,IdxT>::getForwardPosition(IdxT N) const
 {
-   (void)N;
-   return 0 ; //FIXME
+   return m_fwdindex.indexAt(N) ;
 }
 
 //----------------------------------------------------------------------------
@@ -440,8 +578,7 @@ IdxT WordCorpusT<IdT,IdxT>::getForwardPosition(IdxT N) const
 template <typename IdT, typename IdxT>
 IdxT WordCorpusT<IdT,IdxT>::getReversePosition(IdxT N) const
 {
-   (void)N;
-   return 0 ; //FIXME
+   return m_revindex.indexAt(N) ;
 }
 
 //----------------------------------------------------------------------------

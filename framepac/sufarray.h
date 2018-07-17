@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-15					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -60,6 +60,7 @@ class SuffixArray
       IdxT indexSize() const { return m_numids ; }
       IdT vocabSize() const { return  m_types ; }
       IdT idAt(IdxT N) const { return (N < m_numids) ? m_ids[N] : ErrorID ; }
+      IdxT indexAt(IdxT N) const { return m_index[N] ; }
       IdxT getFreq(IdT N) const { return (m_freq && N < m_types) ? m_freq[N] : (IdxT)0 ; }
       bool lookup(const IdT* key, unsigned keylen, IdxT& first_match, IdxT& last_match) const ;
 
@@ -69,6 +70,8 @@ class SuffixArray
  	              size_t minfreq, EnumFunc* fn, void* user_arg) const ;
       bool enumerateParallel(unsigned minlen, unsigned maxlen, size_t minfreq, EnumFunc* fn, void* user_arg) const ;
       void clear() ;
+
+      operator bool () const { return m_index != nullptr ; }
 
       // temporary FrankenpaC support
       void setSentinel(IdT sent) { m_sentinel = sent ; }

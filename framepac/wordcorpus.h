@@ -80,8 +80,8 @@ class WordCorpusT
 
       static bool isCorpusFile(const char *filename) ;
 
-      bool load(const char* filename) ;
-      bool load(CFile&, const char* filename) ;
+      bool load(const char* filename, bool allow_mmap = true) ;
+      bool load(CFile&, const char* filename, bool allow_mmap = true) ;
       bool loadContextEquivs(const char* filename, bool force_lowercase = true) ;
       size_t loadAttribute(const char* filename, unsigned attr_bit, bool add_words = false) ;
       bool save(const char* filename) const ;
@@ -111,6 +111,7 @@ class WordCorpusT
       void clearAttribute(unsigned bit) const { clearAttribute(1<<bit) ; }
 
       bool createIndex(bool bidirectional = false) ;
+      bool freeIndices() ;
       bool lookup(const ID *key, unsigned keylen, Index &first_match, Index &last_match) const ;
       bool enumerateForward(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc *fn, void *user_arg) ;
       bool enumerateForwardParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
@@ -162,14 +163,27 @@ class WordCorpusT
       void setID(IdxT N, IdT id) ;
 
    protected:
+      bool readHeader(CFile&) ;
+      bool loadMapped(const char* filename) ;
+      void incrFreq(IdT N) { if (N < m_wordbuf.size()) ++m_freq[N] ; else ++m_freq[m_newline] ; }
+      bool createForwardIndex() ;
+      bool createReverseIndex() ;
+      bool enumerateForward(IdxT start, IdxT stop, unsigned minlen, unsigned maxlen, size_t minfreq,
+			    SAEnumFunc *fn, void *user_arg) const ;
+      bool enumerateReverse(IdxT start, IdxT stop, unsigned minlen, unsigned maxlen, size_t minfreq,
+			    SAEnumFunc *fn, void *user_arg) const ;
+
+   protected:
       BiMap		 m_wordmap ;
       IDBufferBuilder    m_wordbuf ;	// contains array of word IDs
       Map		 m_contextmap ;
       SufArr   		 m_fwdindex ;
       SufArr   		 m_revindex ;
+      IdxT*		 m_freq { nullptr } ;
       mutable uint8_t*   m_attributes { nullptr } ;
       IdT		 m_rare ;
       IdT		 m_newline ;
+      IdT		 m_sentinel ;
       IdxT		 m_rare_thresh { 0 } ;
       IdxT		 m_last_linenum { (IdxT)~0 } ;
       mutable IdxT	 m_attributes_alloc { 0 } ;
@@ -177,6 +191,7 @@ class WordCorpusT
       unsigned		 m_left_context { 0 } ;
       unsigned		 m_right_context { 0 } ;
       unsigned		 m_total_context { 1 } ;
+      bool		 m_readonly { false } ;
       bool		 m_keep_linenumbers { false } ;
    } ;
 
