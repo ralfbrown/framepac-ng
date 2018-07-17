@@ -54,13 +54,20 @@ class WordCorpusHeader
       uint64_t m_numwords ;		// number of tokens in the corpus
       uint64_t m_vocabsize ;		// number of types in the corpus
       uint64_t m_last_linenum ;		// highest word ID before hitting EOL records		
+      uint64_t m_rare_ID ;		// ID of the <rare> token class
+      uint64_t m_rare_threshold ;	// frequency below which to substitute <rare> class for token
       uint64_t m_wordmap ;		// offset of vocabulary
       uint64_t m_wordbuf ;		// offset of text
+      uint64_t m_contextmap ;		// offset of context map
       uint64_t m_fwdindex ;		// offset of suffix-array index in forward direction
       uint64_t m_revindex ;		// offset of suffix-array index in reverse direction
       uint64_t m_freq ;			// offset of word frequencies
       uint64_t m_attributes ;		// offset of optional attributes for each token in the text
       uint64_t m_pad[16] ;		// padding for future expansion of header
+      uint8_t  m_idsize ;		// sizeof(IdT)
+      uint8_t  m_idxsize ;		// sizeof(IdxT)
+      bool     m_keep_linenumbers ;
+      char     m_pad2[13] ;		// padding for future expansion of header
    } ;
 
 //----------------------------------------------------------------------------

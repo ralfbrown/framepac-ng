@@ -212,9 +212,61 @@ bool WordCorpusT<IdT,IdxT>::save(CFile &fp) const
 {
    if (!fp.writeSignature(signature,file_format))
       return false ;
-   //TODO
-
-   return false ;//FIXME
+   // we don't have all the info needed to write the header yet, so write a placeholder and remember
+   //   the file offset so we can return later and update it
+   off_t headerpos = fp.tell() ;
+   WordCorpusHeader header ;
+   header.m_numwords = corpusSize() ;
+   header.m_vocabsize = vocabSize() ;
+   header.m_last_linenum = m_last_linenum ;
+   header.m_rare_ID = m_rare ;
+   header.m_rare_threshold = m_rare_thresh ;
+   header.m_wordmap = 0 ;
+   header.m_wordbuf = 0 ;
+   header.m_contextmap = 0 ;
+   header.m_fwdindex = 0 ;
+   header.m_revindex = 0 ;
+   header.m_freq = 0 ;
+   header.m_attributes = 0 ;
+   memset(header.m_pad,'\0',sizeof(header.m_pad)) ;
+   header.m_idsize = sizeof(IdT) ;
+   header.m_idxsize = sizeof(IdxT) ;
+   header.m_keep_linenumbers = m_keep_linenumbers ;
+   memset(header.m_pad2,'\0',sizeof(header.m_pad2)) ;
+   if (!fp.writeValue(header))
+      return false ;
+   
+   header.m_wordmap = fp.tell() ;
+   m_wordmap.save(fp) ;
+   header.m_wordbuf = fp.tell() ;
+//!!!   m_wordbuf.save(fp) ;
+   header.m_contextmap = fp.tell() ;
+//!!!   m_contextmap.save(fp) ;
+   header.m_fwdindex = fp.tell() ;
+//!!!   m_fwdindex.save(fp) ;
+   header.m_revindex = fp.tell() ;
+//!!!   m_revindex.save(fp) ;
+   if (m_freq)
+      {
+      header.m_freq = fp.tell() ;
+      fp.writeValues(m_freq,vocabSize()) ;
+      }
+   else
+      header.m_freq = 0 ;
+   if (m_attributes)
+      {
+      header.m_attributes = fp.tell() ;
+      fp.writeValues(m_attributes,corpusSize()) ;
+      }
+   else
+      header.m_attributes = 0 ;
+   // now that we've written all the other data, we have a complete header, so return to the start of the file
+   //   and update the header
+   fp.seek(headerpos) ;
+   if (!fp.writeValue(header))
+      return false ;
+   fp.flush() ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
