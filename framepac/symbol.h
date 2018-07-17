@@ -66,17 +66,20 @@ class SymbolProperties
 
       Object* binding() const { return m_binding ; }
       Frame* frame() const { return m_frame ; }
+      Symbol* inverseRelation() const { return m_invrelation  ; }
       Object* getProperty(Symbol* key) const ;
       List* plist() const { return m_plist ; }
 
       void binding(Object* b) { if (m_binding) m_binding->free() ; m_binding = b ; }
       void frame(Frame* f) ;
+      void inverseRelation(Symbol* inv) { m_invrelation = inv ; }
       void setProperty(Symbol* key, Object* value) ;
 
    private:
       static Allocator s_allocator ;
    protected:
       Object* m_binding ;		// the symbol's value
+      Symbol* m_invrelation ;		// if the symbol is a relation, this is the inverse relation
       Frame*  m_frame ;			// the frame associated with the symbol
       List*   m_plist ;			// assoc-list of other properties
 
@@ -120,6 +123,7 @@ class Symbol : public String
       bool isRelation() const { return (flags() & RELATION_FLAG) != 0 ; }
       Symbol* inverseRelation() const ;
       bool makeRelation(Symbol* inverse) ;
+      bool clearRelation() { return makeRelation(nullptr) ; }
 
       // utility functions for I/O
       static bool nameNeedsQuoting(const char* name) ;
@@ -153,10 +157,10 @@ class Symbol : public String
       void unintern() ; // remove from the symbol table containing it
 
       SymbolProperties* properties() const { return m_properties.pointer() ; }
-      uint8_t symtabID() const { return m_properties.extra() >> 8 ; }
-      uint8_t flags() const { return m_properties.extra() & 0xFF ; }
+      uint16_t symtabID() const { return m_properties.extra() >> 4 ; }
+      uint8_t flags() const { return m_properties.extra() & 0x0F ; }
 
-      void symtabID(uint8_t id) ;
+      void symtabID(uint16_t id) ;
       void setFlag(uint8_t flag) ;
       void clearFlag(uint8_t flag) ;
 
@@ -219,6 +223,10 @@ class Symbol : public String
       FramepaC::PointerPlus16<SymbolProperties> m_properties ;
 
       static constexpr uint8_t RELATION_FLAG = 1 ;
+      // placeholders for future bit flags
+      static constexpr uint8_t Second_FLAG = 2 ;
+      static constexpr uint8_t Third_FLAG = 4 ;
+      static constexpr uint8_t Fourth_FLAG = 8 ;
    } ;
 
 /************************************************************************/

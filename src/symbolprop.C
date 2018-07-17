@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-23					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -31,7 +31,7 @@ namespace Fr
 /************************************************************************/
 
 SymbolProperties::SymbolProperties()
-   : m_binding(nullptr), m_frame(nullptr), m_plist(List::emptyList())
+   : m_binding(nullptr), m_invrelation(nullptr), m_frame(nullptr), m_plist(List::emptyList())
 {
    return ;
 }
@@ -40,8 +40,11 @@ SymbolProperties::SymbolProperties()
 
 SymbolProperties::~SymbolProperties()
 {
-   m_binding->free() ;
-   m_frame->free() ;
+   if (m_binding)
+      m_binding->free() ;
+   if (m_frame)
+      m_frame->free() ;
+   m_invrelation = nullptr ;
    m_plist->free() ;
    return ;
 }
@@ -58,17 +61,33 @@ void SymbolProperties::frame(Frame* f)
 
 //----------------------------------------------------------------------------
 
-Object* SymbolProperties::getProperty(Symbol*) const
+Object* SymbolProperties::getProperty(Symbol* propname) const
 {
-   //TODO
-   return nullptr ;
+   const List* a = m_plist->assoc(propname) ;
+   return a ? a->nth(1) : nullptr ;
 }
 
 //----------------------------------------------------------------------------
 
-void SymbolProperties::setProperty(Symbol*, Object*)
+void SymbolProperties::setProperty(Symbol* propname, Object* value)
 {
-   //TODO
+   List* a = const_cast<List*>(m_plist->assoc(propname)) ;
+   if (a)
+      {
+      // replace the existing value
+      List* tail = a->next() ;
+      if (tail)
+	 {
+	 Object* oldvalue = tail->front() ;
+	 tail->setFront(value) ;
+	 if (oldvalue) oldvalue->free() ;
+	 }
+      else
+	 {
+	 a->setNext(List::create(value)) ;
+	 }
+      }
+   m_plist = m_plist->push(List::create(propname,value)) ;
    return ;
 }
 

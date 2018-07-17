@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-23					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -120,6 +120,54 @@ bool Symbol::setProperty(Symbol* key, Object* value)
       }
    prop->setProperty(key,value) ;
    return true ;
+}
+
+//----------------------------------------------------------------------------
+
+Symbol* Symbol::inverseRelation() const
+{
+   if (isRelation())
+      {
+      const SymbolProperties* prop = properties() ;
+      return prop ? prop->inverseRelation() : nullptr ;
+      }
+   return nullptr ;
+}
+   
+//----------------------------------------------------------------------------
+
+bool Symbol::makeRelation(Symbol* inverse)
+{
+   if (inverse)
+      {
+      if (!properties())
+	 {
+	 //TODO
+	 if (!properties())
+	    return false ;
+	 }
+      properties()->inverseRelation(inverse) ;
+      setFlag(RELATION_FLAG) ;
+      }
+   else
+      clearFlag(RELATION_FLAG) ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+void Symbol::setFlag(uint8_t flag)
+{
+   m_properties.extra(m_properties.extra() | flag) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void Symbol::clearFlag(uint8_t flag)
+{
+   m_properties.extra(m_properties.extra() & ~flag) ;
+   return ;
 }
 
 //----------------------------------------------------------------------------
