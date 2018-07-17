@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.07, last edit 2018-07-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -29,8 +29,9 @@ namespace Fr {
 //----------------------------------------------------------------------------
 // forward declarations
 
-class Map ;
+class CFile ;
 class List ;
+class Map ;
 
 //----------------------------------------------------------------------------
 
@@ -65,6 +66,10 @@ class Map : public Object
       static Map *create(size_t capacity = 0) { return new Map(capacity) ; }
       static Map *create(const List *) ;
       static Map *create(const Map *orig) { return new Map(orig) ; }
+
+      bool load(CFile&) ;
+      bool load(void* mmap_base, size_t mmap_len) ;
+      bool save(CFile&) ;
 
       bool add(Object* key, Object* value = nullptr) { return m_map.add(key,value) ; }
       Object* lookup(const Object* key) const { return m_map.lookup(const_cast<Object*>(key)) ; }

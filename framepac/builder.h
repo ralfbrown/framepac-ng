@@ -45,6 +45,8 @@ class BufferBuilder
 
       bool load(CFile&) ;
       bool load(void* mmap_base, size_t mmap_len) ;
+      bool save(CFile&) const ;
+
       bool read(const char*&) ;
       bool read(char*& input) { return read(const_cast<char*&>(input)) ; }
       void append(T value) ;

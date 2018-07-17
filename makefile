@@ -307,6 +307,7 @@ OBJS = \
 	build/listutil$(OBJ) \
 	build/loadfilelist$(OBJ) \
 	build/map$(OBJ) \
+	build/map_file$(OBJ) \
 	build/matrix$(OBJ) \
 	build/message$(OBJ) \
 	build/mmapfile$(OBJ) \
@@ -550,6 +551,7 @@ build/listbuilder$(OBJ):	src/listbuilder$(C) framepac/list.h framepac/string.h
 build/listutil$(OBJ):		src/listutil$(C) framepac/list.h framepac/string.h
 build/loadfilelist$(OBJ):	src/loadfilelist$(C) framepac/file.h framepac/list.h framepac/message.h
 build/map$(OBJ):		src/map$(C) framepac/map.h framepac/fasthash64.h
+build/map_file$(OBJ):		src/map_file$(C) framepac/map.h framepac/file.h
 build/matrix$(OBJ):		src/matrix$(C) framepac/matrix.h
 build/message$(OBJ):		src/message$(C) framepac/message.h framepac/texttransforms.h
 build/mmapfile$(OBJ):		src/mmapfile$(C) framepac/mmapfile.h framepac/file.h

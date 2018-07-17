@@ -64,6 +64,16 @@ bool BufferBuilder<T,minsize>::load(void* mmap_base, size_t mmap_len)
 //----------------------------------------------------------------------------
 
 template <typename T, size_t minsize>
+bool BufferBuilder<T,minsize>::save(CFile& fp) const
+{
+   if (!fp) return false ;
+//FIXME
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, size_t minsize>
 bool BufferBuilder<T,minsize>::read(const char*& input)
 {
    if (!input || !*input) return false ;
