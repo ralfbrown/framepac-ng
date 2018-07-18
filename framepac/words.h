@@ -45,7 +45,7 @@ class WordSplitter
    public:
       WordSplitter(class CharGetter&) ;
       WordSplitter(const WordSplitter&) = default ;
-      virtual ~WordSplitter() ;
+      virtual ~WordSplitter() {}
       WordSplitter& operator= (const WordSplitter&) = default ;
 
       // return the next word in the stream of characters provided by the CharGetter
@@ -56,15 +56,17 @@ class WordSplitter
       operator bool () const ;  // did we successfully init?
       bool eof() const ;
    public:
-      enum boundary { no_boundary = 0, word_start = 1, word_end = 2 } ;
+      enum boundary { no_boundary = 0, word_start = 1, word_end = 2, word_start_and_end = 3 } ;
    protected:
       CharGetter &m_getter ;
-      unsigned    m_maxlookahead ;
-      unsigned    m_maxlookback ;
+      char        m_buffer[16] ;		// maxlookahead+maxlookback <= 16 !
+      unsigned    m_maxlookahead { 1 } ;
+      unsigned    m_maxlookback { 1 } ;
 
    protected:
       virtual boundary boundaryType(const char* window_start, const char* currpos,
 				    const char* window_end) const ;
+      virtual StringPtr postprocess(StringPtr& word) { return &word ; }
    } ;
 
 //----------------------------------------------------------------------------
@@ -101,6 +103,30 @@ class WordSplitterDelimiter : public WordSplitter
 				    const char* window_end) const ;
    protected:
       char m_delim ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+class WordSplitterCSV : public WordSplitter
+   {
+   public:
+      typedef WordSplitter super ;
+   public:
+      WordSplitterCSV(class CharGetter& getter, char delim = ',', bool strip_quotes = true)
+	 : super(getter), m_delim(delim), m_strip(strip_quotes) {}
+      WordSplitterCSV(const WordSplitterCSV&) = default ;
+      virtual ~WordSplitterCSV() {}
+      WordSplitterCSV& operator= (const WordSplitterCSV&) = default ;
+
+   protected:
+      virtual boundary boundaryType(const char* window_start, const char* currpos,
+				    const char* window_end) const ;
+      virtual StringPtr postprocess(StringPtr& word) ;
+
+   protected:
+      char m_delim ;
+      char m_strip ;
+      mutable char m_quote { '\0' } ;
    } ;
 
 //----------------------------------------------------------------------------

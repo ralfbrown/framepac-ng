@@ -32,16 +32,7 @@ namespace Fr
 
 WordSplitter::WordSplitter(class CharGetter& getter) : m_getter(getter)
 {
-   //TODO
    return ;
-}
-
-//----------------------------------------------------------------------------
-
-WordSplitter::~WordSplitter()
-{
-   //TODO
-   return  ;
 }
 
 //----------------------------------------------------------------------------
@@ -49,7 +40,8 @@ WordSplitter::~WordSplitter()
 StringPtr WordSplitter::nextWord()
 {
    //TODO
-   return nullptr ;
+   StringPtr word { nullptr } ;
+   return postprocess(word) ;
 }
 
 //----------------------------------------------------------------------------
@@ -71,14 +63,14 @@ StringPtr WordSplitter::delimitedWords(char delim)
 
 WordSplitter::operator bool () const
 {
-   return true ; //FIXME
+   return m_getter && !m_getter.eof();
 }
 
 //----------------------------------------------------------------------------
 
 bool WordSplitter::eof() const
 {
-   return true ; //FIXME
+   return !m_getter.eof();
 }
 
 //----------------------------------------------------------------------------
@@ -97,8 +89,15 @@ WordSplitter::boundary WordSplitter::boundaryType(const char* window_start, cons
 WordSplitter::boundary WordSplitterWhitespace::boundaryType(const char* window_start, const char* currpos,
    const char* window_end) const
 {
-   (void)window_start; (void)currpos; (void)window_end;
-   return no_boundary ; //FIXME
+   if (currpos == window_start)
+      return (currpos == window_end || isspace(currpos[0])) ? no_boundary : word_start ;
+   if (currpos == window_end)
+      return (isspace(currpos[-1])) ? no_boundary : word_end ;
+   if (isspace(currpos[-1]) && !isspace(currpos[0]))
+      return word_start ;
+   if (!isspace(currpos[-1]) && isspace(currpos[0]))
+      return word_end ;
+   return no_boundary ;
 }
 
 /************************************************************************/
@@ -108,8 +107,12 @@ WordSplitter::boundary WordSplitterWhitespace::boundaryType(const char* window_s
 WordSplitter::boundary WordSplitterDelimiter::boundaryType(const char* window_start, const char* currpos,
    const char* window_end) const
 {
-   (void)window_start; (void)currpos; (void)window_end;
-   return no_boundary ; //FIXME
+   if (currpos == window_start)
+      return (*currpos == m_delim) ? word_start_and_end : word_start ;
+   if (currpos == window_end)
+      return (*currpos == m_delim) ? no_boundary : word_end ;
+   //TODO
+   return no_boundary ;
 }
 
 //----------------------------------------------------------------------------
