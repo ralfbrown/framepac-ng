@@ -126,6 +126,11 @@ class SuffixArray
       IdT        m_sentinel { 0 } ;
       IdT        m_newline { IdT(-1) } ;
       IdxT       m_last_linenum { IdxT(-1) } ;
+
+      // magic values for serializing
+      static constexpr char signature[] = "\x7FSufArray" ;
+      static constexpr unsigned file_format = 1 ;
+      static constexpr unsigned min_file_format = 1 ;
    } ;
 
 //----------------------------------------------------------------------------

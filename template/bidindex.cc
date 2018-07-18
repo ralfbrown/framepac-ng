@@ -22,6 +22,8 @@
 #include <stdarg.h>
 #include "framepac/bidindex.h"
 #include "framepac/file.h"
+#include "framepac/message.h"
+#include "framepac/mmapfile.h"
 
 namespace Fr
 {
@@ -32,25 +34,35 @@ namespace Fr
 template <class keyT, typename idxT>
 bool BidirIndex<keyT,idxT>::load(const char* filename, bool allow_mmap)
 {
-   if (allow_mmap && loadMapped(filename))
-      return true ;
    CInputFile file(filename,CFile::binary) ;
-   return file ? load(file) : false ;
+   return file ? load(file,filename,allow_mmap) : false ;
 }
 
 //----------------------------------------------------------------------------
 
 template <class keyT, typename idxT>
-bool BidirIndex<keyT,idxT>::load(CFile& file)
+bool BidirIndex<keyT,idxT>::load(CFile& fp, const char* filename, bool allow_mmap)
 {
-   if (!file || file.eof())
+   int version = file_format ;
+   if (!fp || !fp.verifySignature(signature,filename,version,min_file_format))
       return false ;
-   //TODO: check file signature
+   uint8_t keysize, idxsize ;
+   if (!fp.readValue(&keysize) || !fp.readValue(&idxsize))
+      return false ;
+   if (keysize != sizeof(keyT) || idxsize != sizeof(idxT))
+      {
+      SystemMessage::error("wrong data type - sizeof() does not match") ;
+      return false ;
+      }
+   if (allow_mmap && loadMapped(filename))
+      return true ;
 
    size_t count ;
    //FIXME: the following line will currently only instantiate for keyT=CString
-   if (!file.readStringArray(m_reverse_index,count))
+   if (!fp.readStringArray(m_reverse_index,count))
       return false ;
+   m_next_index = count ;
+   m_max_index = count ;
    m_common_buffer = count ;
    for (idxT i = 0 ; i < count ; ++i)
       {
@@ -66,20 +78,42 @@ bool BidirIndex<keyT,idxT>::loadMapped(const char* filename)
 {
    if (!filename || !*filename)
       return false;
-   //TODO
+   MemMappedROFile mm(filename) ;
+   if (!mm)
+      return false ;
+   if (!loadFromMmap(*mm,mm.size()))
+      return false ;
    m_readonly = true ;			// can't modify if we're pointing into a memory-mapped file
-   return false;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
 
 template <class keyT, typename idxT>
-bool BidirIndex<keyT,idxT>::loadFromMmap(void* mmap_base, size_t mmap_len)
+bool BidirIndex<keyT,idxT>::loadFromMmap(const void* mmap_base, size_t mmap_len)
 {
-   if (!mmap_base || mmap_len == 0)
+   size_t header_size = CFile::signatureSize(signature) + 2*sizeof(uint8_t) ;
+   if (!mmap_base || mmap_len < header_size)
       return false;
-   //TODO
-   return false;
+   m_external_storage = true ;
+   mmap_base = ((char*)mmap_base) + header_size ;
+   mmap_len -= header_size ;
+   //uint64_t bufsize = ((uint64_t*)mmap_base)[0] ;
+   m_max_index = (idxT)(((uint64_t*)mmap_base)[1]) ;
+   m_common_buffer = m_max_index ;
+   m_next_index = m_max_index ;
+   m_reverse_index = new keyT[m_max_index] ;
+   if (!m_reverse_index)
+      return false ;
+   //FIXME: the following will currently only instantiate properly for keyT=CString
+   const char* strings = (char*)&(((uint64_t*)mmap_base)[2]) ;
+   for (idxT i = 0 ; i < m_max_index ; ++i)
+      {
+      m_reverse_index[i] = strings ;
+      strings = strchr(strings,'\0') + 1 ;
+      this->add(m_reverse_index[i],i) ;
+      }
+   return true ;
 }
 
 //----------------------------------------------------------------------------
@@ -94,12 +128,20 @@ bool BidirIndex<keyT,idxT>::save(const char* filename) const
 //----------------------------------------------------------------------------
 
 template <class keyT, typename idxT>
-bool BidirIndex<keyT,idxT>::save(CFile& file) const
+bool BidirIndex<keyT,idxT>::save(CFile& fp) const
 {
-   if (!file)
+   if (!m_reverse_index)
+      return false ;			// index must have been finalized prior to trying to save it
+   if (!fp || !fp.writeSignature(signature,file_format))
       return false ;
-   //TODO
-   return false;
+   uint8_t keysize = sizeof(keyT) ;
+   uint8_t idxsize = sizeof(idxT) ;
+   if (!fp.writeValue(keysize) || !fp.writeValue(idxsize))
+      return false ;
+   //FIXME: the following line will currently only instantiate for keyT=CString
+   if (!fp.writeStringArray(m_reverse_index,m_next_index))
+      return false ;
+   return true;
 }
 
 //----------------------------------------------------------------------------
@@ -131,7 +173,7 @@ void BidirIndex<keyT,idxT>::clearReverseIndex(keyT* index, idxT common, idxT tot
       {
       clearReverseElement(&index[i]) ;
       }
-   if (common > 0)
+   if (common > 0 && !m_external_storage)
       {
       // delete the underlying buffer that the first N elements of m_reverse_index all point at
       releaseCommonBuffer(index) ;

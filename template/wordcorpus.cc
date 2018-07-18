@@ -46,23 +46,22 @@ template <typename IdT, typename IdxT>
 WordCorpusT<IdT,IdxT>::WordCorpusT(const char *filename, bool readonly)
    : WordCorpusT<IdT,IdxT>()
 {
-   m_readonly = readonly ;
    if (isCorpusFile(filename))
       {
-      //TODO
+      load(filename) ;
       }
+   m_readonly = readonly ;
    return ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-WordCorpusT<IdT,IdxT>::WordCorpusT(CFile &fp, bool readonly)
+WordCorpusT<IdT,IdxT>::WordCorpusT(CFile &fp, const char* filename, bool readonly)
    : WordCorpusT<IdT,IdxT>()
 {
+   load(fp,filename) ;
    m_readonly = readonly ;
-   (void)fp; 
-
    return ;
 }
 
@@ -116,7 +115,7 @@ bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mma
       if (header.m_wordmap)
 	 {
 	 fp.seek(header.m_wordmap) ;
-	 m_wordmap.load(fp) ;
+	 m_wordmap.load(fp,filename,false) ;
 	 }
       if (header.m_wordbuf)
 	 {
@@ -160,18 +159,6 @@ bool WordCorpusT<IdT,IdxT>::load(const char *filename, bool allow_mmap)
 {
    CInputFile fp(filename) ;
    return fp ? load(fp,filename,allow_mmap) : false ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::readHeader(CFile& fp)
-{
-   uint64_t id_offset ;
-   if (!fp.readValue(&id_offset))
-      return false ;
-   //FIXME / TODO
-   return true ;
 }
 
 //----------------------------------------------------------------------------
@@ -235,17 +222,18 @@ bool WordCorpusT<IdT,IdxT>::save(CFile &fp) const
    memset(header.m_pad2,'\0',sizeof(header.m_pad2)) ;
    if (!fp.writeValue(header))
       return false ;
-   
+
+   bool success = true ;
    header.m_wordmap = fp.tell() ;
-   m_wordmap.save(fp) ;
+   success &= m_wordmap.save(fp) ;
    header.m_wordbuf = fp.tell() ;
-   m_wordbuf.save(fp) ;
+   success &= m_wordbuf.save(fp) ;
    header.m_contextmap = fp.tell() ;
-   m_contextmap.save(fp) ;
+   success &= m_contextmap.save(fp) ;
    header.m_fwdindex = fp.tell() ;
-   m_fwdindex.save(fp) ;
+   success &= m_fwdindex.save(fp) ;
    header.m_revindex = fp.tell() ;
-   m_revindex.save(fp) ;
+   success &= m_revindex.save(fp) ;
    if (m_freq)
       {
       header.m_freq = fp.tell() ;

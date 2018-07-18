@@ -52,9 +52,9 @@ class BidirIndex : public HashTable<keyT,idxT>
       BidirIndex& operator= (const BidirIndex&) = delete ;
 
       bool load(const char* filename, bool allow_mmap = true) ;
-      bool load(CFile&) ;
+      bool load(CFile&, const char* filename, bool allow_mmap = true) ;
       bool loadMapped(const char* filename) ;
-      bool loadFromMmap(void* mmap_base, size_t mmap_len) ;
+      bool loadFromMmap(const void* mmap_base, size_t mmap_len) ;
       bool save(const char* filename) const ;
       bool save(CFile&) const ;
 
@@ -78,11 +78,17 @@ class BidirIndex : public HashTable<keyT,idxT>
       keyT*        m_reverse_index { nullptr } ;
       idxT	   m_common_buffer { 0 } ;	// the first N elts of m_reverse_index share storage
       bool	   m_readonly { false } ;
+      bool         m_external_storage { false } ;
+
+      // magic values for serializing
+      static constexpr char signature[] = "\x7F""BiDIndex" ;
+      static constexpr unsigned file_format = 1 ;
+      static constexpr unsigned min_file_format = 1 ;
 
    protected:
       using HashTable<keyT,idxT>::lookup ;
       using HashTable<keyT,idxT>::contains ;
-      static void clearReverseIndex(keyT*, idxT common, idxT total) ;
+      void clearReverseIndex(keyT*, idxT common, idxT total) ;
       static void clearReverseElement(keyT*) ;
       static void releaseCommonBuffer(keyT*) ;
    } ;

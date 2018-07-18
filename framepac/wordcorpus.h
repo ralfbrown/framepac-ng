@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.07, last edit 2018-07-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -97,8 +97,8 @@ class WordCorpusT
    public: // methods
       WordCorpusT() ;
       WordCorpusT(const WordCorpusT&) = delete ;
-      WordCorpusT(const char* filename, bool readonly) ;
-      WordCorpusT(CFile& fp, bool readonly) ;
+      WordCorpusT(const char* filename, bool readonly = false) ;
+      WordCorpusT(CFile& fp, const char* filename, bool readonly = false) ;
       void operator= (const WordCorpusT&) = delete ;
       ~WordCorpusT() ;
 
@@ -145,7 +145,7 @@ class WordCorpusT
 				    SAEnumFunc *fn, void *user_arg) ;
 
       IdxT rareWordThreshold() const { return  m_rare_thresh ; }
-      size_t numContextEquivs() const { return 0 ; } //FIXME
+      size_t numContextEquivs() const { return m_contextmap.size() ; }
 
       IdT getID(IdxT N) const ;
       IdT getContextID(IdxT N) const ;
@@ -187,7 +187,6 @@ class WordCorpusT
       void setID(IdxT N, IdT id) ;
 
    protected:
-      bool readHeader(CFile&) ;
       bool loadMapped(const char* filename) ;
       void incrFreq(IdT N) { if (N < m_wordbuf.size()) ++m_freq[N] ; else ++m_freq[m_newline] ; }
       bool createForwardIndex() ;

@@ -21,6 +21,7 @@
 
 #include "framepac/file.h"
 #include "framepac/hashtable.h"
+#include "framepac/message.h"
 
 /************************************************************************/
 /*	Methods for class HashTable					*/
@@ -29,8 +30,18 @@
 template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::load(CFile& fp)
 {
-   if (!fp)
+   int version = file_format ;
+   if (!fp || !fp.verifySignature(signature,filename,version,min_file_format))
       return false ;
+   uint8_t keysize, valsize ;
+   if (!fp.readValue(&keysize) || !fp.readValue(&keysize))
+      return false ;
+   if (keysize != sizeof(KeyT) || valsize != sizeof(ValT))
+      {
+      SystemMessage::error("wrong data type - sizeof() does not match") ;
+      return false ;
+      }
+
    //TODO
    return false ;
 }
@@ -51,8 +62,13 @@ bool HashTable<KeyT,ValT>::load(void* mmap_base, size_t mmap_len)
 template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::save(CFile& fp) const
 {
-   if (!fp)
+   if (!fp || !fp.writeSignature(signature,file_format))
       return false ;
+   uint8_t keysize = sizeof(KeyT) ;
+   uint8_t valsize = sizeof(ValT) ;
+   if (!fp.writeValue(keysize) || !fp.writeValue(valsize))
+      return false ;
+
    //TODO
    return false ;
 }

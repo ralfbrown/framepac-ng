@@ -622,6 +622,9 @@ template/argopt.cc:	framepac/argparser.h
 template/basisvector.cc: framepac/random.h framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+template/bidindex.cc:	framepac/bidindex.h framepac/file.h framepac/message.h framepac/mmapfile.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 template/bufbuilder.cc:	framepac/builder.h framepac/convert.h framepac/file.h
 	$(TOUCH) $@ $(BITBUCKET)
 
@@ -669,7 +672,7 @@ template/densevector.cc:	framepac/vector.h template/bufbuilder.cc
 template/hashtable.cc:	framepac/hashtable.h framepac/message.h framepac/fasthash64.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/hashtable_file.cc:	framepac/hashtable.h framepac/file.h
+template/hashtable_file.cc:	framepac/hashtable.h framepac/file.h framepac/message.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/mtrie.cc:	framepac/trie.h
@@ -684,7 +687,7 @@ template/ptrie.cc:	framepac/trie.h
 template/sufarray.cc:	framepac/sufarray.h framepac/bitvector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/sufarray_file.cc:	framepac/sufarray.h framepac/file.h
+template/sufarray_file.cc:	framepac/sufarray.h framepac/file.h framepac/message.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/sparsevector.cc:	framepac/fasthash64.h framepac/vector.h template/bufbuilder.cc

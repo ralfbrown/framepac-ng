@@ -523,6 +523,14 @@ char* CFile::getTrimmedLine(size_t maxline)
 
 //----------------------------------------------------------------------------
 
+size_t CFile::signatureSize(const char* sigstring)
+{
+   if (!sigstring) return 0 ;
+   return strlen(sigstring) + 1 + sizeof(uint16_t) + sizeof(uint32_t) ;
+}
+
+//----------------------------------------------------------------------------
+
 int CFile::verifySignature(const char* sigstring)
 {
    if (!sigstring || !*sigstring) return -1 ;

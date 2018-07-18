@@ -770,6 +770,11 @@ class HashTable : public HashTableBase
       static thread_local HashTable_Stats* s_stats ;
 #endif /* FrHASHTABLE_STATS */
 
+      // magic values for serializing
+      static constexpr char signature[] = "\x7FHshTable" ;
+      static constexpr unsigned file_format = 1 ;
+      static constexpr unsigned min_file_format = 1 ;
+
    protected: // debug methods
 #if FrHASHTABLE_VERBOSITY > 1
       [[gnu::format(printf,1,2)]] 

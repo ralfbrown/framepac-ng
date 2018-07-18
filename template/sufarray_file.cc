@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include "framepac/file.h"
+#include "framepac/message.h"
 #include "framepac/sufarray.h"
 
 namespace Fr {
@@ -31,8 +32,18 @@ namespace Fr {
 template <typename IdT, typename IdxT>
 bool SuffixArray<IdT,IdxT>::load(CFile& fp)
 {
-   if (!fp)
+   int version = file_format ;
+   if (!fp || !fp.verifySignature(signature,filename,version,min_file_format))
       return false ;
+   uint8_t idsize, idxsize ;
+   if (!fp.readValue(&idsize) || !fp.readValue(&idxsize))
+      return false ;
+   if (idsize != sizeof(IdT) || idxsize != sizeof(IdxT))
+      {
+      SystemMessage::error("wrong data type - sizeof() does not match") ;
+      return false ;
+      }
+      
    //TODO
    return false ;
 }
@@ -53,7 +64,11 @@ bool SuffixArray<IdT,IdxT>::load(void* mmap_base, size_t mmap_len)
 template <typename IdT, typename IdxT>
 bool SuffixArray<IdT,IdxT>::save(CFile& fp) const
 {
-   if (!fp)
+   if (!fp || !fp.writeSignature(signature,file_format))
+      return false ;
+   uint8_t idsize = sizeof(IdT) ;
+   uint8_t idxsize = sizeof(IdxT) ;
+   if (!fp.writeValue(idsize) || !fp.writeValue(idxsize))
       return false ;
    //TODO
    return false ;
