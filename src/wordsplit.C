@@ -115,6 +115,42 @@ WordSplitter::boundary WordSplitterDelimiter::boundaryType(const char* window_st
    return no_boundary ;
 }
 
+/************************************************************************/
+/*	Methods for class WordSplitterDelimiter				*/
+/************************************************************************/
+
+WordSplitter::boundary WordSplitterCSV::boundaryType(const char* window_start, const char* currpos,
+   const char* window_end) const
+{
+   if (currpos == window_start)
+      return (*currpos == m_delim) ? word_start_and_end : word_start ;
+   if (currpos == window_end)
+      return (*currpos == m_delim) ? no_boundary : word_end ;
+   if (!m_quote && (*currpos == '"' || *currpos == '\''))
+      m_quote = *currpos ;
+   // ignore the delimiter character if inside a quoted string
+   if (m_quote && *currpos == m_delim)
+      return no_boundary ;
+   //TODO
+   return no_boundary ;
+}
+
+//----------------------------------------------------------------------------
+
+StringPtr WordSplitterCSV::postprocess(StringPtr& word)
+{
+   if (m_strip)
+      {
+      const char* s = word->stringValue() ;
+      size_t len = word->size() ;
+      if (len > 2 && (*s == '"' || *s == '\''))
+	 {
+	 return String::create(s+1,len-2) ;
+	 }
+      }
+   return &word ;
+}
+
 //----------------------------------------------------------------------------
 
 } // end of namespace Fr
