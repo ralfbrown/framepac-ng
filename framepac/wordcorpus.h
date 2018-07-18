@@ -188,6 +188,7 @@ class WordCorpusT
 
    protected:
       bool loadMapped(const char* filename) ;
+      bool loadFromMmap(const void* mmap_base, size_t mmap_len) ;
       void incrFreq(IdT N) { if (N < m_wordbuf.size()) ++m_freq[N] ; else ++m_freq[m_newline] ; }
       bool createForwardIndex() ;
       bool createReverseIndex() ;
@@ -214,6 +215,7 @@ class WordCorpusT
       unsigned		 m_left_context { 0 } ;
       unsigned		 m_right_context { 0 } ;
       unsigned		 m_total_context { 1 } ;
+      bool		 m_mapped { false } ;     // data is memory-mapped; don't free memory!
       bool		 m_readonly { false } ;
       bool		 m_keep_linenumbers { false } ;
    } ;

@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include "framepac/mmapfile.h"
 #include "framepac/wordcorpus.h"
 
 namespace Fr
@@ -98,6 +99,9 @@ bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mma
    WordCorpusHeader header ;
    if (!fp.readValue(&header))
       return false ;
+   // ensure that the writer used the same data sizes
+   if (header.m_idsize != sizeof(IdT) || header.m_idxsize != sizeof(IdxT))
+      return false ;
    if (version < file_format)
       {
       // this is an older but still supported format and needs some conversion/adjustment
@@ -115,34 +119,34 @@ bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mma
       if (header.m_wordmap)
 	 {
 	 fp.seek(header.m_wordmap) ;
-	 m_wordmap.load(fp,filename,false) ;
+	 success &= m_wordmap.load(fp,filename,false) ;
 	 }
       if (header.m_wordbuf)
 	 {
 	 fp.seek(header.m_wordbuf) ;
-	 m_wordbuf.load(fp) ;
+	 success &= m_wordbuf.load(fp,filename) ;
 	 }
       if (header.m_fwdindex)
 	 {
 	 fp.seek(header.m_fwdindex) ;
-	 m_fwdindex.load(fp) ;
+	 success &= m_fwdindex.load(fp,filename) ;
 	 }
       if (header.m_revindex)
 	 {
 	 fp.seek(header.m_revindex) ;
-	 m_revindex.load(fp) ;
+	 success &= m_revindex.load(fp,filename) ;
 	 }
       if (header.m_freq)
 	 {
 	 fp.seek(header.m_freq) ;
 	 m_freq = new IdxT[header.m_vocabsize] ;
-	 fp.readValues(&m_freq,header.m_vocabsize) ;
+	 success &= fp.readValues(&m_freq,header.m_vocabsize) ;
 	 }
       if (header.m_attributes)
 	 {
 	 m_attributes = new uint8_t[header.m_numwords] ;
 	 m_attributes_alloc = header.m_numwords ;
-	 fp.readValues(&m_attributes,m_attributes_alloc) ;
+	 success &= fp.readValues(&m_attributes,m_attributes_alloc) ;
 	 }
       }
    if (success)
@@ -168,8 +172,52 @@ bool WordCorpusT<IdT,IdxT>::loadMapped(const char *filename)
 {
    if (!filename || !*filename)
       return false ;
-   //TODO
+   MemMappedROFile mm(filename) ;
+   if (!mm)
+      return false ;
+   if (!loadFromMmap(*mm,mm.size()))
+      return false ;
+   m_readonly = true ;			// can't modify if we're pointing into a memory-mapped file
    return false ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::loadFromMmap(const void* mmap_base, size_t mmap_len)
+{
+   size_t header_size = CFile::signatureSize(signature) /*+ 2*sizeof(uint8_t) FIXME */ ;
+   if (!mmap_base || mmap_len < header_size)
+      return false;
+   const WordCorpusHeader* header = (WordCorpusHeader*)(((const char*)mmap_base)+header_size) ;
+   // ensure that the writer used the same data sizes
+   if (header->m_idsize != sizeof(IdT) || header->m_idxsize != sizeof(IdxT))
+      return false ;
+   if (header->m_wordmap)
+      {
+      m_wordmap.loadFromMmap(((char*)mmap_base)+header->m_wordmap,mmap_len-header->m_wordmap) ;
+      }
+   if (header->m_wordbuf)
+      {
+      m_wordbuf.loadFromMmap(((char*)mmap_base)+header->m_wordbuf,mmap_len-header->m_wordbuf) ;
+      }
+   if (header->m_fwdindex)
+      {
+      m_fwdindex.loadFromMmap(((char*)mmap_base)+header->m_fwdindex,mmap_len-header->m_fwdindex) ;
+      }
+   if (header->m_revindex)
+      {
+      m_revindex.loadFromMmap(((char*)mmap_base)+header->m_revindex,mmap_len-header->m_revindex) ;
+      }
+   if (header->m_freq)
+      {
+      m_freq = (IdxT*)((char*)mmap_base + header->m_freq) ;
+      }
+   if (header->m_attributes)
+      {
+      m_attributes = (uint8_t*)((char*)mmap_base + header->m_attributes) ;
+      }
+   return true  ;
 }
 
 //----------------------------------------------------------------------------
@@ -178,7 +226,7 @@ template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::loadContextEquivs(const char* filename, bool force_lowercase)
 {
    (void)filename; (void)force_lowercase;
-//FIXME
+//TODO
    return false ; 
 }
 
@@ -187,8 +235,10 @@ bool WordCorpusT<IdT,IdxT>::loadContextEquivs(const char* filename, bool force_l
 template <typename IdT, typename IdxT>
 size_t WordCorpusT<IdT,IdxT>::loadAttribute(const char* filename, unsigned attr_bit, bool add_words)
 {
-   (void)filename; (void)attr_bit; (void)add_words;
-//FIXME
+   if (!filename || !*filename)
+      return 0 ;
+   (void)attr_bit; (void)add_words;
+//TODO
    return 0 ;
 }
 
@@ -197,7 +247,7 @@ size_t WordCorpusT<IdT,IdxT>::loadAttribute(const char* filename, unsigned attr_
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::save(CFile &fp) const
 {
-   if (!fp.writeSignature(signature,file_format))
+   if (!fp || !fp.writeSignature(signature,file_format))
       return false ;
    // we don't have all the info needed to write the header yet, so write a placeholder and remember
    //   the file offset so we can return later and update it
@@ -271,7 +321,8 @@ bool WordCorpusT<IdT,IdxT>::save(const char *filename) const
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::discardText()
 {
-   return false ;//FIXME
+   m_wordbuf.clear() ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
@@ -279,7 +330,8 @@ bool WordCorpusT<IdT,IdxT>::discardText()
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::discardAttributes()
 {
-   delete[] m_attributes ;
+   if (!m_mapped)
+      delete[] m_attributes ;
    m_attributes = nullptr ;
    return true ;
 }
@@ -289,7 +341,8 @@ bool WordCorpusT<IdT,IdxT>::discardAttributes()
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::discardContextEquivs()
 {
-   return false ;//FIXME
+   m_contextmap.clear() ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
@@ -365,8 +418,7 @@ bool WordCorpusT<IdT,IdxT>::rareWordThreshold(IdxT thresh,  const char* token)
 template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::getID(IdxT N) const
 {
-   (void)N;
-   return ErrorID ; //FIXME
+   return (N < corpusSize()) ? m_wordbuf[N] : ErrorID ;
 }
 
 //----------------------------------------------------------------------------
@@ -374,8 +426,15 @@ IdT WordCorpusT<IdT,IdxT>::getID(IdxT N) const
 template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::getContextID(IdxT N) const
 {
-   (void)N;
-   return ErrorID ; //FIXME
+   IdT id = getID(N) ;
+   if (id != ErrorID)
+      {
+      if (id >= m_last_linenum)
+	 return m_newline ;
+      else if (m_freq)
+	 return (m_freq[id] < m_rare_thresh) ? m_rare : id ;
+      }
+   return id ;
 }
 
 //----------------------------------------------------------------------------
@@ -383,8 +442,8 @@ IdT WordCorpusT<IdT,IdxT>::getContextID(IdxT N) const
 template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::getContextID(const char* word) const
 {
-   (void)word;
-   return ErrorID ; //FIXME
+   IdT id = ErrorID ;
+   return m_contextmap.lookup(word,&id) ? id : ErrorID ;
 }
 
 //----------------------------------------------------------------------------
@@ -392,8 +451,7 @@ IdT WordCorpusT<IdT,IdxT>::getContextID(const char* word) const
 template <typename IdT, typename IdxT>
 IdxT WordCorpusT<IdT,IdxT>::getFreq(IdT N) const
 {
-   (void)N;
-   return 0 ; //FIXME
+   return (N <= vocabSize() && m_freq) ? m_freq[N] : IdxT(0) ;
 }
 
 //----------------------------------------------------------------------------
@@ -401,8 +459,7 @@ IdxT WordCorpusT<IdT,IdxT>::getFreq(IdT N) const
 template <typename IdT, typename IdxT>
 IdxT WordCorpusT<IdT,IdxT>::getFreq(const char* word) const
 {
-   (void)word;
-   return 0 ; //FIXME
+   return getFreq(findID(word)) ;
 }
 
 //----------------------------------------------------------------------------
@@ -410,8 +467,7 @@ IdxT WordCorpusT<IdT,IdxT>::getFreq(const char* word) const
 template <typename IdT, typename IdxT>
 const char* WordCorpusT<IdT,IdxT>::getWord(IdT N) const
 {
-   (void)N;
-   return nullptr ; //FIXME
+   return m_wordmap.getKey(N).str() ;
 }
 
 //----------------------------------------------------------------------------
@@ -419,8 +475,12 @@ const char* WordCorpusT<IdT,IdxT>::getWord(IdT N) const
 template <typename IdT, typename IdxT>
 const char* WordCorpusT<IdT,IdxT>::getNormalizedWord(IdT N) const
 {
-   (void)N;
-   return nullptr ; //FIXME
+   if (N <= vocabSize())
+      return getWord(N) ;
+   else if (N >= m_last_linenum)
+      return newlineWord() ;
+   else
+      return nullptr ;
 }
 
 //----------------------------------------------------------------------------
@@ -428,7 +488,7 @@ const char* WordCorpusT<IdT,IdxT>::getNormalizedWord(IdT N) const
 template <typename IdT, typename IdxT>
 const char* WordCorpusT<IdT,IdxT>::newlineWord() const
 {
-   return nullptr ; //FIXME
+   return getWord(m_newline) ;
 }
 
 //----------------------------------------------------------------------------
@@ -436,7 +496,7 @@ const char* WordCorpusT<IdT,IdxT>::newlineWord() const
 template <typename IdT, typename IdxT>
 const char* WordCorpusT<IdT,IdxT>::rareWord() const
 {
-   return nullptr ; //FIXME
+   return m_rare ? getWord(m_rare) : nullptr ;
 }
 
 //----------------------------------------------------------------------------
@@ -444,8 +504,7 @@ const char* WordCorpusT<IdT,IdxT>::rareWord() const
 template <typename IdT, typename IdxT>
 const char* WordCorpusT<IdT,IdxT>::getWordForLoc(IdxT N) const
 {
-   (void)N;
-   return nullptr ; //FIXME
+   return (N <= corpusSize()) ? getNormalizedWord(m_wordbuf[N]) : newlineWord() ;
 }
 
 //----------------------------------------------------------------------------

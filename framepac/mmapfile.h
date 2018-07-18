@@ -22,6 +22,9 @@
 #ifndef _Fr_MMAPFILE_H_INCLUDED
 #define _Fr_MMAPFILE_H_INCLUDED
 
+#include <cstdio>
+using namespace std ;
+
 namespace Fr
 {
 

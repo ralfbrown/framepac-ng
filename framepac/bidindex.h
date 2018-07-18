@@ -68,8 +68,8 @@ class BidirIndex : public HashTable<keyT,idxT>
       idxT indexSize() const { return m_max_index ; }
       bool readonly() const { return m_readonly ; }
 
-      idxT getIndex(keyT key) { idxT index ; return lookup(key,&index) ? index : m_errorID ; }
-      keyT getKey(idxT index) { return index < m_max_index ? m_reverse_index[index] : (keyT)0 ; }
+      idxT getIndex(keyT key) const { idxT index ; return lookup(key,&index) ? index : m_errorID ; }
+      keyT getKey(idxT index) const { return index < m_max_index ? m_reverse_index[index] : keyT(0) ; }
 
    protected:
       atomic<idxT> m_next_index { 0 } ;

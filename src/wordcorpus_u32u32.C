@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-15					*/
+/* Version 0.07, last edit 2018-07-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -20,7 +20,9 @@
 /************************************************************************/
 
 #include "template/concbuilder.cc"
+#include "template/bufbuilder_file.cc"
 #include "template/hashtable.cc"
+#include "template/sufarray_file.cc"
 #include "template/wordcorpus.cc"
 
 namespace Fr

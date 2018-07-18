@@ -52,8 +52,8 @@ class SuffixArray
       SuffixArray& operator= (const SuffixArray&) = delete ;
 
       bool load(const char* filename) ;
-      bool load(CFile&) ; 		       	    // load from open file starting at current file position
-      bool load(void* mmap_base, size_t mmap_len) ; // load starting from specified position in mmap'ed file
+      bool load(CFile&, const char* filename) ;       	    // load from open file starting at current file position
+      bool loadFromMmap(void* mmap_base, size_t mmap_len) ; // load starting from specified position in mmap'ed file
       bool save(CFile&) const ;
 
       bool generate(const IdT* ids, IdxT num_ids, IdT num_types,

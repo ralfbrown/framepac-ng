@@ -625,7 +625,10 @@ template/basisvector.cc: framepac/random.h framepac/vector.h
 template/bidindex.cc:	framepac/bidindex.h framepac/file.h framepac/message.h framepac/mmapfile.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/bufbuilder.cc:	framepac/builder.h framepac/convert.h framepac/file.h
+template/bufbuilder.cc:	framepac/builder.h framepac/convert.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+template/bufbuilder_file.cc:	framepac/builder.h framepac/file.h framepac/message.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster_agglom.cc:	framepac/cluster.h framepac/symboltable.h

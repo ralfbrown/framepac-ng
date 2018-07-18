@@ -43,8 +43,8 @@ class BufferBuilder
       bool preallocate(size_t newsize) ;
       void clear() ;
 
-      bool load(CFile&) ;
-      bool load(void* mmap_base, size_t mmap_len) ;
+      bool load(CFile&, const char* filename) ;
+      bool loadFromMmap(const void* mmap_base, size_t mmap_len) ;
       bool save(CFile&) const ;
 
       bool read(const char*&) ;
@@ -77,6 +77,11 @@ class BufferBuilder
       size_t	m_alloc = minsize ;
       size_t	m_currsize = 0 ;
       T		m_localbuf[minsize] ;
+
+      // magic values for serializing
+      static constexpr char signature[] = "\x7F""BufBuild" ;
+      static constexpr unsigned file_format = 1 ;
+      static constexpr unsigned min_file_format = 1 ;
    } ;
 
 extern template class BufferBuilder<char> ;

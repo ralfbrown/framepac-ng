@@ -27,7 +27,7 @@ namespace Fr
 
 // specializations
 template <>
-CString BidirIndex<CString,uint32_t>::getKey(uint32_t index)
+CString BidirIndex<CString,uint32_t>::getKey(uint32_t index) const
 {
    return index < m_max_index ? m_reverse_index[index] : CString(nullptr) ;
 }

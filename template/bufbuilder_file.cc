@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-17					*/
+/* Version 0.07, last edit 2018-07-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -19,65 +19,68 @@
 /*									*/
 /************************************************************************/
 
+#ifndef Fr_BUFBUILDER_FILE_CC_INCLUDED
+#define Fr_BUFBUILDER_FILE_CC_INCLUDED
+
+#include "framepac/builder.h"
 #include "framepac/file.h"
 #include "framepac/message.h"
-#include "framepac/sufarray.h"
 
 namespace Fr {
 
 /************************************************************************/
-/*	Methods for template class SuffixArray				*/
 /************************************************************************/
 
-template <typename IdT, typename IdxT>
-bool SuffixArray<IdT,IdxT>::load(CFile& fp, const char* filename)
+//----------------------------------------------------------------------------
+
+template <typename T, size_t minsize>
+bool BufferBuilder<T,minsize>::load(CFile& fp, const char* filename)
 {
    int version = file_format ;
    if (!fp || !fp.verifySignature(signature,filename,version,min_file_format))
       return false ;
-   uint8_t idsize, idxsize ;
-   if (!fp.readValue(&idsize) || !fp.readValue(&idxsize))
+   uint8_t tsize ;
+   if (!fp.readValue(&tsize))
       return false ;
-   if (idsize != sizeof(IdT) || idxsize != sizeof(IdxT))
+   if (tsize != sizeof(T))
       {
       SystemMessage::error("wrong data type - sizeof() does not match") ;
       return false ;
       }
-      
-   //TODO
-   return false ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename IdT, typename IdxT>
-bool SuffixArray<IdT,IdxT>::loadFromMmap(void* mmap_base, size_t mmap_len)
-{
-   size_t header_size = CFile::signatureSize(signature) /*+ 2*sizeof(uint8_t) FIXME */ ;
-   if (!mmap_base || mmap_len < header_size)
-      return false;
-   //TODO
+//TODO
    return true ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename IdT, typename IdxT>
-bool SuffixArray<IdT,IdxT>::save(CFile& fp) const
+template <typename T, size_t minsize>
+bool BufferBuilder<T,minsize>::loadFromMmap(const void* mmap_base, size_t mmap_len)
 {
-   if (!fp || !fp.writeSignature(signature,file_format))
-      return false ;
-   uint8_t idsize = sizeof(IdT) ;
-   uint8_t idxsize = sizeof(IdxT) ;
-   if (!fp.writeValue(idsize) || !fp.writeValue(idxsize))
-      return false ;
-   //TODO
-   return false ;
+   size_t header_size = CFile::signatureSize(signature) + sizeof(uint8_t) ;
+   if (!mmap_base || mmap_len < header_size)
+      return false;
+//TODO
+   return true ;
 }
 
 //----------------------------------------------------------------------------
 
+template <typename T, size_t minsize>
+bool BufferBuilder<T,minsize>::save(CFile& fp) const
+{
+   if (!fp || !fp.writeSignature(signature,file_format))
+      return false ;
+   uint8_t tsize = sizeof(T) ;
+   if (!fp.writeValue(tsize))
+      return false ;
+//TODO
+   return true ;
+}
 
-} // end of namespace Fr
+//----------------------------------------------------------------------------
 
-// end of file sufarray_file.cc //
+} // end namespace Fr
+
+#endif /* !Fr_BUFBUILDER_FILE_CC_INCLUDED */
+
+// end of file bufbuilder_file.cc //

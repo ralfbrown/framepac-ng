@@ -24,7 +24,6 @@
 
 #include "framepac/builder.h"
 #include "framepac/convert.h"
-#include "framepac/file.h"
 
 namespace Fr
 {
@@ -39,36 +38,6 @@ BufferBuilder<T,minsize>::~BufferBuilder()
       delete [] m_buffer ;
    m_currsize = 0 ;
    return ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename T, size_t minsize>
-bool BufferBuilder<T,minsize>::load(CFile& fp)
-{
-   if (!fp) return false ;
-//FIXME
-   return true ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename T, size_t minsize>
-bool BufferBuilder<T,minsize>::load(void* mmap_base, size_t mmap_len)
-{
-   if (!mmap_base || mmap_len == 0) return false ;
-//FIXME
-   return true ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename T, size_t minsize>
-bool BufferBuilder<T,minsize>::save(CFile& fp) const
-{
-   if (!fp) return false ;
-//FIXME
-   return true ;
 }
 
 //----------------------------------------------------------------------------
