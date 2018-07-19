@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-17					*/
+/* Version 0.07, last edit 2018-07-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -51,10 +51,13 @@ class SuffixArray
 	 }
       SuffixArray& operator= (const SuffixArray&) = delete ;
 
-      bool load(const char* filename) ;
-      bool load(CFile&, const char* filename) ;       	    // load from open file starting at current file position
-      bool loadFromMmap(void* mmap_base, size_t mmap_len) ; // load starting from specified position in mmap'ed file
-      bool save(CFile&) const ;
+      bool load(const char* filename, bool allow_mmap = true, const IdT* using_ids = nullptr) ;
+      // load from open file starting at current file position
+      bool load(CFile&, const char* filename, bool allow_mmap = true, const IdT* using_ids = nullptr) ;
+      bool loadMapped(const char*filename, const IdT* using_ids = nullptr) ;
+      // load starting from specified position in mmap'ed file
+      bool loadFromMmap(void* mmap_base, size_t mmap_len, const IdT* using_ids = nullptr) ;
+      bool save(CFile&, bool include_ids = true) const ;
 
       bool generate(const IdT* ids, IdxT num_ids, IdT num_types,
 		    IdT mapped_newline, const IdxT* freqs = nullptr) ;
@@ -126,6 +129,7 @@ class SuffixArray
       IdT        m_sentinel { 0 } ;
       IdT        m_newline { IdT(-1) } ;
       IdxT       m_last_linenum { IdxT(-1) } ;
+      bool       m_external_ids { true } ;
 
       // magic values for serializing
       static constexpr char signature[] = "\x7FSufArray" ;
