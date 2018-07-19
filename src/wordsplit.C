@@ -32,6 +32,40 @@ namespace Fr
 
 WordSplitter::WordSplitter(class CharGetter& getter) : m_getter(getter)
 {
+   fillBuffer() ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void WordSplitter::fillBuffer()
+{
+   m_lookback = 0 ;
+   m_lookahead = 0 ;
+   while (m_lookahead < sizeof(m_buffer)/2 && !m_getter.eof())
+      {
+      m_buffer[m_lookahead++] = *m_getter ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void WordSplitter::shiftBuffer()
+{
+   if (m_getter.eof())
+      {
+      // adjust pointers
+      if (!m_lookahead) return ;
+      m_lookahead-- ;
+      m_lookback++ ;
+      }
+   if (m_lookahead + m_lookback >= sizeof(m_buffer))
+      {
+      memmove(m_buffer,m_buffer+1,sizeof(m_buffer)-1) ;
+      m_lookback-- ;
+      }
+   m_buffer[m_lookahead + m_lookback++] = m_getter.get() ;
    return ;
 }
 
@@ -39,9 +73,9 @@ WordSplitter::WordSplitter(class CharGetter& getter) : m_getter(getter)
 
 StringPtr WordSplitter::nextWord()
 {
+   StringBuilder sb ;
    //TODO
-   StringPtr word { nullptr } ;
-   return postprocess(word) ;
+   return postprocess(sb.string()) ;
 }
 
 //----------------------------------------------------------------------------
@@ -126,29 +160,41 @@ WordSplitter::boundary WordSplitterCSV::boundaryType(const char* window_start, c
       return (*currpos == m_delim) ? word_start_and_end : word_start ;
    if (currpos == window_end)
       return (*currpos == m_delim) ? no_boundary : word_end ;
-   if (!m_quote && (*currpos == '"' || *currpos == '\''))
+   // is this a quoted item?
+   if (!m_quote && (*currpos == '"' || *currpos == '\'') && currpos[-1] == m_delim)
       m_quote = *currpos ;
-   // ignore the delimiter character if inside a quoted string
-   if (m_quote && *currpos == m_delim)
-      return no_boundary ;
-   //TODO
+   // ignore the delimiter character if inside a quoted string; if we see a matching quote, turn off the in-string flag
+   if (m_quote)
+      {
+      if (*currpos == m_delim)
+	 return (currpos[-1] == m_quote) ? word_end : no_boundary ;
+      else if (*currpos == m_quote)
+	 m_quote = '\0' ;
+      }
+   if (*currpos == m_delim)
+      return (currpos[-1] == m_delim) ? empty_word : word_end ;
+   if (currpos[-1] == m_delim)
+      return word_start ;
    return no_boundary ;
 }
 
 //----------------------------------------------------------------------------
 
-StringPtr WordSplitterCSV::postprocess(StringPtr& word)
+String* WordSplitterCSV::postprocess(String* word)
 {
+   if (!word) return word ;
    if (m_strip)
       {
       const char* s = word->stringValue() ;
       size_t len = word->size() ;
       if (len > 2 && (*s == '"' || *s == '\''))
 	 {
-	 return String::create(s+1,len-2) ;
+	 String* stripped = String::create(s+1,len-2) ;
+	 word->free() ;
+	 word = stripped ;
 	 }
       }
-   return &word ;
+   return word ;
 }
 
 //----------------------------------------------------------------------------

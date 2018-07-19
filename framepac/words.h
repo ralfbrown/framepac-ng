@@ -56,17 +56,19 @@ class WordSplitter
       operator bool () const ;  // did we successfully init?
       bool eof() const ;
    public:
-      enum boundary { no_boundary = 0, word_start = 1, word_end = 2, word_start_and_end = 3 } ;
+      enum boundary { no_boundary = 0, word_start = 1, word_end = 2, word_start_and_end = 3, empty_word = 4 } ;
    protected:
       CharGetter &m_getter ;
       char        m_buffer[16] ;		// maxlookahead+maxlookback <= 16 !
-      unsigned    m_maxlookahead { 1 } ;
-      unsigned    m_maxlookback { 1 } ;
+      unsigned    m_lookahead { 0 } ;
+      unsigned    m_lookback { 0 } ;
 
    protected:
+      void fillBuffer() ;
+      void shiftBuffer() ;
       virtual boundary boundaryType(const char* window_start, const char* currpos,
 				    const char* window_end) const ;
-      virtual StringPtr postprocess(StringPtr& word) { return &word ; }
+      virtual String* postprocess(String* word) { return word ; }
    } ;
 
 //----------------------------------------------------------------------------
@@ -121,7 +123,7 @@ class WordSplitterCSV : public WordSplitter
    protected:
       virtual boundary boundaryType(const char* window_start, const char* currpos,
 				    const char* window_end) const ;
-      virtual StringPtr postprocess(StringPtr& word) ;
+      virtual String* postprocess(String* word) ;
 
    protected:
       char m_delim ;
