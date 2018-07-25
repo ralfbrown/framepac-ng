@@ -105,7 +105,7 @@ template <typename I>
 void SuffixArray<IdT,IdxT>::induce(const I* ids, IdxT* SA, IdxT num_ids, IdT num_types, IdxT* buckets,
 	    const Fr::BitVector& ls_types)
 {
-   IdxT* bucket_ends = copyBucketBoundaries(buckets+1,num_types) ;
+   LocalAlloc<IdxT,1> bucket_ends { copyBucketBoundaries(buckets+1,num_types) } ;
    // induce on bucket starts (SAl in original paper)
    for (IdxT i = 0 ; i < num_ids ; ++i)
       {
@@ -134,7 +134,6 @@ void SuffixArray<IdT,IdxT>::induce(const I* ids, IdxT* SA, IdxT num_ids, IdT num
 	 SA[--bucket_ends[bck]] = j ;
 	 }
       }
-   delete[] bucket_ends ;
    return ;
 }
 

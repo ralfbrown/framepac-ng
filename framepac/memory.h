@@ -394,10 +394,6 @@ class SmallAlloc
 template <typename T, size_t SZ = 512>
 class LocalAlloc
    {
-   private:
-      T  m_localbuffer[SZ] ;
-      T* m_buffer ;
-
    public:
       LocalAlloc(size_t alloc)
 	 {
@@ -409,6 +405,10 @@ class LocalAlloc
 	 if (m_buffer && clear)
 	    memset(m_buffer,'\0',sizeof(T)*alloc) ;
 	 }
+      LocalAlloc(T* buf)
+	 {
+	 m_buffer = buf ? buf : m_localbuffer ;
+	 }
       ~LocalAlloc()
 	 {
 	 if (m_buffer != m_localbuffer) delete[] m_buffer ;
@@ -418,7 +418,11 @@ class LocalAlloc
       T* base() const { return m_buffer ; }
       T& operator [] (size_t idx) { return m_buffer[idx] ; }
       const T& operator [] (size_t idx) const { return m_buffer[idx] ; }
-      operator T* () { return m_buffer ; }
+      operator T* () const { return m_buffer ; }
+
+   private:
+      T  m_localbuffer[SZ] ;
+      T* m_buffer ;
    } ;
 
 //----------------------------------------------------------------------------
