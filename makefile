@@ -555,7 +555,7 @@ build/loadfilelist$(OBJ):	src/loadfilelist$(C) framepac/file.h framepac/list.h f
 build/map$(OBJ):		src/map$(C) framepac/map.h framepac/fasthash64.h
 build/map_file$(OBJ):		src/map_file$(C) framepac/map.h framepac/file.h
 build/matrix$(OBJ):		src/matrix$(C) framepac/matrix.h
-build/message$(OBJ):		src/message$(C) framepac/message.h framepac/texttransforms.h
+build/message$(OBJ):		src/message$(C) framepac/message.h framepac/texttransforms.h framepac/utility.h
 build/mmapfile$(OBJ):		src/mmapfile$(C) framepac/mmapfile.h framepac/file.h
 build/nonobject$(OBJ):		src/nonobject$(C) framepac/nonobject.h
 build/number$(OBJ):		src/number$(C) framepac/bignum.h framepac/rational.h

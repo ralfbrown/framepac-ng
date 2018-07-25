@@ -54,8 +54,11 @@ class PrefixMatcher
 class ScopedCharPtr
    {
    public:
+      ScopedCharPtr(unsigned N) { m_string = new char[N] ; }
       ScopedCharPtr(char* s) { m_string = s ; }
       ~ScopedCharPtr() { delete[] m_string ; }
+
+      char* move() { char* s = m_string ; m_string = nullptr ; return s ; }
 
       const char* operator* () const { return m_string ; }
       operator char* () const { return m_string ; }

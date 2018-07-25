@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-24					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -88,8 +88,8 @@ ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit
 ConsoleProgressIndicator::~ConsoleProgressIndicator()
 {
    cout << endl ;
-   delete [] m_firstprefix ;
-   delete [] m_restprefix ;
+   delete[] m_firstprefix ;
+   delete[] m_restprefix ;
    return ;
 }
 

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-17					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -24,6 +24,7 @@
 #include <iostream>
 #include "framepac/message.h"
 #include "framepac/texttransforms.h"
+#include "framepac/utility.h"
 
 using namespace std ;
 
@@ -78,9 +79,8 @@ bool SystemMessage::setInstance(SystemMessage& inst)
 
 bool SystemMessage::modal(const char* fmt, va_list args)
 {
-   char* msg = vaprintf(fmt,args) ;
+   ScopedCharPtr msg { vaprintf(fmt,args) } ;
    instance().showModal(msg) ;
-   delete [] msg ;
    return true ;
 }
 
@@ -99,9 +99,8 @@ bool SystemMessage::modal(const char* fmt, ...)
 
 bool SystemMessage::confirmation(const char* fmt, va_list args)
 {
-   char* msg = vaprintf(fmt,args) ;
+   ScopedCharPtr msg { vaprintf(fmt,args) } ;
    instance().showConfirmation(msg) ;
-   delete [] msg ;
    return true ;
 }
 
@@ -120,9 +119,8 @@ bool SystemMessage::confirmation(const char* fmt, ...)
 
 bool SystemMessage::status(const char* fmt, va_list args)
 {
-   char* msg = vaprintf(fmt,args) ;
+   ScopedCharPtr msg { vaprintf(fmt,args) } ;
    instance().showMessage(msg) ;
-   delete [] msg ;
    return true ;
 }
 
@@ -141,9 +139,8 @@ bool SystemMessage::status(const char* fmt, ...)
 
 bool SystemMessage::warning(const char* fmt, va_list args)
 {
-   char* msg = vaprintf(fmt,args) ;
+   ScopedCharPtr msg { vaprintf(fmt,args) } ;
    instance().showWarning(msg) ;
-   delete [] msg ;
    return true ;
 }
 
@@ -162,9 +159,8 @@ bool SystemMessage::warning(const char* fmt, ...)
 
 bool SystemMessage::error(const char* fmt, va_list args)
 {
-   char* msg = vaprintf(fmt,args) ;
+   ScopedCharPtr msg { vaprintf(fmt,args) } ;
    instance().showError(msg) ;
-   delete [] msg ;
    return true ;
 }
 
@@ -183,9 +179,8 @@ bool SystemMessage::error(const char* fmt, ...)
 
 bool SystemMessage::fatal(const char* fmt, va_list args)
 {
-   char* msg = vaprintf(fmt,args) ;
+   ScopedCharPtr msg { vaprintf(fmt,args) } ;
    instance().showFatal(msg) ;
-   delete [] msg ;
    return true ;
 }
 
@@ -212,9 +207,8 @@ bool SystemMessage::nomemory(const char* msg)
 
 bool SystemMessage::prog_error(const char* fmt, va_list args)
 {
-   char* msg = vaprintf(fmt,args) ;
+   ScopedCharPtr msg { vaprintf(fmt,args) } ;
    instance().showFatal(msg) ;
-   delete [] msg ;
    return true ;
 }
 
@@ -233,9 +227,8 @@ bool SystemMessage::prog_error(const char* fmt, ...)
 
 bool SystemMessage::missed_case(const char* fmt, va_list args)
 {
-   char* msg = vaprintf(fmt,args) ;
+   ScopedCharPtr msg { vaprintf(fmt,args) } ;
    instance().showFatal(msg) ;
-   delete [] msg ;
    return true ;
 }
 

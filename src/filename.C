@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-27					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -70,11 +70,11 @@ FilePath::FilePath(const char *pathname)
 
 FilePath::~FilePath()
 {
-   delete [] m_directory ;
-   delete [] m_root ;
-   delete [] m_extension ;
-   delete [] m_path ;
-   delete [] m_basename ;
+   delete[] m_directory ;
+   delete[] m_root ;
+   delete[] m_extension ;
+   delete[] m_path ;
+   delete[] m_basename ;
    return ;
 }
 
@@ -89,9 +89,9 @@ bool FilePath::forceDirectory(const char *new_dir)
    char *dir = dup_string(new_dir) ;
    if (dir)
       {
-      delete [] m_directory ;
+      delete[] m_directory ;
       m_directory = dir ;
-      delete [] m_path ;
+      delete[] m_path ;
       m_path = nullptr ;
       return true ;
       }
@@ -118,11 +118,11 @@ bool FilePath::forceExtension(const char *new_ext)
    char *ext = dup_string(new_ext) ;
    if (ext)
       {
-      delete [] m_extension ;
+      delete[] m_extension ;
       m_extension = ext ;
-      delete [] m_basename ;
+      delete[] m_basename ;
       m_basename = nullptr ;
-      delete [] m_path ;
+      delete[] m_path ;
       m_path = nullptr ;
       return true ;
       }
@@ -140,7 +140,7 @@ bool FilePath::defaultExtension(const char* ext)
 
 const char *FilePath::generatePath() const
 {
-   delete [] m_path ;
+   delete[] m_path ;
    m_path = nullptr ; //FIXME   
    return m_path ;
 }
@@ -149,7 +149,7 @@ const char *FilePath::generatePath() const
 
 const char *FilePath::generateBasename() const
 {
-   delete [] m_basename ;
+   delete[] m_basename ;
    m_basename = nullptr ;
    size_t len_r = strlen(m_root) ;
    size_t len_e = strlen(m_extension) ;

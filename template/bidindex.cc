@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -250,7 +250,7 @@ template <class keyT, typename idxT>
 bool BidirIndex<keyT,idxT>::finalize()
 {
    m_max_index = m_next_index.load() ;
-   delete [] m_reverse_index ;
+   delete[] m_reverse_index ;
    m_reverse_index = new keyT[m_max_index] ;
    if (m_reverse_index)
       {

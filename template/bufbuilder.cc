@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -35,7 +35,7 @@ template <typename T, size_t minsize>
 BufferBuilder<T,minsize>::~BufferBuilder()
 {
    if (m_buffer != m_localbuf)
-      delete [] m_buffer ;
+      delete[] m_buffer ;
    m_currsize = 0 ;
    return ;
 }

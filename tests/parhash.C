@@ -1410,7 +1410,7 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
       for (size_t i = 0 ; i < 6 ; i++)
 	 {
 	 print_chain_lengths(out,i,chains[i],max_chain[i]) ;
-	 delete [] chains[i] ;
+	 delete[] chains[i] ;
 	 }
       lost_chains<HashT>(out,ht,chains[5],max_chain[5]) ;
       }
@@ -1421,7 +1421,7 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
       for (size_t i = 0 ; i < 2 ; i++)
 	 {
 	 print_neighborhoods(out,i,neighborhoods[i],max_neighbors[i]) ;
-	 delete [] neighborhoods[i] ;
+	 delete[] neighborhoods[i] ;
 	 }
       }
    return  ;

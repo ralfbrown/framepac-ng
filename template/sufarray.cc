@@ -120,7 +120,7 @@ void SuffixArray<IdT,IdxT>::induce(const I* ids, IdxT* SA, IdxT num_ids, IdT num
 	 ++buckets[bck] ;
 	 }
       }
-   delete [] buckets ;
+   delete[] buckets ;
    // induce on bucket ends (SAs in original paper)
    for (IdxT i = num_ids ; i > 0 ; --i)
       {
@@ -134,7 +134,7 @@ void SuffixArray<IdT,IdxT>::induce(const I* ids, IdxT* SA, IdxT num_ids, IdT num
 	 SA[--bucket_ends[bck]] = j ;
 	 }
       }
-   delete [] bucket_ends ;
+   delete[] bucket_ends ;
    return ;
 }
 
@@ -193,7 +193,7 @@ bool SuffixArray<IdT,IdxT>::Create(const I* ids, IdxT* index, IdxT num_ids, IdT 
 	 }
       prev_type = curr_type ;
       }
-   delete [] bucket_ends ;
+   delete[] bucket_ends ;
    induce(ids, index, num_ids, num_types, buckets, *ls_types) ;
    // compact all of the sorted substrings into the start of 'suffix_index'
    IdxT subsize { 0 } ;
@@ -314,7 +314,7 @@ bool SuffixArray<IdT,IdxT>::Create(const I* ids, IdxT* index, IdxT num_ids, IdT 
       IdT bck = convertEOL(ids[j],num_types) ;
       index[--bucket_ends[bck]] = j ;
       }
-   delete [] bucket_ends ;
+   delete[] bucket_ends ;
    induce(ids, index, num_ids, num_types, buckets, *ls_types) ;
    ls_types->free() ;
    return true ;

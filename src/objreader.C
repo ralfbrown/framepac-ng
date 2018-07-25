@@ -347,10 +347,8 @@ reader, CharGetter& getter)
 static Object* readstr(const ObjectReader *reader, CharGetter& getter)
 {
    size_t len ;
-   char *buf { reader->read_delimited_string(getter,'\\',len) };
-   Object *obj { String::create(buf,len) };
-   delete [] buf ;
-   return obj ;
+   ScopedCharPtr buf { reader->read_delimited_string(getter,'\\',len) };
+   return String::create(buf,len) ;
 }
 
 //----------------------------------------------------------------------------

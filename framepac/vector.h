@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -81,7 +81,7 @@ class Vector : public Object
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       Vector(size_t capacity = 0) ;
       Vector(const Vector&) ;
-      ~Vector() { delete [] m_values ; m_size = 0 ; }
+      ~Vector() { delete[] m_values ; m_size = 0 ; }
       Vector& operator= (const Vector&) ;
 
       size_t size() const { return m_size ; }
@@ -292,7 +292,7 @@ class SparseVector : public Vector<ValT>
       SparseVector(size_t capacity = 0) ;
       SparseVector(const char* rep) ;
       SparseVector(const SparseVector&) ;
-      ~SparseVector() { delete [] m_indices ; }
+      ~SparseVector() { delete[] m_indices ; }
       SparseVector& operator= (const SparseVector&) ;
 
    protected: // implementation functions for virtual methods

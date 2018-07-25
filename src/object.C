@@ -91,14 +91,11 @@ ostream& Object::print(ostream& out) const
 char* Object::cString(size_t wrap_at, size_t indent, size_t wrapped_indent) const
 {
    size_t buflen { cStringLength(wrap_at,indent,wrapped_indent) };
-   char* buffer { new char[buflen+1] };
+   ScopedCharPtr buffer(buflen+1) ;
    if (toCstring(buffer,buflen+1,wrap_at,indent,wrapped_indent))
-      return buffer ;
+      return buffer.move() ;
    else
-      {
-      delete [] buffer ;
       return nullptr ;
-      }
 }
 
 //----------------------------------------------------------------------------
@@ -126,14 +123,8 @@ char* Object::toCstring_(const Object *obj, char *buffer, size_t buflen, size_t 
 char *Object::jsonString(bool wrap, size_t indent) const
 {
    size_t buflen { jsonStringLength(wrap,indent) };
-   char *buffer { new char[buflen+1] };
-   if (toJSONString(buffer,buflen+1,wrap,indent))
-      return buffer ;
-   else
-      {
-      delete [] buffer ;
-      return nullptr ;
-      }
+   ScopedCharPtr buffer(buflen+1) ;
+   return toJSONString(buffer,buflen+1,wrap,indent) ? buffer.move() : nullptr ;
 }
 
 //----------------------------------------------------------------------------
@@ -199,9 +190,8 @@ int Object::lessThan_(const Object *obj1, const Object *obj2)
 
 void Object::_() const
 {
-   char *printed { cString() };
-   cerr << printed << endl ;
-   delete [] printed ;
+   ScopedCharPtr printed { cString() };
+   cerr << *printed << endl ;
    return ;
 }
 
