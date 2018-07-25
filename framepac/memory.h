@@ -414,6 +414,7 @@ class LocalAlloc
 	 if (m_buffer != m_localbuffer) delete[] m_buffer ;
 	 }
 
+      T* operator& () const { return m_buffer ; }
       T* base() const { return m_buffer ; }
       T& operator [] (size_t idx) { return m_buffer[idx] ; }
       const T& operator [] (size_t idx) const { return m_buffer[idx] ; }

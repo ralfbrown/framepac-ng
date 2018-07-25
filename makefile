@@ -588,7 +588,7 @@ build/symboltable$(OBJ):	src/symboltable$(C) framepac/symboltable.h framepac/fas
 build/synchevent$(OBJ):		src/synchevent$(C) framepac/synchevent.h
 build/termvector$(OBJ):		src/termvector$(C) template/termvector.cc
 build/texttransforms$(OBJ):	src/texttransforms$(C) framepac/texttransforms.h
-build/threadpool$(OBJ):		src/threadpool$(C) framepac/threadpool.h framepac/thread.h
+build/threadpool$(OBJ):		src/threadpool$(C) framepac/threadpool.h framepac/memory.h framepac/thread.h
 build/threshold$(OBJ):		src/threshold$(C) framepac/threshold.h
 build/timer$(OBJ):		src/timer$(C) framepac/timer.h
 build/trie$(OBJ):		src/trie$(C) framepac/trie.h
@@ -603,16 +603,17 @@ build/vecsim_u32_u32$(OBJ):	src/vecsim_u32_u32$(C) template/vecsim_factory.cc
 build/vector_obj_dbl$(OBJ):	src/vector_obj_dbl$(C) template/sparsevector.cc
 build/vector_obj_flt$(OBJ):	src/vector_obj_flt$(C) template/sparsevector.cc
 build/vector_u32_dbl$(OBJ):	src/vector_u32_dbl$(C) template/vector.cc template/densevector.cc \
-			template/sparsevector.cc
+				template/sparsevector.cc
 build/vector_u32_flt$(OBJ):	src/vector_u32_flt$(C) template/vector.cc template/densevector.cc \
-			template/sparsevector.cc
+				template/sparsevector.cc
 build/vector_u32_u32$(OBJ):	src/vector_u32_u32$(C) template/vector.cc template/densevector.cc \
-			template/sparsevector.cc
+				template/sparsevector.cc
 build/wordcorpus_u24u32$(OBJ): 	src/wordcorpus_u32u40$(C) template/wordcorpus.cc template/concbuilder.cc
 build/wordcorpus_u32u32$(OBJ): 	src/wordcorpus_u32u32$(C) template/wordcorpus.cc template/hashtable.cc \
-			template/concbuilder.cc
+				template/concbuilder.cc
 build/wordcorpus_u32u40$(OBJ): 	src/wordcorpus_u32u40$(C) template/wordcorpus.cc
-build/wordsplit$(OBJ):		src/wordsplit$(C) framepac/charget.h framepac/stringbuilder.h framepac/words.h
+build/wordsplit$(OBJ):		src/wordsplit$(C) framepac/charget.h framepac/list.h framepac/stringbuilder.h \
+				framepac/words.h
 build/wordsplit_eng$(OBJ):	src/wordsplit_eng$(C) framepac/words.h
 
 globaldata$(C):

@@ -941,7 +941,7 @@ static void hash_test(ThreadPool* user_pool, ostream& out, const char* heading, 
 	 if (maxsize > 2000000 * slices && slices < 512) slices *= 2 ;
 	 }
       }
-   HashRequestOrder* hashorders = new HashRequestOrder[slices] ;
+   LocalAlloc<HashRequestOrder> hashorders(slices) ;
    size_t slice_size = (maxsize + slices/2) / slices ;
    if (ht)
       {
@@ -1049,7 +1049,6 @@ static void hash_test(ThreadPool* user_pool, ostream& out, const char* heading, 
       }
    if (op == Op_NONE)
       {
-      delete[] hashorders ;
       if (!user_pool)
 	 delete tpool ;
       return ;
@@ -1123,7 +1122,6 @@ static void hash_test(ThreadPool* user_pool, ostream& out, const char* heading, 
       }
    if (!user_pool)
       delete tpool ;
-   delete[] hashorders ;
    if (!ht)
       return ;
 #ifdef FrHASHTABLE_STATS
@@ -1434,18 +1432,17 @@ void hash_command(ostream &out, int threads, bool terse, uint32_t* randnums,
 {
    if (!terse)
       out << "Parallel (threaded) Object Hash Table operations\n" << endl ;
-   Symbol** keys = new Symbol*[2*maxsize] ;
+   LocalAlloc<Symbol*> keys(2*maxsize) ;
    // speed up symbol creation and avoid memory fragmentation by
    //  expanding the symbol table to hold all the symbols we will
    //  create
    size_t needed = (size_t)(2.5*maxsize) ;
    SymbolTable* symtab = SymbolTable::create(needed) ;
    symtab->select() ;
-   hash_test(nullptr,out,"Preparing symbols",threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_GENSYM,terse) ;
-   hash_test(nullptr,out,"Checking symbols",threads,1,(ObjHashTable*)nullptr,2*maxsize,keys,Op_CHECKSYMS,terse) ;
-   run_tests<ObjHashTable>(threads,threads,startsize,maxsize,cycles,keys,randnums,out,terse,throughput,time_limit) ;
+   hash_test(nullptr,out,"Preparing symbols",threads,1,(ObjHashTable*)nullptr,2*maxsize,&keys,Op_GENSYM,terse) ;
+   hash_test(nullptr,out,"Checking symbols",threads,1,(ObjHashTable*)nullptr,2*maxsize,&keys,Op_CHECKSYMS,terse) ;
+   run_tests<ObjHashTable>(threads,threads,startsize,maxsize,cycles,&keys,randnums,out,terse,throughput,time_limit) ;
    symtab->free() ;
-   delete[] keys ;
    return ;
 }
 
@@ -1625,7 +1622,7 @@ int main(int argc, char** argv)
       {
       if (!terse)
 	 cout << "Generating random numbers for randomized tests" << endl ;
-      uint32_t* randnums = new uint32_t[2*grow_size] ;
+      LocalAlloc<uint32_t> randnums(2*grow_size) ;
       RandomInteger rand(grow_size) ;
       for (size_t i = 0 ; i < 2*grow_size ; i++)
 	 {
@@ -1633,19 +1630,18 @@ int main(int argc, char** argv)
 	 }
       if (use_STL_unorderedset)
 	 {
-	 stlset_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride,throughput) ;
+	 stlset_command(cout,threads,terse,&randnums,start_size,grow_size,repetitions,key_order,stride,throughput) ;
 	 }
       else if (use_hopscotch)
 	 {
 #ifdef TEST_HOPSCOTCH
-	 hopscotch_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride,throughput) ;
+	 hopscotch_command(cout,threads,terse,&randnums,start_size,grow_size,repetitions,key_order,stride,throughput) ;
 #endif /* TEST_HOPSCOTCH */
 	 }
       else if (use_int_hashtable)
-	 ihash_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,key_order,stride,throughput) ;
+	 ihash_command(cout,threads,terse,&randnums,start_size,grow_size,repetitions,key_order,stride,throughput) ;
       else
-	 hash_command(cout,threads,terse,randnums,start_size,grow_size,repetitions,throughput) ;
-      delete[] randnums ;
+	 hash_command(cout,threads,terse,&randnums,start_size,grow_size,repetitions,throughput) ;
       }
    return 0 ;
 }

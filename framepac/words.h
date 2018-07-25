@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -37,6 +37,9 @@ typedef uint32_t WordID ;
 typedef BidirIndex<Symbol,WordID> BidirWordIndex ;
 extern template class BidirIndex<Symbol,WordID> ;
 
+// forward declaration, full definition only needed in wordsplit.C
+class List ;
+
 /************************************************************************/
 /************************************************************************/
 
@@ -50,6 +53,8 @@ class WordSplitter
 
       // return the next word in the stream of characters provided by the CharGetter
       StringPtr nextWord() ;
+      // return a list of all the words in the stream of characters
+      List* allWords() ;
       // return a single string containing all of the words, separated by the given character
       StringPtr delimitedWords(char delim = ' ') ;
 

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-11					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2018 Carnegie Mellon University			*/
@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include "framepac/charget.h"
+#include "framepac/list.h"
 #include "framepac/stringbuilder.h"
 #include "framepac/words.h"
 
@@ -76,6 +77,18 @@ StringPtr WordSplitter::nextWord()
    StringBuilder sb ;
    //TODO
    return postprocess(sb.string()) ;
+}
+
+//----------------------------------------------------------------------------
+
+List* WordSplitter::allWords()
+{
+   ListBuilder lb ;
+   while (!eof())
+      {
+      lb += nextWord() ;
+      }
+   return lb.move() ;
 }
 
 //----------------------------------------------------------------------------

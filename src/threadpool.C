@@ -25,6 +25,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
+#include "framepac/memory.h"
 #include "framepac/thread.h"
 #include "framepac/threadpool.h"
 using namespace std ;
@@ -605,7 +606,7 @@ bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, va_list ar
       return success ;
       }
    // dispatch a job request for each item in the input
-   ParallelJob* jobs = new ParallelJob[num_items] ;
+   LocalAlloc<ParallelJob> jobs(num_items) ;
    for (size_t i = 0 ; i < num_items ; ++i)
       {
       jobs[i].id = i ;
@@ -614,7 +615,6 @@ bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, va_list ar
       this->dispatch(parallelize_worker,nullptr,&jobs[i]) ;
       }
    this->waitUntilIdle() ;
-   delete[] jobs ;
    return false ;
 }
 

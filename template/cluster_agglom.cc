@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-23					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -202,8 +202,8 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
    //   merge the two most similar clusters
    auto prog = this->makeProgressIndicator(num_vectors - this->desiredClusters()) ;
    auto tp = ThreadPool::defaultPool() ;
-   double* similarities = new double[num_vectors] ;
-   size_t* neighbors = new size_t[num_vectors] ;
+   LocalAlloc<double> similarities(num_vectors) ;
+   LocalAlloc<size_t> neighbors(num_vectors) ;
    this->log(0,"Computed nearest neighbor for each vector") ;
    tp->parallelize(agglom_clustering_best_similarity<IdxT,ValT>,num_vectors,clusters->subclusters(),
       similarities,neighbors,this->m_measure,prog) ;
@@ -241,8 +241,6 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
 	 neighbors,this->m_measure,best_clus,best_neighbor) ;
       prog->incr() ;
       }
-   delete[] neighbors ;
-   delete[] similarities ;
    delete prog ;
    if (this->m_flatten && clusters->numSubclusters() > 1)
       {

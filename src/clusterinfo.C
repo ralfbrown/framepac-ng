@@ -387,25 +387,21 @@ ObjectPtr ClusterInfo::subseq_int(const Object* obj,size_t start, size_t stop)
    auto clus = static_cast<const ClusterInfo*>(obj) ;
    if (clus->m_members && !clus->m_subclusters)
       {
-      Object** vectors = new Object*[stop-start] ;
+      LocalAlloc<Object*> vectors(stop-start) ;
       for (size_t i = start ; i < stop ; ++i)
 	 {
 	 vectors[i-start] = clus->m_members->getNth(i) ;
 	 }
-      auto copy = ClusterInfo::create(vectors,stop-start) ;
-      delete[] vectors ;
-      return copy ;
+      return ClusterInfo::create(vectors,stop-start) ;
       }
    else if (clus->m_subclusters && !clus->m_members)
       {
-      ClusterInfo** orig = new ClusterInfo*[stop-start] ;
+      LocalAlloc<ClusterInfo*> orig(stop-start) ;
       for (size_t i = start ; i < stop ; ++i)
 	 {
 	 orig[i-start] = static_cast<ClusterInfo*>(clus->m_subclusters->getNth(i)) ;
 	 }
-      auto copy = ClusterInfo::create(orig,stop-start) ;
-      delete[] orig ;
-      return copy ;
+      return ClusterInfo::create(orig,stop-start) ;
       }
    else
       {
