@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-13					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -22,6 +22,7 @@
 #include "framepac/file.h"
 #include "framepac/spelling.h"
 #include "framepac/stringbuilder.h"
+#include "framepac/utility.h"
 
 namespace Fr
 {
@@ -149,9 +150,8 @@ CognateData* CognateData::load(const char* filename, size_t fuzzy_match_score)
 	 StringBuilder sb ;
 	 while (!f.eof())
 	    {
-	    char* line = f.getCLine() ;
-	    sb.append(line) ;
-	    delete[] line ;
+	    ScopedCharPtr line { f.getCLine() } ;
+	    sb.append(*line) ;
 	    }
 	 const char* cogstring = sb.c_str() ;
 	 cognates = List::create(cogstring) ;
@@ -162,9 +162,8 @@ CognateData* CognateData::load(const char* filename, size_t fuzzy_match_score)
 	 //   "src" "trg" score
 	 while (!f.eof())
 	    {
-	    char* line = f.getCLine() ;
+	    ScopedCharPtr line { f.getCLine() } ;
 	    //TODO
-	    delete[] line ;
 	    }
 	 }
       else

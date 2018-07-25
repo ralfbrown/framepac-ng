@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-04-30					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -24,6 +24,7 @@
 #include "framepac/message.h"
 #include "framepac/progress.h"
 #include "framepac/texttransforms.h"
+#include "framepac/utility.h"
 
 namespace Fr
 {
@@ -43,7 +44,7 @@ bool ClusteringAlgoBase::parseOptions(const char* opt)
       size_t len = 0 ;
       while (opt[len] && opt[len] != '=' && opt[len] != ':')
 	 len++ ;
-      char* optname = dup_string_n(opt,len) ;
+      ScopedCharPtr optname { dup_string_n(opt,len) } ;
       lowercase_string(optname) ;
       opt += len ;
       char* optvalue_orig ;
@@ -95,7 +96,6 @@ bool ClusteringAlgoBase::parseOptions(const char* opt)
       // pass the option name and value down to the actual clustering algorithm to be used as it sees fit
       if (!applyOption(optname,optvalue))
 	 all_parsed = false ;
-      delete[] optname ;
       delete[] optvalue_orig ;
       if (*opt == ':')
 	 opt++ ;

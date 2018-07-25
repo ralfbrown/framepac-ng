@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-24					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -25,6 +25,7 @@
 #include "framepac/message.h"
 #include "framepac/threadpool.h"
 #include "framepac/timer.h"
+#include "framepac/utility.h"
 
 using namespace Fr ;
 
@@ -60,9 +61,8 @@ static void show_clusters(const ClusterInfo* clusters, size_t level)
       for (auto v : *clusters->members())
 	 {
 	 auto vector = static_cast<Vector<float>*>(v) ;
-	 char* printed = vector->cString(0,indent,indent+1) ;
-	 cout << printed << endl ;
-	 delete[] printed ;
+	 ScopedCharPtr printed { vector->cString(0,indent,indent+1) } ;
+	 cout << *printed << endl ;
 	 }
       }
    if (clusters->subclusters())
@@ -168,9 +168,8 @@ int main(int argc, char** argv)
       }
    if (dump_vectors)
       {
-      char* printed = clusters->cString() ;
-      cout << "Resulting ClusterInfo structure: " << endl << printed << endl << endl ;
-      delete[] printed ;
+      ScopedCharPtr printed { clusters->cString() } ;
+      cout << "Resulting ClusterInfo structure: " << endl << *printed << endl << endl ;
       RefArray* members = clusters->allMembers() ;
       if (members)
 	 {

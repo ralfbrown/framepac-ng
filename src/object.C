@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -22,6 +22,7 @@
 #include <iostream>
 #include "framepac/object.h"
 #include "framepac/objreader.h"
+#include "framepac/utility.h"
 
 using namespace FramepaC ;
 using namespace Fr ;
@@ -69,15 +70,14 @@ ObjectPtr Object::subseq_iter(const Object *, ObjectIter /*start*/, ObjectIter /
 
 ostream& Object::print(ostream& out) const
 {
-   const Object* o = this ;
+   const Object* o = this ;	// work around "this is never null" compiler warning
    if (o)
       {
       // TODO: make a virtual function that dispatches to the proper
       //   type so that we don't need to go via a string conversion
       //   first
-      char* printed { cString() } ;
-      out << printed << flush ;
-      delete[] printed ;
+      ScopedCharPtr printed { cString() } ;
+      out << *printed << flush ;
       }
    else
       {

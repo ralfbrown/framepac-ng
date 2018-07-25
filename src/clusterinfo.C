@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-20					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -22,6 +22,7 @@
 #include "framepac/atomic.h"
 #include "framepac/cluster.h"
 #include "framepac/texttransforms.h"
+#include "framepac/utility.h"
 
 using namespace Fr ;
 
@@ -305,10 +306,9 @@ bool ClusterInfo::labelSubclusterPaths(bool (*fn)(Object*, const char* label), c
       {
       for (auto sub : *subclusters())
 	 {
-	 char* new_prefix = aprintf("%s%s%d%c",prefix,*prefix?sep:"",count++,'\0') ;
+	 ScopedCharPtr new_prefix { aprintf("%s%s%d%c",prefix,*prefix?sep:"",count++,'\0') } ;
 	 auto subcluster = static_cast<ClusterInfo*>(sub) ;
 	 success = subcluster->labelSubclusterPaths(fn,new_prefix,sep) ;
-	 delete[] new_prefix ;
 	 if (!success)
 	    break ;
 	 }
@@ -321,10 +321,8 @@ bool ClusterInfo::labelSubclusterPaths(bool (*fn)(Object*, const char* label), c
 Symbol* ClusterInfo::genLabel()
 {
    size_t id = ++next_cluster_ID ;
-   char* symname = Fr::aprintf("<CL_%lu>",id) ;
-   Symbol *sym = Symbol::create(symname) ;
-   delete[] symname ;
-   return sym ;
+   ScopedCharPtr symname { Fr::aprintf("<CL_%lu>",id) } ;
+   return Symbol::create(symname) ;
 }
 
 //----------------------------------------------------------------------------

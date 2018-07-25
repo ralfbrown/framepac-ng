@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-23					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -34,6 +34,7 @@
 #include "framepac/symboltable.h"
 #include "framepac/termvector.h"
 #include "framepac/texttransforms.h"
+#include "framepac/utility.h"
 
 namespace Fr {
 
@@ -308,10 +309,8 @@ char* ObjectReader::read_delimited_string(CharGetter &getter, char quotechar, si
 static Object* readqsym(const ObjectReader *reader, CharGetter &getter)
 {
    size_t len ;
-   char* buf { reader->read_delimited_string(getter,'|',len) };
-   Object* obj { SymbolTable::current()->add(buf) };
-   delete[] buf ;
-   return obj ;
+   ScopedCharPtr buf { reader->read_delimited_string(getter,'|',len) };
+   return SymbolTable::current()->add(buf) ;
 }
 
 //----------------------------------------------------------------------------
@@ -319,14 +318,11 @@ static Object* readqsym(const ObjectReader *reader, CharGetter &getter)
 static Object* read_uninterned_symbol(const ObjectReader* 
 reader, CharGetter& getter)
 {
-   char* buf ;
    if (getter.peek() == '|')
       {
       size_t len ;
-      buf = reader->read_delimited_string(getter,'|',len) ;
-      Object* obj { Symbol::create(buf) } ;
-      delete[] buf ;
-      return obj ;
+      ScopedCharPtr buf { reader->read_delimited_string(getter,'|',len) } ;
+      return Symbol::create(buf) ;
       }
    else
       {

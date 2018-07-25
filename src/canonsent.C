@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-08					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -21,6 +21,7 @@
 
 #include "framepac/stringbuilder.h"
 #include "framepac/texttransforms.h"
+#include "framepac/utility.h"
 
 namespace Fr
 {
@@ -40,8 +41,8 @@ char* canonicalize_sentence(const char* orig_sent, std::locale& locale, bool for
 
    if (!orig_sent)
       return nullptr ;
-   char* sent = dup_string(orig_sent) ;
-   char* sent_copy = sent ;
+   ScopedCharPtr sent_copy { dup_string(orig_sent) } ;
+   char* sent = sent_copy ;
    StringBuilder sb ;
    // strip leading and trailing whitespace
    sent = trim_whitespace(sent,locale) ;
@@ -56,7 +57,6 @@ char* canonicalize_sentence(const char* orig_sent, std::locale& locale, bool for
 
       ++sent ;
       }
-   delete[] sent_copy ;
    return sb.c_str() ;
 }
 

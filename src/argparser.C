@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-03					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -22,6 +22,7 @@
 #include <cstring>
 #include <sstream>
 #include "framepac/argparser.h"
+#include "framepac/utility.h"
 
 namespace Fr
 {
@@ -168,11 +169,10 @@ void ArgOptBase::invalidValue(const char* opt) const
    else
       cerr << "--" << fullName() ;
    cerr << endl ;
-   char* range = describeRange() ;
+   ScopedCharPtr range { describeRange() } ;
    if (range)
       {
-      cerr << "valid range is " << range << endl ;
-      delete[] range ;
+      cerr << "valid range is " << *range << endl ;
       }
    return ;
 }

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-13					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -27,6 +27,7 @@
 #include "framepac/string.h"
 #include "framepac/symbol.h"
 #include "framepac/texttransforms.h"
+#include "framepac/utility.h"
 
 namespace Fr
 {
@@ -507,10 +508,9 @@ void Configuration::warn(const char* msg) const
 template <typename T>
 void Configuration::warn(const char* msg, const char* where, T value) const
 {
-   char* strvalue = as_string(value) ;
+   ScopedCharPtr strvalue { as_string(value) } ;
    SM::warning("Configuration error (%s line %d, %s): %s %s",
       m_infile_name?m_infile_name:"",m_currline,where,msg,strvalue) ;
-   delete[] strvalue ;
    return ;
 }
 

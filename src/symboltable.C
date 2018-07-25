@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-12					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -23,6 +23,7 @@
 #include "framepac/symboltable.h"
 #include "framepac/fasthash64.h"
 #include "framepac/texttransforms.h"
+#include "framepac/utility.h"
 
 using namespace FramepaC ;
 
@@ -139,9 +140,8 @@ Symbol* SymbolTable::gensym(const char* basename, const char* suffix)
       // get a unique count
       size_t count = gensym_count++ ;
       // generate the symbol's name
-      char* name = aprintf("%s%ld%s",basename,count,suffix) ;
+      ScopedCharPtr name { aprintf("%s%ld%s",basename,count,suffix) } ;
       sym = m_symbols.addKey(name,&existed) ;
-      delete[] name ;
       } while (!sym || existed) ; // loop until the generated name was not already a symbol in the table
    return const_cast<Symbol*>(sym) ;
 }

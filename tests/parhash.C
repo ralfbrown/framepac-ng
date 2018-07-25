@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-24					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2015,2017,2018 Carnegie Mellon University		*/
@@ -34,6 +34,7 @@
 #include "framepac/texttransforms.h"
 #include "framepac/threadpool.h"
 #include "framepac/timer.h"
+#include "framepac/utility.h"
 
 using namespace Fr ;
 
@@ -506,11 +507,10 @@ static void print_msg(ostream& out, const char* fmt, ...)
 {
    va_list args ;
    va_start(args,fmt) ;
-   char* msg = Fr::vaprintf(fmt,args) ;
+   ScopedCharPtr msg { Fr::vaprintf(fmt,args) } ;
    if (msg)
       {
-      out << msg << flush  ;
-      delete[] msg ;
+      out << *msg << flush  ;
       }
    return  ;
 }
@@ -617,9 +617,8 @@ static void hash_check(HashRequestOrder* order)
       }
    if (order->m_verbose)
       {
-      char* msg = aprintf(";  Job %lu cycle %lu complete.\n",order->id,order->current_cycle) ;
-      cout << msg << flush ;
-      delete[] msg ;
+      ScopedCharPtr msg { aprintf(";  Job %lu cycle %lu complete.\n",order->id,order->current_cycle) } ;
+      cout << *msg << flush ;
       }
    return ;
 }
@@ -901,9 +900,8 @@ void announce(ostream& out, bool terse, const char *msg, size_t threads, STLset*
 #ifdef TEST_HOPSCOTCH
 void announce(ostream& out, bool terse, const char *msg, size_t threads, HopscotchMap*)
 {
-   char* type = Fr::aprintf("Hopsc%03d",g_Hopscotch_Concurrency) ;
-   announce(out,terse,msg,type,threads) ;
-   delete[] type ;
+   ScopedCharPtr type { Fr::aprintf("Hopsc%03d",g_Hopscotch_Concurrency) } ;
+   announce(out,terse,msg,*type,threads) ;
    return ;
 }
 #endif /* TEST_HOPSCOTCH */
@@ -1361,9 +1359,8 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
       hash_test(&tpool,out,"Timed throughput test (90%)",threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,90,false,randnums) ;
       if (throughput != 10 && throughput != 30 && throughput != 50 && throughput != 70 && throughput != 90)
 	 {
-	 char *heading = Fr::aprintf("Timed throughput test (%d%%)",throughput) ;
-	 hash_test(&tpool,out,heading,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,throughput,false,randnums) ;
-	 delete[] heading ;
+	 ScopedCharPtr heading { Fr::aprintf("Timed throughput test (%d%%)",throughput) } ;
+	 hash_test(&tpool,out,*heading,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,throughput,false,randnums) ;
 	 }
       for (size_t i = 0 ; i < maxsize ; i++)
 	 {
