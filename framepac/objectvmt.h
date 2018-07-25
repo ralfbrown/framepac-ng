@@ -117,6 +117,12 @@ class Ptr
 	 acquire(o) ;
 	 return *this ;
 	 }
+      Ptr& operator= (T* o)
+	 {
+	 this->free() ;
+	 m_object = o ;
+	 return *this ;
+	 }
       operator T* () const { return m_object ; }
       operator bool () const { return m_object != nullptr ; }
 

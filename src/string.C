@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.07, last edit 2018-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -109,9 +109,12 @@ String::~String()
       Allocator::free(m_buffer.pointer()) ;
    else
       {
+      // get the base pointer to the allocated string
       char* buf = m_buffer.pointer() ;
+      // adjust for length field, if present
       if (buf && m_buffer.extra() == 0xFFFF)
 	 buf -= sizeof(size_t) ;
+      // release the allocation
       delete buf ;
       }
    return ;

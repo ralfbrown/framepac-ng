@@ -380,7 +380,7 @@ ThreadPool::~ThreadPool()
 //FIXME: can we use wait() instead of sleeping?
 	 }
       }
-   // join all the worker threads and then delete them
+   // join all the worker threads and then free them
    for (unsigned i = 0 ; i < numThreads() ; i++)
       {
       m_pool[i]->join() ;

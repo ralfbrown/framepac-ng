@@ -266,6 +266,7 @@ class STLset : public unordered_set<INTEGER_TYPE>
 	 {
 	 }
       ~STLset() = default ;
+      void free() { delete this ; }
 
       bool add(INTEGER_TYPE key)
 	 {
@@ -400,6 +401,7 @@ class HopscotchMap
 	 {
 	 }
       ~HopscotchMap() = default ;
+      void free() { delete this ; }
 
       bool add(INTEGER_TYPE key) { (void)ht.putIfAbsent(key,0) ; return false; }
       bool contains(INTEGER_TYPE key) { return ht.containsKey(key) ; }
@@ -1329,77 +1331,73 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
    size_t* neighborhoods[5] ;
    size_t max_neighbors[5] ;
 
-   HashT* ht = new HashT(startsize) ;
+   Ptr<HashT> ht { new HashT(startsize) } ;
    ThreadPool tpool(threads) ;
    if (!terse)
       out << "Checking overhead (NOP) " << endl ;
    Timer timer  ;
-   hash_test(&tpool,out,"",threads,1,ht,maxsize,keys,Op_NONE,true) ;
+   hash_test(&tpool,out,"",threads,1,&ht,maxsize,keys,Op_NONE,true) ;
    double overhead = timer.elapsedSeconds() ;
    if (!terse)
       out << "   overhead = " << 1000.0*overhead << "ms" << endl ;
-   hash_test(&tpool,out,"Filling hash table",writethreads,1,ht,maxsize,keys,Op_ADD,terse,overhead) ;
+   hash_test(&tpool,out,"Filling hash table",writethreads,1,&ht,maxsize,keys,Op_ADD,terse,overhead) ;
    if_SHOW_CHAINS(chains[0] = ht->chainLengths(max_chain[0]));
    if (show_neighbors)
       neighborhoods[0] = ht->neighborhoodDensities(max_neighbors[0]) ;
-   hash_test(&tpool,out,"Lookups (100% present)",threads,cycles,ht,maxsize,keys,Op_CHECK,terse,overhead) ;
+   hash_test(&tpool,out,"Lookups (100% present)",threads,cycles,&ht,maxsize,keys,Op_CHECK,terse,overhead) ;
    size_t half_cycles = (cycles + 1) / 2 ;
    swap_segments(keys,2*maxsize,threads) ;
-   hash_test(&tpool,out,"Lookups (50% present)",threads,half_cycles,ht,2*maxsize,keys,Op_CHECK,terse,overhead,false) ;
+   hash_test(&tpool,out,"Lookups (50% present)",threads,half_cycles,&ht,2*maxsize,keys,Op_CHECK,terse,overhead,false) ;
    swap_segments(keys,2*maxsize,threads) ;
-   hash_test(&tpool,out,"Lookups (0% present)",threads,cycles,ht,maxsize,keys+maxsize,Op_CHECKMISS,terse,overhead) ;
+   hash_test(&tpool,out,"Lookups (0% present)",threads,cycles,&ht,maxsize,keys+maxsize,Op_CHECKMISS,terse,overhead) ;
    if (throughput >= 0)
       {
-      hash_test(&tpool,out,"Timed throughput test (10%)",threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,10,false,randnums) ;
-      hash_test(&tpool,out,"Timed throughput test (30%)",threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,30,false,randnums) ;
-      hash_test(&tpool,out,"Timed throughput test (50%)",threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,50,false,randnums) ;
-      hash_test(&tpool,out,"Timed throughput test (70%)",threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,70,false,randnums) ;
-      hash_test(&tpool,out,"Timed throughput test (90%)",threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,90,false,randnums) ;
+      hash_test(&tpool,out,"Timed throughput test (10%)",threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,10,false,randnums) ;
+      hash_test(&tpool,out,"Timed throughput test (30%)",threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,30,false,randnums) ;
+      hash_test(&tpool,out,"Timed throughput test (50%)",threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,50,false,randnums) ;
+      hash_test(&tpool,out,"Timed throughput test (70%)",threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,70,false,randnums) ;
+      hash_test(&tpool,out,"Timed throughput test (90%)",threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,90,false,randnums) ;
       if (throughput != 10 && throughput != 30 && throughput != 50 && throughput != 70 && throughput != 90)
 	 {
 	 ScopedCharPtr heading { Fr::aprintf("Timed throughput test (%d%%)",throughput) } ;
-	 hash_test(&tpool,out,*heading,threads,timelimit,ht,maxsize,keys,Op_THROUGHPUT,terse,throughput,false,randnums) ;
+	 hash_test(&tpool,out,*heading,threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,throughput,false,randnums) ;
 	 }
       for (size_t i = 0 ; i < maxsize ; i++)
 	 {
 	 (void)ht->remove(keys[maxsize+i]) ;
 	 }
       }
-   hash_test(&tpool,out,"Emptying hash table",writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,throughput < 0) ;
+   hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,throughput < 0) ;
    if (throughput < 0)
       {
-      hash_test(&tpool,out,"Lookups in empty table",threads,cycles,ht,maxsize,keys,Op_CHECKMISS,terse,overhead) ;
-      delete ht ;
+      hash_test(&tpool,out,"Lookups in empty table",threads,cycles,&ht,maxsize,keys,Op_CHECKMISS,terse,overhead) ;
       ht = new HashT(startsize) ;
-      hash_test(&tpool,out,"Random additions",writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_ADDONLY,terse,overhead,true,
+      hash_test(&tpool,out,"Random additions",writethreads,half_cycles,&ht,maxsize,keys,Op_RANDOM_ADDONLY,terse,overhead,true,
 	 randnums) ;
       if_SHOW_CHAINS(chains[1] = ht->chainLengths(max_chain[1])) ;
-      hash_test(&tpool,out,"Emptying hash table",writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
-      delete ht ;
+      hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
       ht = new HashT(startsize) ;
-      hash_test(&tpool,out,"Random ops (del=1)",writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
+      hash_test(&tpool,out,"Random ops (del=1)",writethreads,half_cycles,&ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
 	 randnums + maxsize/2 - 1) ;
       if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
-      hash_test(&tpool,out,"Random ops (del=1,full)",writethreads,half_cycles,ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
+      hash_test(&tpool,out,"Random ops (del=1,full)",writethreads,half_cycles,&ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
 	 	randnums + maxsize/2 - 1) ;
       if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
-      hash_test(&tpool,out,"Emptying hash table",writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
-      delete ht ;
+      hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
       ht = new HashT(startsize) ;
-      hash_test(&tpool,out,"Random ops (del=3)",writethreads,cycles,ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
+      hash_test(&tpool,out,"Random ops (del=3)",writethreads,cycles,&ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
 	 randnums + maxsize - 1) ;
       if_SHOW_CHAINS(chains[3] = ht->chainLengths(max_chain[3])) ;
       if (show_neighbors)
 	 neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1]) ;
-      hash_test(&tpool,out,"Emptying hash table",writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
-      delete ht  ;
+      hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
       ht = new HashT(startsize) ;
-      hash_test(&tpool,out,"Random ops (del=7)",writethreads,cycles,ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
+      hash_test(&tpool,out,"Random ops (del=7)",writethreads,cycles,&ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
 	 randnums + maxsize - 1) ;
       if_SHOW_CHAINS(chains[4] = ht->chainLengths(max_chain[4])) ;
       if (show_neighbors)
 	 neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1]) ;
-      hash_test(&tpool,out,"Emptying hash table",writethreads,1,ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
+      hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
       if_SHOW_CHAINS(chains[5] = ht->chainLengths(max_chain[5])) ;
       }
 #ifdef SHOW_CHAINS
@@ -1410,10 +1408,9 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
 	 print_chain_lengths(out,i,chains[i],max_chain[i]) ;
 	 delete[] chains[i] ;
 	 }
-      lost_chains<HashT>(out,ht,chains[5],max_chain[5]) ;
+      lost_chains<HashT>(out,&ht,chains[5],max_chain[5]) ;
       }
 #endif /* SHOW_CHAINS */
-   delete ht ;
    if (!terse && show_neighbors && throughput < 0)
       {
       for (size_t i = 0 ; i < 2 ; i++)

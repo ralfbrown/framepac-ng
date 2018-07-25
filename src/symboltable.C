@@ -76,7 +76,7 @@ SymbolTable::~SymbolTable()
 
 SymbolTable* SymbolTable::create(size_t capacity)
 {
-   SymbolTable* symtab = new SymbolTable(capacity) ;
+   Ptr<SymbolTable> symtab { new SymbolTable(capacity) } ;
    // allocate a table ID by scanning for an unused slot in symbol_tables
    for (size_t i = 0 ; i < lengthof(symbol_tables) ; ++i)
       {
@@ -87,11 +87,10 @@ SymbolTable* SymbolTable::create(size_t capacity)
 	 {
 	 // we've successfully allocated a slot, so remember the ID
 	 symtab->m_table_id = i ;
-	 return symtab ;
+	 return symtab.move() ;
 	 }
       }
    // if we get here, we were unable to allocate a table ID, so we have to bail out
-   delete symtab ;
    return nullptr ;
 }
 
