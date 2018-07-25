@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.07, last edit 2018-07-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -74,9 +74,6 @@ class ClusterInfo ;
 
 class ClusterInfoIter
    {
-   private:
-      Array*	 m_members ;
-      size_t	 m_index ;
    public:
       ClusterInfoIter() : m_members(nullptr), m_index(~0U) {}
       ClusterInfoIter(ClusterInfo* inf) ;
@@ -89,6 +86,10 @@ class ClusterInfoIter
       inline ClusterInfoIter& operator++ () ;
       bool operator== (const ClusterInfoIter& other) const { return m_members == other.m_members ; }
       bool operator!= (const ClusterInfoIter& other) const { return m_members != other.m_members ; }
+
+   private:
+      Array*	 m_members ;
+      size_t	 m_index ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -171,22 +172,6 @@ class ClusterInfo : public Object
       DenseVector<ValT>* createDenseCentroid(const Array* vectors) const ;
       
    protected:
-      typedef Fr::Initializer<ClusterInfo> Initializer ;
-
-   protected:
-      RefArray* m_members { nullptr } ;	// individual vectors in this cluster
-      Array* m_subclusters { nullptr };	// sub-clusters (if any) of this cluster
-      Object* m_rep { nullptr } ;	// representative element: centroid/mediod/etc.
-      Symbol* m_label { nullptr } ;	// cluster label
-      uint32_t m_size { 0 } ;		// number of elements in this cluster
-      uint16_t m_flags { 0 } ;
-      ClusterRep m_cluster_rep { ClusterRep::centroid } ; // what is the representative element for the cluster?
-
-   private: // static members
-      static Allocator s_allocator ;
-      static Initializer s_init ;
-
-   protected:
       bool allMembers(RefArray* mem) const ;
 
    protected: // construction/destruction
@@ -242,6 +227,23 @@ class ClusterInfo : public Object
       // *** startup/shutdown functions ***
       static void StaticInitialization() ;
       static void StaticCleanup() ;
+
+   protected:
+      typedef Fr::Initializer<ClusterInfo> Initializer ;
+
+   protected:
+      RefArray* m_members { nullptr } ;	// individual vectors in this cluster
+      Array* m_subclusters { nullptr };	// sub-clusters (if any) of this cluster
+      Object* m_rep { nullptr } ;	// representative element: centroid/mediod/etc.
+      Symbol* m_label { nullptr } ;	// cluster label
+      uint32_t m_size { 0 } ;		// number of elements in this cluster
+      uint16_t m_flags { 0 } ;
+      ClusterRep m_cluster_rep { ClusterRep::centroid } ; // what is the representative element for the cluster?
+
+   private: // static members
+      static Allocator s_allocator ;
+      static Initializer s_init ;
+
    } ;
 
 //----------------------------------------------------------------------------
@@ -267,7 +269,7 @@ class ClusteringAlgoBase
    {
    public:
       ClusteringAlgoBase() {}
-      ~ClusteringAlgoBase() {}
+      virtual ~ClusteringAlgoBase() {}
 
       bool parseOptions(const char* opt) ;
       virtual bool applyOption(const char* /*optname*/, const char* /*optvalue*/) { return true ; }
@@ -313,6 +315,12 @@ class ClusteringAlgo : public ClusteringAlgoBase
       virtual const char* algorithmName() const = 0 ;
       const char* measureName() const { return m_measure ? m_measure->canonicalName() : "(none)" ; }
 
+      void setMeasure(VectorMeasure<IdxT,ValT>* meas)
+	 {
+	 delete m_measure ;
+	 m_measure = meas ;
+	 }
+
       ClusterInfo* cluster(ObjectIter& first, ObjectIter& past_end) const ;
       ClusterInfo* cluster(ArrayIter first, ArrayIter past_end) const ;
       virtual ClusterInfo* cluster(const Array* vectors) const = 0 ;
@@ -321,7 +329,6 @@ class ClusteringAlgo : public ClusteringAlgoBase
 	 VectorMeasure<IdxT,ValT>* measure, double threshold = -1.0) ;
    protected: //methods
       ClusteringAlgo() {}
-
 
       Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array* centers, double threshold = -1.0) const
 	 { return nearestNeighbor(vector,centers,m_measure,threshold) ; }

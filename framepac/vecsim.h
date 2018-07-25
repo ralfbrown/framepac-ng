@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.07, last edit 2018-07-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -217,6 +217,7 @@ class VectorMeasure
    public:
       static VectorMeasure<IdxT,ValT>* create(const char* simtype, const char* options = nullptr) ;
       static VectorMeasure<IdxT,ValT>* create(VectorSimilarityMeasure simtype, const char* options = nullptr) ;
+      virtual ~VectorMeasure() {}
 
       const char* canonicalName() const { return myCanonicalName() ; }
       
@@ -356,6 +357,42 @@ class DistanceMeasureReciprocal : public VectorMeasure<IdxT, ValT>
 
 */
 
+//----------------------------------------------------------------------------
+//   a base class to allow end-user code to create measures that modify a base measure
+//      using info other than the vector elements
+
+template <typename IdxT, typename ValT>
+class WrappedVectorMeasure : public VectorMeasure<IdxT,ValT>
+   {
+   public:
+      typedef VectorMeasure<IdxT,ValT> super ;
+   public:
+      static WrappedVectorMeasure* create(const char* base_simtype, const char* options = nullptr)
+	 { return new WrappedVectorMeasure(base_simtype,options) ; }
+      static WrappedVectorMeasure* create(VectorSimilarityMeasure base_simtype, const char* options = nullptr)
+	 { return new WrappedVectorMeasure(base_simtype,options) ; }
+      virtual ~WrappedVectorMeasure() { delete m_basemeasure ; m_basemeasure = nullptr ; }
+
+      // give access to the base measure's similarity() and distance() functions
+      double baseSimilarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 { return m_basemeasure->similarity(v1,v2) ; }
+      double baseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+	 { return  m_basemeasure->distance(v1,v2) ; }
+
+      // must derive a subclass that implements similarity() and distance()
+      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const = 0 ;
+      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const = 0 ;
+
+   protected:
+      WrappedVectorMeasure(const char* base_simtype, const char* options = nullptr)
+	 { m_basemeasure = super::create(base_simtype,options) ; }
+      WrappedVectorMeasure(VectorSimilarityMeasure base_simtype, const char* options = nullptr)
+	 { m_basemeasure = super::create(base_simtype,options) ; }
+   protected:
+      super* m_basemeasure ;
+   } ;
+	    
+      
 //----------------------------------------------------------------------------
 // utility function used by subclasses of VectorMeasure
 
