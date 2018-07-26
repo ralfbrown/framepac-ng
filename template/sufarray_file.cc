@@ -78,7 +78,7 @@ bool SuffixArray<IdT,IdxT>::loadMapped(const char* filename, const IdT* using_id
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool SuffixArray<IdT,IdxT>::loadFromMmap(void* mmap_base, size_t mmap_len, const IdT* using_ids)
+bool SuffixArray<IdT,IdxT>::loadFromMmap(const void* mmap_base, size_t mmap_len, const IdT* using_ids)
 {
    size_t header_size = CFile::signatureSize(signature) /*+ 2*sizeof(uint8_t) FIXME */ ;
    if (!mmap_base || mmap_len < header_size)
@@ -100,6 +100,10 @@ bool SuffixArray<IdT,IdxT>::save(CFile& fp, bool include_ids) const
    if (!fp.writeValue(idsize) || !fp.writeValue(idxsize))
       return false ;
    //TODO
+   if (include_ids)
+      {
+      //TODO
+      }
    return false ;
 }
 

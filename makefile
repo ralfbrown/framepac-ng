@@ -541,7 +541,7 @@ build/hashtable_objsz$(OBJ):	src/hashtable_objsz$(C) template/hashtable.cc
 build/hashtable_symnul$(OBJ):	src/hashtable_symnul$(C) template/hashtable.cc
 build/hashtable_symobj$(OBJ):	src/hashtable_symobj$(C) template/hashtable.cc
 build/hashtable_symsz$(OBJ):	src/hashtable_symsz$(C) template/hashtable.cc
-build/hashtable_u32u32$(OBJ):	src/hashtable_u32u32$(C) template/hashtable.cc
+build/hashtable_u32u32$(OBJ):	src/hashtable_u32u32$(C) template/hashtable.cc template/hashtable_file.cc
 build/hazardptr$(OBJ):		src/hazardptr$(C) framepac/atomic.h
 build/init$(OBJ):		src/init$(C) framepac/init.h framepac/symboltable.h
 build/integer$(OBJ):		src/integer$(C) framepac/number.h framepac/fasthash64.h
@@ -580,8 +580,9 @@ build/sparsematrix$(OBJ):	src/sparsematrix$(C) framepac/matrix.h
 build/spelling$(OBJ):		src/spelling$(C) framepac/spelling.h
 build/string$(OBJ):		src/string$(C) framepac/string.h framepac/fasthash64.h
 build/stringbuilder$(OBJ):	src/stringbuilder$(C) framepac/stringbuilder.h framepac/file.h
-build/sufarray_u32u32$(OBJ):	src/sufarray_u32u32$(C) template/sufarray.cc
-build/sufarray_u32u40$(OBJ):	src/sufarray_u32u40$(C) template/sufarray.cc framepac/byteorder.h
+build/sufarray_u32u32$(OBJ):	src/sufarray_u32u32$(C) template/sufarray.cc template/sufarray_file.cc
+build/sufarray_u32u40$(OBJ):	src/sufarray_u32u40$(C) template/sufarray.cc template/sufarray_file.cc \
+				framepac/byteorder.h
 build/symbol$(OBJ):		src/symbol$(C) framepac/symbol.h framepac/nonobject.h framepac/fasthash64.h
 build/symbolprop$(OBJ):		src/symbolprop$(C) framepac/frame.h framepac/list.h framepac/symbol.h
 build/symboltable$(OBJ):	src/symboltable$(C) framepac/symboltable.h framepac/fasthash64.h \
@@ -611,7 +612,8 @@ build/vector_u32_u32$(OBJ):	src/vector_u32_u32$(C) template/vector.cc template/d
 				template/sparsevector.cc
 build/wordcorpus_u24u32$(OBJ): 	src/wordcorpus_u32u40$(C) template/wordcorpus.cc template/concbuilder.cc
 build/wordcorpus_u32u32$(OBJ): 	src/wordcorpus_u32u32$(C) template/wordcorpus.cc template/hashtable.cc \
-				template/concbuilder.cc
+				template/concbuilder.cc template/bufbuilder_file.cc template/hashtable_file.cc \
+				template/sufarray_file.cc
 build/wordcorpus_u32u40$(OBJ): 	src/wordcorpus_u32u40$(C) template/wordcorpus.cc
 build/wordsplit$(OBJ):		src/wordsplit$(C) framepac/charget.h framepac/list.h framepac/stringbuilder.h \
 				framepac/words.h

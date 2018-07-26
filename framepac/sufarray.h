@@ -56,7 +56,7 @@ class SuffixArray
       bool load(CFile&, const char* filename, bool allow_mmap = true, const IdT* using_ids = nullptr) ;
       bool loadMapped(const char*filename, const IdT* using_ids = nullptr) ;
       // load starting from specified position in mmap'ed file
-      bool loadFromMmap(void* mmap_base, size_t mmap_len, const IdT* using_ids = nullptr) ;
+      bool loadFromMmap(const void* mmap_base, size_t mmap_len, const IdT* using_ids = nullptr) ;
       bool save(CFile&, bool include_ids = true) const ;
 
       bool generate(const IdT* ids, IdxT num_ids, IdT num_types,

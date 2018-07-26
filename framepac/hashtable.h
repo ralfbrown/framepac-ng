@@ -880,7 +880,7 @@ class HashTable : public HashTableBase
       HashTable(const HashTable &ht) ;
       virtual ~HashTable() ;
 
-      bool load(CFile&) ;
+      bool load(CFile&, const char* filename) ;
       bool load(void* mmap_base, size_t mmap_len) ;
       bool save(CFile&) const ;
 

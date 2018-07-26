@@ -22,6 +22,7 @@
 #include "template/concbuilder.cc"
 #include "template/bufbuilder_file.cc"
 #include "template/hashtable.cc"
+#include "template/hashtable_file.cc"
 #include "template/sufarray_file.cc"
 #include "template/wordcorpus.cc"
 

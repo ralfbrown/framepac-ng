@@ -23,18 +23,21 @@
 #include "framepac/hashtable.h"
 #include "framepac/message.h"
 
+namespace Fr
+{
+
 /************************************************************************/
 /*	Methods for class HashTable					*/
 /************************************************************************/
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::load(CFile& fp)
+bool HashTable<KeyT,ValT>::load(CFile& fp, const char* filename)
 {
    int version = file_format ;
    if (!fp || !fp.verifySignature(signature,filename,version,min_file_format))
       return false ;
    uint8_t keysize, valsize ;
-   if (!fp.readValue(&keysize) || !fp.readValue(&keysize))
+   if (!fp.readValue(&keysize) || !fp.readValue(&valsize))
       return false ;
    if (keysize != sizeof(KeyT) || valsize != sizeof(ValT))
       {
