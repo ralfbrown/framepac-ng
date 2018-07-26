@@ -197,6 +197,18 @@ void lowercase_string(char* s, std::locale& loc)
 
 //----------------------------------------------------------------------------
 
+void lowercase_string(char* s, std::locale* loc)
+{
+   if (!s || !loc)
+      return ;
+   // see http://en.cppreference.com/w/cpp/locale/ctype/tolower
+   char* last = strchr(s,'\0') ;
+   std::use_facet<std::ctype<char> >(*loc).tolower(s, last) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 void uppercase_string(char* s)
 {
    if (!s)
@@ -214,6 +226,17 @@ void uppercase_string(char* s, std::locale& loc)
       return ;
    char* last = strchr(s,'\0') ;
    std::use_facet<std::ctype<char> >(loc).toupper(s, last) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void uppercase_string(char* s, std::locale* loc)
+{
+   if (!s || !loc)
+      return ;
+   char* last = strchr(s,'\0') ;
+   std::use_facet<std::ctype<char> >(*loc).toupper(s, last) ;
    return ;
 }
 
