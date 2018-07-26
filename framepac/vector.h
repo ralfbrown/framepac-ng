@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.07, last edit 2018-07-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -47,11 +47,13 @@ class Vector : public Object
       Symbol* key() const { return m_key ; }
       Symbol* label() const { return m_label ; }
       float weight() const { return m_weight ; }
+      void* userData() const { return m_user ; }
 
       void setKey(Symbol* key) { m_key = key ; }
       void setLabel(Symbol* label) { m_label = label ; }
       void setWeight(float wt) { m_weight = wt ; }
       void setWeight(double wt) { m_weight = (float)wt ; }
+      void setUserData(void* u) { m_user = u ; }
 
       void setElement(size_t N, ValT value)
 	 {
@@ -169,6 +171,7 @@ class Vector : public Object
       ValT*    m_values { nullptr } ;
       Symbol*  m_key { nullptr } ;	// the vector's name (e.g. word for which this is a context vector)
       Symbol*  m_label { nullptr } ;	// user label applied to vector (e.g. cluster name)
+      mutable void*  m_user { nullptr };// available for user to store any needed extra data about this vector
       mutable double m_length { -1 } ;	// cached vector length (L2-norm)
       uint32_t m_size { 0 } ;	  	// number of elements in vector
       uint32_t m_capacity { 0 } ;	// number of elements allocated (may be greater than m_size)
