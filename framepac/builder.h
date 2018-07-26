@@ -79,7 +79,7 @@ class BufferBuilder
       T		m_localbuf[minsize] ;
 
       // magic values for serializing
-      static constexpr char signature[] = "\x7F""BufBuild" ;
+      static constexpr auto signature = "\x7F""BufBuild" ;
       static constexpr unsigned file_format = 1 ;
       static constexpr unsigned min_file_format = 1 ;
    } ;

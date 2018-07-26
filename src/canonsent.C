@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.07, last edit 2018-07-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -19,9 +19,10 @@
 /*									*/
 /************************************************************************/
 
-#include "framepac/stringbuilder.h"
+#include "framepac/charget.h"
 #include "framepac/texttransforms.h"
 #include "framepac/utility.h"
+#include "framepac/words.h"
 
 namespace Fr
 {
@@ -37,27 +38,19 @@ extern std::locale utf8locale ;
 char* canonicalize_sentence(const char* orig_sent, std::locale& locale, bool force_uppercase,
 			    const char *delim, char const* const* abbrevs)
 {
-   (void)delim; (void)abbrevs ;
+   (void)abbrevs ;
 
    if (!orig_sent)
       return nullptr ;
-   ScopedCharPtr sent_copy { dup_string(orig_sent) } ;
-   char* sent = sent_copy ;
-   StringBuilder sb ;
-   // strip leading and trailing whitespace
-   sent = trim_whitespace(sent,locale) ;
+   ScopedCharPtr sent { dup_string(orig_sent) } ;
    if (force_uppercase)
       {
       uppercase_string(sent,locale) ;
       }
-   while (*sent)
-      {
-      sent = skip_whitespace(sent,locale) ;
-//FIXME
-
-      ++sent ;
-      }
-   return sb.c_str() ;
+   CharGetterCString getter(sent) ;
+   WordSplitterEnglish splitter(getter,delim) ;
+   StringPtr words = splitter.delimitedWords() ;
+   return dup_string(words->c_str()) ;
 }
 
 //----------------------------------------------------------------------------

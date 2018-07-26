@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-17					*/
+/* Version 0.07, last edit 2018-07-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -90,7 +90,7 @@ class WordCorpusT
 
    public: // constants
       static constexpr ID ErrorID { ID(~0) } ;
-      static constexpr char signature[] { "\x7FWordCorp" } ;
+      static constexpr auto signature { "\x7FWordCorp" } ;
       static constexpr int file_format { 2 } ;
       static constexpr int min_file_format { 2 } ;
 

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.07, last edit 2018-07-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -771,7 +771,7 @@ class HashTable : public HashTableBase
 #endif /* FrHASHTABLE_STATS */
 
       // magic values for serializing
-      static constexpr char signature[] = "\x7FHshTable" ;
+      static constexpr auto signature = "\x7FHshTable" ;
       static constexpr unsigned file_format = 1 ;
       static constexpr unsigned min_file_format = 1 ;
 

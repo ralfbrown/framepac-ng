@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.07, last edit 2018-07-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -36,6 +36,45 @@ BufferBuilder<T,minsize>::~BufferBuilder()
 {
    if (m_buffer != m_localbuf)
       delete[] m_buffer ;
+   m_currsize = 0 ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, size_t minsize>
+bool BufferBuilder<T,minsize>::preallocate(size_t newsize)
+{
+   T* newbuf { new T[newsize] };
+   if (newbuf)
+      {
+      for (size_t i = 0 ; i < m_currsize ; i++)
+	 {
+	 newbuf[i] = m_buffer[i] ;
+	 }
+      if (m_buffer != m_localbuf)
+	 {
+	 delete[] m_buffer ;
+	 }
+      m_buffer = newbuf ;
+      m_alloc = newsize ;
+      return true ;
+      }
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, size_t minsize>
+void BufferBuilder<T,minsize>::clear()
+{
+   // reset the buffer to be the initial buffer
+   if (m_buffer != m_localbuf)
+      {
+      delete[] m_buffer ;
+      }
+   m_buffer = m_localbuf ;
+   m_alloc = minsize ;
    m_currsize = 0 ;
    return ;
 }
@@ -83,17 +122,7 @@ void BufferBuilder<T,minsize>::append(T value)
 {
    if (m_currsize >= m_alloc)
       {
-         size_t newalloc { 2 * m_currsize };
-	 T *newbuf { new T[newalloc] };
-	 if (newbuf)
-	    {
-	    for (size_t i = 0 ; i < m_currsize ; i++)
-	       {
-	       newbuf[i] = m_buffer[i] ;
-	       }
-	    m_buffer = newbuf ;
-	    m_alloc = newalloc ;
-	    }
+      preallocate(2*m_currsize) ;
       }
    m_buffer[m_currsize++] = value ;
    return ;
@@ -108,16 +137,7 @@ void BufferBuilder<T,minsize>::append(const BufferBuilder<T,minsize>& addbuf)
    if (m_currsize + grow > m_alloc)
       {
       size_t newalloc = (grow > m_currsize) ? 2 * (m_currsize + grow) : (2 * m_currsize) ;
-      T *newbuf { new T[newalloc] };
-      if (newbuf)
-	 {
-	 for (size_t i = 0 ; i < m_currsize ; i++)
-	    {
-	    newbuf[i] = m_buffer[i] ;
-	    }
-	 m_buffer = newbuf ;
-	 m_alloc = newalloc ;
-	 }
+      preallocate(newalloc) ;
       }
    for (size_t i = 0 ; i < grow ; ++i)
       {

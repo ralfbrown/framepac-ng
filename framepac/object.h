@@ -257,6 +257,9 @@ class ScopedObjectPtr
       ScopedObjectPtr(T* o) : m_object(o) { }
       ~ScopedObjectPtr() { if (m_object) m_object->free() ; }
 
+      ScopedObjectPtr& operator= (T* o) { release() ; m_object = o ; return *this ; }
+
+      T* move() { T* o = m_object ; release() ; return o ; }
       void release() { m_object = nullptr ; }
 
       operator bool () const { return m_object != nullptr ; }

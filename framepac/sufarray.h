@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-19					*/
+/* Version 0.07, last edit 2018-07-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -132,7 +132,7 @@ class SuffixArray
       bool       m_external_ids { true } ;
 
       // magic values for serializing
-      static constexpr char signature[] = "\x7FSufArray" ;
+      static constexpr auto signature = "\x7FSufArray" ;
       static constexpr unsigned file_format = 1 ;
       static constexpr unsigned min_file_format = 1 ;
    } ;

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.07, last edit 2018-07-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -81,7 +81,7 @@ class BidirIndex : public HashTable<keyT,idxT>
       bool         m_external_storage { false } ;
 
       // magic values for serializing
-      static constexpr char signature[] = "\x7F""BiDIndex" ;
+      static constexpr auto signature = "\x7F""BiDIndex" ;
       static constexpr unsigned file_format = 1 ;
       static constexpr unsigned min_file_format = 1 ;
 

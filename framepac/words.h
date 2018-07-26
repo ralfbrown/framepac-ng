@@ -143,19 +143,17 @@ class WordSplitterEnglish : public WordSplitter
    public:
       typedef WordSplitter super ;
    public:
-      WordSplitterEnglish(class CharGetter& getter, bool force_lower = false)
-	 : super(getter), m_force_lower(force_lower) {}
+      WordSplitterEnglish(class CharGetter& getter, const char* delim = nullptr)
+	 : super(getter), m_delim(delim) {}
       WordSplitterEnglish(const WordSplitterEnglish&) = default ;
       virtual ~WordSplitterEnglish() {}
       WordSplitterEnglish& operator= (const WordSplitterEnglish&) = default ;
-
-      bool forceLowercase() const { return m_force_lower ; }
 
    protected:
       virtual boundary boundaryType(const char* window_start, const char* currpos,
 				    const char* window_end) const ;
    protected:
-      bool m_force_lower ;
+      const char* m_delim ;
    } ;
 
 /************************************************************************/
