@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-26					*/
+/* Version 0.07, last edit 2018-07-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -22,11 +22,14 @@
 #ifndef _Fr_WORDCORPUS_H_INCLUDED
 #define _Fr_WORDCORPUS_H_INCLUDED
 
+#include <cstdio>
+
 #include "framepac/bidindex.h"
 #include "framepac/builder.h"
 #include "framepac/byteorder.h"
 #include "framepac/cstring.h"
 #include "framepac/file.h"
+#include "framepac/mmapfile.h"
 #include "framepac/sufarray.h"
 
 /************************************************************************/
@@ -61,8 +64,8 @@ class WordCorpusHeader
       uint64_t m_contextmap ;		// offset of context map
       uint64_t m_fwdindex ;		// offset of suffix-array index in forward direction
       uint64_t m_revindex ;		// offset of suffix-array index in reverse direction
-      uint64_t m_freq ;			// offset of word frequencies
-      uint64_t m_attributes ;		// offset of optional attributes for each token in the text
+      uint64_t m_freq { 0 } ;		// offset of word frequencies
+      uint64_t m_attributes { 0 } ;	// offset of optional attributes for each token in the text
       uint64_t m_pad[16] ;		// padding for future expansion of header
       uint8_t  m_idsize ;		// sizeof(IdT)
       uint8_t  m_idxsize ;		// sizeof(IdxT)
@@ -187,8 +190,8 @@ class WordCorpusT
       void setID(IdxT N, IdT id) ;
 
    protected:
-      bool loadMapped(const char* filename) ;
-      bool loadFromMmap(const void* mmap_base, size_t mmap_len) ;
+      bool loadMapped(const char* filename, off_t base_offset = 0) ;
+      bool loadFromMmap(const char* mmap_base, size_t mmap_len) ;
       void incrFreq(IdT N) { if (N < m_wordbuf.size()) ++m_freq[N] ; else ++m_freq[m_newline] ; }
       bool createForwardIndex() ;
       bool createReverseIndex() ;
@@ -198,6 +201,7 @@ class WordCorpusT
 			    SAEnumFunc *fn, void *user_arg) const ;
 
    protected:
+      MemMappedFile      m_mmap ;
       BiMap		 m_wordmap ;
       IDBufferBuilder    m_wordbuf ;	// contains array of word IDs
       Map		 m_contextmap ;

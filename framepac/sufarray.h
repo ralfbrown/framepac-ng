@@ -23,6 +23,7 @@
 #define _Fr_SUFARRAY_H_INCLUDED
 
 #include "framepac/file.h"
+#include "framepac/mmapfile.h"
 
 namespace Fr {
 
@@ -45,18 +46,27 @@ class SuffixArray
 	 { generate(ids,num_ids, num_types, newline, freqs) ; }
       ~SuffixArray()
 	 {
+	 if (!m_mmap && !m_readonly)	// if memory-mapped, we didn't allocate any arrays
+	    {
 	    delete[] m_index ;
-	    m_index = nullptr ;
-	    m_numids = 0 ;
+	    delete[] m_freq ;
+	    if (!m_external_ids)
+	       delete[] m_ids ;
+	    }
+	 m_ids = nullptr ;
+	 m_index = nullptr ;
+	 m_freq = nullptr ;
+	 m_numids = 0 ;
+	 m_types = 0 ;
 	 }
       SuffixArray& operator= (const SuffixArray&) = delete ;
 
       bool load(const char* filename, bool allow_mmap = true, const IdT* using_ids = nullptr) ;
       // load from open file starting at current file position
       bool load(CFile&, const char* filename, bool allow_mmap = true, const IdT* using_ids = nullptr) ;
-      bool loadMapped(const char*filename, const IdT* using_ids = nullptr) ;
+      bool loadMapped(const char*filename, off_t base_offset = 0, const IdT* using_ids = nullptr) ;
       // load starting from specified position in mmap'ed file
-      bool loadFromMmap(const void* mmap_base, size_t mmap_len, const IdT* using_ids = nullptr) ;
+      bool loadFromMmap(const char* mmap_base, size_t mmap_len, const IdT* using_ids = nullptr) ;
       bool save(CFile&, bool include_ids = true) const ;
 
       bool generate(const IdT* ids, IdxT num_ids, IdT num_types,
@@ -121,7 +131,8 @@ class SuffixArray
       static void enumerate_segment(const void* in, void* out) ;
 
    protected:
-      const IdT* m_ids { nullptr } ;
+      MemMappedFile m_mmap ;
+      IdT*       m_ids { nullptr } ;
       IdxT*      m_index { nullptr } ;
       IdxT*      m_freq { nullptr } ;
       IdxT       m_numids { 0 } ;
@@ -130,6 +141,7 @@ class SuffixArray
       IdT        m_newline { IdT(-1) } ;
       IdxT       m_last_linenum { IdxT(-1) } ;
       bool       m_external_ids { true } ;
+      bool	 m_readonly { false } ;
 
       // magic values for serializing
       static constexpr auto signature = "\x7FSufArray" ;

@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.07, last edit 2018-07-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -77,7 +77,8 @@ void MemMappedFile::init(int fd, off_t start_offset, off_t length, bool readonly
 
 MemMappedFile::~MemMappedFile()
 {
-   (void)munmap(m_address,m_length) ;
+   if (m_address)
+      (void)munmap(m_address,m_length) ;
    return ;
 }
 

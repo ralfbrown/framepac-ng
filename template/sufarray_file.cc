@@ -27,6 +27,24 @@
 namespace Fr {
 
 /************************************************************************/
+/*	Types for this module						*/
+/************************************************************************/
+
+class SuffixArrayHeader
+   {
+   public:
+      uint64_t m_numids ;	// number of tokens in the corpus
+      uint64_t m_types ;	// number of types (distinct IDs)
+      uint64_t m_sentinel ;	// ID for end-of-data sentinel
+      uint64_t m_newline ;	// ID for newline
+      uint64_t m_last_linenum ; // dividing point between token IDs and line-number records
+      uint64_t m_index ;	// offset of array of indices
+      uint64_t m_ids { 0 } ;	// offset of array of IDs
+      uint64_t m_freq { 0 } ;	// offset of array of ID frequencies
+      uint64_t m_pad[16] { 0 }; // padding for future extensions
+   } ;
+
+/************************************************************************/
 /*	Methods for template class SuffixArray				*/
 /************************************************************************/
 
@@ -42,8 +60,11 @@ bool SuffixArray<IdT,IdxT>::load(const char* filename, bool allow_mmap, const Id
 template <typename IdT, typename IdxT>
 bool SuffixArray<IdT,IdxT>::load(CFile& fp, const char* filename, bool allow_mmap, const IdT* using_ids)
 {
+   if (!fp)
+      return false ;
+   off_t base_offset = fp.tell() ;
    int version = file_format ;
-   if (!fp || !fp.verifySignature(signature,filename,version,min_file_format))
+   if (!fp.verifySignature(signature,filename,version,min_file_format))
       return false ;
    uint8_t idsize, idxsize ;
    if (!fp.readValue(&idsize) || !fp.readValue(&idxsize))
@@ -53,38 +74,96 @@ bool SuffixArray<IdT,IdxT>::load(CFile& fp, const char* filename, bool allow_mma
       SystemMessage::error("wrong data type - sizeof() does not match") ;
       return false ;
       }
-   if (allow_mmap && loadMapped(filename,using_ids))
+   if (allow_mmap && loadMapped(filename,base_offset,using_ids))
       return true ;
-   //TODO
-   return false ;
+   SuffixArrayHeader header ;
+   if (!fp.readValue(&header))
+      return false ;
+   m_numids = IdxT(header.m_numids) ;
+   m_types = IdT(header.m_types) ;
+   m_sentinel = IdT(header.m_sentinel) ;
+   m_newline = IdT(header.m_newline) ;
+   m_last_linenum = IdxT(header.m_last_linenum) ;
+   bool success = true ;
+   if (header.m_index)
+      {
+      success &= fp.readVarsAt(header.m_index + base_offset,&m_index,m_numids) ;
+      }
+   if (success && header.m_freq)
+      {
+      success &= fp.readVarsAt(header.m_freq + base_offset,&m_freq,m_types) ;
+      }
+   if (using_ids)
+      {
+      m_ids = const_cast<IdT*>(using_ids) ;
+      m_external_ids = true ;
+      }
+   else if (header.m_ids)
+      {
+      success &= fp.readVarsAt(header.m_ids + base_offset,&m_ids,m_numids) ;
+      }
+   if (!success)
+      {
+      delete[] m_index ;
+      m_index = nullptr  ;
+      delete[] m_freq ;
+      m_freq = nullptr ;
+      if (!m_external_ids)
+	 delete[] m_ids ;
+      m_ids = nullptr ;
+      m_numids = 0 ;
+      m_types = 0 ;
+      }
+   return success ;
 }
 
 //----------------------------------------------------------------------------
 
 template <class IdT, typename IdxT>
-bool SuffixArray<IdT,IdxT>::loadMapped(const char* filename, const IdT* using_ids)
+bool SuffixArray<IdT,IdxT>::loadMapped(const char* filename, off_t base_offset, const IdT* using_ids)
 {
    if (!filename || !*filename)
       return false;
-   MemMappedROFile mm(filename) ;
+   MemMappedROFile mm(filename,base_offset) ;
    if (!mm)
       return false ;
-   if (!loadFromMmap(*mm,mm.size(),using_ids))
-      return false ;
-//   m_readonly = true ;			// can't modify if we're pointing into a memory-mapped file
-   return true ;
+   m_mmap = std::move(mm) ;
+   return loadFromMmap(*m_mmap,m_mmap.size(),using_ids) ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool SuffixArray<IdT,IdxT>::loadFromMmap(const void* mmap_base, size_t mmap_len, const IdT* using_ids)
+bool SuffixArray<IdT,IdxT>::loadFromMmap(const char* mmap_base, size_t mmap_len, const IdT* using_ids)
 {
-   size_t header_size = CFile::signatureSize(signature) /*+ 2*sizeof(uint8_t) FIXME */ ;
-   if (!mmap_base || mmap_len < header_size)
+   size_t header_size = CFile::signatureSize(signature) + 2*sizeof(uint8_t) ;
+   if (!mmap_base || mmap_len < header_size + sizeof(SuffixArrayHeader))
       return false;
-   (void)using_ids ;
-   //TODO
+   m_readonly = true ;
+   m_external_ids = false ;
+   const SuffixArrayHeader* header = reinterpret_cast<const SuffixArrayHeader*>(mmap_base + header_size) ;
+   m_numids = IdxT(header->m_numids) ;
+   m_types = IdT(header->m_types) ;
+   m_sentinel = IdT(header->m_sentinel) ;
+   m_newline = IdT(header->m_newline) ;
+   m_last_linenum = IdxT(header->m_last_linenum) ;
+   if (header->m_index)
+      {
+      m_index = const_cast<IdxT*>(reinterpret_cast<const IdxT*>(mmap_base + header->m_index)) ;
+      }
+   if (header->m_freq)
+      {
+      m_freq = const_cast<IdxT*>(reinterpret_cast<const IdxT*>(mmap_base + header->m_freq)) ;
+      }
+   if (using_ids)
+      {
+      m_ids = const_cast<IdT*>(using_ids) ;
+      m_external_ids = true ;
+      }
+   else if (header->m_ids)
+      {
+      m_ids = const_cast<IdT*>(reinterpret_cast<const IdT*>(mmap_base + header->m_ids)) ;
+      }
    return true ;
 }
 
@@ -93,18 +172,49 @@ bool SuffixArray<IdT,IdxT>::loadFromMmap(const void* mmap_base, size_t mmap_len,
 template <typename IdT, typename IdxT>
 bool SuffixArray<IdT,IdxT>::save(CFile& fp, bool include_ids) const
 {
-   if (!fp || !fp.writeSignature(signature,file_format))
+   if (!fp)
+      return false ;
+   off_t base_offset = fp.tell() ;
+   if (!fp.writeSignature(signature,file_format))
       return false ;
    uint8_t idsize = sizeof(IdT) ;
    uint8_t idxsize = sizeof(IdxT) ;
    if (!fp.writeValue(idsize) || !fp.writeValue(idxsize))
       return false ;
-   //TODO
-   if (include_ids)
+   off_t header_offset = fp.tell() ;
+   SuffixArrayHeader header ;
+   header.m_numids = m_numids ;
+   header.m_types = m_types ;
+   header.m_sentinel = m_sentinel ;
+   header.m_newline = m_newline ;
+   header.m_last_linenum = m_last_linenum;
+   if (!fp.writeValue(header))
+      return false ;
+   if (m_index)
       {
-      //TODO
+      header.m_index = fp.tell() - base_offset ;
+      if (!fp.writeValues(m_index,m_numids))
+	 return false ;
       }
-   return false ;
+   if (m_freq)
+      {
+      header.m_freq = fp.tell() - base_offset ;
+      if (!fp.writeValues(m_freq,m_types))
+	 return false ;
+      }
+   if (include_ids && m_ids)
+      {
+      header.m_ids = fp.tell() - base_offset ;
+      if (!fp.writeValues(m_ids,m_numids))
+	 return false ;
+      }
+   // now that we've written all the other data, we have a complete header, so return to the start of the file
+   //   and update the header
+   fp.seek(header_offset) ;
+   if (!fp.writeValue(header))
+      return false ;
+   fp.flush() ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------

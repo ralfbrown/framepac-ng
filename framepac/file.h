@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.07, last edit 2018-07-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -148,18 +148,18 @@ class CFile
 	 }
 
       // on success, updated first argument to point at allocated array of values read; array must be
-      //   released with Fr::Free()
+      //   released with delete[]
       template <typename T>
       bool readValues(T** val, size_t count)
 	 {
 	    if (!val || count == 0) return true ; // trivially successful
-	    *val = Fr::New<T>(count) ;
+	    *val = new T[count] ;
 	    if (!*val) return false ;
 	    if (read(*val,sizeof(T),count) == count)
 	       return true ;
 	    else
 	       {
-	       Fr::Free(*val) ;
+	       delete[] *val ;
 	       *val = nullptr ;
 	       return false ;
 	       }

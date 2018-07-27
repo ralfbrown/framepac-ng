@@ -835,6 +835,9 @@ framepac/string.h:	framepac/object.h
 framepac/stringbuilder.h:	framepac/builder.h framepac/string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+framepac/sufarray.h:	framepac/file.h framepac/mmapfile.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 framepac/symbol.h:	framepac/string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
@@ -866,7 +869,7 @@ framepac/words.h:	framepac/bidindex.h framepac/file.h framepac/string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/wordcorpus.h:	framepac/bidindex.h framepac/builder.h framepac/byteorder.h \
-		framepac/cstring.h framepac/file.h framepac/sufarray.h
+		framepac/cstring.h framepac/file.h framepac/mmapfile.h framepac/sufarray.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 FramepaC.h:		framepac/config.h framepac/argparser.h framepac/hashtable.h framepac/cluster.h \

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.07, last edit 2018-07-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -325,7 +325,7 @@ template <typename IdT, typename IdxT>
 bool SuffixArray<IdT,IdxT>::generate(const IdT *ids, IdxT num_ids, IdT num_types,
 				     IdT mapped_newline, const IdxT *freqs)
 {
-   m_ids = ids ;
+   m_ids = const_cast<IdT*>(ids) ;
    m_numids = num_ids ;
    m_types = num_types ;
    m_newline = mapped_newline ;

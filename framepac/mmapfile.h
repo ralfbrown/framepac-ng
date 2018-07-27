@@ -45,7 +45,6 @@ class MemMappedFile
 	 orig.m_length = 0 ;
 	 }
       ~MemMappedFile() ;
-      MemMappedFile& operator= (const MemMappedFile&) = delete ;
       MemMappedFile& operator= (MemMappedFile&& orig)
 	 {
 	 m_address = orig.m_address ;
@@ -56,7 +55,7 @@ class MemMappedFile
 	 }
 
       size_t size() const { return m_length ; }
-      operator bool () const { return m_address != nullptr ; }
+      explicit operator bool () const { return m_address != nullptr ; }
       char* operator* () const { return m_address ; }
       char& operator[] (size_t N) { return m_address[N] ; }
       const char& operator[] (size_t N) const { return m_address[N] ; }

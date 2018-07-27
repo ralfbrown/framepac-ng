@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-14					*/
+/* Version 0.07, last edit 2018-07-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -93,6 +93,9 @@ bool WordCorpusT<IdT,IdxT>::isCorpusFile(const char* filename)
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mmap)
 {
+   if (!fp)
+      return false ;
+   off_t base_offset = fp.tell() ;
    int version = file_format ;
    if (!fp.verifySignature(signature,filename,version,min_file_format))
       return false ;
@@ -113,37 +116,38 @@ bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mma
 
       }
    bool success = true ;
-   if (!allow_mmap || !loadMapped(filename))
+   if (!allow_mmap || !loadMapped(filename,base_offset))
       {
       // we couldn't memory-map the data, so read it into allocated memory
       if (header.m_wordmap)
 	 {
-	 fp.seek(header.m_wordmap) ;
+	 fp.seek(header.m_wordmap + base_offset) ;
 	 success &= m_wordmap.load(fp,filename,false) ;
 	 }
       if (header.m_wordbuf)
 	 {
-	 fp.seek(header.m_wordbuf) ;
+	 fp.seek(header.m_wordbuf + base_offset) ;
 	 success &= m_wordbuf.load(fp,filename) ;
 	 }
       if (header.m_fwdindex)
 	 {
-	 fp.seek(header.m_fwdindex) ;
+	 fp.seek(header.m_fwdindex + base_offset) ;
 	 success &= m_fwdindex.load(fp,filename) ;
 	 }
       if (header.m_revindex)
 	 {
-	 fp.seek(header.m_revindex) ;
+	 fp.seek(header.m_revindex + base_offset) ;
 	 success &= m_revindex.load(fp,filename) ;
 	 }
       if (header.m_freq)
 	 {
-	 fp.seek(header.m_freq) ;
+	 fp.seek(header.m_freq + base_offset) ;
 	 m_freq = new IdxT[header.m_vocabsize] ;
 	 success &= fp.readValues(&m_freq,header.m_vocabsize) ;
 	 }
       if (header.m_attributes)
 	 {
+	 fp.seek(header.m_attributes + base_offset) ;
 	 m_attributes = new uint8_t[header.m_numwords] ;
 	 m_attributes_alloc = header.m_numwords ;
 	 success &= fp.readValues(&m_attributes,m_attributes_alloc) ;
@@ -168,46 +172,45 @@ bool WordCorpusT<IdT,IdxT>::load(const char *filename, bool allow_mmap)
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::loadMapped(const char *filename)
+bool WordCorpusT<IdT,IdxT>::loadMapped(const char *filename, off_t base_offset)
 {
    if (!filename || !*filename)
       return false ;
-   MemMappedROFile mm(filename) ;
+   MemMappedROFile mm(filename,base_offset) ;
    if (!mm)
       return false ;
-   if (!loadFromMmap(*mm,mm.size()))
-      return false ;
-   m_readonly = true ;			// can't modify if we're pointing into a memory-mapped file
-   return false ;
+   m_mmap = std::move(mm) ;
+   return loadFromMmap(*m_mmap,m_mmap.size()) ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::loadFromMmap(const void* mmap_base, size_t mmap_len)
+bool WordCorpusT<IdT,IdxT>::loadFromMmap(const char* mmap_base, size_t mmap_len)
 {
    size_t header_size = CFile::signatureSize(signature) /*+ 2*sizeof(uint8_t) FIXME */ ;
    if (!mmap_base || mmap_len < header_size)
       return false;
-   const WordCorpusHeader* header = (WordCorpusHeader*)(((const char*)mmap_base)+header_size) ;
+   m_readonly = true ;			// can't modify if we're pointing into a memory-mapped file
+   const WordCorpusHeader* header = (WordCorpusHeader*)(mmap_base+header_size) ;
    // ensure that the writer used the same data sizes
    if (header->m_idsize != sizeof(IdT) || header->m_idxsize != sizeof(IdxT))
       return false ;
    if (header->m_wordmap)
       {
-      m_wordmap.loadFromMmap(((char*)mmap_base)+header->m_wordmap,mmap_len-header->m_wordmap) ;
+      m_wordmap.loadFromMmap(mmap_base+header->m_wordmap,mmap_len-header->m_wordmap) ;
       }
    if (header->m_wordbuf)
       {
-      m_wordbuf.loadFromMmap(((char*)mmap_base)+header->m_wordbuf,mmap_len-header->m_wordbuf) ;
+      m_wordbuf.loadFromMmap(mmap_base+header->m_wordbuf,mmap_len-header->m_wordbuf) ;
       }
    if (header->m_fwdindex)
       {
-      m_fwdindex.loadFromMmap(((char*)mmap_base)+header->m_fwdindex,mmap_len-header->m_fwdindex) ;
+      m_fwdindex.loadFromMmap(mmap_base+header->m_fwdindex,mmap_len-header->m_fwdindex) ;
       }
    if (header->m_revindex)
       {
-      m_revindex.loadFromMmap(((char*)mmap_base)+header->m_revindex,mmap_len-header->m_revindex) ;
+      m_revindex.loadFromMmap(mmap_base+header->m_revindex,mmap_len-header->m_revindex) ;
       }
    if (header->m_freq)
       {
@@ -247,7 +250,10 @@ size_t WordCorpusT<IdT,IdxT>::loadAttribute(const char* filename, unsigned attr_
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::save(CFile &fp) const
 {
-   if (!fp || !fp.writeSignature(signature,file_format))
+   if (!fp)
+      return false ;
+   off_t base_offset = fp.tell() ;
+   if (!fp.writeSignature(signature,file_format))
       return false ;
    // we don't have all the info needed to write the header yet, so write a placeholder and remember
    //   the file offset so we can return later and update it
@@ -274,30 +280,26 @@ bool WordCorpusT<IdT,IdxT>::save(CFile &fp) const
       return false ;
 
    bool success = true ;
-   header.m_wordmap = fp.tell() ;
+   header.m_wordmap = fp.tell() - base_offset ;
    success &= m_wordmap.save(fp) ;
-   header.m_wordbuf = fp.tell() ;
+   header.m_wordbuf = fp.tell() - base_offset ;
    success &= m_wordbuf.save(fp) ;
-   header.m_contextmap = fp.tell() ;
+   header.m_contextmap = fp.tell() - base_offset ;
    success &= m_contextmap.save(fp) ;
-   header.m_fwdindex = fp.tell() ;
+   header.m_fwdindex = fp.tell() - base_offset ;
    success &= m_fwdindex.save(fp) ;
-   header.m_revindex = fp.tell() ;
+   header.m_revindex = fp.tell() - base_offset ;
    success &= m_revindex.save(fp) ;
    if (m_freq)
       {
-      header.m_freq = fp.tell() ;
+      header.m_freq = fp.tell() - base_offset ;
       fp.writeValues(m_freq,vocabSize()) ;
       }
-   else
-      header.m_freq = 0 ;
    if (m_attributes)
       {
-      header.m_attributes = fp.tell() ;
+      header.m_attributes = fp.tell() - base_offset ;
       fp.writeValues(m_attributes,corpusSize()) ;
       }
-   else
-      header.m_attributes = 0 ;
    // now that we've written all the other data, we have a complete header, so return to the start of the file
    //   and update the header
    fp.seek(headerpos) ;
