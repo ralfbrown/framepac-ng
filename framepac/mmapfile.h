@@ -31,13 +31,29 @@ namespace Fr
 class MemMappedFile
    {
    public:
+      MemMappedFile() : m_address(nullptr), m_length(0) {}
       MemMappedFile(const char *filename, off_t start_offset = 0,
 		    off_t length = ~0, bool readonly = false) ;
       MemMappedFile(class CFile &, off_t start_offset = 0,
 		    off_t length = ~0, bool readonly = false) ;
       MemMappedFile(const MemMappedFile&) = delete ;
+      MemMappedFile(MemMappedFile&& orig)
+	 {
+	 m_address = orig.m_address ;
+	 m_length = orig.m_length ;
+	 orig.m_address = nullptr ;
+	 orig.m_length = 0 ;
+	 }
       ~MemMappedFile() ;
       MemMappedFile& operator= (const MemMappedFile&) = delete ;
+      MemMappedFile& operator= (MemMappedFile&& orig)
+	 {
+	 m_address = orig.m_address ;
+	 m_length = orig.m_length ;
+	 orig.m_address = nullptr ;
+	 orig.m_length = 0 ;
+	 return *this ;
+	 }
 
       size_t size() const { return m_length ; }
       operator bool () const { return m_address != nullptr ; }
