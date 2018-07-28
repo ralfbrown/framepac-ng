@@ -72,13 +72,13 @@ class BidirIndex : public HashTable<keyT,idxT>
       keyT getKey(idxT index) const { return index < m_max_index ? m_reverse_index[index] : keyT(0) ; }
 
    protected:
-      atomic<idxT> m_next_index { 0 } ;
-      idxT         m_max_index { 0 } ;
-      idxT         m_errorID { (idxT)-1 } ;
-      keyT*        m_reverse_index { nullptr } ;
-      idxT	   m_common_buffer { 0 } ;	// the first N elts of m_reverse_index share storage
-      bool	   m_readonly { false } ;
-      bool         m_external_storage { false } ;
+      atomic<idxT>  m_next_index { 0 } ;
+      idxT          m_max_index { 0 } ;
+      idxT          m_errorID { (idxT)-1 } ;
+      keyT*         m_reverse_index { nullptr } ;
+      idxT	    m_common_buffer { 0 } ;	// the first N elts of m_reverse_index share storage
+      bool	    m_readonly { false } ;
+      bool          m_external_storage { false } ;
 
       // magic values for serializing
       static constexpr auto signature = "\x7F""BiDIndex" ;

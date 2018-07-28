@@ -41,7 +41,7 @@ class SuffixArrayHeader
       uint64_t m_index ;	// offset of array of indices
       uint64_t m_ids { 0 } ;	// offset of array of IDs
       uint64_t m_freq { 0 } ;	// offset of array of ID frequencies
-      uint64_t m_pad[16] { 0 }; // padding for future extensions
+      uint64_t m_pad[8] { 0 } ; // padding for future extensions
    } ;
 
 /************************************************************************/

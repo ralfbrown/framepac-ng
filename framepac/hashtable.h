@@ -881,7 +881,7 @@ class HashTable : public HashTableBase
       virtual ~HashTable() ;
 
       bool load(CFile&, const char* filename) ;
-      bool load(void* mmap_base, size_t mmap_len) ;
+      bool load(const char* mmap_base, size_t mmap_len) ;
       bool save(CFile&) const ;
 
       // *** object factories ***
