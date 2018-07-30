@@ -321,7 +321,7 @@ bool ClusterInfo::labelSubclusterPaths(bool (*fn)(Object*, const char* label), c
 Symbol* ClusterInfo::genLabel()
 {
    size_t id = ++next_cluster_ID ;
-   ScopedCharPtr symname { Fr::aprintf("<CL_%lu>",id) } ;
+   ScopedCharPtr symname { Fr::aprintf("<CL_%04lu>",id) } ;
    return Symbol::create(symname) ;
 }
 
