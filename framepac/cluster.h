@@ -128,7 +128,7 @@ class ClusterInfo : public Object
 
       static Symbol* genLabel() ;
       static bool isGeneratedLabel(const char* name) ;
-      static bool isGeneratedLabel(Symbol *name) { return name ? isGeneratedLabel(name->c_str()) : false ; }
+      static bool isGeneratedLabel(const Symbol *name) { return name ? isGeneratedLabel(name->c_str()) : false ; }
       void setLabel(Symbol* label) { m_label = label ; }
       Symbol* label() const { return m_label ; }
 
