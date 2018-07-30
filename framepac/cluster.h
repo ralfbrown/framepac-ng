@@ -127,8 +127,12 @@ class ClusterInfo : public Object
       RefArray* allMembers() const ;
 
       static Symbol* genLabel() ;
+      static Symbol* numberLabel() ;
       static bool isGeneratedLabel(const char* name) ;
       static bool isGeneratedLabel(const Symbol *name) { return name ? isGeneratedLabel(name->c_str()) : false ; }
+      static bool isNumberLabel(const char* name) ;
+      static bool isNumberLabel(const Symbol* name) ;
+
       void setLabel(Symbol* label) { m_label = label ; }
       Symbol* label() const { return m_label ; }
 

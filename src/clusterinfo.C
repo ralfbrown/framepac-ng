@@ -327,6 +327,16 @@ Symbol* ClusterInfo::genLabel()
 
 //----------------------------------------------------------------------------
 
+static Symbol* number ;
+
+Symbol* ClusterInfo::numberLabel()
+{
+   if (!number) number = Symbol::create("<NUMBER>") ;
+   return number ;
+}
+
+//----------------------------------------------------------------------------
+
 bool ClusterInfo::isGeneratedLabel(const char* name)
 {
    if (!name || strncmp(name,"<CL_",4) != 0)
@@ -340,6 +350,20 @@ bool ClusterInfo::isGeneratedLabel(const char* name)
       return false ;
    // all checks passed, this is indeed a cluster label produced by genLabel()
    return true ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ClusterInfo::isNumberLabel(const char* name)
+{
+   return name && strcmp(name,"<NUMBER>") == 0 ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ClusterInfo::isNumberLabel(const Symbol* name)
+{
+   return name && name == number ;
 }
 
 //----------------------------------------------------------------------------
