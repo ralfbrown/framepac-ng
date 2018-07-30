@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-24					*/
+/* Version 0.07, last edit 2018-07-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -127,6 +127,8 @@ class ClusterInfo : public Object
       RefArray* allMembers() const ;
 
       static Symbol* genLabel() ;
+      static bool isGeneratedLabel(const char* name) ;
+      static bool isGeneratedLabel(Symbol *name) { return name ? isGeneratedLabel(name->c_str()) : false ; }
       void setLabel(Symbol* label) { m_label = label ; }
       Symbol* label() const { return m_label ; }
 

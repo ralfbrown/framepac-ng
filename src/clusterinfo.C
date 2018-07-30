@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.07, last edit 2018-07-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -323,6 +323,23 @@ Symbol* ClusterInfo::genLabel()
    size_t id = ++next_cluster_ID ;
    ScopedCharPtr symname { Fr::aprintf("<CL_%lu>",id) } ;
    return Symbol::create(symname) ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ClusterInfo::isGeneratedLabel(const char* name)
+{
+   if (!name || strncmp(name,"<CL_",4) != 0)
+      return false ;
+   name += 4 ;  // skip the prefix
+   // skip over disambiguating digits
+   while (*name && isdigit(*name))
+      name++ ;
+   // verify the suffix following the digits
+   if (name[0] != '>' || name[1] != '\0')
+      return false ;
+   // all checks passed, this is indeed a cluster label produced by genLabel()
+   return true ;
 }
 
 //----------------------------------------------------------------------------
