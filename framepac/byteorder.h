@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-15					*/
+/* Version 0.07, last edit 2018-07-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -25,8 +25,35 @@
 #include <cstdint>
 #include "framepac/config.h"
 
+// check for #defines indicating little-endian target architectures
+#if (defined(__GNUC__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+   || defined(__ARMEL__) || defined(__THUMBEL__) || defined(__AARCH64EL__) || defined(_MIPSEL) || defined(__MIPSEL) \
+   || defined(__MIPSEL__) || defined(_M_IX86) || defined(_M_X86) || defined(_M_IA64) || defined(_M_ARM) \
+   || defined(__LITTLE_ENDIAN__)
+#  define FrLITTLE_ENDIAN
+
+// check for #defines indicating big-endian target architectures
+#elif (defined(__GNUC__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) \
+   || defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || defined(_MIPSEB) || defined(__MIPSEB) \
+   || defined(__MIPSEB__) || defined(_M_PPC) \
+   || defined(__BIG_ENDIAN__)
+#  define FrBIG_ENDIAN
+#else
+
+// try to convince the preprocessor to determine endianness for us
+# if '1234' == 0x31323334
+#  define FrBIG_ENDIAN
+# else
+#  define FrLITTLE_ENDIAN
+# endif
+#endif
+
+// final fallback if none of the above worked: manual configuration
+#if !defined(FrLITTLE_ENDIAN) && !defined(FrBIG_ENDIAN)
+// uncomment the appropriate line below for the endianness of the platform if it is not automatically detected above
 #define FrLITTLE_ENDIAN
 //#define FrBIG_ENDIAN
+#endif /* !FrLITTLE_ENDIAN && !FrBIG_ENDIAN */
 
 namespace Fr
 {
