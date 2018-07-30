@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include "framepac/byteorder.h"   // for FrLITTLE_ENDIAN
 #include "framepac/charget.h"
 #include "framepac/list.h"
 #include "framepac/stringbuilder.h"
@@ -63,7 +64,17 @@ void WordSplitter::shiftBuffer()
       }
    if (m_lookahead + m_lookback >= sizeof(m_buffer))
       {
-      memmove(m_buffer,m_buffer+1,sizeof(m_buffer)-1) ;
+      if (sizeof(m_buffer) == sizeof(size_t))
+	 {
+	 // optimization for when the buffer is the same size as the machine word: treat is as a word and shift
+# ifdef FrLITTLE_ENDIAN
+	 *((size_t*)&m_buffer) >>= 8 ;
+# else
+	 *((size_t*)&m_buffer) <<= 8 ;
+# endif /* FrLITTLE_ENDIAN */
+	 }
+      else
+	 memmove(m_buffer,m_buffer+1,sizeof(m_buffer)-1) ;
       m_lookback-- ;
       }
    m_buffer[m_lookahead + m_lookback++] = m_getter.get() ;
@@ -74,8 +85,14 @@ void WordSplitter::shiftBuffer()
 
 StringPtr WordSplitter::nextWord()
 {
+   if (m_lookahead == 0) // out of input?
+      return nullptr ;
    StringBuilder sb ;
+   while (m_lookahead > 0)
+      {
    //TODO
+      shiftBuffer() ;
+      }
    return postprocess(sb.string()) ;
 }
 

@@ -61,12 +61,25 @@ class WordSplitter
       operator bool () const ;  // did we successfully init?
       bool eof() const ;
    public:
-      enum boundary { no_boundary = 0, word_start = 1, word_end = 2, word_start_and_end = 3, empty_word = 4 } ;
+      enum boundary
+	 {
+	 no_boundary = 0,	// there is no boundary at this position; if we were outside a word (e.g. whitespace),
+	 			//   we remain outside a word; if in a word, we remain in the SAME word
+	 word_start = 1,	// the current character is the first character of a new word
+	 word_end = 2,		// the preceding character was the last character of the current word
+	 word_start_and_end = 3,// the preceding character was the last character of the current word, and the
+	 			//   current character is the first character of a new word
+	 empty_word = 4		// the preceding character is a delimiter indicating that a word starts after it,
+	 			//   and the current character is a delimiter indicating that a word ended before
+	 			//   it, resulting in a zero-length word between the previous and current characters
+	 } ;
    protected:
-      CharGetter &m_getter ;
-      char        m_buffer[16] ;		// maxlookahead+maxlookback <= 16 !
-      unsigned    m_lookahead { 0 } ;
-      unsigned    m_lookback { 0 } ;
+      CharGetter&  m_getter ;
+      char         m_buffer[8] ;		// (lookahead+maxlookback) <= 8 !
+      unsigned     m_lookahead { 0 } ;
+      unsigned     m_lookback { 0 } ;
+      mutable bool m_new_word { false } ; 	// did the previous nextWord() determine that the active character
+      						//  is the start of a new word?
 
    protected:
       void fillBuffer() ;
