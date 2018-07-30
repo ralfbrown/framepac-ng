@@ -81,10 +81,13 @@ IdxT Trie<T,IdxT,bits>::allocValuelessNode()
       {
       // reallocate the node buffer
       IdxT newcap = (m_capacity_valueless <= 500 ? 1000 : 3*m_capacity_valueless/2) ;
-      Node* new_nodes = new Node[newcap] ;
+      ValuelessNode* new_nodes = new ValuelessNode[newcap] ;
       if (new_nodes)
 	 {
-	 memcpy(new_nodes,m_valueless,m_capacity_valueless*sizeof(Node)) ;
+	 for (size_t i = 0 ; i < m_capacity_valueless ; ++i)
+	    {
+	    new_nodes[i] = m_valueless[i] ;
+	    }
 	 delete[] m_valueless ;
 	 m_valueless = new_nodes ;
 	 m_capacity_valueless = newcap ;
@@ -111,7 +114,10 @@ IdxT Trie<T,IdxT,bits>::allocNode()
       Node* new_nodes = new Node[newcap] ;
       if (new_nodes)
 	 {
-	 memcpy(new_nodes,m_nodes,m_capacity_full*sizeof(Node)) ;
+	 for (size_t i = 0 ; i < m_capacity_full ; ++i)
+	    {
+	    new_nodes[i] = m_nodes[i] ;
+	    }
 	 delete[] m_nodes ;
 	 m_nodes = new_nodes ;
 	 m_capacity_full = newcap ;
