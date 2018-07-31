@@ -61,6 +61,7 @@ void WordSplitter::shiftBuffer()
       if (!m_lookahead) return ;
       m_lookahead-- ;
       m_lookback++ ;
+      return  ;
       }
    if (m_lookahead + m_lookback >= sizeof(m_buffer))
       {
@@ -176,7 +177,7 @@ WordSplitter::operator bool () const
 
 bool WordSplitter::eof() const
 {
-   return m_getter.eof();
+   return m_getter.eof() && !m_new_word ;
 }
 
 //----------------------------------------------------------------------------
