@@ -27,10 +27,21 @@
 using namespace Fr ;
 using namespace std ;
 
+/************************************************************************/
+/*	Types for this module						*/
+/************************************************************************/
+
 typedef void output_function(WordSplitter&, char delimiter) ;
 typedef void process_function(output_function*, CFile&, char in_delimiter, char out_delimiter) ;
 
-//----------------------------------------------------------------------------
+/************************************************************************/
+/*	Global variables for this module				*/
+/************************************************************************/
+
+static bool keep_embedded { false } ;
+
+/************************************************************************/
+/************************************************************************/
 
 static void line_by_line(WordSplitter& splitter, char delim)
 {
@@ -69,6 +80,7 @@ static void process_English(output_function* fn, CFile& file, char, char out_del
       char* line = file.getCLine() ;
       CharGetterCString getter(line) ;
       WordSplitterEnglish splitter(getter) ;
+      splitter.keepEmbeddedPeriods(keep_embedded) ;
       fn(splitter,out_delimiter) ;
       delete[] line ;
       }
@@ -127,7 +139,7 @@ int main(int argc, char** argv)
    bool out_list { false } ;
    bool out_separated { false } ;
    char out_delimiter { ' ' } ;
-   
+
    Fr::Initialize() ;
    ArgParser cmdline ;
    cmdline
@@ -137,6 +149,7 @@ int main(int argc, char** argv)
       .add(out_normalized,"n","normalized","DELIM\voutput results normalized to one DELIM between tokens (default blank)"," ")
       .add(out_list,"l","list","output results as a list of words for each line of input")
       .add(out_separated,"s","separate","output each token on a separate line")
+      .add(keep_embedded,"k","keep_periods","don't split on periods embedded between two letters")
       .addHelp("","longhelp","show detailed help",true) ;
    if (!cmdline.parseArgs(argc,argv))
       {

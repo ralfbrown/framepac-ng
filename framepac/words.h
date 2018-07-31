@@ -162,6 +162,9 @@ class WordSplitterEnglish : public WordSplitter
       virtual ~WordSplitterEnglish() {}
       WordSplitterEnglish& operator= (const WordSplitterEnglish&) = default ;
 
+      void keepEmbeddedPeriods(bool keep = true) { m_embedded_periods = keep ; }
+      bool keepingEmbeddedPeriods() const { return m_embedded_periods ; }
+
    protected:
       virtual boundary boundaryType(const char* window_start, const char* currpos,
 				    const char* window_end) const ;
@@ -169,6 +172,7 @@ class WordSplitterEnglish : public WordSplitter
       static const char s_default_delim[256] ;
       const char*  m_delim ;
       bool         m_tag_mode ;
+      bool         m_embedded_periods { false } ;
       mutable bool m_in_tag { false } ;
    } ;
 

@@ -123,6 +123,10 @@ WordSplitter::boundary WordSplitterEnglish::boundaryType(const char* window_star
       {
       return no_boundary ;
       }
+   if (prevchar == '.' && isalpha(currchar))
+      {
+      return keepingEmbeddedPeriods() ? no_boundary : word_start_and_end ;
+      }
    // a digit followed by an 'e' followed by an optional sign and more digits is part of a floating-point number
    if ((currchar == 'e' || currchar == 'E') && isdigit(prevchar))
       {
@@ -172,9 +176,16 @@ WordSplitter::boundary WordSplitterEnglish::boundaryType(const char* window_star
       if (currchar == '>')
 	 m_in_tag = false ;
       }
-   else if (prevchar == '<' || prevchar == '>')
+   else
       {
-      return word_start_and_end ;
+      if (prevchar == '<' || prevchar == '>')
+	 {
+	 return word_start_and_end ;
+	 }
+      else if (currchar == '<' || currchar == '>')
+	 {
+	 return word_start_and_end ;
+	 }
       }
    if (m_in_tag && (currchar == ':' || currchar == '/'))
       {
@@ -187,7 +198,7 @@ WordSplitter::boundary WordSplitterEnglish::boundaryType(const char* window_star
       // we know that the previous character isn't whitespace, so the delimiter causes a word break
       return word_start_and_end ;
       }
-   else if (m_delim[(unsigned char)prevchar])
+   else if (prevchar != '.' && m_delim[(unsigned char)prevchar])
       {
       // if the previous character was a delimiter and the current one isn't, we need to split following
       //   the previous char
