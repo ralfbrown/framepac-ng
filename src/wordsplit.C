@@ -177,7 +177,7 @@ WordSplitter::operator bool () const
 
 bool WordSplitter::eof() const
 {
-   return m_getter.eof() && !m_new_word ;
+   return m_lookahead == 0 && !m_new_word ;
 }
 
 //----------------------------------------------------------------------------

@@ -78,7 +78,6 @@ static void process_English(output_function* fn, CFile& file, char, char out_del
    while (!file.eof())
       {
       char* line = file.getCLine() ;
-cerr<<"processing '"<<line<<"'"<<endl;
       CharGetterCString getter(line) ;
       WordSplitterEnglish splitter(getter) ;
       splitter.keepEmbeddedPeriods(keep_embedded) ;
@@ -110,7 +109,6 @@ static void process_delimited(output_function* fn, CFile& file, char in_delimite
    while (!file.eof())
       {
       char* line = file.getCLine() ;
-cerr<<"processing '"<<line<<"'"<<endl;
       CharGetterCString getter(line) ;
       WordSplitterDelimiter splitter(getter,in_delimiter) ;
       fn(splitter,out_delimiter) ;
