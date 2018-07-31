@@ -143,7 +143,7 @@ List* WordSplitter::allWords()
       {
       StringPtr word = nextWord() ;
       if (word)
-	 lb += word ;
+	 lb += word.move() ;
       }
    return lb.move() ;
 }
@@ -214,12 +214,17 @@ WordSplitter::boundary WordSplitterWhitespace::boundaryType(const char* window_s
 WordSplitter::boundary WordSplitterDelimiter::boundaryType(const char* window_start, const char* currpos,
    const char* window_end) const
 {
+   char currchar = currpos[0] ;
+   bool is_delim = (currchar == m_delim) ;
    if (currpos == window_start)
-      return (*currpos == m_delim) ? word_start_and_end : word_start ;
+      return is_delim ? word_start_and_end : word_start ;
    if (currpos == window_end)
-      return (*currpos == m_delim) ? no_boundary : word_end ;
-   //TODO
-   return no_boundary ;
+      return is_delim ? no_boundary : word_end ;
+   char prevchar = currpos[-1] ;
+   bool was_delim = (prevchar == m_delim) ;
+   if (!is_delim)
+      return was_delim ? word_start : no_boundary ;
+   return (prevchar == m_delim) ? empty_word : word_end ;
 }
 
 /************************************************************************/
