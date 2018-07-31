@@ -380,6 +380,7 @@ TESTPROGS = \
 	$(BINDIR)/membench$(EXE) \
 	$(BINDIR)/objtest$(EXE) \
 	$(BINDIR)/parhash$(EXE) \
+	$(BINDIR)/splitwords$(EXE) \
 	$(BINDIR)/stringtest$(EXE) \
 	$(BINDIR)/tpool$(EXE)
 
@@ -475,6 +476,10 @@ $(BINDIR)/objtest$(EXE):	tests/objtest$(OBJ) $(LIBRARY)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
 $(BINDIR)/parhash$(EXE):	tests/parhash$(OBJ) $(LIBRARY)
+		@ mkdir -p $(BINDIR)
+		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
+
+$(BINDIR)/splitwords$(EXE):	tests/splitwords$(OBJ) $(LIBRARY)
 		@ mkdir -p $(BINDIR)
 		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
@@ -886,6 +891,7 @@ tests/objtest$(OBJ):	tests/objtest$(C) framepac/objreader.h framepac/symboltable
 tests/parhash$(OBJ):	tests/parhash$(C) framepac/argparser.h framepac/fasthash64.h framepac/hashtable.h \
 			framepac/message.h framepac/random.h framepac/symboltable.h framepac/texttransforms.h \
 			framepac/threadpool.h framepac/timer.h framepac/utility.h
+tests/splitwords$(OBJ): tests/splitwords$(C) framepac/words.h framepac/argparser.h framepac/charget.h framepac/file.h
 tests/stringtest$(OBJ):	tests/stringtest$(C) framepac/argparser.h framepac/string.h framepac/memory.h \
 			framepac/threadpool.h framepac/timer.h
 tests/tpool$(OBJ):	tests/tpool$(C) framepac/argparser.h framepac/random.h framepac/threadpool.h framepac/timer.h
