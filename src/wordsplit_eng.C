@@ -84,6 +84,11 @@ WordSplitter::boundary WordSplitterEnglish::boundaryType(const char* window_star
       //  a split
       return word_start_and_end ;
       }
+   //  multiple consecutive periods stay together
+   if (currchar == '.' && prevchar == '.')
+      {
+      return no_boundary ;
+      }
    // a digit followed by an 'e' followed by an optional sign and more digits is part of a floating-point number
    if ((currchar == 'e' || currchar == 'E') && isdigit(prevchar))
       {
@@ -114,25 +119,37 @@ WordSplitter::boundary WordSplitterEnglish::boundaryType(const char* window_star
       }
    if (currchar == '\'')
       {
-      //TODO: check if contraction or doubled single quote
+      if (prevchar == '\'')
+	 return no_boundary ;   // repeated single quote
+      if (isalpha(prevchar) && isalpha(nextchar))
+	 return no_boundary ;	// contraction or ohina (Hawai'ian)
       }
    if (currchar == '`')
       {
-      //TODO: check if doubled back-quote
+      if (prevchar == '`')
+	 return no_boundary ;   // repeated back-quote
       }
-#if 0
-   if (PnP_mode && (currchar == ':' || currchar == '/'))
+   if (m_tag_mode)
+      {
+      // Remember whether we are inside a tag.  This works because we are called exactly once per character,
+      //   in strict left-to-right order.
+      if (currchar == '<')
+	 m_in_tag = true ;
+      if (currchar == '>')
+	 m_in_tag = false ;
+      }
+   if (m_in_tag && (currchar == ':' || currchar == '/'))
       {
       // treat colons and slashes as normal non-delimiter characters inside a glossary variable or marker
-
+      return no_boundary ;
       }
-#endif
    // at last, the default case: check whether the character is a delimiter, and split appropriately
    if (m_delim[(unsigned)currchar])
       {
-//TODO   
+      // we know that the previous character isn't whitespace, so the delimiter causes a word break
+      return word_start_and_end ;
       }
-   return no_boundary ; //FIXME
+   return no_boundary ;
 }
 
 //----------------------------------------------------------------------------

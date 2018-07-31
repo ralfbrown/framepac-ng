@@ -156,8 +156,8 @@ class WordSplitterEnglish : public WordSplitter
    public:
       typedef WordSplitter super ;
    public:
-      WordSplitterEnglish(class CharGetter& getter, const char* delim = nullptr)
-	 : super(getter), m_delim(delim) {}
+      WordSplitterEnglish(class CharGetter& getter, const char* delim = nullptr, bool tag_mode = false)
+	 : super(getter), m_delim(delim), m_tag_mode(tag_mode) {}
       WordSplitterEnglish(const WordSplitterEnglish&) = default ;
       virtual ~WordSplitterEnglish() {}
       WordSplitterEnglish& operator= (const WordSplitterEnglish&) = default ;
@@ -166,7 +166,9 @@ class WordSplitterEnglish : public WordSplitter
       virtual boundary boundaryType(const char* window_start, const char* currpos,
 				    const char* window_end) const ;
    protected:
-      const char* m_delim ;
+      const char*  m_delim ;
+      bool         m_tag_mode ;
+      mutable bool m_in_tag { false } ;
    } ;
 
 /************************************************************************/
