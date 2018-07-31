@@ -38,6 +38,7 @@ static constexpr unsigned num_allocators = lengthof(allocator_sizes) ;
 static constexpr unsigned max_small_alloc = allocator_sizes[num_allocators-1] ;
 
 static SmallAlloc* allocators[max_small_alloc] ;
+static bool allocators_initialized ;
 
 /************************************************************************/
 /************************************************************************/
@@ -124,6 +125,8 @@ String::~String()
 
 void String::StaticInitialization()
 {
+   if (allocators_initialized)
+      return ;
    unsigned prev_size = 0 ;
    for (size_t i = 0 ; i < num_allocators ; ++i)
       {
@@ -135,6 +138,7 @@ void String::StaticInitialization()
 	 }
       prev_size = size ;
       }
+   allocators_initialized = true ;
    return ;
 }
 

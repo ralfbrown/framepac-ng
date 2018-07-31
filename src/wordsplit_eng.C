@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-11					*/
+/* Version 0.07, last edit 2018-07-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2018 Carnegie Mellon University			*/
@@ -23,6 +23,40 @@
 
 namespace Fr
 {
+
+/************************************************************************/
+/************************************************************************/
+
+const char WordSplitterEnglish::s_default_delim[256] =
+   {
+   // delimiters for plain ASCII and supersets such as UTF-8
+      1, 1, 1, 1, 1, 1, 1, 1,	1, 1, 1, 1, 1, 1, 1, 1,	   // ^@ to ^O
+      1, 1, 1, 1, 1, 1, 1, 1,	1, 1, 1, 1, 1, 1, 1, 1,	   // ^P to ^_
+      1, 1, 1, 1, 1, 1, 1, 1,	1, 1, 1, 1, 1, 1, 1, 1,	   // SP to /
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 1, 1, 0, 1, 0, 1,	   //  0 to ?
+      1, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   //  @ to O
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 1, 1, 1, 1, 0,	   //  P to _
+      1, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   //  ` to o
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 1, 1, 1, 1, 0,	   //  p to DEL
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   // 0x80 to 0x8F
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   // 0x90 to 0x9F
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   // 0xA0 to 0xAF
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   // 0xB0 to 0xBF
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   // 0xC0 to 0xCF
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   // 0xD0 to 0xDF
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   // 0xE0 to 0xEF
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   // 0xF0 to 0xFF
+#if 0 // delimiters for Latin-1
+      0, 0, 1, 0, 1, 1, 0, 0,	0, 1, 0, 0, 0, 0, 0, 0,	   // 0x80 to 0x8F
+      0, 1, 1, 1, 1, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   // 0x90 to 0x9F
+      1, 1, 0, 1, 0, 1, 0, 1,	0, 0, 0, 1, 0, 0, 0, 0,	   // 0xA0 to 0xAF
+      1, 0, 0, 0, 0, 1, 1, 1,	1, 0, 0, 1, 0, 0, 0, 1,	   // 0xB0 to 0xBF
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   // 0xC0 to 0xCF
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   // 0xD0 to 0xDF
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   // 0xE0 to 0xEF
+      0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,	   // 0xF0 to 0xFF
+#endif
+   } ;
 
 /************************************************************************/
 /*	Methods for class WordSplitterEnglish				*/
@@ -144,7 +178,7 @@ WordSplitter::boundary WordSplitterEnglish::boundaryType(const char* window_star
       return no_boundary ;
       }
    // at last, the default case: check whether the character is a delimiter, and split appropriately
-   if (m_delim[(unsigned)currchar])
+   if (m_delim[(unsigned char)currchar])
       {
       // we know that the previous character isn't whitespace, so the delimiter causes a word break
       return word_start_and_end ;

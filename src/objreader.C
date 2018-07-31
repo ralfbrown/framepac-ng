@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.07, last edit 2018-07-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -870,6 +870,7 @@ void ObjectReader::StaticInitialization()
    if (!symbolEOF)
       {
       SymbolTable::StaticInitialization() ;  // ensure that we have a default symbol table
+      String::StaticInitialization() ;	     // ensure that string allocators are initialized
       SymHashSet::threadInit() ;	     // and initialize per-thread data for main thread
       symbolEOF = SymbolTable::current()->add("*EOF*") ;
       }

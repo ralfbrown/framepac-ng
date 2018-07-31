@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.07, last edit 2018-07-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2018 Carnegie Mellon University			*/
@@ -66,7 +66,7 @@ void WordSplitter::shiftBuffer()
       {
       if (sizeof(m_buffer) == sizeof(size_t))
 	 {
-	 // optimization for when the buffer is the same size as the machine word: treat is as a word and shift
+	 // optimization for when the buffer is the same size as the machine word: treat it as a word and shift
 # ifdef FrLITTLE_ENDIAN
 	 *((size_t*)&m_buffer) >>= 8 ;
 # else
@@ -86,7 +86,17 @@ void WordSplitter::shiftBuffer()
 StringPtr WordSplitter::nextWord()
 {
    if (m_lookahead == 0) // out of input?
+      {
+      if (m_new_word && m_lookback > 0)
+	 {
+	 // we have an unconsumed character, so return it as a single-char word
+	 m_new_word = false ;
+	 StringBuilder sb ;
+	 sb += m_buffer[m_lookback-1] ;
+	 return postprocess(sb.string()) ;
+	 }
       return nullptr ;
+      }
    StringBuilder sb ;
    bool in_word = false ;
    if (m_new_word)
@@ -99,7 +109,9 @@ StringPtr WordSplitter::nextWord()
       }
    while (m_lookahead > 0)
       {
+      char currchar = m_buffer[m_lookback] ;
       boundary b = boundaryType(m_buffer,m_buffer+m_lookback,m_buffer+m_lookback+m_lookahead) ;
+      shiftBuffer() ;
       if (b == word_end || b == word_start_and_end)
 	 {
 	 if (b == word_start_and_end)
@@ -116,8 +128,7 @@ StringPtr WordSplitter::nextWord()
 	 in_word = true ;
 	 }
       if (in_word)
-	 sb += m_buffer[m_lookback] ;
-      shiftBuffer() ;
+	 sb += currchar ;
       }
    return postprocess(sb.string()) ;
 }
@@ -129,7 +140,9 @@ List* WordSplitter::allWords()
    ListBuilder lb ;
    while (!eof())
       {
-      lb += nextWord() ;
+      StringPtr word = nextWord() ;
+      if (word)
+	 lb += word ;
       }
    return lb.move() ;
 }
@@ -143,8 +156,11 @@ StringPtr WordSplitter::delimitedWords(char delim)
    while (!eof())
       {
       StringPtr word = nextWord() ;
+      if (!word)
+	 continue ;
       if (!first) sb += delim ;
       sb.append(word->c_str()) ;
+      first = false ;
       }
    return sb.string() ;
 }
@@ -160,7 +176,7 @@ WordSplitter::operator bool () const
 
 bool WordSplitter::eof() const
 {
-   return !m_getter.eof();
+   return m_getter.eof();
 }
 
 //----------------------------------------------------------------------------

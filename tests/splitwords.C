@@ -128,6 +128,7 @@ int main(int argc, char** argv)
    bool out_separated { false } ;
    char out_delimiter { ' ' } ;
    
+   Fr::Initialize() ;
    ArgParser cmdline ;
    cmdline
       .add(in_CSV,"c","csv","DELIM\vprocess input as CSV file using DELIM as delimiter character (default is comma)",",")
@@ -173,6 +174,13 @@ int main(int argc, char** argv)
    else if (out_separated)
       {
       out_fn = word_per_line ;
+      }
+   if (argc == 1)
+      {
+      // get input from stdin
+      CFile file(stdin) ;
+      if (file)
+	 in_fn(out_fn,file,in_delimiter,out_delimiter) ;
       }
    while (argc > 1)
       {
