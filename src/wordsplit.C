@@ -88,9 +88,35 @@ StringPtr WordSplitter::nextWord()
    if (m_lookahead == 0) // out of input?
       return nullptr ;
    StringBuilder sb ;
+   bool in_word = false ;
+   if (m_new_word)
+      {
+      // did the previous nextWord() find that the then-current char is the start of a word?  If so, we continue
+      //   building on it until the next boundary
+      m_new_word = false ;
+      sb += m_buffer[m_lookback-1] ;
+      in_word = true ;
+      }
    while (m_lookahead > 0)
       {
-   //TODO
+      boundary b = boundaryType(m_buffer,m_buffer+m_lookback,m_buffer+m_lookback+m_lookahead) ;
+      if (b == word_end || b == word_start_and_end)
+	 {
+	 if (b == word_start_and_end)
+	    m_new_word = true ;	// remember that the current char belongs to the next word
+	 break ;
+	 }
+      if (b == word_start)
+	 {
+	 if (in_word)			// oops, two consecutive word starts
+	    {
+	    m_new_word = true ;
+	    break ;
+	    }
+	 in_word = true ;
+	 }
+      if (in_word)
+	 sb += m_buffer[m_lookback] ;
       shiftBuffer() ;
       }
    return postprocess(sb.string()) ;
