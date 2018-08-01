@@ -54,9 +54,6 @@ class BufferBuilder
       void append(const BufferBuilder& value) ;
       void remove() { if (m_currsize > 0) --m_currsize ; } // remove last-added item
 
-      size_t reserveElements(size_t count) ;
-      void setElement(size_t N, T& value) ;
-
       size_t currentLength() const { return m_currsize ; }
       size_t size() const { return m_currsize ; }
       size_t capacity() const { return m_alloc ; }
@@ -77,11 +74,6 @@ class BufferBuilder
       BufferBuilder &operator += (const BufferBuilder& buf) { append(buf) ; return *this ; }
 
    protected:
-#if __cplusplus > 201400
-      std::shared_timed_mutex m_buffer_lock ;
-#else
-      std::mutex m_buffer_lock ;
-#endif /* C++14 or later */
       T        *m_buffer = m_localbuf ;
       size_t	m_alloc = minsize ;
       size_t	m_currsize = 0 ;
@@ -92,6 +84,40 @@ class BufferBuilder
       static constexpr unsigned file_format = 1 ;
       static constexpr unsigned min_file_format = 1 ;
    } ;
+
+//----------------------------------------------------------------------------
+
+template <typename T, size_t minsize = 200>
+class ParallelBufferBuilder : public BufferBuilder<T,minsize>
+   {
+   public: // types
+      typedef BufferBuilder<T,minsize> super ;
+   public: // methods
+      ParallelBufferBuilder() : super() {}
+      ParallelBufferBuilder(const ParallelBufferBuilder&) = delete ;
+      ~ParallelBufferBuilder() ;
+      void operator= (const ParallelBufferBuilder&) = delete ;
+
+      // new functions to support parallel construction of the buffer
+      size_t reserveElements(size_t count) ;
+      void setElement(size_t N, T& value) ;
+
+      // operator overloads
+      T *operator * () const { return this->m_buffer ; }
+      T operator [] (size_t N) const { return this->m_buffer[N] ; }
+      ParallelBufferBuilder &operator += (T value) { this->append(value) ; return *this ; }
+      ParallelBufferBuilder &operator += (const ParallelBufferBuilder& buf) { this->append(buf) ; return *this ; }
+      ParallelBufferBuilder &operator += (const super& buf) { this->append(buf) ; return *this ; }
+
+   protected:      
+#if __cplusplus > 201400
+      std::shared_timed_mutex m_buffer_lock ;
+#else
+      std::mutex m_buffer_lock ;
+#endif /* C++14 or later */
+   } ;
+
+//----------------------------------------------------------------------------
 
 extern template class BufferBuilder<char> ;
 

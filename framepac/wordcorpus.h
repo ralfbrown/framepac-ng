@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-27					*/
+/* Version 0.07, last edit 2018-07-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -81,8 +81,7 @@ class WordCorpusT
    public: // types
       typedef IdT ID ;
       typedef IdxT Index ;
-      typedef BufferBuilder<IdT,1> IDBufferBuilder ;
-      //typedef ConcurrentBufferBuilder<IdT,1> IDBufferBuilder ;
+      typedef ParallelBufferBuilder<IdT,1> IDBufferBuilder ;
       typedef Fr::SuffixArray<IdT,IdxT> SufArr ;
       typedef Fr::HashTable<Fr::CString,IdT> Map ;
       typedef Fr::BidirIndex<Fr::CString,IdT> BiMap ;
