@@ -153,18 +153,6 @@ List* WordSplitter::allWords()
 StringPtr WordSplitter::delimitedWords(char delim)
 {
    StringBuilder sb ;
-#if OLD
-   bool first = true ;
-   while (!eof())
-      {
-      StringPtr word = nextWord() ;
-      if (!word)
-	 continue ;
-      if (!first) sb += delim ;
-      sb.append(word->c_str()) ;
-      first = false ;
-      }
-#else
    bool in_word = false ;
    while (m_lookahead > 0)
       {
@@ -182,7 +170,6 @@ StringPtr WordSplitter::delimitedWords(char delim)
       if (in_word)
 	 sb += currchar ;
       }
-#endif
    return sb.string() ;
 }
 
