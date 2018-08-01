@@ -836,7 +836,26 @@ bool WordCorpusT<IdT,IdxT>::printWords(CFile& fp, size_t max) const
       return false ;
    if (max > corpusSize())
       max = corpusSize() ;
-   //TODO
+   bool line_start = true ;
+   for (size_t i = 0 ; i < max ; ++i)
+      {
+      const char* word = getWordForLoc(i) ;
+      if (!word)
+	 {
+	 fp.putc('\n') ;
+	 line_start = true ;
+	 }
+      else
+	 {
+	 if (!line_start)
+	    fp.putc(' ') ;
+	 fp.puts(word) ;
+	 line_start = false ;
+	 }
+      }
+   // unless the last thing we printed was a newline, terminate the current line
+   if (!line_start)
+      fp.putc('\n') ;
    return true ;
 }
 
@@ -853,9 +872,38 @@ bool WordCorpusT<IdT,IdxT>::printSuffixes(CFile& fp, bool by_ID, size_t max) con
       max = 2 ;
    for (size_t i = 0 ; i < corpusSize() ; ++i)
       {
-      //TODO
+      IdxT offset = m_fwdindex.indexAt(i) ;
+      if (offset > corpusSize())
+	 {
+	 fp.puts("-1\t<eol>\n") ;
+	 continue ;
+	 }
+      fp.printf("%lu\t",(unsigned long)offset) ;
+      size_t maxhere = max ;
+      if (offset + maxhere > corpusSize())
+	 maxhere = corpusSize() - offset ;
+      for (size_t j = 0 ; j < maxhere ; ++j)
+	 {
+	 if (j > 0)
+	    fp.putc(' ') ;
+	 if (by_ID)
+	    {
+	    IdxT id = m_fwdindex.idAt(offset+j) ;
+	    if (id >= m_last_linenum)
+	       fp.puts("<eol>") ;
+	    else
+	       fp.printf("%lu",(unsigned long)id) ;
+	    }
+	 else
+	    {
+	    const char* word = getWordForLoc(offset+j) ;
+	    fp.puts(word ? word : "<eol>") ;
+	    }
+	 }
+      if (offset + maxhere < corpusSize())
+	 fp.puts(" ...") ;
+      fp.putc('\n') ;
       }
-   (void)by_ID;
    return true ;
 }
 
