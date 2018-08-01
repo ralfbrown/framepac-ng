@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.07, last edit 2018-07-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -22,6 +22,7 @@
 #ifndef _Fr_BUILDER_H_INCLUDED
 #define _Fr_BUILDER_H_INCLUDED
 
+#include <mutex>
 #include "framepac/config.h"
 
 /************************************************************************/
@@ -53,6 +54,9 @@ class BufferBuilder
       void append(const BufferBuilder& value) ;
       void remove() { if (m_currsize > 0) --m_currsize ; } // remove last-added item
 
+      size_t reserveElements(size_t count) ;
+      void setElement(size_t N, T& value) ;
+
       size_t currentLength() const { return m_currsize ; }
       size_t size() const { return m_currsize ; }
       size_t capacity() const { return m_alloc ; }
@@ -73,6 +77,11 @@ class BufferBuilder
       BufferBuilder &operator += (const BufferBuilder& buf) { append(buf) ; return *this ; }
 
    protected:
+#if __cplusplus > 201400
+      std::shared_timed_mutex m_buffer_lock ;
+#else
+      std::mutex m_buffer_lock ;
+#endif /* C++14 or later */
       T        *m_buffer = m_localbuf ;
       size_t	m_alloc = minsize ;
       size_t	m_currsize = 0 ;

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-27					*/
+/* Version 0.07, last edit 2018-07-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -569,8 +569,12 @@ void WordCorpusT<IdT,IdxT>::clearAttributes(uint8_t mask) const
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::createIndex(bool bidirectional)
 {
-   (void)bidirectional;
-   return false ; //FIXME
+   bool success = createForwardIndex() ;
+   if (success && bidirectional)
+      {
+      success &= createReverseIndex() ;
+      }
+   return success ;
 }
 
 //----------------------------------------------------------------------------
@@ -783,8 +787,9 @@ bool WordCorpusT<IdT,IdxT>::printSuffixes(CFile&, bool by_ID, size_t max) const
 template <typename IdT, typename IdxT>
 IdxT WordCorpusT<IdT,IdxT>::reserveIDs(IdxT count, IdT* newline)
 {
-   (void)count; (void)newline;
-   return 0 ; //FIXME
+   if (newline)
+      *newline = (--m_last_linenum)+1 ;
+   return m_wordbuf.reserveElements(count) ;
 }
 
 //----------------------------------------------------------------------------
@@ -792,8 +797,8 @@ IdxT WordCorpusT<IdT,IdxT>::reserveIDs(IdxT count, IdT* newline)
 template <typename IdT, typename IdxT>
 void WordCorpusT<IdT,IdxT>::setID(IdxT N, IdT id)
 {
-   (void)N; (void)id;
-   return ; //FIXME
+   m_wordbuf.setElement(N,id) ;
+   return ;
 }
 
 //----------------------------------------------------------------------------
