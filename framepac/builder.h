@@ -53,6 +53,7 @@ class BufferBuilder
       void append(T value) ;
       void append(const BufferBuilder& value) ;
       void remove() { if (m_currsize > 0) --m_currsize ; } // remove last-added item
+      void reverse() ;
 
       size_t currentLength() const { return m_currsize ; }
       size_t size() const { return m_currsize ; }
@@ -95,7 +96,7 @@ class ParallelBufferBuilder : public BufferBuilder<T,minsize>
    public: // methods
       ParallelBufferBuilder() : super() {}
       ParallelBufferBuilder(const ParallelBufferBuilder&) = delete ;
-      ~ParallelBufferBuilder() ;
+      ~ParallelBufferBuilder() {}
       void operator= (const ParallelBufferBuilder&) = delete ;
 
       // new functions to support parallel construction of the buffer

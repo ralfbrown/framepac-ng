@@ -22,6 +22,7 @@
 #ifndef Fr_BUFBUILDER_CC_INCLUDED
 #define Fr_BUFBUILDER_CC_INCLUDED
 
+#include <algorithm>
 #include "framepac/builder.h"
 #include "framepac/convert.h"
 
@@ -143,6 +144,15 @@ void BufferBuilder<T,minsize>::append(const BufferBuilder<T,minsize>& addbuf)
       {
       m_buffer[m_currsize++] = addbuf[i] ;
       }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, size_t minsize>
+void BufferBuilder<T,minsize>::reverse() 
+{
+   std::reverse(m_buffer,m_buffer+size()) ;
    return ;
 }
 

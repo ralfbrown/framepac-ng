@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-31					*/
+/* Version 0.08, last edit 2018-08-01					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -137,6 +137,7 @@ class WordCorpusT
       void clearAttribute(unsigned bit) const { clearAttribute(1<<bit) ; }
 
       bool createIndex(bool bidirectional = false) ;
+      void freeTermFrequencies() ;
       bool freeIndices() ;
       bool lookup(const ID *key, unsigned keylen, Index &first_match, Index &last_match) const ;
       bool enumerateForward(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc *fn, void *user_arg) ;
@@ -155,6 +156,7 @@ class WordCorpusT
       IdT newlineID() const { return m_newline ; }
       IdT rareID() const { return m_rare ; }
 
+      bool haveTermFrequencies() const { return m_freq != nullptr ; }
       IdxT getFreq(IdT N) const ;
       IdxT getFreq(const char* word) const ;
 
@@ -191,7 +193,7 @@ class WordCorpusT
    protected:
       bool loadMapped(const char* filename, off_t base_offset = 0) ;
       bool loadFromMmap(const char* mmap_base, size_t mmap_len) ;
-      void incrFreq(IdT N) { if (N < m_wordbuf.size()) ++m_freq[N] ; else ++m_freq[m_newline] ; }
+      void computeTermFrequencies() ;
       bool createForwardIndex() ;
       bool createReverseIndex() ;
       bool enumerateForward(IdxT start, IdxT stop, unsigned minlen, unsigned maxlen, size_t minfreq,

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-31					*/
+/* Version 0.08, last edit 2018-08-01					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -74,7 +74,7 @@ WordCorpusT<IdT,IdxT>::~WordCorpusT()
    discardAttributes() ;
    discardContextEquivs() ;
    discardText() ;
-   //TODO
+   freeTermFrequencies() ;
    return ;
 }
 
@@ -188,7 +188,7 @@ bool WordCorpusT<IdT,IdxT>::loadMapped(const char *filename, off_t base_offset)
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::loadFromMmap(const char* mmap_base, size_t mmap_len)
 {
-   size_t header_size = CFile::signatureSize(signature) /*+ 2*sizeof(uint8_t) FIXME */ ;
+   size_t header_size = CFile::signatureSize(signature) ;
    if (!mmap_base || mmap_len < header_size)
       return false;
    m_readonly = true ;			// can't modify if we're pointing into a memory-mapped file
@@ -385,7 +385,6 @@ bool WordCorpusT<IdT,IdxT>::addWord(IdT word)
    if (m_wordbuf.size() >= m_last_linenum)
       return false ;			// collision with IDs used for recording line numbers
    m_wordbuf += word ;
-   incrFreq(word) ;
    freeIndices() ;
    return true ;
 }
@@ -446,6 +445,41 @@ IdT WordCorpusT<IdT,IdxT>::getContextID(const char* word) const
 {
    IdT id = ErrorID ;
    return m_contextmap.lookup(word,&id) ? id : ErrorID ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+void WordCorpusT<IdT,IdxT>::computeTermFrequencies()
+{
+   if (m_freq)
+      return;
+   size_t num_types = m_wordmap.size() ;
+   m_freq = new IdxT[num_types] ;
+   // zero out the frequencies
+   for (size_t i = 0 ; i < num_types ; ++i)
+      {
+      m_freq[i] = IdxT(0) ;
+      }
+   // scan the array of term IDs and accumulate counts
+   const IdT* buf = m_wordbuf.currentBuffer() ;
+   for (size_t i = 0 ; i < m_wordbuf.size() ; ++i)
+      {
+      IdT id = buf[i] ;
+      if (id < num_types)
+	 ++m_freq[id] ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+void WordCorpusT<IdT,IdxT>::freeTermFrequencies()
+{
+   delete[] m_freq ;
+   m_freq = nullptr ;
+   return ;
 }
 
 //----------------------------------------------------------------------------
@@ -582,8 +616,7 @@ bool WordCorpusT<IdT,IdxT>::createIndex(bool bidirectional)
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::lookup(const IdT *key, unsigned keylen, IdxT& first_match, IdxT& last_match) const
 {
-   (void)key; (void)keylen; (void)first_match; (void)last_match;
-   return false ; //FIXME
+   return m_fwdindex.lookup(key,keylen,first_match,last_match) ;
 }
 
 //----------------------------------------------------------------------------
@@ -670,10 +703,11 @@ bool WordCorpusT<IdT,IdxT>::createForwardIndex()
       // add the end-of-data sentinel
       addWord(m_sentinel) ;
       }
-   //TODO: m_fwdindex.generate()
-   // m_fwdindex.setFreqTable
-   // m_fwdindex.setSentinel
-   return false; //FIXME
+   computeTermFrequencies(); 
+   m_fwdindex.generate(m_wordbuf.currentBuffer(),m_wordbuf.size(), m_wordmap.size(), m_newline, m_freq) ;
+   m_fwdindex.setFreqTable(m_freq) ;
+   m_fwdindex.setSentinel(m_sentinel) ;
+   return m_fwdindex == true ;
 }
 
 //----------------------------------------------------------------------------
@@ -688,10 +722,14 @@ bool WordCorpusT<IdT,IdxT>::createReverseIndex()
       // add the end-of-data sentinel
       addWord(m_sentinel) ;
       }
-   //TODO: m_revindex.generate()
-   // m_revindex.setFreqTable
-   // m_revindex.setSentinel
-   return false; //FIXME
+   computeTermFrequencies(); 
+   m_wordbuf.reverse() ;
+   m_revindex.generate(m_wordbuf.currentBuffer(),m_wordbuf.size(), m_wordmap.size(), m_newline, m_freq) ;
+   //TODO: adjust offsets in index to match un-reversed positions in buffer
+   m_wordbuf.reverse() ;
+   m_revindex.setFreqTable(m_freq) ;
+   m_revindex.setSentinel(m_sentinel) ;
+   return m_revindex == true ;
 }
 
 //----------------------------------------------------------------------------
@@ -759,27 +797,66 @@ IdT WordCorpusT<IdT,IdxT>::wordForPositionalID(IdT pos) const
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::printVocab(CFile&) const
+bool WordCorpusT<IdT,IdxT>::printVocab(CFile& fp) const
 {
-   return false ; //FIXME
+   if (!fp)
+      return false ;
+   if (haveTermFrequencies())
+      {
+      for (size_t i = 0 ; i < vocabSize() ; ++i)
+	 {
+	 const char* word = getWord(i) ;
+	 if (word)
+	    {
+	    fp.printf("%lu\t%s\n",(unsigned long)getFreq(i),word) ;
+	    }
+	 else
+	    {
+	    fp.puts("<null> ==> error!\n") ;
+	    }
+	 }
+      }
+   else
+      {
+      for (size_t i = 0 ; i < vocabSize() ; ++i)
+	 {
+	 const char* word = getWord(i) ;
+	 fp.printf("%s\n",word?word:"(null)") ;
+	 }
+      }
+   return true ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::printWords(CFile&, size_t max) const
+bool WordCorpusT<IdT,IdxT>::printWords(CFile& fp, size_t max) const
 {
-   (void)max;
-   return false ; //FIXME
+   if (!fp)
+      return false ;
+   if (max > corpusSize())
+      max = corpusSize() ;
+   //TODO
+   return true ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::printSuffixes(CFile&, bool by_ID, size_t max) const
+bool WordCorpusT<IdT,IdxT>::printSuffixes(CFile& fp, bool by_ID, size_t max) const
 {
-   (void)by_ID; (void)max;
-   return false ; //FIXME
+   if (!fp)
+      return false ;
+   if (!m_fwdindex)
+      return false ;
+   if (max == 0)
+      max = 2 ;
+   for (size_t i = 0 ; i < corpusSize() ; ++i)
+      {
+      //TODO
+      }
+   (void)by_ID;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
