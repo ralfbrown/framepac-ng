@@ -153,6 +153,7 @@ List* WordSplitter::allWords()
 StringPtr WordSplitter::delimitedWords(char delim)
 {
    StringBuilder sb ;
+#if OLD
    bool first = true ;
    while (!eof())
       {
@@ -163,6 +164,25 @@ StringPtr WordSplitter::delimitedWords(char delim)
       sb.append(word->c_str()) ;
       first = false ;
       }
+#else
+   bool in_word = false ;
+   while (m_lookahead > 0)
+      {
+      char currchar = m_buffer[m_lookback] ;
+      boundary b = boundaryType(m_buffer,m_buffer+m_lookback,m_buffer+m_lookback+m_lookahead) ;
+      shiftBuffer() ;
+      if (b == word_start || b == word_start_and_end)
+	 {
+	 if (sb.size() > 0)
+	    sb += delim ;
+	 in_word = true ;
+	 }
+      if (b == word_end)
+	 in_word = false ;
+      if (in_word)
+	 sb += currchar ;
+      }
+#endif
    return sb.string() ;
 }
 
@@ -260,17 +280,15 @@ WordSplitter::boundary WordSplitterCSV::boundaryType(const char* window_start, c
 
 String* WordSplitterCSV::postprocess(String* word)
 {
-   if (!word) return word ;
-   if (m_strip)
+   if (!word || !m_strip)
+      return word ;
+   const char* s = word->stringValue() ;
+   size_t len = word->size() ;
+   if (len > 2 && (*s == '"' || *s == '\''))
       {
-      const char* s = word->stringValue() ;
-      size_t len = word->size() ;
-      if (len > 2 && (*s == '"' || *s == '\''))
-	 {
-	 String* stripped = String::create(s+1,len-2) ;
-	 word->free() ;
-	 word = stripped ;
-	 }
+      String* stripped = String::create(s+1,len-2) ;
+      word->free() ;
+      word = stripped ;
       }
    return word ;
 }
