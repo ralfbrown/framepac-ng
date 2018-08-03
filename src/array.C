@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-23					*/
+/* Version 0.08, last edit 2018-08-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include <algorithm>
 #include "framepac/array.h"
 #include "framepac/fasthash64.h"
 #include "framepac/random.h"
@@ -162,6 +163,14 @@ bool Array::elide(size_t N)
       }
    m_size-- ;
    return true ;
+}
+   
+//----------------------------------------------------------------------------
+
+void Array::reverse()
+{
+   std::reverse(m_array,m_array+m_size) ;
+   return ;
 }
    
 //----------------------------------------------------------------------------
