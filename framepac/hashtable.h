@@ -578,7 +578,7 @@ class HashTable : public HashTableBase
 	 [[gnu::hot]] bool add(size_t hashval, KeyT key) { return add(hashval,key,nullVal()) ; }
 	 [[gnu::hot]] ValT addCount(size_t hashval, KeyT key, size_t incr) ;
 
-	 [[gnu::hot]] bool contains(size_t hashval, KeyT key) const ;
+	 [[gnu::hot]] bool contains(size_t hashval, const KeyT key) const ;
 	 [[gnu::hot]] ValT lookup(size_t hashval, KeyT key) const ;
 	 [[gnu::hot]] bool lookup(size_t hashval, KeyT key, ValT *value) const ;
 	 // NOTE: this lookup() is not entirely thread-safe if clear==true
@@ -900,7 +900,7 @@ class HashTable : public HashTableBase
       [[gnu::hot]] bool add(KeyT key, ValT value) { INCR_COUNT(insert) ; DELEGATE_HASH(add(hashval,key,value)) }
       [[gnu::hot]] ValT addCount(KeyT key, size_t incr) { INCR_COUNT(insert) ; DELEGATE_HASH(addCount(hashval,key,incr)) }
       bool remove(KeyT key) { DELEGATE_HASH(remove(hashval,key)) }
-      [[gnu::hot]] bool contains(KeyT key) const { DELEGATE_HASH(contains(hashval,key)) }
+      [[gnu::hot]] bool contains(const KeyT key) const { DELEGATE_HASH(contains(hashval,key)) }
       [[gnu::hot]] ValT lookup(KeyT key) const { DELEGATE_HASH(lookup(hashval,key)) }
       [[gnu::hot]] bool lookup(KeyT key, ValT *value) const { DELEGATE_HASH(lookup(hashval,key,value)) }
       // NOTE: this lookup() is not entirely thread-safe if clear==true

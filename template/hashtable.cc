@@ -804,7 +804,7 @@ ValT HashTable<KeyT,ValT>::Table::addCount(size_t hashval, KeyT key, size_t incr
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, KeyT key) const
+bool HashTable<KeyT,ValT>::Table::contains(size_t hashval, const KeyT key) const
 {
    size_t bucketnum = hashval % m_size ;
    FORWARD_IF_COPIED(contains(hashval,key),contains_forwarded) ;

@@ -223,9 +223,37 @@ List* List::pop(Object*& obj)
 
 List* List::elide(size_t start, size_t stop)
 {
-   (void)start; (void)stop ;
-
-   return this ; //FIXME
+   if (stop <= start)
+      return this ;
+   size_t to_elide = stop - start ;
+   if (start == 0)
+      {
+      List* l = this ;
+      while (l && l != emptyList() && to_elide > 0)
+	 {
+	 List* tmp = l->next() ;
+	 l->setNext(nullptr) ;
+	 l->free() ;
+	 l = tmp ;
+	 --to_elide ;
+	 }
+      return l ;
+      }
+   else
+      {
+      List* prev = nthcdr(start-1) ;
+      List* curr = prev->next() ;
+      while (curr && curr != emptyList() && to_elide > 0)
+	 {
+	 List* tmp = curr->next() ;
+	 curr->setNext(nullptr) ;
+	 curr->free() ;
+	 curr = tmp ;
+	 --to_elide ;
+	 }
+      prev->setNext(curr) ;
+      return this ;
+      }
 }
 
 //----------------------------------------------------------------------------
