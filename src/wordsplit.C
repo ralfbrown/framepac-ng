@@ -40,6 +40,41 @@ WordSplitter::WordSplitter(class CharGetter& getter) : m_getter(getter)
 
 //----------------------------------------------------------------------------
 
+WordSplitter::WordSplitter(const char* s) : m_getter(*new CharGetterCString(s))
+{
+   m_getter_local = &m_getter ;
+   fillBuffer() ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+WordSplitter::WordSplitter(const std::string& s) : m_getter(*new CharGetterStdString(s))
+{
+   m_getter_local = &m_getter ;
+   fillBuffer() ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+WordSplitter::WordSplitter(CFile& file) : m_getter(*new CharGetterFILE(file))
+{
+   m_getter_local = &m_getter ;
+   fillBuffer() ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+WordSplitter::~WordSplitter()
+{
+   delete m_getter_local ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 void WordSplitter::fillBuffer()
 {
    m_lookback = 0 ;

@@ -30,10 +30,11 @@ using namespace Fr ;
 int main(int /*argc*/, char** /*argv*/)
 {
    Fr::Initialize() ;
-   Symbol* NIL { SymbolTable::current()->add("NIL") } ;
    Object* obj { nullptr } ;
+   Symbol* NIL { SymbolTable::current()->add("NIL") } ;
    while (obj != NIL && !cin.eof())
       {
+      if (obj) obj->free() ;
       cout << "Type an object, or NIL to quit: " << flush ;
       cin >> obj ;
       if (obj == nullptr)
@@ -48,7 +49,6 @@ int main(int /*argc*/, char** /*argv*/)
 	 cout << "Its string value is " << str << endl ;
       else
 	 cout << "It has no string value" << endl ;
-      //FIXME
       }
    cout << "\nGoodbye." << endl ;
    return 0 ;

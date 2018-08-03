@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.08, last edit 2018-08-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -47,8 +47,11 @@ class WordSplitter
    {
    public:
       WordSplitter(class CharGetter&) ;
+      WordSplitter(const char* s) ;
+      WordSplitter(const std::string& s) ;
+      WordSplitter(class CFile&) ;
       WordSplitter(const WordSplitter&) = default ;
-      virtual ~WordSplitter() {}
+      virtual ~WordSplitter() ;
       WordSplitter& operator= (const WordSplitter&) = default ;
 
       // return the next word in the stream of characters provided by the CharGetter
@@ -75,6 +78,7 @@ class WordSplitter
 	 } ;
    protected:
       CharGetter&  m_getter ;
+      CharGetter*  m_getter_local { nullptr } ;
       char         m_buffer[8] ;		// (lookahead+maxlookback) <= 8 !
       unsigned     m_lookahead { 0 } ;
       unsigned     m_lookback { 0 } ;
@@ -97,6 +101,9 @@ class WordSplitterWhitespace : public WordSplitter
       typedef WordSplitter super ;
    public:
       WordSplitterWhitespace(class CharGetter& getter) : super(getter) {}
+      WordSplitterWhitespace(const char* s) : super(s) {}
+      WordSplitterWhitespace(const std::string& s) : super(s) {}
+      WordSplitterWhitespace(class CFile& file) : super(file) {}
       WordSplitterWhitespace(const WordSplitterWhitespace&) = default ;
       virtual ~WordSplitterWhitespace() {}
       WordSplitterWhitespace& operator= (const WordSplitterWhitespace&) = default ;
@@ -114,6 +121,9 @@ class WordSplitterDelimiter : public WordSplitter
       typedef WordSplitter super ;
    public:
       WordSplitterDelimiter(class CharGetter& getter, char delim = ' ') : super(getter), m_delim(delim) {}
+      WordSplitterDelimiter(const char* s, char delim = ' ') : super(s), m_delim(delim) {}
+      WordSplitterDelimiter(const std::string& s, char delim = ' ') : super(s), m_delim(delim) {}
+      WordSplitterDelimiter(class CFile& file, char delim = ' ') : super(file), m_delim(delim) {}
       WordSplitterDelimiter(const WordSplitterDelimiter&) = default ;
       virtual ~WordSplitterDelimiter() {}
       WordSplitterDelimiter& operator= (const WordSplitterDelimiter&) = default ;
@@ -134,6 +144,12 @@ class WordSplitterCSV : public WordSplitter
    public:
       WordSplitterCSV(class CharGetter& getter, char delim = ',', bool strip_quotes = true)
 	 : super(getter), m_delim(delim), m_strip(strip_quotes) {}
+      WordSplitterCSV(const char* s, char delim = ' ', bool strip_quotes = true)
+	 : super(s), m_delim(delim), m_strip(strip_quotes) {}
+      WordSplitterCSV(const std::string& s, char delim = ' ', bool strip_quotes = true)
+	 : super(s), m_delim(delim), m_strip(strip_quotes) {}
+      WordSplitterCSV(class CFile& file, char delim = ' ', bool strip_quotes = true)
+	 : super(file), m_delim(delim), m_strip(strip_quotes) {}
       WordSplitterCSV(const WordSplitterCSV&) = default ;
       virtual ~WordSplitterCSV() {}
       WordSplitterCSV& operator= (const WordSplitterCSV&) = default ;
@@ -158,6 +174,12 @@ class WordSplitterEnglish : public WordSplitter
    public:
       WordSplitterEnglish(class CharGetter& getter, const char* delim = nullptr, bool tag_mode = false)
 	 : super(getter), m_delim(delim), m_tag_mode(tag_mode) { if (delim == nullptr) m_delim = s_default_delim ; }
+      WordSplitterEnglish(const char* s, const char* delim = nullptr, bool tag_mode = false)
+	 : super(s), m_delim(delim), m_tag_mode(tag_mode) { if (delim == nullptr) m_delim = s_default_delim ; }
+      WordSplitterEnglish(const std::string& s, const char* delim = nullptr, bool tag_mode = false)
+	 : super(s), m_delim(delim), m_tag_mode(tag_mode) { if (delim == nullptr) m_delim = s_default_delim ; }
+      WordSplitterEnglish(class CFile& file, const char* delim = nullptr, bool tag_mode = false)
+	 : super(file), m_delim(delim), m_tag_mode(tag_mode) { if (delim == nullptr) m_delim = s_default_delim ; }
       WordSplitterEnglish(const WordSplitterEnglish&) = default ;
       virtual ~WordSplitterEnglish() {}
       WordSplitterEnglish& operator= (const WordSplitterEnglish&) = default ;
