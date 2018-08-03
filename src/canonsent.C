@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-26					*/
+/* Version 0.08, last edit 2018-08-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -19,7 +19,6 @@
 /*									*/
 /************************************************************************/
 
-#include "framepac/charget.h"
 #include "framepac/texttransforms.h"
 #include "framepac/utility.h"
 #include "framepac/words.h"
@@ -47,8 +46,7 @@ char* canonicalize_sentence(const char* orig_sent, std::locale& locale, bool for
       {
       uppercase_string(sent,locale) ;
       }
-   CharGetterCString getter(sent) ;
-   WordSplitterEnglish splitter(getter,delim) ;
+   WordSplitterEnglish splitter(sent,delim) ;
    StringPtr words = splitter.delimitedWords() ;
    return dup_string(words->c_str()) ;
 }
