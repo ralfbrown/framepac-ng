@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-30					*/
+/* Version 0.08, last edit 2018-08-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -130,6 +130,7 @@ class ClusterInfo : public Object
       static Symbol* numberLabel() ;
       static bool isGeneratedLabel(const char* name) ;
       static bool isGeneratedLabel(const Symbol *name) { return name ? isGeneratedLabel(name->c_str()) : false ; }
+      bool isGeneratedLabel() const { return label() ? isGeneratedLabel(label()) : false ; }
       static bool isNumberLabel(const char* name) ;
       static bool isNumberLabel(const Symbol* name) ;
 
@@ -290,12 +291,14 @@ class ClusteringAlgoBase
       void desiredClusters(size_t N) { m_desired_clusters = N ; }
       void verbosity(int v) { m_verbosity = v ; }
       void maxIterations(size_t N) { m_max_iterations = N ; }
+      void limitClusters(bool limit) { m_hard_limit = limit ; }
 
       double clusterThreshold() const { return m_threshold ; }
       size_t desiredClusters() const { return m_desired_clusters ; }
       size_t maxIterations() const { return m_max_iterations ; }
       int verbosity() const { return m_verbosity ; }
       bool usingSparseVectors() const { return m_use_sparse_vectors ; }
+      bool hardLimitOnClusters() const { return m_hard_limit ; }
 
    protected:
       double    m_alpha { 0 } ;
@@ -307,6 +310,7 @@ class ClusteringAlgoBase
       size_t    m_max_iterations { 5 } ;
       int	m_verbosity { 0 } ;
       bool	m_use_sparse_vectors { false } ;
+      bool      m_hard_limit { false } ;		// don't allow more than desired # of clusters no matter what
    } ;
 
 //----------------------------------------------------------------------------
@@ -315,7 +319,8 @@ template <typename IdxT, typename ValT>
 class ClusteringAlgo : public ClusteringAlgoBase
    {
    public:
-      static ClusteringAlgo* instantiate(const char* algo_name, const char* options) ;
+      static ClusteringAlgo* instantiate(const char* algo_name, const char* options,
+	 VectorMeasure<IdxT,ValT>* measure = nullptr) ;
       virtual ~ClusteringAlgo() {}
 
       virtual const char* algorithmName() const = 0 ;

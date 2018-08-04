@@ -132,6 +132,7 @@ class String : public Object
       static String* create() { return new String ; }
       static String* create(const char* s) { return new String(s) ; }
       static String* create(const char* s, size_t len) { return new String(s,len) ; }
+      static String* create(const String* s) { return new String(s) ; }
       static String* create(const Object* obj) { return new String(obj) ; }
       static String* create(istream&) ;
 

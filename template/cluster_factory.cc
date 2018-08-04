@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-17					*/
+/* Version 0.08, last edit 2018-08-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -32,7 +32,8 @@ namespace Fr
 {
 
 template <typename IdxT, typename ValT>
-ClusteringAlgo<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::instantiate(const char* algo_name, const char* options)
+ClusteringAlgo<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::instantiate(const char* algo_name, const char* options,
+   VectorMeasure<IdxT,ValT>* measure)
 {
    if (!algo_name || !*algo_name)
       return nullptr ;
@@ -70,7 +71,12 @@ ClusteringAlgo<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::instantiate(const char* al
       {
       // parse options
       //TODO
-      // default to cosine similarity if no other similarity measure is given in the options
+      if (measure)
+	 {
+	 delete clusterer->m_measure ;
+	 clusterer->m_measure = measure ;
+	 }
+      // default to cosine similarity if no other similarity measure is given in the options or by the caller
       if (!clusterer->m_measure)
 	 {
 	 clusterer->m_measure = VectorMeasure<IdxT,ValT>::create(VectorSimilarityMeasure::cosine) ;

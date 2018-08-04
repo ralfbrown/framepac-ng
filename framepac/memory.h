@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.08, last edit 2018-08-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -22,6 +22,7 @@
 #ifndef __Fr_MEMORY_H_INCLUDED
 #define __Fr_MEMORY_H_INCLUDED
 
+#include <cstring>
 #include <mutex>
 #include <thread>
 #include "framepac/atomic.h"
@@ -403,7 +404,7 @@ class LocalAlloc
 	 {
 	 m_buffer = (alloc > SZ) ? new T[alloc] : m_localbuffer ;
 	 if (m_buffer && clear)
-	    memset(m_buffer,'\0',sizeof(T)*alloc) ;
+	    std::memset(m_buffer,'\0',sizeof(T)*alloc) ;
 	 }
       LocalAlloc(T* buf)
 	 {

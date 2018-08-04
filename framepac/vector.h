@@ -51,6 +51,7 @@ class Vector : public Object
 
       void setKey(Symbol* key) { m_key = key ; }
       void setLabel(Symbol* label) { m_label = label ; }
+      void setWeight(size_t wt) { m_weight = (float)wt ; }
       void setWeight(float wt) { m_weight = wt ; }
       void setWeight(double wt) { m_weight = (float)wt ; }
       void setUserData(void* u) { m_user = u ; }
