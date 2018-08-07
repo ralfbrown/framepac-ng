@@ -437,6 +437,24 @@ bool ClusterInfo::addVectors(const RefArray* vectors)
 
 //----------------------------------------------------------------------------
 
+void ClusterInfo::sortMembers(ObjectCompareFn* cmp)
+{
+   if (m_members)
+      m_members->sort(cmp) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void ClusterInfo::sortSubclusters(ObjectCompareFn* cmp)
+{
+   if (m_subclusters)
+      m_subclusters->sort(cmp) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 ObjectPtr ClusterInfo::clone_(const Object* orig)
 {
    auto info = static_cast<const ClusterInfo*>(orig) ;
