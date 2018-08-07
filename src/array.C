@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-03					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -173,6 +173,14 @@ void Array::reverse()
    return ;
 }
    
+//----------------------------------------------------------------------------
+
+void Array::sort(ObjectCompareFn* cmp)
+{
+   std::sort(m_array,m_array+m_size,cmp) ;
+   return ;
+}
+
 //----------------------------------------------------------------------------
 
 bool Array::reserve(size_t N)

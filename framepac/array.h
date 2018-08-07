@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -69,6 +69,7 @@ class Array : public Object
       bool elide(size_t N) ;
 
       void reverse() ;
+      void sort(ObjectCompareFn*) ;
 
       // return a reference array containing the given number of elements sampled at random
       //   if size < 1, use the given proportion; if size >= 1, use that number of elements
@@ -112,12 +113,6 @@ class Array : public Object
 
       size_t capacity() const { return m_alloc ; }
 
-   private: // static members
-      static Allocator s_allocator ;
-   protected:
-      Object** m_array ;
-      size_t   m_size ;
-      size_t   m_alloc ;
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
@@ -178,6 +173,13 @@ class Array : public Object
       // *** iterator support ***
       static Object* next_(const Object*) { return nullptr ; }
       static ObjectIter& next_(const Object*, ObjectIter& it) { it.incrIndex() ; return it ; }
+
+   private: // static members
+      static Allocator s_allocator ;
+   protected:
+      Object** m_array ;
+      size_t   m_size ;
+      size_t   m_alloc ;
    } ;
 
 //----------------------------------------------------------------------------
