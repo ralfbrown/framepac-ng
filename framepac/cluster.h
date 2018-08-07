@@ -115,6 +115,7 @@ class ClusterInfo : public Object
       static ClusterInfo* createSingleton(const Object* vector) ;
 
       // *** cluster manipulation
+      void shrink_to_fit() ; // remove any null pointers and update sizes
       ClusterInfo* merge(const ClusterInfo* other, bool flatten = false) const ;
       bool merge(size_t clusternum1, size_t clusternum2, bool flatten = false) ;
       bool flattenSubclusters() ;

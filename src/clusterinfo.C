@@ -174,6 +174,33 @@ ClusterInfo* ClusterInfo::createSingletonClusters(const Array* vectors)
 
 //----------------------------------------------------------------------------
 
+void ClusterInfo::shrink_to_fit()
+{
+   bool changes { false } ;
+   if (m_members)
+      {
+      changes |= m_members->removeNulls() ;
+      }
+   if (m_subclusters)
+      {
+      changes |= m_subclusters->removeNulls() ;
+      }
+   if (changes)
+      {
+      m_size = m_members ? m_members->size() : 0 ;
+      if (m_subclusters)
+	 {
+	 for (auto sub : *m_subclusters)
+	    {
+	    m_size += static_cast<ClusterInfo*>(sub)->size() ;
+	    }
+	 }
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 ClusterInfo* ClusterInfo::merge(const ClusterInfo* other, bool flatten) const
 {
    if (!other)
