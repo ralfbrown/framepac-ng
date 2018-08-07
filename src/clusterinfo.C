@@ -437,7 +437,7 @@ bool ClusterInfo::addVectors(const RefArray* vectors)
 
 //----------------------------------------------------------------------------
 
-void ClusterInfo::sortMembers(ObjectCompareFn* cmp)
+void ClusterInfo::sortMembers(ObjectOrderingFn* cmp)
 {
    if (m_members)
       m_members->sort(cmp) ;
@@ -446,7 +446,7 @@ void ClusterInfo::sortMembers(ObjectCompareFn* cmp)
 
 //----------------------------------------------------------------------------
 
-void ClusterInfo::sortSubclusters(ObjectCompareFn* cmp)
+void ClusterInfo::sortSubclusters(ObjectOrderingFn* cmp)
 {
    if (m_subclusters)
       m_subclusters->sort(cmp) ;

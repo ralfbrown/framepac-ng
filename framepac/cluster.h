@@ -180,8 +180,8 @@ class ClusterInfo : public Object
       template <typename ValT>
       DenseVector<ValT>* createDenseCentroid(const Array* vectors) const ;
 
-      void sortMembers(ObjectCompareFn*) ;
-      void sortSubclusters(ObjectCompareFn*) ;
+      void sortMembers(ObjectOrderingFn*) ;
+      void sortSubclusters(ObjectOrderingFn*) ;
 
    protected:
       bool allMembers(RefArray* mem) const ;
