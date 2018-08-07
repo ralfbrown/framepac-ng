@@ -175,7 +175,7 @@ void Array::reverse()
    
 //----------------------------------------------------------------------------
 
-void Array::sort(ObjectCompareFn* cmp)
+void Array::sort(ObjectOrderingFn* cmp)
 {
    std::sort(m_array,m_array+m_size,cmp) ;
    return ;

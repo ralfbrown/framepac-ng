@@ -69,7 +69,7 @@ class Array : public Object
       bool elide(size_t N) ;
 
       void reverse() ;
-      void sort(ObjectCompareFn*) ;
+      void sort(ObjectOrderingFn*) ;
 
       // return a reference array containing the given number of elements sampled at random
       //   if size < 1, use the given proportion; if size >= 1, use that number of elements
