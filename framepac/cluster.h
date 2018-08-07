@@ -81,7 +81,7 @@ class ClusterInfoIter
       ClusterInfoIter(const ClusterInfoIter &it) = default ;
       ~ClusterInfoIter() = default ;
 
-      inline Object* operator* () const { return m_members ; }
+      inline Object* operator* () const { return m_members->getNth(m_index) ; }
       const Array* operator-> () const { return m_members ; }
       inline ClusterInfoIter& operator++ () { m_index++ ; return *this ; }
       bool operator== (const ClusterInfoIter& other) const { return m_members == other.m_members ; }
@@ -156,6 +156,7 @@ class ClusterInfo : public Object
       Object* representative() const { return m_rep ; }
       ClusterRep repType() const { return  m_cluster_rep ; }
       const Array* members() const { return m_members ; }
+      size_t numMembers() const { return m_members ? m_members->size() : 0 ; }
       const Array* subclusters() const { return m_subclusters ; }
       size_t numSubclusters() const { return m_subclusters->size() ; }
       uint32_t flags() const { return m_flags ; }
