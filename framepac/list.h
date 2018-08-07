@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.08, last edit 2018-08-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -82,7 +82,10 @@ class List : public Object
       List* elide(size_t start, size_t stop) ;
       List* nconc(List* newtail) ;
 
+      List* removeIf(ObjectCompareFn*, const Object*) ;
       List* removeIf(ObjectPredicateFn*) ;
+      List* removeIfNot(ObjectPredicateFn*) ;
+      List* removeIfNot(ObjectCompareFn*, const Object*) ;
 
       void setFront(Object* o) { m_item = o ? o : empty_list ; }
 

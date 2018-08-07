@@ -244,7 +244,7 @@ build/%$(OBJ) : src/%$(C)
 # define the package info and files to be used
 
 PACKAGE=framepacng
-RELEASE=0.04
+RELEASE=0.08
 
 # the object modules to be included in the library file
 OBJS = \

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.08, last edit 2018-08-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -275,6 +275,57 @@ List* List::removeIf(ObjectPredicateFn* fn)
    for (auto item : *this)
       {
       if (!fn(item))
+	 result += item ;
+      else if (item)
+	 item->free() ;
+      }
+   this->shallowFree() ;
+   return result.move() ;
+}
+
+//----------------------------------------------------------------------------
+
+List* List::removeIf(ObjectCompareFn* fn, const Object* other)
+{
+   if (!fn) return this ;
+   ListBuilder result ;
+   for (auto item : *this)
+      {
+      if (!fn(item,other))
+	 result += item ;
+      else if (item)
+	 item->free() ;
+      }
+   this->shallowFree() ;
+   return result.move() ;
+}
+
+//----------------------------------------------------------------------------
+
+List* List::removeIfNot(ObjectPredicateFn* fn)
+{
+   if (!fn) return this ;
+   ListBuilder result ;
+   for (auto item : *this)
+      {
+      if (fn(item))
+	 result += item ;
+      else if (item)
+	 item->free() ;
+      }
+   this->shallowFree() ;
+   return result.move() ;
+}
+
+//----------------------------------------------------------------------------
+
+List* List::removeIfNot(ObjectCompareFn* fn, const Object* other)
+{
+   if (!fn) return this ;
+   ListBuilder result ;
+   for (auto item : *this)
+      {
+      if (fn(item,other))
 	 result += item ;
       else if (item)
 	 item->free() ;
