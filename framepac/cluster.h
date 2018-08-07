@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-03					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -81,9 +81,9 @@ class ClusterInfoIter
       ClusterInfoIter(const ClusterInfoIter &it) = default ;
       ~ClusterInfoIter() = default ;
 
-      inline Object* operator* () const ;
+      inline Object* operator* () const { return m_members ; }
       const Array* operator-> () const { return m_members ; }
-      inline ClusterInfoIter& operator++ () ;
+      inline ClusterInfoIter& operator++ () { m_index++ ; return *this ; }
       bool operator== (const ClusterInfoIter& other) const { return m_members == other.m_members ; }
       bool operator!= (const ClusterInfoIter& other) const { return m_members != other.m_members ; }
 
@@ -125,6 +125,7 @@ class ClusterInfo : public Object
       template <typename IdxT, typename ValT>
       void setRepresentative() ;
       RefArray* allMembers() const ;
+      Array* allKeys() const ;
 
       static Symbol* genLabel() ;
       static Symbol* numberLabel() ;
@@ -180,6 +181,7 @@ class ClusterInfo : public Object
       
    protected:
       bool allMembers(RefArray* mem) const ;
+      bool allKeys(Array* mem) const ;
 
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }

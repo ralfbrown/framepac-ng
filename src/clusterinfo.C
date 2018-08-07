@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-30					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -186,13 +186,13 @@ ClusterInfo* ClusterInfo::merge(const ClusterInfo* other, bool flatten) const
       RefArray* our_vectors = this->allMembers() ;
       RefArray* other_vectors = other->allMembers() ;
       RefArray* vectors = RefArray::create(info->m_size) ;
-      for (size_t i = 0 ; i < our_vectors->size() ; ++i)
+      for (auto vec : *our_vectors)
 	 {
-	 vectors->append(our_vectors->getNth(i)) ;
+	 vectors->append(vec) ;
 	 }
-      for (size_t i = 0 ; i < other_vectors->size() ; ++i)
+      for (auto vec : *other_vectors)
 	 {
-	 vectors->append(other_vectors->getNth(i)) ;
+	 vectors->append(vec) ;
 	 }
       info->m_members = vectors ;
       }
@@ -229,19 +229,18 @@ bool ClusterInfo::allMembers(RefArray* mem) const
 {
    if (members())
       {
-      for (size_t i = 0 ; i < members()->size() ; ++i)
+      for (auto member : *members())
 	 {
-	 mem->append(members()->getNth(i)) ;
+	 mem->append(member) ;
 	 }
       }
    if (subclusters())
       {
       // recursively add members from subclusters
-      for (size_t i = 0 ; i <= subclusters()->size() ; ++i)
+      for (auto subclus : *subclusters())
 	 {
-	 auto subclus = static_cast<ClusterInfo*>(subclusters()->getNth(i)) ;
 	 if (subclus)
-	    subclus->allMembers(mem) ;
+	    static_cast<ClusterInfo*>(subclus)->allMembers(mem) ;
 	 }
       }
    return true ;
@@ -258,13 +257,46 @@ RefArray* ClusterInfo::allMembers() const
 
 //----------------------------------------------------------------------------
 
+bool ClusterInfo::allKeys(Array* keys) const
+{
+   if (members())
+      {
+      for (auto member : *members())
+	 {
+	 VectorBase* vec = static_cast<VectorBase*>(member) ;
+	 keys->append(vec->key()) ;
+	 }
+      }
+   if (subclusters())
+      {
+      // recursively add keys from members in subclusters
+      for (auto subclus : *subclusters())
+	 {
+	 if (subclus)
+	    static_cast<ClusterInfo*>(subclus)->allKeys(keys) ;
+	 }
+      }
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+Array* ClusterInfo::allKeys() const
+{
+   Array* keys = Array::create(this->m_size) ;
+   (void)allKeys(keys) ;
+   return keys ;
+}
+
+//----------------------------------------------------------------------------
+
 bool ClusterInfo::flattenSubclusters()
 {
    if (!m_subclusters)
       return true ;			// trivially successful
-   for (size_t i = 0 ; i < m_subclusters->size() ; ++i)
+   for (auto subclus : *m_subclusters)
       {
-      auto subcluster = static_cast<ClusterInfo*>(m_subclusters->getNth(i)) ;
+      auto subcluster = static_cast<ClusterInfo*>(subclus) ;
       RefArray* members = subcluster->allMembers() ;
       if (subcluster->m_members)
 	 subcluster->m_members->free() ;
@@ -396,9 +428,9 @@ void ClusterInfo::clearFlag(ClusterInfo::Flags f)
 
 bool ClusterInfo::addVectors(const RefArray* vectors)
 {
-   for (size_t i = 0 ; i < vectors->size() ; ++i)
+   for (auto vec : *vectors)
       {
-      addVector(vectors->getNth(i)) ;
+      addVector(vec) ;
       }
    return true ;
 }
