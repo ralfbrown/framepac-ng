@@ -286,31 +286,43 @@ class ClusteringAlgoBase
       void log(int level, const char* fmt, ...) const ;
       ProgressIndicator* makeProgressIndicator(size_t limit) const ;
 
-      void useSparseVectors(bool use) { m_use_sparse_vectors = use ; }
       void clusterThreshold(double thr) { m_threshold = thr ; }
       void desiredClusters(size_t N) { m_desired_clusters = N ; }
-      void verbosity(int v) { m_verbosity = v ; }
       void maxIterations(size_t N) { m_max_iterations = N ; }
+      void numThreads(size_t thr) { m_threads = thr ; }
+      void verbosity(int v) { m_verbosity = v ; }
       void limitClusters(bool limit) { m_hard_limit = limit ; }
+      void useSparseVectors(bool use) { m_use_sparse_vectors = use ; }
+      void ignoreExtraClusters(bool ignore) { m_ignore_extra = ignore ; }
+      void backoffSet(double b) { m_backoff = b ; }
+      void excludeSingletons(bool excl) { m_no_singletons = excl ; }
 
       double clusterThreshold() const { return m_threshold ; }
       size_t desiredClusters() const { return m_desired_clusters ; }
       size_t maxIterations() const { return m_max_iterations ; }
+      size_t numThreads() const { return m_threads ; }
       int verbosity() const { return m_verbosity ; }
       bool usingSparseVectors() const { return m_use_sparse_vectors ; }
       bool hardLimitOnClusters() const { return m_hard_limit ; }
+      bool ignoringExtraClusters() const { return m_ignore_extra ; }
+      bool excludingSingletons() const { return m_no_singletons ; }
+      double backoffStep() const { return m_backoff ; }
 
    protected:
       double    m_alpha { 0 } ;
       double    m_beta { 0 } ;
       double    m_gamma { 0 } ;
       double	m_threshold { -999.99 } ;
+      double    m_backoff { 0.05 } ;
       size_t    m_desired_clusters { 2 } ;
       size_t    m_min_points { 0 } ;
       size_t    m_max_iterations { 5 } ;
+      size_t    m_threads { 2 } ;
       int	m_verbosity { 0 } ;
       bool	m_use_sparse_vectors { false } ;
       bool      m_hard_limit { false } ;		// don't allow more than desired # of clusters no matter what
+      bool      m_ignore_extra { false } ;
+      bool      m_no_singletons { false } ;
    } ;
 
 //----------------------------------------------------------------------------
