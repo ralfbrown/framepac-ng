@@ -371,6 +371,8 @@ class WrappedVectorMeasure : public VectorMeasure<IdxT,ValT>
 	 { return new WrappedVectorMeasure(base_simtype,options) ; }
       static WrappedVectorMeasure* create(VectorSimilarityMeasure base_simtype, const char* options = nullptr)
 	 { return new WrappedVectorMeasure(base_simtype,options) ; }
+      static WrappedVectorMeasure* create(VectorMeasure<IdxT,ValT>* base)
+	 { return new WrappedVectorMeasure(base) ; }
       virtual ~WrappedVectorMeasure() { delete m_basemeasure ; m_basemeasure = nullptr ; }
 
       // give access to the base measure's similarity() and distance() functions
@@ -388,6 +390,8 @@ class WrappedVectorMeasure : public VectorMeasure<IdxT,ValT>
 	 { m_basemeasure = super::create(base_simtype,options) ; }
       WrappedVectorMeasure(VectorSimilarityMeasure base_simtype, const char* options = nullptr)
 	 { m_basemeasure = super::create(base_simtype,options) ; }
+      WrappedVectorMeasure(VectorMeasure<IdxT,ValT>* base) { m_basemeasure = base ; }
+
    protected:
       super* m_basemeasure ;
    } ;
