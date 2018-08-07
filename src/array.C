@@ -167,6 +167,22 @@ bool Array::elide(size_t N)
    
 //----------------------------------------------------------------------------
 
+bool Array::removeNulls()
+{
+   size_t dest { 0 } ;
+   for (size_t i = 0 ; i < m_size ; ++i)
+      {
+      if (m_array[i])
+	 m_array[dest++] = m_array[i] ;
+      }
+   bool changes { dest != m_size } ;
+   m_size = dest ;
+   shrink_to_fit() ;
+   return changes ;
+}
+
+//----------------------------------------------------------------------------
+
 void Array::reverse()
 {
    std::reverse(m_array,m_array+m_size) ;
