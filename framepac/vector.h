@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-26					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -32,18 +32,13 @@ namespace Fr {
 /************************************************************************/
 /************************************************************************/
 
-template <typename ValT>
-class Vector : public Object
+// abstract class, do not instantiate
+class VectorBase : public Object
    {
-   public: // types
-      typedef Object super ;
-      // export the template type parameter for use in other templates that may not have
-      //   an explicit parameter giving this type because they inferred the vector type
-      typedef ValT value_type ;
-
    public:
-      static Vector* create(size_t numelts) ;
-
+      VectorBase() {}
+      ~VectorBase() {}
+      
       Symbol* key() const { return m_key ; }
       Symbol* label() const { return m_label ; }
       float weight() const { return m_weight ; }
@@ -55,6 +50,40 @@ class Vector : public Object
       void setWeight(float wt) { m_weight = wt ; }
       void setWeight(double wt) { m_weight = (float)wt ; }
       void setUserData(void* u) { m_user = u ; }
+
+   protected:
+      void startModifying() { m_critsect.lock() ; m_length = -1 ; }
+      void doneModifying() { m_critsect.unlock() ; }
+
+   protected:
+      size_t size() const { return m_size ; }
+      size_t capacity() const { return m_capacity ; }
+
+   protected: // data
+      Symbol*  m_key { nullptr } ;	// the vector's name (e.g. word for which this is a context vector)
+      Symbol*  m_label { nullptr } ;	// user label applied to vector (e.g. cluster name)
+      mutable void*  m_user { nullptr };// available for user to store any needed extra data about this vector
+      mutable double m_length { -1 } ;	// cached vector length (L2-norm)
+      uint32_t m_size { 0 } ;	  	// number of elements in vector
+      uint32_t m_capacity { 0 } ;	// number of elements allocated (may be greater than m_size)
+      float    m_weight { 1.0f } ; 
+      mutable CriticalSection m_critsect ;
+   } ;
+
+/************************************************************************/
+/************************************************************************/
+
+template <typename ValT>
+class Vector : public VectorBase
+   {
+   public: // types
+      typedef Object super ;
+      // export the template type parameter for use in other templates that may not have
+      //   an explicit parameter giving this type because they inferred the vector type
+      typedef ValT value_type ;
+
+   public:
+      static Vector* create(size_t numelts) ;
 
       void setElement(size_t N, ValT value)
 	 {
@@ -86,13 +115,6 @@ class Vector : public Object
       Vector(const Vector&) ;
       ~Vector() { delete[] m_values ; m_size = 0 ; }
       Vector& operator= (const Vector&) ;
-
-      size_t size() const { return m_size ; }
-      size_t capacity() const { return m_capacity ; }
-
-   protected:
-      void startModifying() { m_critsect.lock() ; m_length = -1 ; }
-      void doneModifying() { m_critsect.unlock() ; }
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<Vector> ;
@@ -170,14 +192,6 @@ class Vector : public Object
       static const char* s_typename ;
    protected:
       ValT*    m_values { nullptr } ;
-      Symbol*  m_key { nullptr } ;	// the vector's name (e.g. word for which this is a context vector)
-      Symbol*  m_label { nullptr } ;	// user label applied to vector (e.g. cluster name)
-      mutable void*  m_user { nullptr };// available for user to store any needed extra data about this vector
-      mutable double m_length { -1 } ;	// cached vector length (L2-norm)
-      uint32_t m_size { 0 } ;	  	// number of elements in vector
-      uint32_t m_capacity { 0 } ;	// number of elements allocated (may be greater than m_size)
-      float    m_weight { 1.0f } ; 
-      mutable CriticalSection m_critsect ;
    } ;
 
 //----------------------------------------------------------------------------
