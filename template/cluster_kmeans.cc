@@ -130,9 +130,9 @@ static size_t find_least_similar(const Array* vectors, const Array* refs, Vector
       auto vector = static_cast<Vector<ValT>*>(vectors->getNth(i)) ;
       if (!vector) continue ;
       double sim = -999.99 ;
-      for (size_t j = 0 ; j < refs->size() ; ++j)
+      for (auto ref : *refs)
 	 {
-	 sim = std::max(sim,vm->similarity(vector,static_cast<Vector<ValT>*>(refs->getNth(j)))) ;
+	 sim = std::max(sim,vm->similarity(vector,static_cast<Vector<ValT>*>(ref))) ;
 	 }
       if (sim < best_sim)
 	 {
@@ -186,11 +186,10 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       sample->free() ;
       }
    // assign a label to each of the selected centers
-   for (size_t i = 0 ; i < centers->size() ; ++i)
+   for (auto v : *centers)
       {
-      Vector<ValT>* v = static_cast<Vector<ValT>*>(centers->getNth(i)) ;
       if (v)
-	 v->setLabel(ClusterInfo::genLabel()) ;
+	 static_cast<Vector<ValT>*>(v)->setLabel(ClusterInfo::genLabel()) ;
       }
    // until converged or iteration limit:
    //    assign each vector to the nearest center

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.08, last edit 2018-08-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -149,9 +149,9 @@ int main(int argc, char** argv)
    if (dump_vectors)
       {
       cout << vectors->size() << " vectors to be clustered" << endl ;
-      for (size_t i = 0 ; i < vectors->size() ; ++i)
+      for (auto vec : *vectors)
 	 {
-	 cout << vectors->getNth(i) << endl ;
+	 cout << vec << endl ;
 	 }
       cout << "   ====   " << endl ;
       }

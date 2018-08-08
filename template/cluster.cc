@@ -36,11 +36,10 @@ template <typename IdxT, typename ValT>
 SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid() const
 {
    auto centroid = SparseVector<IdxT,ValT>::create() ;
-   for (size_t i = 0 ; i < members()->size() ; i++)
+   for (auto vec : *members())
       {
-      auto vec = static_cast<SparseVector<IdxT,ValT>*>(members()->getNth(i)) ;
-      if (!vec) continue ;
-      centroid->incr(vec) ;
+      if (vec)
+	 centroid->incr(static_cast<SparseVector<IdxT,ValT>*>(vec)) ;
       }
    centroid->setLabel(this->label()) ;
    return centroid ;
@@ -52,11 +51,10 @@ template <typename IdxT, typename ValT>
 SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid(const Array* vectors) const
 {
    auto centroid = SparseVector<IdxT,ValT>::create() ;
-   for (size_t i = 0 ; i < vectors->size() ; i++)
+   for (auto vec : *vectors)
       {
-      auto vec = static_cast<SparseVector<IdxT,ValT>*>(vectors->getNth(i)) ;
-      if (!vec) continue ;
-      centroid->incr(vec) ;
+      if (vec)
+	 centroid->incr(static_cast<SparseVector<IdxT,ValT>*>(vec)) ;
       }
    centroid->setLabel(this->label()) ;
    return centroid ;
@@ -272,10 +270,10 @@ Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vec
 {
    Vector<ValT>* best_center = nullptr ;
    double best_sim = -999.99 ;
-   for (size_t i = 0 ; i < centers->size() ; ++i)
+   for (auto cent : *centers)
       {
-      auto center = static_cast<Vector<ValT>*>(centers->getNth(i)) ;
-      if (!center) continue ;
+      if (!cent) continue ;
+      auto center = static_cast<Vector<ValT>*>(cent) ;
       double sim = measure->similarity(vector,center) ;
       if (sim >= threshold && sim > best_sim)
 	 {
@@ -296,13 +294,12 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInf
    clusters = nullptr ;
    // count the number of unique labels on the vectors, and assign each one an index
    ObjCountHashTable label_map ;
-   for (size_t i = 0 ; i < vectors->size() ; ++i)
+   for (auto vec : *vectors)
       {
-      auto vector = static_cast<Vector<ValT>*>(vectors->getNth(i)) ;
-      if (!vector) continue ;
+      if (!vec) continue ;
+      auto vector = static_cast<Vector<ValT>*>(vec) ;
       Symbol* label = vector->label() ;
-      if (!label) continue ;
-      if (!label_map.contains(label))
+      if (label && !label_map.contains(label))
 	 {
 	 label_map.add(label,label_map.currentSize()) ;
 	 }
@@ -316,10 +313,10 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInf
 	 clusters[i] = ClusterInfo::create() ;
 	 }
       // collect the vectors into the appropriate cluster
-      for (size_t i = 0 ; i < vectors->size() ; ++i)
+      for (auto vec : *vectors)
 	 {
-	 auto vector = static_cast<Vector<ValT>*>(vectors->getNth(i)) ;
-	 if (!vector) continue ;
+	 if (!vec) continue ;
+	 auto vector = static_cast<Vector<ValT>*>(vec) ;
 	 Symbol* label = vector->label() ;
 	 if (!label && unassigned)
 	    unassigned->append(vector) ;

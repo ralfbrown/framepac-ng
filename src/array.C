@@ -329,9 +329,8 @@ size_t Array::cStringLength_(const Object* obj,size_t wrap_at, size_t indent, si
    size_t len = indent + 4 + (arr->size() ? arr->size()-1 : 0) ;
    bool wrapped { false } ;
    (void)wrapped_indent; //TODO
-   for (size_t i = 0 ; i < arr->size() ; ++i)
+   for (auto o : *arr)
       {
-      const Object* o = arr->at(i) ;
       if (o)
 	 len += o->cStringLength(wrap_at,wrapped?indent+3:0,wrapped_indent) ;
       else
