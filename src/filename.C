@@ -39,27 +39,21 @@ FilePath::FilePath(const char *pathname)
    if (last_slash)
       {
       size_t len = last_slash - pathname + 1 ;
-      m_directory = new char[len + 1] ;
-      memcpy(m_directory,pathname,len) ;
       if (len > 1) --len ;  // swallow trailing slash
-      m_directory[len] = '\0' ;
+      m_directory = dup_string(pathname, len) ;
       pathname = last_slash + 1 ;
       }
    const char *last_period = strrchr(pathname,'.') ;
    if (last_period)
       {
       size_t len = last_period - pathname ;
-      m_root = new char[len+1] ;
-      memcpy(m_root,pathname,len) ;
-      m_root[len] = '\0' ;
-      len = strlen(last_period) ;
-      m_extension = new char[len+1] ;
-      memcpy(m_extension,last_period,len) ;
-      m_extension[len] = '\0' ;
+      m_root = dup_string(pathname,len) ;
+      m_extension = dup_string(last_period) ;
       }
    else
       {
       m_root = dup_string(pathname) ;
+      m_extension = nullptr ;
       }
    return ;
 }
