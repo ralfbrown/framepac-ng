@@ -52,6 +52,21 @@ CharPtr dup_string(const char* s)
 
 //----------------------------------------------------------------------------
 
+CharPtr dup_string(const char* s, size_t len)
+{
+   if (!s)
+      return nullptr ;
+   char* copy = new char[len+1] ;
+   if (copy)
+      {
+      memcpy(copy,s,len) ;
+      copy[len] = '\0' ;
+      }
+   return copy ;
+}
+
+//----------------------------------------------------------------------------
+
 CharPtr dup_string_n(const char* s, size_t maxlen)
 {
    if (!s)

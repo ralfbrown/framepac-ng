@@ -29,6 +29,7 @@ namespace Fr
 {
 
 CharPtr dup_string(const char*) ;
+CharPtr dup_string(const char*, size_t len) ;
 CharPtr dup_string_n(const char*, size_t maxlength) ;
 
 char* skip_whitespace(char*) ;
