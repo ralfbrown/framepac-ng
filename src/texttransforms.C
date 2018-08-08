@@ -76,7 +76,10 @@ CharPtr dup_string_n(const char* s, size_t maxlen)
       len = maxlen ;
    char* copy = new char[len+1] ;
    if (copy)
-      memcpy(copy,s,len+1) ;
+      {
+      memcpy(copy,s,len) ;
+      copy[len] = '\0' ;
+      }
    return copy ;
 }
 
