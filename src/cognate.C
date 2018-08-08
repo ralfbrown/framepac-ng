@@ -150,8 +150,7 @@ CognateData* CognateData::load(const char* filename, size_t fuzzy_match_score)
 	 StringBuilder sb ;
 	 while (!f.eof())
 	    {
-	    ScopedCharPtr line { f.getCLine() } ;
-	    sb.append(*line) ;
+	    sb += *f.getCLine() ;
 	    }
 	 const char* cogstring = sb.c_str() ;
 	 cognates = List::create(cogstring) ;
@@ -162,7 +161,7 @@ CognateData* CognateData::load(const char* filename, size_t fuzzy_match_score)
 	 //   "src" "trg" score
 	 while (!f.eof())
 	    {
-	    ScopedCharPtr line { f.getCLine() } ;
+	    CharPtr line { f.getCLine() } ;
 	    //TODO
 	    }
 	 }

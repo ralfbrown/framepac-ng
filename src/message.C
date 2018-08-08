@@ -79,7 +79,7 @@ bool SystemMessage::setInstance(SystemMessage& inst)
 
 bool SystemMessage::modal(const char* fmt, va_list args)
 {
-   ScopedCharPtr msg { vaprintf(fmt,args) } ;
+   CharPtr msg { vaprintf(fmt,args) } ;
    instance().showModal(msg) ;
    return true ;
 }
@@ -99,7 +99,7 @@ bool SystemMessage::modal(const char* fmt, ...)
 
 bool SystemMessage::confirmation(const char* fmt, va_list args)
 {
-   ScopedCharPtr msg { vaprintf(fmt,args) } ;
+   CharPtr msg { vaprintf(fmt,args) } ;
    instance().showConfirmation(msg) ;
    return true ;
 }
@@ -119,7 +119,7 @@ bool SystemMessage::confirmation(const char* fmt, ...)
 
 bool SystemMessage::status(const char* fmt, va_list args)
 {
-   ScopedCharPtr msg { vaprintf(fmt,args) } ;
+   CharPtr msg { vaprintf(fmt,args) } ;
    instance().showMessage(msg) ;
    return true ;
 }
@@ -139,7 +139,7 @@ bool SystemMessage::status(const char* fmt, ...)
 
 bool SystemMessage::warning(const char* fmt, va_list args)
 {
-   ScopedCharPtr msg { vaprintf(fmt,args) } ;
+   CharPtr msg { vaprintf(fmt,args) } ;
    instance().showWarning(msg) ;
    return true ;
 }
@@ -159,7 +159,7 @@ bool SystemMessage::warning(const char* fmt, ...)
 
 bool SystemMessage::error(const char* fmt, va_list args)
 {
-   ScopedCharPtr msg { vaprintf(fmt,args) } ;
+   CharPtr msg { vaprintf(fmt,args) } ;
    instance().showError(msg) ;
    return true ;
 }
@@ -179,7 +179,7 @@ bool SystemMessage::error(const char* fmt, ...)
 
 bool SystemMessage::fatal(const char* fmt, va_list args)
 {
-   ScopedCharPtr msg { vaprintf(fmt,args) } ;
+   CharPtr msg { vaprintf(fmt,args) } ;
    instance().showFatal(msg) ;
    return true ;
 }
@@ -207,7 +207,7 @@ bool SystemMessage::nomemory(const char* msg)
 
 bool SystemMessage::prog_error(const char* fmt, va_list args)
 {
-   ScopedCharPtr msg { vaprintf(fmt,args) } ;
+   CharPtr msg { vaprintf(fmt,args) } ;
    instance().showFatal(msg) ;
    return true ;
 }
@@ -227,7 +227,7 @@ bool SystemMessage::prog_error(const char* fmt, ...)
 
 bool SystemMessage::missed_case(const char* fmt, va_list args)
 {
-   ScopedCharPtr msg { vaprintf(fmt,args) } ;
+   CharPtr msg { vaprintf(fmt,args) } ;
    instance().showFatal(msg) ;
    return true ;
 }

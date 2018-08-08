@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -61,7 +61,7 @@ static void show_clusters(const ClusterInfo* clusters, size_t level)
       for (auto v : *clusters->members())
 	 {
 	 auto vector = static_cast<Vector<float>*>(v) ;
-	 ScopedCharPtr printed { vector->cString(0,indent,indent+1) } ;
+	 CharPtr printed { vector->cString(0,indent,indent+1) } ;
 	 cout << *printed << endl ;
 	 }
       }
@@ -118,10 +118,12 @@ int main(int argc, char** argv)
 	 }
       else
 	 {
-	 char* line ;
-	 while ((line = vecfile.getTrimmedLine()) != nullptr)
+	 for ( ; ; )
 	    {
-	    if (!*line) continue ;
+	    CharPtr line = vecfile.getTrimmedLine() ;
+	    if (!line)
+	       break  ;
+	    if (!**line) continue ;
 	    Vector<float>* v;
 	    if (use_sparse_vectors)
 	       {
@@ -168,7 +170,7 @@ int main(int argc, char** argv)
       }
    if (dump_vectors)
       {
-      ScopedCharPtr printed { clusters->cString() } ;
+      CharPtr printed { clusters->cString() } ;
       cout << "Resulting ClusterInfo structure: " << endl << *printed << endl << endl ;
       RefArray* members = clusters->allMembers() ;
       if (members)

@@ -365,7 +365,7 @@ bool ClusterInfo::labelSubclusterPaths(bool (*fn)(Object*, const char* label), c
       {
       for (auto sub : *subclusters())
 	 {
-	 ScopedCharPtr new_prefix { aprintf("%s%s%d%c",prefix,*prefix?sep:"",count++,'\0') } ;
+	 CharPtr new_prefix { aprintf("%s%s%d%c",prefix,*prefix?sep:"",count++,'\0') } ;
 	 auto subcluster = static_cast<ClusterInfo*>(sub) ;
 	 success = subcluster->labelSubclusterPaths(fn,new_prefix,sep) ;
 	 if (!success)
@@ -380,7 +380,7 @@ bool ClusterInfo::labelSubclusterPaths(bool (*fn)(Object*, const char* label), c
 Symbol* ClusterInfo::genLabel()
 {
    size_t id = ++next_cluster_ID ;
-   ScopedCharPtr symname { Fr::aprintf("<CL_%04lu>",id) } ;
+   CharPtr symname { Fr::aprintf("<CL_%04lu>",id) } ;
    return Symbol::create(symname) ;
 }
 

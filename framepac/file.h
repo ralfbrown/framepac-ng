@@ -56,6 +56,7 @@ class LineBatch
 
       void clear() ;
       bool append(char* ln) ;
+      bool append(CharPtr&& ln) ;
       LineBatch& operator+= (char* ln) { (void)append(ln) ; return *this ; }
 
       const char* line(size_t N) const { return (N < size()) ?  m_lines[N] : nullptr ; }

@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-13					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -47,12 +47,13 @@ List* load_file_list(bool use_stdin, const char* listfile, const char* what, boo
 	    exit(1) ;
 	 return nullptr ;
 	 }
-      char* filename ;
-      while (!listfp.eof() && (filename = listfp.getTrimmedLine()) != nullptr)
+      for ( ; ; )
 	 {
-	 if (*filename && *filename != '#' && *filename != ';')
+	 CharPtr filename = listfp.getTrimmedLine() ;
+	 if (!filename)
+	    break ;
+	 if (**filename && **filename != '#' && **filename != ';')
 	    files += filename ;
-	 delete[] filename ;
 	 }
       }
    return files.move() ;

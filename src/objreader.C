@@ -309,7 +309,7 @@ char* ObjectReader::read_delimited_string(CharGetter &getter, char quotechar, si
 static Object* readqsym(const ObjectReader *reader, CharGetter &getter)
 {
    size_t len ;
-   ScopedCharPtr buf { reader->read_delimited_string(getter,'|',len) };
+   CharPtr buf { reader->read_delimited_string(getter,'|',len) };
    return SymbolTable::current()->add(buf) ;
 }
 
@@ -321,7 +321,7 @@ reader, CharGetter& getter)
    if (getter.peek() == '|')
       {
       size_t len ;
-      ScopedCharPtr buf { reader->read_delimited_string(getter,'|',len) } ;
+      CharPtr buf { reader->read_delimited_string(getter,'|',len) } ;
       return Symbol::create(buf) ;
       }
    else
@@ -347,7 +347,7 @@ reader, CharGetter& getter)
 static Object* readstr(const ObjectReader *reader, CharGetter& getter)
 {
    size_t len ;
-   ScopedCharPtr buf { reader->read_delimited_string(getter,'\\',len) };
+   CharPtr buf { reader->read_delimited_string(getter,'\\',len) };
    return String::create(buf,len) ;
 }
 

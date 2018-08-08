@@ -102,7 +102,7 @@ static Object* read_json_number(const ObjectReader* reader, CharGetter& getter)
 static Object* read_json_string(const ObjectReader* reader, CharGetter& getter)
 {
    size_t len ;
-   ScopedCharPtr buf { reader->read_delimited_string(getter,'\\',len) } ;
+   CharPtr buf { reader->read_delimited_string(getter,'\\',len) } ;
    return String::create(buf,len) ;
 }
 

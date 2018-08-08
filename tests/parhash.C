@@ -509,7 +509,8 @@ static void print_msg(ostream& out, const char* fmt, ...)
 {
    va_list args ;
    va_start(args,fmt) ;
-   ScopedCharPtr msg { Fr::vaprintf(fmt,args) } ;
+   CharPtr msg { Fr::vaprintf(fmt,args) } ;
+   va_end(args) ;
    if (msg)
       {
       out << *msg << flush  ;
@@ -619,7 +620,7 @@ static void hash_check(HashRequestOrder* order)
       }
    if (order->m_verbose)
       {
-      ScopedCharPtr msg { aprintf(";  Job %lu cycle %lu complete.\n",order->id,order->current_cycle) } ;
+      CharPtr msg { aprintf(";  Job %lu cycle %lu complete.\n",order->id,order->current_cycle) } ;
       cout << *msg << flush ;
       }
    return ;
@@ -902,7 +903,7 @@ void announce(ostream& out, bool terse, const char *msg, size_t threads, STLset*
 #ifdef TEST_HOPSCOTCH
 void announce(ostream& out, bool terse, const char *msg, size_t threads, HopscotchMap*)
 {
-   ScopedCharPtr type { Fr::aprintf("Hopsc%03d",g_Hopscotch_Concurrency) } ;
+   CharPtr type { Fr::aprintf("Hopsc%03d",g_Hopscotch_Concurrency) } ;
    announce(out,terse,msg,*type,threads) ;
    return ;
 }
@@ -1359,7 +1360,7 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
       hash_test(&tpool,out,"Timed throughput test (90%)",threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,90,false,randnums) ;
       if (throughput != 10 && throughput != 30 && throughput != 50 && throughput != 70 && throughput != 90)
 	 {
-	 ScopedCharPtr heading { Fr::aprintf("Timed throughput test (%d%%)",throughput) } ;
+	 CharPtr heading { Fr::aprintf("Timed throughput test (%d%%)",throughput) } ;
 	 hash_test(&tpool,out,*heading,threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,throughput,false,randnums) ;
 	 }
       for (size_t i = 0 ; i < maxsize ; i++)

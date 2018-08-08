@@ -139,7 +139,7 @@ Symbol* SymbolTable::gensym(const char* basename, const char* suffix)
       // get a unique count
       size_t count = gensym_count++ ;
       // generate the symbol's name
-      ScopedCharPtr name { aprintf("%s%ld%s",basename,count,suffix) } ;
+      CharPtr name { aprintf("%s%ld%s",basename,count,suffix) } ;
       sym = m_symbols.addKey(name,&existed) ;
       } while (!sym || existed) ; // loop until the generated name was not already a symbol in the table
    return const_cast<Symbol*>(sym) ;

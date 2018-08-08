@@ -78,9 +78,7 @@ static void process_English(output_function* fn, CFile& file, char, char out_del
 {
    while (!file.eof())
       {
-      ScopedCharPtr line { file.getCLine() } ;
-      CharGetterCString getter(line) ;
-      WordSplitterEnglish splitter(getter) ;
+      WordSplitterEnglish splitter(file.getCLine()) ;
       splitter.keepEmbeddedPeriods(keep_embedded) ;
       fn(splitter,out_delimiter) ;
       }
@@ -93,9 +91,7 @@ static void process_CSV(output_function* fn, CFile& file, char in_delimiter, cha
 {
    while (!file.eof())
       {
-      ScopedCharPtr line { file.getCLine() } ;
-      CharGetterCString getter(line) ;
-      WordSplitterCSV splitter(getter,in_delimiter) ;
+      WordSplitterCSV splitter(file.getCLine(),in_delimiter) ;
       fn(splitter,out_delimiter) ;
       }
    return ;
@@ -107,9 +103,7 @@ static void process_delimited(output_function* fn, CFile& file, char in_delimite
 {
    while (!file.eof())
       {
-      ScopedCharPtr line { file.getCLine() } ;
-      CharGetterCString getter(line) ;
-      WordSplitterDelimiter splitter(getter,in_delimiter) ;
+      WordSplitterDelimiter splitter(file.getCLine(),in_delimiter) ;
       fn(splitter,out_delimiter) ;
       }
    return ;

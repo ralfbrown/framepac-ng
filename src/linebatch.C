@@ -105,6 +105,21 @@ bool LineBatch::append(char* ln)
 
 //----------------------------------------------------------------------------
 
+bool LineBatch::append(CharPtr&& ln)
+{
+   if (size() >= capacity())
+      {
+      size_t newsize = capacity() * 2 ;
+      if (newsize < 1000) newsize = 1000 ;
+      if (!expandTo(newsize))
+	 return false ;
+      }
+   m_lines[m_count++] = ln.move() ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
 bool LineBatch::applyVA(LineEditFunc* fn, va_list args)
 {
    if (!fn)
@@ -131,8 +146,7 @@ LineBatch* CFile::getLines(size_t batchsize)
    LineBatch* batch = new LineBatch(batchsize) ;
    while (!eof() && batch->size() < batch->capacity())
       {
-      char* line = getCLine() ;
-      batch->append(line) ;
+      batch->append(getCLine()) ;
       }
    return batch ;
 }
@@ -151,12 +165,10 @@ LineBatch* CFile::getLines(size_t batchsize, int mono_skip)
 	 // if mono_skip > 0, we read the first of each pair and skip the second
 	 skipBlankLines() ;
 	 skipLines((mono_skip<0) ? 1 : 0) ;
-	 char* line = getTrimmedLine() ;
+	 CharPtr line { getTrimmedLine() } ;
 	 skipLines((mono_skip>0) ? 1 : 0) ;
-	 if (line && *line)
+	 if (line && **line)
 	    batch->append(line) ;
-	 else
-	    delete[] line ;
 	 }
       }
    return batch ;
