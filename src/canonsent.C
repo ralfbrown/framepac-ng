@@ -19,7 +19,6 @@
 /*									*/
 /************************************************************************/
 
-#include "framepac/cstring.h"
 #include "framepac/texttransforms.h"
 #include "framepac/words.h"
 
@@ -34,14 +33,14 @@ extern std::locale utf8locale ;
 /************************************************************************/
 /************************************************************************/
 
-char* canonicalize_sentence(const char* orig_sent, std::locale& locale, bool force_uppercase,
-			    const char *delim, char const* const* abbrevs)
+CharPtr canonicalize_sentence(const char* orig_sent, std::locale& locale, bool force_uppercase,
+			      const char *delim, char const* const* abbrevs)
 {
    (void)abbrevs ;
 
    if (!orig_sent)
       return nullptr ;
-   ScopedCharPtr sent { dup_string(orig_sent) } ;
+   CharPtr sent { dup_string(orig_sent) } ;
    if (force_uppercase)
       {
       uppercase_string(sent,locale) ;
@@ -53,8 +52,8 @@ char* canonicalize_sentence(const char* orig_sent, std::locale& locale, bool for
 
 //----------------------------------------------------------------------------
 
-char* canonicalize_sentence(const char* sent, bool force_uppercase,
-			    const char *delim, char const* const* abbrevs)
+CharPtr canonicalize_sentence(const char* sent, bool force_uppercase,
+			      const char *delim, char const* const* abbrevs)
 {
    return canonicalize_sentence(sent,utf8locale,force_uppercase,delim,abbrevs) ;
 }

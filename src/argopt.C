@@ -99,9 +99,9 @@ bool ArgOpt<char*>::convert(const char* arg, const char* delim)
    const char* new_val = string_as<const char*>(arg,success) ;
    if (!success)
       return false ;
-   char* concat = delim ? aprintf("%s%s%s",m_value,delim,new_val) : dup_string(new_val) ;
+   CharPtr concat = delim ? aprintf("%s%s%s",m_value,delim,new_val) : dup_string(new_val) ;
    delete[] m_value ;
-   m_value = concat ;
+   m_value = concat.move() ;
    return true ;
 }
 

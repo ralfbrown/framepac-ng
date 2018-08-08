@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -44,7 +44,7 @@ bool ClusteringAlgoBase::parseOptions(const char* opt)
       size_t len = 0 ;
       while (opt[len] && opt[len] != '=' && opt[len] != ':')
 	 len++ ;
-      ScopedCharPtr optname { dup_string_n(opt,len) } ;
+      CharPtr optname { dup_string_n(opt,len) } ;
       lowercase_string(optname) ;
       opt += len ;
       char* optvalue_orig ;
@@ -54,11 +54,11 @@ bool ClusteringAlgoBase::parseOptions(const char* opt)
 	 len = 0 ;
 	 while (opt[len] && opt[len] != ':')
 	    len++ ;
-	 optvalue_orig = dup_string_n(opt,len) ;
+	 optvalue_orig = dup_string_n(opt,len).move() ;
 	 opt += len ;
 	 }
       else
-	 optvalue_orig = dup_string("") ;
+	 optvalue_orig = dup_string("").move() ;
       const char* optvalue = optvalue_orig ;
       if (strcmp(optname,"a") == 0 || strcmp(optname,"alpha") == 0)
 	 {

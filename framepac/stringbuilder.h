@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -23,6 +23,7 @@
 #define _Fr_STRINGBUILDER_H_INCLUDED
 
 #include "framepac/builder.h"
+#include "framepac/cstring.h"
 #include "framepac/string.h"
 
 /************************************************************************/
@@ -47,7 +48,7 @@ class StringBuilder : public BufferBuilder<char>
       using BufferBuilder<char>::operator+= ;
       StringBuilder& operator += (const char* s) { append(s) ; return *this ; }
       String *string() const { return String::create(currentBuffer(),currentLength()) ; }
-      char* c_str() const ;
+      CharPtr c_str() const ;
 
       // iterator support
       char* begin() const { return currentBuffer() ; }

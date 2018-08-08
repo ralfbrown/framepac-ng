@@ -24,6 +24,7 @@
 
 #include <iostream>
 #include <string>
+#include "framepac/cstring.h"
 #include "framepac/memory.h"
 
 /************************************************************************/
@@ -114,9 +115,9 @@ class Object
       const char* printableName() const { return (this != nullptr) ? stringValue() : nullptr ; }
       // generate printed representation to a stream
       ostream& print(ostream&) const ;
-      // generate printed representation; returned value must be freed
-      char* cString(size_t wrap_at = 0, size_t indent = 0, size_t wrapped_indent = 0) const ;
-      char* jsonString(bool wrap = false, size_t indent = 0) const ;
+      // generate printed representation into an allocated buffer
+      CharPtr cString(size_t wrap_at = 0, size_t indent = 0, size_t wrapped_indent = 0) const ;
+      CharPtr jsonString(bool wrap = false, size_t indent = 0) const ;
       // generate printed representation into a buffer
       FrVIRTFUNC5(char*,toCstring,toCstring_,const,char*,buffer,size_t,buflen,size_t,wrap_at,size_t,indent,size_t,wrapped_indent) ;
       char* toCstring(char* buffer, size_t buflen) const { return toCstring(buffer,buflen,0,0,0) ; }

@@ -65,10 +65,10 @@ void StringBuilder::append(const char *s)
 
 //----------------------------------------------------------------------------
 
-char* StringBuilder::c_str() const
+CharPtr StringBuilder::c_str() const
 {
    size_t len = currentLength() ;
-   char* s = new char[len+1] ;
+   CharPtr s(len+1) ;
    memcpy(s,currentBuffer(),len) ;
    s[len] = '\0' ;
    return s ;

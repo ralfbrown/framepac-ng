@@ -23,12 +23,13 @@
 #define _Fr_TEXTTRANSFORMS_H_INCLUDED
 
 #include <locale>
+#include "framepac/cstring.h"
 
 namespace Fr
 {
 
-char* dup_string(const char*) ;
-char* dup_string_n(const char*, size_t maxlength) ;
+CharPtr dup_string(const char*) ;
+CharPtr dup_string_n(const char*, size_t maxlength) ;
 
 char* skip_whitespace(char*) ;
 const char* skip_whitespace(const char*) ;
@@ -52,16 +53,16 @@ void uppercase_string(char*, std::locale*) ;
 //std::string lowercase_utf8_string(char*) ;
 //std::string uppercase_utf8_string(char*) ;
 
-char* canonicalize_sentence(const char*, bool force_uppercase = false, const char* delim = nullptr,
-			    char const* const* abbrevs = nullptr) ;
-char* canonicalize_sentence(const char*, std::locale&, bool force_uppercase = false,
-			    const char* delim = nullptr, char const* const* abbrevs = nullptr) ;
+CharPtr canonicalize_sentence(const char*, bool force_uppercase = false, const char* delim = nullptr,
+	  		      char const* const* abbrevs = nullptr) ;
+CharPtr canonicalize_sentence(const char*, std::locale&, bool force_uppercase = false,
+			      const char* delim = nullptr, char const* const* abbrevs = nullptr) ;
 
 [[gnu::format(gnu_printf,1,0)]]
-char* vaprintf(const char *fmt, va_list args) ;
+CharPtr vaprintf(const char *fmt, va_list args) ;
 
 [[gnu::format(gnu_printf,1,2)]]
-char* aprintf(const char* fmt, ...) ;
+CharPtr aprintf(const char* fmt, ...) ;
 
 } // end namespace Fr
 

@@ -23,6 +23,7 @@
 #include <sstream>
 #include "framepac/argparser.h"
 #include "framepac/cstring.h"
+#include "framepac/texttransforms.h"
 
 namespace Fr
 {
@@ -169,7 +170,7 @@ void ArgOptBase::invalidValue(const char* opt) const
    else
       cerr << "--" << fullName() ;
    cerr << endl ;
-   ScopedCharPtr range { describeRange() } ;
+   CharPtr range { describeRange() } ;
    if (range)
       {
       cerr << "valid range is " << *range << endl ;
@@ -179,30 +180,22 @@ void ArgOptBase::invalidValue(const char* opt) const
 
 //----------------------------------------------------------------------------
 
-char* ArgOptBase::describeDefault() const
+CharPtr ArgOptBase::describeDefault() const
 {
    if (!m_have_defvalue) return nullptr ;
    std::ostringstream s ;
    describeDefault(s) ;
-   const char* str = s.str().c_str() ;
-   size_t len = std::strlen(str) ;
-   char* result = new char[len+1] ;
-   std::memcpy(result,str,len+1) ;
-   return result ;
+   return dup_string(s.str().c_str()) ;
 }
 
 //----------------------------------------------------------------------------
 
-char* ArgOptBase::describeRange() const
+CharPtr ArgOptBase::describeRange() const
 {
    if (!m_have_minmax) return nullptr ;
    std::ostringstream s ;
    describeRange(s) ;
-   const char* str = s.str().c_str() ;
-   size_t len = std::strlen(str) ;
-   char* result = new char[len+1] ;
-   std::memcpy(result,str,len+1) ;
-   return result ;
+   return dup_string(s.str().c_str()) ;
 }
 
 /************************************************************************/

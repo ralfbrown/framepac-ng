@@ -354,7 +354,7 @@ bool Configuration::onChange(ConfigVariableType, void*)
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr Configuration::currentValue(const ConfigurationTable* param)
+CharPtr Configuration::currentValue(const ConfigurationTable* param)
 {
    if (!param || !param->m_keyword)
       return nullptr ;
@@ -405,14 +405,14 @@ ScopedCharPtr Configuration::currentValue(const ConfigurationTable* param)
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr Configuration::currentValue(const char* param_name)
+CharPtr Configuration::currentValue(const char* param_name)
 {
    return currentValue(findParameter(param_name)) ;
 }
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr Configuration::currentValue(const char* param_name, const char* bit_name)
+CharPtr Configuration::currentValue(const char* param_name, const char* bit_name)
 {
    ConfigurationTable* tbl = findParameter(param_name) ;
    if (!tbl || !tbl->m_keyword)
@@ -507,7 +507,7 @@ void Configuration::warn(const char* msg) const
 template <typename T>
 void Configuration::warn(const char* msg, const char* where, T value) const
 {
-   ScopedCharPtr strvalue { as_string(value) } ;
+   CharPtr strvalue { as_string(value) } ;
    SM::warning("Configuration error (%s line %d, %s): %s %s",
       m_infile_name?m_infile_name:"",m_currline,where,msg,strvalue) ;
    return ;

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-14					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -42,17 +42,17 @@ char* as_string(const class Object* value, char* buf, std::size_t buflen) ;
 char* as_string(const void*, char* buf, std::size_t buflen) ;
 
 // each of the following returns an allocated string
-ScopedCharPtr as_string(long value) ;
-ScopedCharPtr as_string(unsigned int value) ;
-ScopedCharPtr as_string(unsigned long value) ;
-ScopedCharPtr as_string(std::intmax_t value) ;
-ScopedCharPtr as_string(std::uintmax_t value) ;
-ScopedCharPtr as_string(double value) ;
-ScopedCharPtr as_string(long double value) ;
-ScopedCharPtr as_string(char value) ;
-ScopedCharPtr as_string(const char* value) ;
-ScopedCharPtr as_string(const class Object* value) ;
-ScopedCharPtr as_string(const void* value) ;
+CharPtr as_string(long value) ;
+CharPtr as_string(unsigned int value) ;
+CharPtr as_string(unsigned long value) ;
+CharPtr as_string(std::intmax_t value) ;
+CharPtr as_string(std::uintmax_t value) ;
+CharPtr as_string(double value) ;
+CharPtr as_string(long double value) ;
+CharPtr as_string(char value) ;
+CharPtr as_string(const char* value) ;
+CharPtr as_string(const class Object* value) ;
+CharPtr as_string(const void* value) ;
 
 unsigned len_as_string(long value) ;
 unsigned len_as_string(unsigned int value) ;

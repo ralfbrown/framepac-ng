@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-11					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -53,11 +53,11 @@ class CognateCorrespondence
 	    if (m_srclen < sizeof(m_source))
 	       strcpy((char*)&m_source,src) ;
 	    else
-	       m_source = dup_string(src) ;
+	       m_source = dup_string(src).move() ;
 	    if (m_trglen < sizeof(m_target))
 	       strcpy((char*)&m_target,trg) ;
 	    else
-	       m_target = dup_string(trg) ;
+	       m_target = dup_string(trg).move() ;
 	    return ;
 	 }
       void freeStrings()

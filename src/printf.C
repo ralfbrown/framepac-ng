@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-05					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -21,6 +21,7 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include "framepac/cstring.h"
 #include "framepac/texttransforms.h"
 
 namespace Fr
@@ -29,7 +30,7 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-char* vaprintf(const char *fmt, va_list args)
+CharPtr vaprintf(const char *fmt, va_list args)
 {
    // we need to make a copy of the arglist, because va_lists are passed by
    //   reference, so the first call to vsprintf would clobber 'args' for
@@ -38,7 +39,7 @@ char* vaprintf(const char *fmt, va_list args)
    va_copy(argcopy,args) ;
    size_t len = vsnprintf(nullptr,0,fmt,argcopy) ;
    va_end(argcopy) ;
-   char* buf = new char[len+1] ;
+   CharPtr buf(len+1) ;
    if (buf)
       {
       va_copy(argcopy,args) ;
@@ -51,11 +52,11 @@ char* vaprintf(const char *fmt, va_list args)
 
 //----------------------------------------------------------------------------
 
-char* aprintf(const char *fmt, ...)
+CharPtr aprintf(const char *fmt, ...)
 {
    va_list args ;
    va_start(args,fmt) ;
-   char* s = vaprintf(fmt,args) ;
+   auto s = vaprintf(fmt,args) ;
    va_end(args) ;
    return s ;
 }

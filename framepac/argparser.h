@@ -56,8 +56,8 @@ class ArgOptBase
       const char* shortName() const { return m_shortname ; }
       const char* fullName() const { return m_fullname ; }
       const char* description() const { return m_description ; }
-      char* describeDefault() const ;
-      char* describeRange() const ;
+      CharPtr describeDefault() const ;
+      CharPtr describeRange() const ;
 
       void setParser(ArgParser* p) { m_parser = p ; }
       ArgParser* getParser() const { return m_parser ; }

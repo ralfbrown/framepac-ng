@@ -494,7 +494,7 @@ $(BINDIR)/tpool$(EXE):		tests/tpool$(OBJ) $(LIBRARY)
 build/allocator$(OBJ):		src/allocator$(C) framepac/atomic.h framepac/memory.h
 build/argopt$(OBJ):		src/argopt$(C) template/argopt.cc
 build/argopt_real$(OBJ):	src/argopt_real$(C) template/argopt.cc
-build/argparser$(OBJ):		src/argparser$(C) framepac/argparser.h framepac/cstring.h
+build/argparser$(OBJ):		src/argparser$(C) framepac/argparser.h framepac/texttransforms.h
 build/array$(OBJ):		src/array$(C) framepac/array.h framepac/fasthash64.h
 build/as_string$(OBJ):		src/as_string$(C) framepac/as_string.h framepac/object.h framepac/texttransforms.h
 build/basisvector_u32$(OBJ):	src/basisvector_u32$(C) template/basisvector.cc
@@ -504,17 +504,16 @@ build/bignum$(OBJ):		src/bignum$(C) framepac/bignum.h
 build/bitvector$(OBJ):		src/bitvector$(C) framepac/bitvector.h framepac/number.h framepac/fasthash64.h
 build/bufbuilder_char$(OBJ):	src/bufbuilder_char$(C) template/bufbuilder.cc
 build/bwt$(OBJ):		src/bwt$(C) framepac/config.h
-build/canonsent$(OBJ):		src/canonsent$(C) framepac/cstring.h framepac/texttransforms.h framepac/words.h
+build/canonsent$(OBJ):		src/canonsent$(C) framepac/texttransforms.h framepac/words.h
 build/charget$(OBJ):		src/charget$(C) framepac/charget.h framepac/builder.h
 build/cfgfile$(OBJ):		src/cfgfile$(C) framepac/configfile.h framepac/charget.h framepac/list.h \
 				framepac/as_string.h framepac/message.h framepac/string.h framepac/symbol.h \
-				framepac/texttransforms.h framepac/cstring.h
+				framepac/texttransforms.h
 build/cfile$(OBJ):		src/cfile$(C) framepac/file.h framepac/message.h framepac/stringbuilder.h \
 				framepac/texttransforms.h
 build/cluster$(OBJ):		src/cluster$(C) framepac/cluster.h framepac/message.h framepac/progress.h \
 				framepac/texttransforms.h framepac/cstring.h framepac/convert.h
-build/clusterinfo$(OBJ):	src/clusterinfo$(C) framepac/atomic.h framepac/cluster.h framepac/texttransforms.h \
-				framepac/cstring.h
+build/clusterinfo$(OBJ):	src/clusterinfo$(C) framepac/atomic.h framepac/cluster.h framepac/texttransforms.h
 build/cluster_name$(OBJ):	src/cluster_name$(C) framepac/cluster.h
 build/cluster_u32_dbl$(OBJ):	src/cluster_u32_dbl$(C) template/cluster_factory.cc
 build/cluster_u32_flt$(OBJ):	src/cluster_u32_flt$(C) template/cluster_factory.cc
@@ -560,7 +559,7 @@ build/loadfilelist$(OBJ):	src/loadfilelist$(C) framepac/file.h framepac/list.h f
 build/map$(OBJ):		src/map$(C) framepac/map.h framepac/fasthash64.h
 build/map_file$(OBJ):		src/map_file$(C) framepac/map.h framepac/file.h
 build/matrix$(OBJ):		src/matrix$(C) framepac/matrix.h
-build/message$(OBJ):		src/message$(C) framepac/message.h framepac/texttransforms.h framepac/cstring.h
+build/message$(OBJ):		src/message$(C) framepac/message.h framepac/texttransforms.h
 build/mmapfile$(OBJ):		src/mmapfile$(C) framepac/mmapfile.h framepac/file.h
 build/nonobject$(OBJ):		src/nonobject$(C) framepac/nonobject.h
 build/number$(OBJ):		src/number$(C) framepac/bignum.h framepac/rational.h
@@ -568,7 +567,7 @@ build/object$(OBJ):		src/object$(C) framepac/object.h framepac/objreader.h frame
 build/objreader$(OBJ):		src/objreader$(C) framepac/objreader.h framepac/symboltable.h framepac/array.h \
 			framepac/bignum.h framepac/bitvector.h framepac/map.h framepac/rational.h \
 			framepac/list.h framepac/number.h framepac/stringbuilder.h framepac/termvector.h \
-			framepac/texttransforms.h framepac/cstring.h
+			framepac/texttransforms.h
 build/prefixmatcher$(OBJ):	src/prefixmatcher$(C) framepac/utility.h
 build/printf$(OBJ):		src/printf$(C) framepac/texttransforms.h
 build/progress$(OBJ):		src/progress$(C) framepac/progress.h framepac/timer.h
@@ -590,7 +589,7 @@ build/sufarray_u32u40$(OBJ):	src/sufarray_u32u40$(C) template/sufarray.cc templa
 build/symbol$(OBJ):		src/symbol$(C) framepac/symbol.h framepac/nonobject.h framepac/fasthash64.h
 build/symbolprop$(OBJ):		src/symbolprop$(C) framepac/frame.h framepac/list.h framepac/symbol.h
 build/symboltable$(OBJ):	src/symboltable$(C) framepac/symboltable.h framepac/fasthash64.h \
-			framepac/texttransforms.h framepac/cstring.h
+				framepac/texttransforms.h
 build/synchevent$(OBJ):		src/synchevent$(C) framepac/synchevent.h
 build/termvector$(OBJ):		src/termvector$(C) template/termvector.cc
 build/texttransforms$(OBJ):	src/texttransforms$(C) framepac/texttransforms.h
@@ -812,7 +811,7 @@ framepac/nonobject.h: framepac/object.h
 framepac/number.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/object.h:	framepac/memory.h
+framepac/object.h:	framepac/cstring.h framepac/memory.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/objectvmt.h:	framepac/config.h
@@ -842,7 +841,7 @@ framepac/spelling.h:	framepac/hashtable.h framepac/texttransforms.h framepac/tri
 framepac/string.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/stringbuilder.h:	framepac/builder.h framepac/string.h
+framepac/stringbuilder.h:	framepac/builder.h framepac/cstring.h framepac/string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/sufarray.h:	framepac/file.h framepac/mmapfile.h
@@ -858,6 +857,9 @@ framepac/synchevent.h:	framepac/atomic.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/termvector.h:	framepac/vector.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/texttransforms.h:	framepac/cstring.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/thread.h:	framepac/init.h

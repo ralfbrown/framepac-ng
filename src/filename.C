@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -86,11 +86,11 @@ bool FilePath::forceDirectory(const char *new_dir)
       new_dir = "." ;
    if (strcmp(new_dir,m_directory) == 0)
       return false ; // no change
-   char *dir = dup_string(new_dir) ;
+   CharPtr dir { dup_string(new_dir) } ;
    if (dir)
       {
       delete[] m_directory ;
-      m_directory = dir ;
+      m_directory = dir.move() ;
       delete[] m_path ;
       m_path = nullptr ;
       return true ;
@@ -115,11 +115,11 @@ bool FilePath::forceExtension(const char *new_ext)
       new_ext++ ;
    if (strcmp(new_ext,m_extension) == 0)
       return false ; // no change
-   char *ext = dup_string(new_ext) ;
+   CharPtr ext { dup_string(new_ext) } ;
    if (ext)
       {
       delete[] m_extension ;
-      m_extension = ext ;
+      m_extension = ext.move() ;
       delete[] m_basename ;
       m_basename = nullptr ;
       delete[] m_path ;

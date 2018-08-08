@@ -42,7 +42,7 @@ unsigned len_as_string(long value)
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr as_string(long value)
+CharPtr as_string(long value)
 {
    return Fr::aprintf("%ld",value) ;
 }
@@ -63,7 +63,7 @@ unsigned len_as_string(unsigned int value)
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr as_string(unsigned int value)
+CharPtr as_string(unsigned int value)
 {
    return Fr::aprintf("%u",value) ;
 }
@@ -84,7 +84,7 @@ unsigned len_as_string(unsigned long value)
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr as_string(unsigned long value)
+CharPtr as_string(unsigned long value)
 {
    return Fr::aprintf("%lu",value) ;
 }
@@ -106,7 +106,7 @@ unsigned len_as_string(std::intmax_t value)
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr as_string(std::intmax_t value)
+CharPtr as_string(std::intmax_t value)
 {
    return Fr::aprintf("%jd",value) ;
 }
@@ -129,7 +129,7 @@ unsigned len_as_string(std::uintmax_t value)
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr as_string(std::uintmax_t value)
+CharPtr as_string(std::uintmax_t value)
 {
    return Fr::aprintf("%ju",value) ;
 }
@@ -151,7 +151,7 @@ unsigned len_as_string(double value)
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr as_string(double value)
+CharPtr as_string(double value)
 {
    return Fr::aprintf("%g",value) ;
 }
@@ -172,7 +172,7 @@ unsigned len_as_string(long double value)
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr as_string(long double value)
+CharPtr as_string(long double value)
 {
    return Fr::aprintf("%Lg",value) ;
 }
@@ -193,7 +193,7 @@ unsigned len_as_string(char /*value*/)
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr as_string(char value)
+CharPtr as_string(char value)
 {
    return Fr::aprintf("%c",value) ;
 }
@@ -214,7 +214,7 @@ unsigned len_as_string(const char* value)
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr as_string(const char* value)
+CharPtr as_string(const char* value)
 {
    return dup_string(value ? value : "(null)") ;
 }
@@ -235,7 +235,7 @@ unsigned len_as_string(const Object* value)
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr as_string(const Object* value)
+CharPtr as_string(const Object* value)
 {
    return value ? value->cString() : dup_string("#N<>") ;
 }
@@ -257,7 +257,7 @@ unsigned len_as_string(const void* /*value*/)
 
 //----------------------------------------------------------------------------
 
-ScopedCharPtr as_string(const void* /*value*/)
+CharPtr as_string(const void* /*value*/)
 {
    return dup_string("???") ;
 }

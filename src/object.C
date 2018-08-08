@@ -76,7 +76,7 @@ ostream& Object::print(ostream& out) const
       // TODO: make a virtual function that dispatches to the proper
       //   type so that we don't need to go via a string conversion
       //   first
-      ScopedCharPtr printed { cString() } ;
+      CharPtr printed { cString() } ;
       out << *printed << flush ;
       }
    else
@@ -88,12 +88,12 @@ ostream& Object::print(ostream& out) const
 
 //----------------------------------------------------------------------------
 
-char* Object::cString(size_t wrap_at, size_t indent, size_t wrapped_indent) const
+CharPtr Object::cString(size_t wrap_at, size_t indent, size_t wrapped_indent) const
 {
    size_t buflen { cStringLength(wrap_at,indent,wrapped_indent) };
-   ScopedCharPtr buffer(buflen+1) ;
+   CharPtr buffer(buflen+1) ;
    if (toCstring(buffer,buflen+1,wrap_at,indent,wrapped_indent))
-      return buffer.move() ;
+      return buffer ;
    else
       return nullptr ;
 }
@@ -120,11 +120,14 @@ char* Object::toCstring_(const Object *obj, char *buffer, size_t buflen, size_t 
 
 //----------------------------------------------------------------------------
 
-char *Object::jsonString(bool wrap, size_t indent) const
+CharPtr Object::jsonString(bool wrap, size_t indent) const
 {
    size_t buflen { jsonStringLength(wrap,indent) };
-   ScopedCharPtr buffer(buflen+1) ;
-   return toJSONString(buffer,buflen+1,wrap,indent) ? buffer.move() : nullptr ;
+   CharPtr buffer(buflen+1) ;
+   if (toJSONString(buffer,buflen+1,wrap,indent))
+      return buffer ;
+   else
+      return nullptr ;
 }
 
 //----------------------------------------------------------------------------
@@ -190,7 +193,7 @@ int Object::lessThan_(const Object *obj1, const Object *obj2)
 
 void Object::_() const
 {
-   ScopedCharPtr printed { cString() };
+   CharPtr printed { cString() };
    cerr << *printed << endl ;
    return ;
 }

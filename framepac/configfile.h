@@ -96,8 +96,8 @@ class Configuration
 
       bool validValues(const char* param_name, const char*& min_value, const char*& max_value,
 	 const char*& def_value) const ;
-      ScopedCharPtr currentValue(const char* param_name) ;
-      ScopedCharPtr currentValue(const char* param_name, const char* bit_name) ;
+      CharPtr currentValue(const char* param_name) ;
+      CharPtr currentValue(const char* param_name, const char* bit_name) ;
 
       bool setParameter(const char* param_name, const char* new_value, std::ostream* err = nullptr) ;
       bool setParameter(const char* new_value, const ConfigurationTable* param, bool initializing,
@@ -127,7 +127,7 @@ class Configuration
       virtual bool onChange(ConfigVariableType, void* where) ;
       
    protected: // methods
-      ScopedCharPtr currentValue(const ConfigurationTable* param) ;
+      CharPtr currentValue(const ConfigurationTable* param) ;
       bool skipToSection(CharGetter& stream, const char* section_name, bool from_start = true) ;
       ConfigurationTable* findParameter(const char* param_name) ;
       const ConfigurationTable* findParameter(const char* param_name) const ;
