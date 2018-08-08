@@ -25,6 +25,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include "framepac/config.h"
+#include "framepac/cstring.h"
 
 namespace Fr
 {
@@ -119,8 +120,8 @@ class CFile
       size_t skipLines(size_t maxskip = 1) ;
       size_t skipBlankLines(size_t maxskip = (size_t)~0) ;
       class Fr::String* getline(size_t maxline = (size_t)~0) ; // result must be freed
-      char* getCLine(size_t maxline = (size_t)~0) ; // result must be freed
-      char* getTrimmedLine(size_t maxline = (size_t)~0) ; // result must be freed
+      CharPtr getCLine(size_t maxline = (size_t)~0) ; // result must be freed
+      CharPtr getTrimmedLine(size_t maxline = (size_t)~0) ; // result must be freed
       LineBatch* getLines(size_t batchsize = 0) ;
       LineBatch* getLines(size_t batchsize, int mono_skip) ;
       void putc(char c) { fputc(c,m_file) ; }
@@ -262,17 +263,17 @@ class FilePath
    public:
       FilePath(const char *pathname) ;
       FilePath(const FilePath&) = delete ; // no copying (for now)
-      ~FilePath() ;
+      ~FilePath() = default ;
 
       FilePath& operator= (const FilePath&) = delete ; // no copying (for now)
 
-      const char *path() const { return m_path ? m_path : generatePath() ; }
+      const char *path() const { return m_path ? *m_path : generatePath() ; }
       const char *directory() const { return m_directory ; }
-      const char *basename() const { return m_basename ? m_basename : generateBasename() ; }
+      const char *basename() const { return m_basename ? *m_basename : generateBasename() ; }
       const char *root() const { return m_root ; }
       const char *extension() const { return m_extension ; }
 
-      bool pathOnly() const { return m_root == nullptr && m_extension == nullptr ; }
+      bool pathOnly() const { return *m_root == nullptr && *m_extension == nullptr ; }
 
       bool defaultDirectory(const char *path) ;
       bool forceDirectory(const char *new_path) ;
@@ -280,11 +281,11 @@ class FilePath
       bool forceExtension(const char *new_extension) ;
 
    protected:
-      char *m_directory ;
-      char *m_root ;
-      char *m_extension ;
-      mutable char *m_path ;
-      mutable char *m_basename ;
+      CharPtr m_directory ;
+      CharPtr m_root ;
+      CharPtr m_extension ;
+      mutable CharPtr m_path ;
+      mutable CharPtr m_basename ;
    protected:
       const char *generatePath() const ;
       const char *generateBasename() const ;

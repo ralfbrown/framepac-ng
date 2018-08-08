@@ -59,22 +59,8 @@ FilePath::FilePath(const char *pathname)
       }
    else
       {
-      size_t len = strlen(pathname) ;
-      m_root = new char[len+1] ;
-      strncpy(m_root,pathname,len+1) ;
+      m_root = dup_string(pathname) ;
       }
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-FilePath::~FilePath()
-{
-   delete[] m_directory ;
-   delete[] m_root ;
-   delete[] m_extension ;
-   delete[] m_path ;
-   delete[] m_basename ;
    return ;
 }
 
@@ -89,9 +75,7 @@ bool FilePath::forceDirectory(const char *new_dir)
    CharPtr dir { dup_string(new_dir) } ;
    if (dir)
       {
-      delete[] m_directory ;
       m_directory = dir.move() ;
-      delete[] m_path ;
       m_path = nullptr ;
       return true ;
       }
@@ -102,7 +86,7 @@ bool FilePath::forceDirectory(const char *new_dir)
 
 bool FilePath::defaultDirectory(const char* dir)
 {
-   return *m_directory ? true : forceDirectory(dir) ;
+   return (m_directory && **m_directory) ? true : forceDirectory(dir) ;
 }
 
 //----------------------------------------------------------------------------
@@ -118,11 +102,8 @@ bool FilePath::forceExtension(const char *new_ext)
    CharPtr ext { dup_string(new_ext) } ;
    if (ext)
       {
-      delete[] m_extension ;
       m_extension = ext.move() ;
-      delete[] m_basename ;
       m_basename = nullptr ;
-      delete[] m_path ;
       m_path = nullptr ;
       return true ;
       }
@@ -133,14 +114,13 @@ bool FilePath::forceExtension(const char *new_ext)
 
 bool FilePath::defaultExtension(const char* ext)
 {
-   return *m_extension ? true : forceExtension(ext) ;
+   return (m_extension && **m_extension) ? true : forceExtension(ext) ;
 }
 
 //----------------------------------------------------------------------------
 
 const char *FilePath::generatePath() const
 {
-   delete[] m_path ;
    m_path = nullptr ; //FIXME   
    return m_path ;
 }
@@ -149,7 +129,6 @@ const char *FilePath::generatePath() const
 
 const char *FilePath::generateBasename() const
 {
-   delete[] m_basename ;
    m_basename = nullptr ;
    size_t len_r = strlen(m_root) ;
    size_t len_e = strlen(m_extension) ;
@@ -157,11 +136,11 @@ const char *FilePath::generateBasename() const
    char *base = new char[len+1] ;
    if (base)
       {
-      memcpy(base,m_root,len_r) ;
+      memcpy(base,*m_root,len_r) ;
       if (len_e)
 	 {
 	 base[len_r++] = '.' ;
-	 memcpy(base+len_r,m_extension,len_e+1) ;
+	 memcpy(base+len_r,*m_extension,len_e+1) ;
 	 }
       m_basename = base ;
       }

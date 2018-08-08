@@ -783,7 +783,7 @@ framepac/counter.h:	framepac/atomic.h
 framepac/critsect.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/file.h:	framepac/config.h
+framepac/file.h:	framepac/config.h framepac/cstring.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/frame.h:	framepac/object.h

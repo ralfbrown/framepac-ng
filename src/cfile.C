@@ -502,7 +502,7 @@ String* CFile::getline(size_t maxline)
 
 //----------------------------------------------------------------------------
 
-char* CFile::getCLine(size_t maxline)
+CharPtr CFile::getCLine(size_t maxline)
 {
    if (!m_file || feof(m_file))
       return nullptr ;
@@ -512,13 +512,13 @@ char* CFile::getCLine(size_t maxline)
 
 //----------------------------------------------------------------------------
 
-char* CFile::getTrimmedLine(size_t maxline)
+CharPtr CFile::getTrimmedLine(size_t maxline)
 {
    if (!m_file || feof(m_file))
       return nullptr ;
    skipWS() ;
    StringBuilder str(this,maxline) ;
-   return trim_whitespace(str.c_str()) ;
+   return trim_whitespace(str.c_str().move()) ;
 }
 
 //----------------------------------------------------------------------------
