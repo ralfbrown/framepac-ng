@@ -33,29 +33,35 @@ namespace Fr {
 //----------------------------------------------------------------------------
 
 template <typename T>
-class ScopedNewPtr
+class NewPtr
    {
    public:
-      ScopedNewPtr(unsigned N) { m_string = new T[N] ; }
-      ScopedNewPtr(T* s) { m_string = s ; }
-      ScopedNewPtr(const ScopedNewPtr&) = delete ;
-      ScopedNewPtr(ScopedNewPtr&& orig) { m_string = orig.move() ; }
-      ~ScopedNewPtr() { delete[] m_string ; }
-      ScopedNewPtr& operator= (const ScopedNewPtr&) = delete ;
-      ScopedNewPtr& operator= (ScopedNewPtr&& orig) { delete[] m_string ; m_string = orig.move() ; return *this ; }
+      NewPtr(unsigned N) { m_string = new T[N] ; }
+      NewPtr(T* s) { m_string = s ; }
+      NewPtr(const NewPtr&) = delete ;
+      NewPtr(NewPtr&& orig) { m_string = orig.move() ; }
+      ~NewPtr() { release() ; }
+      NewPtr& operator= (const NewPtr&) = delete ;
+      NewPtr& operator= (NewPtr&& orig) { release() ; m_string = orig.move() ; return *this ; }
+      NewPtr& operator= (T* new_s) { release() ; m_string = new_s ; return *this ; }
 
-      T* move() { T* s = m_string ; m_string = nullptr ; return s ; }
+      T* move() { T* s = m_string ; clear() ; return s ; }
+      void clear() { m_string = nullptr ; }
+      void release() { delete[] m_string ; m_string = nullptr ; }
 
       const T* operator* () const { return m_string ; }
       operator T* () const { return m_string ; }
       operator const T* () const { return m_string ; }
+      T& operator[] (size_t N) { return m_string[N] ; }
+      const T& operator[] (size_t N) const { return m_string[N] ; }
       explicit operator bool () const { return m_string != nullptr ; }
       bool operator ! () const { return m_string == nullptr ; }
    protected:
       T* m_string ;
    } ;
 
-typedef ScopedNewPtr<char> ScopedCharPtr ;
+typedef NewPtr<char> ScopedCharPtr ;
+typedef NewPtr<char> CharPtr ;
 
 //----------------------------------------------------------------------------
 
