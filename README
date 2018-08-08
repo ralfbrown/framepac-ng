@@ -1,2 +1,12 @@
 This is still very much pre-alpha software.  Many of the functions are
 still stubs.  Use at your own risk....
+
+This code is licensed under GPL v3 (unless an alternate license has been negotiated).
+
+SPDX-Version: SPDX-2.1
+LicenceListVersion: 2.0
+SPDX-Licence-Identifier: GPL-3.0-only
+Creator: Person: Ralf Brown ()
+PackageName: FramepaC-ng
+PackageVersion: 0.08
+PackageDownloadLocation: git+https://www.github.com/ralfbrown/FramepaC-ng
