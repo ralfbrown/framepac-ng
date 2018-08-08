@@ -21,10 +21,10 @@
 
 #include "framepac/cluster.h"
 #include "framepac/convert.h"
+#include "framepac/cstring.h"
 #include "framepac/message.h"
 #include "framepac/progress.h"
 #include "framepac/texttransforms.h"
-#include "framepac/utility.h"
 
 namespace Fr
 {

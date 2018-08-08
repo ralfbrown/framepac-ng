@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -23,11 +23,38 @@
 #define _Fr_CSTRING_H_INCLUDED
 
 #include <iostream>
+#include <cstring>
 
 /************************************************************************/
 /************************************************************************/
 
 namespace Fr {
+
+//----------------------------------------------------------------------------
+
+class ScopedCharPtr
+   {
+   public:
+      ScopedCharPtr(unsigned N) { m_string = new char[N] ; }
+      ScopedCharPtr(char* s) { m_string = s ; }
+      ScopedCharPtr(const ScopedCharPtr&) = delete ;
+      ScopedCharPtr(ScopedCharPtr&& orig) { m_string = orig.move() ; }
+      ~ScopedCharPtr() { delete[] m_string ; }
+      ScopedCharPtr& operator= (const ScopedCharPtr&) = delete ;
+      ScopedCharPtr& operator= (ScopedCharPtr&& orig) { m_string = orig.move() ; return *this ; }
+
+      char* move() { char* s = m_string ; m_string = nullptr ; return s ; }
+
+      const char* operator* () const { return m_string ; }
+      operator char* () const { return m_string ; }
+      operator const char* () const { return m_string ; }
+      explicit operator bool () const { return m_string != nullptr ; }
+      bool operator ! () const { return m_string == nullptr ; }
+   protected:
+      char* m_string ;
+   } ;
+
+//----------------------------------------------------------------------------
 
 class CString 
    {
@@ -58,7 +85,7 @@ class CString
 	 {
 	    if (!buf || !_s || buflen == 0) return buf ;
 	    if (buflen > cStringLength()+1) buflen = cStringLength()+1 ;
-	    memcpy(buf,_s,buflen-1) ;
+	    std::memcpy(buf,_s,buflen-1) ;
 	    buf[buflen] = '\0' ;
 	    return buf+buflen ;
 	 }

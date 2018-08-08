@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-31					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -24,6 +24,7 @@
 #include "framepac/array.h"
 #include "framepac/bignum.h"
 #include "framepac/bitvector.h"
+#include "framepac/cstring.h"
 #include "framepac/list.h"
 #include "framepac/map.h"
 #include "framepac/number.h"
@@ -34,7 +35,6 @@
 #include "framepac/symboltable.h"
 #include "framepac/termvector.h"
 #include "framepac/texttransforms.h"
-#include "framepac/utility.h"
 
 namespace Fr {
 

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -22,12 +22,12 @@
 #include "framepac/as_string.h"
 #include "framepac/charget.h"
 #include "framepac/configfile.h"
+#include "framepac/cstring.h"
 #include "framepac/list.h"
 #include "framepac/message.h"
 #include "framepac/string.h"
 #include "framepac/symbol.h"
 #include "framepac/texttransforms.h"
-#include "framepac/utility.h"
 
 namespace Fr
 {

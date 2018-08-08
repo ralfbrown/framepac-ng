@@ -22,7 +22,7 @@
 #include <cstring>
 #include <sstream>
 #include "framepac/argparser.h"
-#include "framepac/utility.h"
+#include "framepac/cstring.h"
 
 namespace Fr
 {

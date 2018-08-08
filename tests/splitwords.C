@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-30					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -21,6 +21,7 @@
 
 #include "framepac/argparser.h"
 #include "framepac/charget.h"
+#include "framepac/cstring.h"
 #include "framepac/file.h"
 #include "framepac/words.h"
 
@@ -77,12 +78,11 @@ static void process_English(output_function* fn, CFile& file, char, char out_del
 {
    while (!file.eof())
       {
-      char* line = file.getCLine() ;
+      ScopedCharPtr line { file.getCLine() } ;
       CharGetterCString getter(line) ;
       WordSplitterEnglish splitter(getter) ;
       splitter.keepEmbeddedPeriods(keep_embedded) ;
       fn(splitter,out_delimiter) ;
-      delete[] line ;
       }
    return ;
 }
@@ -93,11 +93,10 @@ static void process_CSV(output_function* fn, CFile& file, char in_delimiter, cha
 {
    while (!file.eof())
       {
-      char* line = file.getCLine() ;
+      ScopedCharPtr line { file.getCLine() } ;
       CharGetterCString getter(line) ;
       WordSplitterCSV splitter(getter,in_delimiter) ;
       fn(splitter,out_delimiter) ;
-      delete[] line ;
       }
    return ;
 }
@@ -108,11 +107,10 @@ static void process_delimited(output_function* fn, CFile& file, char in_delimite
 {
    while (!file.eof())
       {
-      char* line = file.getCLine() ;
+      ScopedCharPtr line { file.getCLine() } ;
       CharGetterCString getter(line) ;
       WordSplitterDelimiter splitter(getter,in_delimiter) ;
       fn(splitter,out_delimiter) ;
-      delete[] line ;
       }
    return ;
 }

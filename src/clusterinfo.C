@@ -21,8 +21,8 @@
 
 #include "framepac/atomic.h"
 #include "framepac/cluster.h"
+#include "framepac/cstring.h"
 #include "framepac/texttransforms.h"
-#include "framepac/utility.h"
 
 using namespace Fr ;
 

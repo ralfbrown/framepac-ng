@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-03					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -19,8 +19,8 @@
 /*									*/
 /************************************************************************/
 
+#include "framepac/cstring.h"
 #include "framepac/texttransforms.h"
-#include "framepac/utility.h"
 #include "framepac/words.h"
 
 namespace Fr

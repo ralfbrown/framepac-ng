@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -20,9 +20,9 @@
 /************************************************************************/
 
 #include <iostream>
+#include "framepac/cstring.h"
 #include "framepac/object.h"
 #include "framepac/objreader.h"
-#include "framepac/utility.h"
 
 using namespace FramepaC ;
 using namespace Fr ;

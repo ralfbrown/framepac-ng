@@ -21,11 +21,11 @@
 
 #include "framepac/argparser.h"
 #include "framepac/cluster.h"
+#include "framepac/cstring.h"
 #include "framepac/file.h"
 #include "framepac/message.h"
 #include "framepac/threadpool.h"
 #include "framepac/timer.h"
-#include "framepac/utility.h"
 
 using namespace Fr ;
 
