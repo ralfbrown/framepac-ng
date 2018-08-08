@@ -42,7 +42,7 @@ class ScopedNewPtr
       ScopedNewPtr(ScopedNewPtr&& orig) { m_string = orig.move() ; }
       ~ScopedNewPtr() { delete[] m_string ; }
       ScopedNewPtr& operator= (const ScopedNewPtr&) = delete ;
-      ScopedNewPtr& operator= (ScopedNewPtr&& orig) { m_string = orig.move() ; return *this ; }
+      ScopedNewPtr& operator= (ScopedNewPtr&& orig) { delete[] m_string ; m_string = orig.move() ; return *this ; }
 
       T* move() { T* s = m_string ; m_string = nullptr ; return s ; }
 

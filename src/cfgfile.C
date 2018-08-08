@@ -22,7 +22,6 @@
 #include "framepac/as_string.h"
 #include "framepac/charget.h"
 #include "framepac/configfile.h"
-#include "framepac/cstring.h"
 #include "framepac/list.h"
 #include "framepac/message.h"
 #include "framepac/string.h"
@@ -355,7 +354,7 @@ bool Configuration::onChange(ConfigVariableType, void*)
 
 //----------------------------------------------------------------------------
 
-char* Configuration::currentValue(const ConfigurationTable* param)
+ScopedCharPtr Configuration::currentValue(const ConfigurationTable* param)
 {
    if (!param || !param->m_keyword)
       return nullptr ;
@@ -406,14 +405,14 @@ char* Configuration::currentValue(const ConfigurationTable* param)
 
 //----------------------------------------------------------------------------
 
-char* Configuration::currentValue(const char* param_name)
+ScopedCharPtr Configuration::currentValue(const char* param_name)
 {
    return currentValue(findParameter(param_name)) ;
 }
 
 //----------------------------------------------------------------------------
 
-char* Configuration::currentValue(const char* param_name, const char* bit_name)
+ScopedCharPtr Configuration::currentValue(const char* param_name, const char* bit_name)
 {
    ConfigurationTable* tbl = findParameter(param_name) ;
    if (!tbl || !tbl->m_keyword)

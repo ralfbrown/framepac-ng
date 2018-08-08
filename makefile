@@ -739,6 +739,9 @@ framepac/argparser.h:	framepac/as_string.h
 framepac/array.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+framepac/as_string.h:	framepac/cstring.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 framepac/atomic.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
@@ -764,6 +767,9 @@ framepac/cluster.h:	framepac/array.h framepac/list.h framepac/symbol.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/complex.h:	framepac/number.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/configfile.h:	framepac/cstring.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/concbuilder.h:	framepac/builder.h

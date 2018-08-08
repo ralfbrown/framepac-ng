@@ -23,6 +23,7 @@
 #define _Fr_AS_STRING_H_INCLUDED
 
 #include <cstdint>
+#include "framepac/cstring.h"
 
 namespace Fr
 {
@@ -40,18 +41,18 @@ char* as_string(const char* value, char* buf, std::size_t buflen) ;
 char* as_string(const class Object* value, char* buf, std::size_t buflen) ;
 char* as_string(const void*, char* buf, std::size_t buflen) ;
 
-// each of the following returns an allocated string which must be released with delete[]
-char* as_string(long value) ;
-char* as_string(unsigned int value) ;
-char* as_string(unsigned long value) ;
-char* as_string(std::intmax_t value) ;
-char* as_string(std::uintmax_t value) ;
-char* as_string(double value) ;
-char* as_string(long double value) ;
-char* as_string(char value) ;
-char* as_string(const char* value) ;
-char* as_string(const class Object* value) ;
-char* as_string(const void* value) ;
+// each of the following returns an allocated string
+ScopedCharPtr as_string(long value) ;
+ScopedCharPtr as_string(unsigned int value) ;
+ScopedCharPtr as_string(unsigned long value) ;
+ScopedCharPtr as_string(std::intmax_t value) ;
+ScopedCharPtr as_string(std::uintmax_t value) ;
+ScopedCharPtr as_string(double value) ;
+ScopedCharPtr as_string(long double value) ;
+ScopedCharPtr as_string(char value) ;
+ScopedCharPtr as_string(const char* value) ;
+ScopedCharPtr as_string(const class Object* value) ;
+ScopedCharPtr as_string(const void* value) ;
 
 unsigned len_as_string(long value) ;
 unsigned len_as_string(unsigned int value) ;
