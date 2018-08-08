@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-13					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include <cstring>
+#include "framepac/texttransforms.h"
 #include "template/argopt.cc"
 
 namespace Fr
@@ -28,7 +29,7 @@ namespace Fr
 using namespace std ;
 
 /************************************************************************/
-/*	Methods for template class ArgOpt				*/
+/*	Methods for template class ArgOpt<bool>				*/
 /************************************************************************/
 
 template <>
@@ -42,7 +43,7 @@ bool ArgOpt<bool>::setDefaultValue()
 //----------------------------------------------------------------------------
 
 template <>
-bool ArgOpt<bool>::convert(const char* arg)
+bool ArgOpt<bool>::convert(const char* arg, const char* /*delim*/)
 {
    if (!arg || !*arg)
       return false ;
@@ -87,7 +88,25 @@ bool ArgOpt<bool>::optional() const
    return true ;
 }
 
-//----------------------------------------------------------------------------
+/************************************************************************/
+/*	Methods for template class ArgOpt<char*>			*/
+/************************************************************************/
+
+template <>
+bool ArgOpt<char*>::convert(const char* arg, const char* delim)
+{
+   bool success ;
+   const char* new_val = string_as<const char*>(arg,success) ;
+   if (!success)
+      return false ;
+   char* concat = delim ? aprintf("%s%s%s",m_value,delim,new_val) : dup_string(new_val) ;
+   delete[] m_value ;
+   m_value = concat ;
+   return true ;
+}
+
+/************************************************************************/
+/************************************************************************/
 
 // explicit instantiations of the common types
 template class ArgOpt<bool> ;
@@ -96,6 +115,7 @@ template class ArgOpt<unsigned> ;
 template class ArgOpt<long> ;
 template class ArgOpt<size_t> ;
 template class ArgOpt<const char*> ;
+template class ArgOpt<char*> ;
 
 } // end namespace Fr
 

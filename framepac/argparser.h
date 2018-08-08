@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -49,6 +49,10 @@ class ArgOptBase
       void mustDelete(bool del) { m_must_delete = del ; }
       bool mustDelete() const { return m_must_delete ; }
 
+      void repeatable(const char* delimiter) { m_delimiter = delimiter ; }
+      bool repeatable() const { return m_delimiter != nullptr ; }
+      const char* repeatDelimiter() const { return m_delimiter ; }
+
       const char* shortName() const { return m_shortname ; }
       const char* fullName() const { return m_fullname ; }
       const char* description() const { return m_description ; }
@@ -59,7 +63,7 @@ class ArgOptBase
       ArgParser* getParser() const { return m_parser ; }
 
    protected:
-      virtual bool convert(const char*) = 0 ;
+      virtual bool convert(const char*, const char* = nullptr) = 0 ;
       virtual bool setDefaultValue() ;
       virtual bool validateValue() = 0 ;
       virtual bool optional() const { return false ; } ;
@@ -71,6 +75,7 @@ class ArgOptBase
       const char* m_shortname ;
       const char* m_fullname ;
       const char* m_description ;
+      const char* m_delimiter { nullptr } ;
       bool        m_must_delete ;
       bool        m_have_defvalue { false } ;
       bool        m_have_minmax { false } ;
@@ -98,7 +103,7 @@ class ArgOptFunc : public ArgOptBase
       ~ArgOptFunc() {}
 
    protected:
-      virtual bool convert(const char* arg) { return m_func(arg) ; }
+      virtual bool convert(const char* arg, const char* /*delim*/) { return m_func(arg) ; }
       virtual bool setDefaultValue() { return false ; }
       virtual bool validateValue() { return true ; }
    protected:
@@ -151,7 +156,7 @@ class ArgOpt : public ArgOptBase
 	 }
 
    protected:
-      virtual bool convert(const char* arg)
+      virtual bool convert(const char* arg, const char* /*delim*/)
 	 {
 	 // default instantiation uses string_as<> conversion
 	 bool success ;
@@ -172,7 +177,7 @@ class ArgOpt : public ArgOptBase
 
 
 // library provides instantiations for the common variable types
-template<> bool ArgOpt<bool>::convert(const char*) ;
+template<> bool ArgOpt<bool>::convert(const char*, const char*) ;
 template<> bool ArgOpt<bool>::optional() const ;
 template<> bool ArgOpt<bool>::setDefaultValue() ;
 template<> bool ArgOpt<bool>::validateValue() ;
@@ -184,6 +189,8 @@ extern template class ArgOpt<size_t> ;
 extern template class ArgOpt<float> ;
 extern template class ArgOpt<double> ;
 extern template class ArgOpt<const char*> ;
+template<> bool ArgOpt<char*>::convert(const char*, const char*) ;
+extern template class ArgOpt<char*> ;
 
 //----------------------------------------------------------------------------
 
@@ -202,7 +209,7 @@ class ArgHelp : public ArgOptBase
       bool showHelp() ;
 
    protected:
-      virtual bool convert(const char*) ;
+      virtual bool convert(const char*, const char*) ;
       virtual bool setDefaultValue() ;
       virtual bool validateValue() ;
       virtual bool optional() const { return true ; }
@@ -242,6 +249,8 @@ class ArgParser
       template <typename Callable>
       ArgParser& addFunc(Callable& fn, const char* shortname, const char* fullname, const char* desc)
 	 { addOpt(new ArgOptFunc<Callable>(fn,shortname,fullname,desc),true) ; return *this ; }
+
+      ArgParser& repeatable(const char* delim = nullptr) ;
 
       void addOpt(ArgOptBase* opt, bool must_delete = false) ;
       bool parseArgs(int& argc, char**& argv, bool show_help_on_error = false) ;

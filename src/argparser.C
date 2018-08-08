@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.08, last edit 2018-08-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -275,7 +275,7 @@ bool ArgHelp::setDefaultValue()
 
 //----------------------------------------------------------------------------
 
-bool ArgHelp::convert(const char* arg)
+bool ArgHelp::convert(const char* arg, const char* /*delim*/)
 {
    (void)arg ;
 //TODO
@@ -323,6 +323,15 @@ void ArgParser::init()
       m_self = this ;
       }
    return ;
+}
+
+//----------------------------------------------------------------------------
+
+ArgParser& ArgParser::repeatable(const char* delim)
+{
+   if (!delim) delim = "," ;
+   m_options->repeatable(delim) ;
+   return *this ;
 }
 
 //----------------------------------------------------------------------------
