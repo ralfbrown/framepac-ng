@@ -24,6 +24,7 @@
 #include <iomanip>
 #include "framepac/progress.h"
 #include "framepac/timer.h"
+#include "framepac/texttransforms.h"
 
 namespace Fr
 {
@@ -61,22 +62,10 @@ void ProgressIndicator::incr(size_t increment)
 /*	Methods for class ConsoleProgressIndicator			*/
 /************************************************************************/
 
-static char* duplicate_string(const char* s)
-{
-   if (!s) s = "" ;
-   size_t len = strlen(s) ;
-   char* buf = new char[len+1] ;
-   if (buf)
-      memcpy(buf,s,len+1) ;
-   return buf ;
-}
-
-//----------------------------------------------------------------------------
-
 ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit, size_t per_line,
 						   const char* first_prefix, const char* rest_prefix)
    : ProgressIndicator(interval,limit), m_prevfrac(0),
-     m_firstprefix(duplicate_string(first_prefix)), m_restprefix(duplicate_string(rest_prefix)),
+     m_firstprefix(dup_string(first_prefix)), m_restprefix(dup_string(rest_prefix)),
      m_per_line(per_line), m_linewidth(80), m_lastupdate(0)
 {
    //TODO: get actual line width rather than always assuming an 80-column display
@@ -88,8 +77,6 @@ ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit
 ConsoleProgressIndicator::~ConsoleProgressIndicator()
 {
    cout << endl ;
-   delete[] m_firstprefix ;
-   delete[] m_restprefix ;
    return ;
 }
 
@@ -148,12 +135,12 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       // we don't know what fraction has been completed, so just update progress
       //   by adding a period, wrapping after every 'per_line' 
       if (prev_intervals == 0)
-	 cout << m_firstprefix ;
+	 cout << *m_firstprefix ;
       while (prev_intervals++ < intervals)
 	 {
 	 if (intervals % m_per_line == 0)
 	    {
-	    cout << endl << m_restprefix << (char)('0' + ((prev_intervals / m_per_line) % 10)) ;
+	    cout << endl << *m_restprefix << (char)('0' + ((prev_intervals / m_per_line) % 10)) ;
 	    }
 	 cout << '.' << flush ;
 	 }
@@ -199,7 +186,7 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	 overhead -= 6 ;
 	 }
       size_t width = m_linewidth - overhead ;
-      cout << m_firstprefix << '[' ;
+      cout << *m_firstprefix << '[' ;
       size_t count = (size_t)(width * frac + 0.8) ;
       for (size_t i = 0 ; i < count ; ++i)
 	 {

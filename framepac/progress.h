@@ -23,6 +23,7 @@
 #define _Fr_PROGRESS_H_INCLUDED
 
 #include "framepac/atomic.h"
+#include "framepac/cstring.h"
 
 namespace Fr
 {
@@ -110,12 +111,12 @@ class ConsoleProgressIndicator : public ProgressIndicator
       virtual void finalize() ;
 
    protected:
-      double m_prevfrac ;
-      char*  m_firstprefix ;
-      char*  m_restprefix ;
-      size_t m_per_line ;
-      size_t m_linewidth ;
-      size_t m_lastupdate ;
+      double  m_prevfrac ;
+      CharPtr m_firstprefix ;
+      CharPtr m_restprefix ;
+      size_t  m_per_line ;
+      size_t  m_linewidth ;
+      size_t  m_lastupdate ;
    } ;
 
 //----------------------------------------------------------------------------
