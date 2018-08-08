@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.08, last edit 2018-08-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -66,33 +66,6 @@ enum class ClusterRep
    } ;
 
 //----------------------------------------------------------------------------
-//   due to the circular dependencies, we can't actually define all of
-//   the functions inline in the iterator class definition; the rest
-//   will be defined after the underlying class has been declared
-
-class ClusterInfo ;
-
-class ClusterInfoIter
-   {
-   public:
-      ClusterInfoIter() : m_members(nullptr), m_index(~0U) {}
-      ClusterInfoIter(ClusterInfo* inf) ;
-      ClusterInfoIter(const ClusterInfo* inf) ;
-      ClusterInfoIter(const ClusterInfoIter &it) = default ;
-      ~ClusterInfoIter() = default ;
-
-      inline Object* operator* () const { return m_members->getNth(m_index) ; }
-      const Array* operator-> () const { return m_members ; }
-      inline ClusterInfoIter& operator++ () { m_index++ ; return *this ; }
-      bool operator== (const ClusterInfoIter& other) const { return m_members == other.m_members ; }
-      bool operator!= (const ClusterInfoIter& other) const { return m_members != other.m_members ; }
-
-   private:
-      Array*	 m_members ;
-      size_t	 m_index ;
-   } ;
-
-//----------------------------------------------------------------------------
 
 class ClusterInfo : public Object
    {
@@ -145,10 +118,10 @@ class ClusterInfo : public Object
       operator bool () const { return !this->empty() ; }
 
       // *** iterator support ***
-      ClusterInfoIter begin() const { return ClusterInfoIter(this) ; }
-      ClusterInfoIter cbegin() const { return ClusterInfoIter(this) ; }
-      static ClusterInfoIter end() { return ClusterInfoIter() ; }
-      static ClusterInfoIter cend() { return ClusterInfoIter() ; }
+      ArrayIter begin() const { return members()->begin() ; }
+      ArrayIter cbegin() const { return members()->cbegin() ; }
+      ArrayIter end() { return members()->end() ; }
+      ArrayIter cend() { return members()->cend() ; }
 
       // *** utility functions ***
       bool contains(const Object*) const ; // is Object a member of the cluster?
@@ -257,25 +230,7 @@ class ClusterInfo : public Object
    private: // static members
       static Allocator s_allocator ;
       static Initializer s_init ;
-
    } ;
-
-//----------------------------------------------------------------------------
-// deferred definitions of functions subject to circular dependencies
-
-inline ClusterInfoIter::ClusterInfoIter(ClusterInfo* inf)
-   : m_members(const_cast<Array*>(inf->members())), m_index(0)
-{
-   return  ;
-}
-
-//----------------------------------------------------------------------------
-
-inline ClusterInfoIter::ClusterInfoIter(const ClusterInfo* inf)
-   : m_members(const_cast<Array*>(inf->members())), m_index(0)
-{
-   return ;
-}
 
 //----------------------------------------------------------------------------
 

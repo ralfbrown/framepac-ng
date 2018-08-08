@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.08, last edit 2018-08-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -43,6 +43,7 @@ class RevArrayIter
       Object* operator* () const { return *m_array ; }
       Object* operator-> () const { return *m_array ; }
       RevArrayIter& operator++ () { --m_array ; return *this ; }
+      RevArrayIter& operator-- () { ++m_array ; return *this ; }
       Object*& operator [] (size_t n) const { return m_array[-n] ; }
 
       bool operator== (const RevArrayIter& other) { return m_array == other.m_array ; }
