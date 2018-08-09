@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-03					*/
+/* Version 0.08, last edit 2018-08-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -74,15 +74,15 @@ class Slab
 	 return reinterpret_cast<SlabGroup*>(const_cast<Slab*>(this) - m_info.m_slab_id) ;
 	 }
 
-      static Slab* slab(const void* block)
+      static constexpr Slab* slab(const void* block)
 	 {
 	 return (Slab*)(((uintptr_t)block)&~(SLAB_SIZE-1)) ;
 	 }
-      static alloc_size_t slabOffset(void* block)
+      static constexpr alloc_size_t slabOffset(void* block)
 	 {
 	 return (alloc_size_t)(((uintptr_t)block) & (SLAB_SIZE-1)) ;
 	 }
-      static const ObjectVMT* VMT(const void* block)
+      static constexpr const ObjectVMT* VMT(const void* block)
          {
 	 // convert the pointer to the allocated block into a pointer to the slab, then index off that
 	 return slab(block)->m_info.m_vmt ;
