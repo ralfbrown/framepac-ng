@@ -76,10 +76,10 @@ WordCorpusT<IdT,IdxT>::~WordCorpusT()
    discardContextEquivs() ;
    discardText() ;
    freeTermFrequencies() ;
-   m_contextmap->free() ;
-   m_contextmap = nullptr ;
    m_wordmap->free() ;
    m_wordmap = nullptr ;
+//   m_contextmap->free() ; //FIXME: memleak without this free(), crash with....
+   m_contextmap = nullptr ;
    return ;
 }
 

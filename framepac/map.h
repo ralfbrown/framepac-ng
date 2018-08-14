@@ -100,7 +100,7 @@ class Map : public ObjHashTable
       Map(size_t initial_size = 0) ;
       Map(const Map* orig) ;
       Map(const Map& orig) ;
-      ~Map() ;
+      ~Map() = default ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<Map> ;

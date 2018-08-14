@@ -162,6 +162,12 @@ WordSplitter::boundary WordSplitterEnglish::boundaryType(const char* window_star
       if (isalpha(prevchar) && isalpha(nextchar))
 	 return no_boundary ;	// contraction or ohina (Hawai'ian)
       }
+   if (prevchar == '\'' && isalpha(currchar))
+      {
+      // check if contraction
+      if (currpos > window_start + 1 && isalpha(currpos[-2]))
+	 return no_boundary ;
+      }
    if (currchar == '`')
       {
       if (prevchar == '`')
