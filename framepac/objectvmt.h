@@ -33,7 +33,7 @@
 //    which Object_VMT will dispatch
 
 #define FrVIRTFUNC0(ret,name,altname,isconst)				\
-   static ret altname(isconst Object *) ;            			\
+   static ret altname(isconst Object *) ;				\
    ret name() isconst                                           	\
       { return FramepaC::Slab::VMT(this)->altname(this) ; }
 #define FrVIRTFUNC1(ret,name,altname,isconst,t1,a1)			\

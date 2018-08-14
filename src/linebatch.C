@@ -168,7 +168,7 @@ LineBatch* CFile::getLines(size_t batchsize, int mono_skip)
 	 CharPtr line { getTrimmedLine() } ;
 	 skipLines((mono_skip>0) ? 1 : 0) ;
 	 if (line && **line)
-	    batch->append(line) ;
+	    batch->append(line.move()) ;
 	 }
       }
    return batch ;

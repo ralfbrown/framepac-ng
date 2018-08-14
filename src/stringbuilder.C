@@ -68,8 +68,7 @@ void StringBuilder::append(const char *s)
 CharPtr StringBuilder::c_str() const
 {
    size_t len = currentLength() ;
-   CharPtr s(len+1) ;
-   memcpy(s,currentBuffer(),len) ;
+   CharPtr s(len+1,currentBuffer(),len) ;
    s[len] = '\0' ;
    return s ;
 }

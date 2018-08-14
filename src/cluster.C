@@ -45,7 +45,7 @@ bool ClusteringAlgoBase::parseOptions(const char* opt)
       while (opt[len] && opt[len] != '=' && opt[len] != ':')
 	 len++ ;
       CharPtr optname { dup_string_n(opt,len) } ;
-      lowercase_string(optname) ;
+      lowercase_string((char*)optname) ;
       opt += len ;
       char* optvalue_orig ;
       if (*opt == '=')

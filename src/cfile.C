@@ -475,7 +475,7 @@ size_t CFile::skipBlankLines(size_t maxskip)
 	 if (!isspace(c))
 	    {
 	    ungetc(c) ;
-	    break ;
+	    return skipped ;
 	    }
 	 }
       if (c == '\r')

@@ -43,7 +43,7 @@ CharPtr canonicalize_sentence(const char* orig_sent, std::locale& locale, bool f
    CharPtr sent { dup_string(orig_sent) } ;
    if (force_uppercase)
       {
-      uppercase_string(sent,locale) ;
+      uppercase_string((char*)sent,locale) ;
       }
    WordSplitterEnglish splitter(sent,delim) ;
    StringPtr words = splitter.delimitedWords() ;

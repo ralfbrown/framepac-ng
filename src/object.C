@@ -92,7 +92,7 @@ CharPtr Object::cString(size_t wrap_at, size_t indent, size_t wrapped_indent) co
 {
    size_t buflen { cStringLength(wrap_at,indent,wrapped_indent) };
    CharPtr buffer(buflen+1) ;
-   if (toCstring(buffer,buflen+1,wrap_at,indent,wrapped_indent))
+   if (toCstring((char*)buffer,buflen+1,wrap_at,indent,wrapped_indent))
       return buffer ;
    else
       return nullptr ;
@@ -124,7 +124,7 @@ CharPtr Object::jsonString(bool wrap, size_t indent) const
 {
    size_t buflen { jsonStringLength(wrap,indent) };
    CharPtr buffer(buflen+1) ;
-   if (toJSONString(buffer,buflen+1,wrap,indent))
+   if (toJSONString((char*)buffer,buflen+1,wrap,indent))
       return buffer ;
    else
       return nullptr ;

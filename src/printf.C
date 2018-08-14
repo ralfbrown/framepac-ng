@@ -43,7 +43,7 @@ CharPtr vaprintf(const char *fmt, va_list args)
    if (buf)
       {
       va_copy(argcopy,args) ;
-      vsnprintf(buf,len+1,fmt,args) ;
+      vsnprintf((char*)buf,len+1,fmt,args) ;
       va_end(argcopy) ;
       buf[len+1] = '\0' ;
       }

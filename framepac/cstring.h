@@ -37,6 +37,8 @@ class NewPtr
    {
    public:
       NewPtr(unsigned N) { m_string = new T[N] ; }
+      NewPtr(unsigned N, const T* s, unsigned copyN)
+	 { m_string = new T[N] ; std::copy(s,s+copyN,m_string) ; }
       NewPtr(T* s) { m_string = s ; }
       NewPtr(const NewPtr&) = delete ;
       NewPtr(NewPtr&& orig) { m_string = orig.move() ; }
@@ -50,7 +52,7 @@ class NewPtr
       void release() { delete[] m_string ; m_string = nullptr ; }
 
       const T* operator* () const { return m_string ; }
-      operator T* () const { return m_string ; }
+      explicit operator T* () const { return m_string ; }
       operator const T* () const { return m_string ; }
       T& operator[] (size_t N) { return m_string[N] ; }
       const T& operator[] (size_t N) const { return m_string[N] ; }
