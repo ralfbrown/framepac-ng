@@ -608,12 +608,12 @@ void WordCorpusT<IdT,IdxT>::clearAttributes(uint8_t mask) const
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::createIndex(bool bidirectional)
 {
-   m_wordmap->finalize() ;
    bool success = createForwardIndex() ;
    if (success && bidirectional)
       {
       success &= createReverseIndex() ;
       }
+   m_wordmap->finalize() ;
    return success ;
 }
 
@@ -849,6 +849,11 @@ bool WordCorpusT<IdT,IdxT>::printWords(CFile& fp, size_t max) const
       if (!word)
 	 {
 	 fp.putc('\n') ;
+	 line_start = true ;
+	 }
+      else if (strcmp(word,"<newline>") == 0)
+	 {
+	 fp.puts("<newline>\n") ;
 	 line_start = true ;
 	 }
       else
