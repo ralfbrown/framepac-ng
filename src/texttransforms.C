@@ -203,6 +203,14 @@ void lowercase_string(char* s)
 
 //----------------------------------------------------------------------------
 
+void lowercase_string(CharPtr& s)
+{
+   lowercase_string((char*)s) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 void lowercase_string(char* s, std::locale& loc)
 {
    if (!s)
@@ -227,12 +235,28 @@ void lowercase_string(char* s, std::locale* loc)
 
 //----------------------------------------------------------------------------
 
+void lowercase_string(CharPtr& s, std::locale* loc)
+{
+   lowercase_string((char*)s,loc) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 void uppercase_string(char* s)
 {
    if (!s)
       return ;
    char* last = strchr(s,'\0') ;
    std::use_facet<std::ctype<char> >(utf8locale).toupper(s, last) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void uppercase_string(CharPtr& s)
+{
+   uppercase_string((char*)s) ;
    return ;
 }
 
@@ -255,6 +279,14 @@ void uppercase_string(char* s, std::locale* loc)
       return ;
    char* last = strchr(s,'\0') ;
    std::use_facet<std::ctype<char> >(*loc).toupper(s, last) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void uppercase_string(CharPtr& s, std::locale* loc)
+{
+   uppercase_string((char*)s,loc) ;
    return ;
 }
 

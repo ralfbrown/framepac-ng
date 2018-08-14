@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-01					*/
+/* Version 0.08, last edit 2018-08-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -30,11 +30,12 @@ namespace Fr
 
 template <typename IdT, typename IdxT>
 WordCorpusT<IdT,IdxT>::WordCorpusT()
-   : m_wordmap(),
-     m_wordbuf(),
+   : m_wordbuf(),
      m_fwdindex(),
      m_revindex()
 {
+   m_wordmap = new BiMap ;
+   m_contextmap = new Map ;
    m_sentinel = findOrAddID("<end_of_data>") ;
    m_newline = findOrAddID("<newline>") ;
    setContextSizes(0,0) ;
@@ -75,6 +76,10 @@ WordCorpusT<IdT,IdxT>::~WordCorpusT()
    discardContextEquivs() ;
    discardText() ;
    freeTermFrequencies() ;
+   delete m_contextmap ;
+   m_contextmap = nullptr ;
+   delete m_wordmap ;
+   m_wordmap = nullptr ;
    return ;
 }
 
@@ -122,7 +127,7 @@ bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mma
       if (header.m_wordmap)
 	 {
 	 fp.seek(header.m_wordmap + base_offset) ;
-	 success &= m_wordmap.load(fp,filename,false) ;
+	 success &= m_wordmap->load(fp,filename,false) ;
 	 }
       if (header.m_wordbuf)
 	 {
@@ -198,7 +203,7 @@ bool WordCorpusT<IdT,IdxT>::loadFromMmap(const char* mmap_base, size_t mmap_len)
       return false ;
    if (header->m_wordmap)
       {
-      m_wordmap.loadFromMmap(mmap_base+header->m_wordmap,mmap_len-header->m_wordmap) ;
+      m_wordmap->loadFromMmap(mmap_base+header->m_wordmap,mmap_len-header->m_wordmap) ;
       }
    if (header->m_wordbuf)
       {
@@ -281,11 +286,11 @@ bool WordCorpusT<IdT,IdxT>::save(CFile &fp) const
 
    bool success = true ;
    header.m_wordmap = fp.tell() - base_offset ;
-   success &= m_wordmap.save(fp) ;
+   success &= m_wordmap->save(fp) ;
    header.m_wordbuf = fp.tell() - base_offset ;
    success &= m_wordbuf.save(fp) ;
    header.m_contextmap = fp.tell() - base_offset ;
-   success &= m_contextmap.save(fp) ;
+   success &= m_contextmap->save(fp) ;
    header.m_fwdindex = fp.tell() - base_offset ;
    success &= m_fwdindex.save(fp) ;
    header.m_revindex = fp.tell() - base_offset ;
@@ -343,7 +348,7 @@ bool WordCorpusT<IdT,IdxT>::discardAttributes()
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::discardContextEquivs()
 {
-   m_contextmap.clear() ;
+   m_contextmap->clear() ;
    return true ;
 }
 
@@ -356,7 +361,7 @@ IdT WordCorpusT<IdT,IdxT>::findID(const char* word) const
       return ErrorID ;
    CString key(word) ;
    IdT id ;
-   return m_wordmap.findKey(key,&id) ? id : ErrorID ;
+   return m_wordmap->findKey(key,&id) ? id : ErrorID ;
 }
 
 //----------------------------------------------------------------------------
@@ -365,7 +370,7 @@ template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::findOrAddID(const char* word)
 {
    CString key(word) ;
-   return m_wordmap.addKey(key) ;
+   return m_wordmap->addKey(key) ;
 }
 
 //----------------------------------------------------------------------------
@@ -444,7 +449,7 @@ template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::getContextID(const char* word) const
 {
    IdT id = ErrorID ;
-   return m_contextmap.lookup(word,&id) ? id : ErrorID ;
+   return m_contextmap->lookup(word,&id) ? id : ErrorID ;
 }
 
 //----------------------------------------------------------------------------
@@ -454,7 +459,7 @@ void WordCorpusT<IdT,IdxT>::computeTermFrequencies()
 {
    if (m_freq)
       return;
-   size_t num_types = m_wordmap.size() ;
+   size_t num_types = m_wordmap->size() ;
    m_freq = new IdxT[num_types] ;
    // zero out the frequencies
    for (size_t i = 0 ; i < num_types ; ++i)
@@ -503,7 +508,7 @@ IdxT WordCorpusT<IdT,IdxT>::getFreq(const char* word) const
 template <typename IdT, typename IdxT>
 const char* WordCorpusT<IdT,IdxT>::getWord(IdT N) const
 {
-   return m_wordmap.getKey(N).str() ;
+   return m_wordmap->getKey(N).str() ;
 }
 
 //----------------------------------------------------------------------------
@@ -704,7 +709,7 @@ bool WordCorpusT<IdT,IdxT>::createForwardIndex()
       addWord(m_sentinel) ;
       }
    computeTermFrequencies(); 
-   m_fwdindex.generate(m_wordbuf.currentBuffer(),m_wordbuf.size(), m_wordmap.size(), m_newline, m_freq) ;
+   m_fwdindex.generate(m_wordbuf.currentBuffer(),m_wordbuf.size(), m_wordmap->size(), m_newline, m_freq) ;
    m_fwdindex.setFreqTable(m_freq) ;
    m_fwdindex.setSentinel(m_sentinel) ;
    return m_fwdindex == true ;
@@ -724,7 +729,7 @@ bool WordCorpusT<IdT,IdxT>::createReverseIndex()
       }
    computeTermFrequencies(); 
    m_wordbuf.reverse() ;
-   m_revindex.generate(m_wordbuf.currentBuffer(),m_wordbuf.size(), m_wordmap.size(), m_newline, m_freq) ;
+   m_revindex.generate(m_wordbuf.currentBuffer(),m_wordbuf.size(), m_wordmap->size(), m_newline, m_freq) ;
    //TODO: adjust offsets in index to match un-reversed positions in buffer
    m_wordbuf.reverse() ;
    m_revindex.setFreqTable(m_freq) ;

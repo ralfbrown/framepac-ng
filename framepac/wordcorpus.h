@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-01					*/
+/* Version 0.08, last edit 2018-08-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -117,7 +117,7 @@ class WordCorpusT
       bool discardContextEquivs() ;
 
       IdxT corpusSize() const { return m_wordbuf.size() ; }
-      IdT vocabSize() const { return m_wordmap.indexSize() ; }
+      IdT vocabSize() const { return m_wordmap->indexSize() ; }
 
       IdT findID(const char* word) const ;
       IdT findOrAddID(const char* word) ;
@@ -148,7 +148,7 @@ class WordCorpusT
 				    SAEnumFunc *fn, void *user_arg) ;
 
       IdxT rareWordThreshold() const { return  m_rare_thresh ; }
-      size_t numContextEquivs() const { return m_contextmap.size() ; }
+      size_t numContextEquivs() const { return m_contextmap->size() ; }
 
       IdT getID(IdxT N) const ;
       IdT getContextID(IdxT N) const ;
@@ -203,9 +203,9 @@ class WordCorpusT
 
    protected:
       MemMappedFile      m_mmap ;
-      BiMap		 m_wordmap ;
+      BiMap*		 m_wordmap ;
       IDBufferBuilder    m_wordbuf ;	// contains array of word IDs
-      Map		 m_contextmap ;
+      Map*		 m_contextmap ;
       SufArr   		 m_fwdindex ;
       SufArr   		 m_revindex ;
       IdxT*		 m_freq { nullptr } ;

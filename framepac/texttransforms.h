@@ -44,12 +44,16 @@ char* trim_whitespace(char*) ;
 char* trim_whitespace(char*, std::locale&) ;
 
 void lowercase_string(char*) ;
-void uppercase_string(char*) ;
-
+void lowercase_string(CharPtr&) ;
 void lowercase_string(char*, std::locale&) ;
 void lowercase_string(char*, std::locale*) ;
+void lowercase_string(CharPtr&, std::locale*) ;
+
+void uppercase_string(char*) ;
+void uppercase_string(CharPtr&) ;
 void uppercase_string(char*, std::locale&) ;
 void uppercase_string(char*, std::locale*) ;
+void uppercase_string(CharPtr&, std::locale*) ;
 
 //std::string lowercase_utf8_string(char*) ;
 //std::string uppercase_utf8_string(char*) ;
