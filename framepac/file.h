@@ -109,9 +109,9 @@ class CFile
       bool filtered() const { return m_piped ; }
       FILE* operator* () const { return m_file ; }
       size_t read(char* buf, size_t buflen) ;
-      size_t read(void* buf, size_t itemsize, size_t itemcount) ;
+      size_t read(void* buf, size_t itemcount, size_t itemsize) ;
       size_t write(const char* buf, size_t buflen) ;
-      size_t write(const void* buf, size_t itemsize, size_t itemcount) ;
+      size_t write(const void* buf, size_t itemcount, size_t itemsize) ;
       int getc() { return fgetc(m_file) ; }
       int getc_nonws() ;
       int ungetc(int c) { return std::ungetc(c,m_file) ; }
@@ -146,7 +146,7 @@ class CFile
       bool readValue(T* val)
 	 {
 	    if (!val) return true ; // trivially successful
-	    return read(val,sizeof(T),1) == 1 ;
+	    return read(val,1,sizeof(T)) == 1 ;
 	 }
 
       // on success, updated first argument to point at allocated array of values read; array must be
@@ -157,7 +157,7 @@ class CFile
 	    if (!val || count == 0) return true ; // trivially successful
 	    *val = new T[count] ;
 	    if (!*val) return false ;
-	    if (read(*val,sizeof(T),count) == count)
+	    if (read(*val,count,sizeof(T)) == count)
 	       return true ;
 	    else
 	       {
@@ -190,14 +190,14 @@ class CFile
       template <typename T>
       bool writeValue(T& val)
 	 {
-	    return write(&val,sizeof(T),1) == 1 ;
+	    return write(&val,1,sizeof(T)) == 1 ;
 	 }
 
       template <typename T>
       bool writeValues(T* val, size_t count = 1)
 	 {
 	    if (!val || count == 0) return true ; // trivially successful
-	    return write(val,sizeof(T),count) == count ;
+	    return write(val,count,sizeof(T)) == count ;
 	 }
 
       bool writeStringArray(const CString* strings, size_t count) ;

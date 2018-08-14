@@ -378,7 +378,7 @@ size_t CFile::read(char *buf, size_t buflen)
 
 //----------------------------------------------------------------------------
 
-size_t CFile::read(void *buf, size_t itemsize, size_t itemcount)
+size_t CFile::read(void *buf, size_t itemcount, size_t itemsize)
 {
    if (m_file)
       return fread(buf,itemsize,itemcount,m_file) ;
@@ -538,7 +538,7 @@ int CFile::verifySignature(const char* sigstring)
    LocalAlloc<char> buf(len) ;
    uint16_t version ;
    uint32_t byteorder ;
-   if (read(buf,sizeof(char),len) < len || !readValue(&version) || !readValue(&byteorder))
+   if (read(buf,len) < len || !readValue(&version) || !readValue(&byteorder))
       return -1 ;
    if (memcmp(sigstring,buf,len) != 0)
       return -2 ;
@@ -608,7 +608,7 @@ bool CFile::writeSignature(const char* sigstring, int version)
    if (!sigstring || !*sigstring || version < 1)
       return false ;
    size_t len = strlen(sigstring) + 1 ;
-   if (write(sigstring,sizeof(char),len) < len)
+   if (write(sigstring,len) < len)
       return false ;
    uint32_t byteorder { 0x12345678 } ;
    uint16_t ver { (uint16_t)version } ;
