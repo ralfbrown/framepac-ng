@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-17					*/
+/* Version 0.08, last edit 2018-08-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -57,10 +57,10 @@ class MapIter
 
 //----------------------------------------------------------------------------
 
-class Map : public Object
+class Map : public ObjHashTable
    {
    public: // types
-      typedef Object super ;
+      typedef ObjHashTable super ;
       typedef bool remove_fn(Object*,Object*) ;
    public:
       static Map *create(size_t capacity = 0) { return new Map(capacity) ; }
@@ -71,10 +71,11 @@ class Map : public Object
       bool load(void* mmap_base, size_t mmap_len) ;
       bool save(CFile&) const ;
 
-      bool add(Object* key, Object* value = nullptr) { return m_map.add(key,value) ; }
-      Object* lookup(const Object* key) const { return m_map.lookup(const_cast<Object*>(key)) ; }
+      bool add(Object* key, Object* value = nullptr)
+	 { bool existed = this->super::add(key,value) ; if (!existed) m_size++ ; return existed ; }
+      Object* lookup(const Object* key) const { return this->super::lookup(const_cast<Object*>(key)) ; }
 
-      void onRemove(remove_fn* fn) { m_map.onRemove(fn) ; }
+      void onRemove(remove_fn* fn) { this->super::onRemove(fn) ; }
 
       // *** standard info functions ***
       size_t size() const { return m_size ; }
@@ -116,6 +117,11 @@ class Map : public Object
       static ObjectPtr subseq_int(const Object*, size_t start, size_t stop) ;
       static ObjectPtr subseq_iter(const Object*, ObjectIter start, ObjectIter stop) ;
 
+      // *** destroying ***
+      static void free_(Object* obj) { delete static_cast<Map*>(obj) ; }
+      // use shallowFree() on a shallowCopy()
+      static void shallowFree_(Object* obj) { free_(obj) ; }
+
       // *** I/O ***
       // generate printed representation into a buffer
       static size_t cStringLength_(const Object*, size_t wrap_at, size_t indent, size_t wrapped_indent) ;
@@ -144,8 +150,7 @@ class Map : public Object
    private: // static members
       static Allocator s_allocator ;
    protected:
-      size_t       m_size ;
-      ObjHashTable m_map ;
+      size_t       m_size { 0 } ;
    } ;
 
 //----------------------------------------------------------------------------

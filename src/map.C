@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-09					*/
+/* Version 0.08, last edit 2018-08-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -37,27 +37,24 @@ Allocator Map::s_allocator(FramepaC::Object_VMT<Map>::instance(),sizeof(Map)) ;
 /************************************************************************/
 
 Map::Map(size_t initial_size)
-   : m_size(0), m_map()
+   : super(initial_size), m_size(0)
 {
-   (void)initial_size ; //FIXME
-   //FIXME
-
    return ;
 }
 
 //----------------------------------------------------------------------------
 
-Map::Map(const Map *) : Object(), m_size(0), m_map()
+Map::Map(const Map *) : super(), m_size(0)
 {
-
+   //TODO
    return ;
 }
 
 //----------------------------------------------------------------------------
 
-Map::Map(const Map &) : Object(), m_size(0), m_map()
+Map::Map(const Map &) : super(), m_size(0)
 {
-
+   //TODO
    return ;
 }
 
@@ -74,15 +71,16 @@ Map::~Map()
 ObjectPtr Map::clone_(const Object *)
 {
 
-   return ObjectPtr(nullptr) ; //FIXME
+   return ObjectPtr(nullptr) ; //TODO
 }
 
 //----------------------------------------------------------------------------
 
 ObjectPtr Map::subseq_int(const Object *,size_t start, size_t stop)
 {
-   (void)start; (void)stop ; //FIXME
-
+   if (start >= stop)
+      return Map::create() ;
+   //TODO
    return ObjectPtr(nullptr) ; //FIXME
 }
 
@@ -90,7 +88,9 @@ ObjectPtr Map::subseq_int(const Object *,size_t start, size_t stop)
 
 ObjectPtr Map::subseq_iter(const Object *,ObjectIter start, ObjectIter stop)
 {
-   (void)start; (void)stop ; //FIXME
+   if (start == stop)
+      return Map::create();
+   //TODO
    return ObjectPtr(nullptr) ; //FIXME
 }
 
@@ -100,7 +100,7 @@ size_t Map::cStringLength_(const Object* obj, size_t wrap_at, size_t indent, siz
 {
    size_t len = indent + 4 ;
    bool first { true } ;
-   for (const auto key : static_cast<const Map*>(obj)->m_map)
+   for (const auto key : *static_cast<const super*>(obj))
       {
       if (first)
 	 first = false ;
@@ -122,7 +122,7 @@ char* Map::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t wra
    char* bufend = buffer + buflen ;
    buffer += snprintf(buffer,buflen,"%*s",(int)indent,"#M(") ;
    bool first { true } ;
-   for (const auto key : static_cast<const Map*>(obj)->m_map)
+   for (const auto key : *static_cast<const super*>(obj))
       {
       if (first)
 	 first = false ;
