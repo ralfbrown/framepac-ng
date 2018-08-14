@@ -249,16 +249,16 @@ static bool make_reverse_entry(keyT key, idxT index, va_list args)
 template <class keyT, typename idxT>
 bool BidirIndex<keyT,idxT>::finalize()
 {
-   m_max_index = m_next_index.load() ;
+   idxT max = m_next_index.load() ;
+   if (m_max_index == max)
+      return true ; 			// already finalized
+   m_max_index = max ;
    delete[] m_reverse_index ;
    m_reverse_index = new keyT[m_max_index] ;
    if (m_reverse_index)
       {
       // in case there are any gaps in the index values, zero out the array first
-      for (size_t i = 0 ; i < m_max_index ; i++)
-	 {
-	 m_reverse_index = nullptr ;
-	 }
+      std::fill(m_reverse_index,m_reverse_index+m_max_index,nullptr) ;
       // iterate through the hash table, storing each key at the appropriate location
       //   in the m_reverse_index array
       return this->iterate(make_reverse_entry,m_reverse_index) ;

@@ -608,6 +608,7 @@ void WordCorpusT<IdT,IdxT>::clearAttributes(uint8_t mask) const
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::createIndex(bool bidirectional)
 {
+   m_wordmap->finalize() ;
    bool success = createForwardIndex() ;
    if (success && bidirectional)
       {
