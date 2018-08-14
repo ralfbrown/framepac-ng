@@ -34,8 +34,8 @@ WordCorpusT<IdT,IdxT>::WordCorpusT()
      m_fwdindex(),
      m_revindex()
 {
-   m_wordmap = new BiMap ;
-   m_contextmap = new Map ;
+   m_wordmap = BiMap::create() ;
+   m_contextmap = Map::create() ;
    m_sentinel = findOrAddID("<end_of_data>") ;
    m_newline = findOrAddID("<newline>") ;
    setContextSizes(0,0) ;
@@ -76,9 +76,9 @@ WordCorpusT<IdT,IdxT>::~WordCorpusT()
    discardContextEquivs() ;
    discardText() ;
    freeTermFrequencies() ;
-   delete m_contextmap ;
+   m_contextmap->free() ;
    m_contextmap = nullptr ;
-   delete m_wordmap ;
+   m_wordmap->free() ;
    m_wordmap = nullptr ;
    return ;
 }

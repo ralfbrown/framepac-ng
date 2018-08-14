@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-26					*/
+/* Version 0.08, last edit 2018-08-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -46,9 +46,8 @@ class BidirIndex : public HashTable<keyT,idxT>
       typedef HashTable<keyT,idxT> super ;
 
    public:
-      BidirIndex(size_t initial_size = 1000) : super(initial_size) {}
+      static BidirIndex* create(size_t initial_size = 1000) { return new BidirIndex(initial_size) ; }
       BidirIndex(const BidirIndex&) = delete ;
-      ~BidirIndex() { delete[] m_reverse_index ; }
       BidirIndex& operator= (const BidirIndex&) = delete ;
 
       bool load(const char* filename, bool allow_mmap = true) ;
@@ -71,7 +70,60 @@ class BidirIndex : public HashTable<keyT,idxT>
       idxT getIndex(keyT key) const { idxT index ; return lookup(key,&index) ? index : m_errorID ; }
       keyT getKey(idxT index) const { return index < m_max_index ? m_reverse_index[index] : keyT(0) ; }
 
+   protected: // construction/destruction
+      void *operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
+      BidirIndex(size_t initial_size = 1000) : super(initial_size) {}
+      ~BidirIndex() { delete[] m_reverse_index ; }
+
+   protected: // implementation functions for virtual methods
+      friend class FramepaC::Object_VMT<BidirIndex> ;
+
+      // type determination predicates
+      static const char *typeName_(const Object*) { return "BidirIndex" ; }
+
+      // *** copying ***
+      static ObjectPtr clone_(const Object*) { return nullptr ; } //TODO
+      static Object* shallowCopy_(const Object* obj) { return clone_(obj) ; }
+
+      // *** destroying ***
+      static void free_(Object* obj) { delete static_cast<BidirIndex*>(obj) ; }
+      // use shallowFree() on a shallowCopy()
+      static void shallowFree_(Object* obj) { free_(obj) ; }
+
+      // *** I/O ***
+      // generate printed representation into a buffer
+      static size_t cStringLength_(const Object*, size_t wrap_at, size_t indent, size_t wrapped_indent) ;
+      static char* toCstring_(const Object*, char* buffer, size_t buflen,
+	 size_t wrap_at, size_t indent, size_t wrapped_indent) ;
+      static size_t jsonStringLength_(const Object*, bool wrap, size_t indent) ;
+      static bool toJSONString_(const Object*, char* buffer, size_t buflen, bool wrap,
+	 size_t indent) ;
+
+      // *** standard info functions ***
+      static size_t size_(const Object* obj) { return static_cast<const BidirIndex*>(obj)->indexSize() ; }
+      static bool empty_(const Object* obj) { return static_cast<const BidirIndex*>(obj)->indexSize() == 0 ; }
+
+      // *** standard access functions ***
+      static Object* front_(Object* obj)
+	 { return (Object*)static_cast<const BidirIndex*>(obj)->m_reverse_index[0] ; }
+      static const Object* front_(const Object *obj)
+	 { return (Object*)static_cast<const BidirIndex*>(obj)->m_reverse_index[0] ; }
+
+      // *** comparison functions ***
+      static size_t hashValue_(const Object*) ;
+      static bool equal_(const Object* obj, const Object* other) ;
+      static int compare_(const Object* obj, const Object* other) ;
+      static int lessThan_(const Object* obj, const Object* other) ;
+
    protected:
+      using HashTable<keyT,idxT>::lookup ;
+      using HashTable<keyT,idxT>::contains ;
+      void clearReverseIndex(keyT*, idxT common, idxT total) ;
+      static void clearReverseElement(keyT*) ;
+      static void releaseCommonBuffer(keyT*) ;
+
+   protected: // data members
       atomic<idxT>  m_next_index { 0 } ;
       idxT          m_max_index { 0 } ;
       idxT          m_errorID { (idxT)-1 } ;
@@ -85,12 +137,8 @@ class BidirIndex : public HashTable<keyT,idxT>
       static constexpr unsigned file_format = 1 ;
       static constexpr unsigned min_file_format = 1 ;
 
-   protected:
-      using HashTable<keyT,idxT>::lookup ;
-      using HashTable<keyT,idxT>::contains ;
-      void clearReverseIndex(keyT*, idxT common, idxT total) ;
-      static void clearReverseElement(keyT*) ;
-      static void releaseCommonBuffer(keyT*) ;
+   private: // static members
+      static Allocator s_allocator ;
    } ;
 
 } // end namespace Fr

@@ -268,6 +268,87 @@ bool BidirIndex<keyT,idxT>::finalize()
 
 //----------------------------------------------------------------------------
 
+template <class keyT, typename idxT>
+size_t BidirIndex<keyT,idxT>::cStringLength_(const Object* obj, size_t wrap_at, size_t indent, size_t wrapped_indent)
+{
+   (void)obj; (void)wrap_at; (void)indent; (void)wrapped_indent;
+//TODO
+   return 0 ;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+char* BidirIndex<keyT,idxT>::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t wrap_at, size_t indent,
+   size_t wrapped_indent)
+{
+   (void)obj; (void)buffer; (void)buflen; (void)wrap_at; (void)indent; (void)wrapped_indent ;
+//TODO
+   return nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+size_t BidirIndex<keyT,idxT>::jsonStringLength_(const Object* obj, bool wrap, size_t indent)
+{
+   (void)obj ; (void)wrap; (void)indent ; //TODO
+   return 0 ;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+bool BidirIndex<keyT,idxT>::toJSONString_(const Object* obj, char* buffer, size_t buflen,
+			 bool /*wrap*/, size_t indent)
+{
+   (void)obj; (void)buffer; (void)buflen; (void)indent ;
+//TODO
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+size_t BidirIndex<keyT,idxT>::hashValue_(const Object* obj)
+{
+   return Object::hashValue_(obj) ; //FIXME
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+bool BidirIndex<keyT,idxT>::equal_(const Object* obj1, const Object* obj2)
+{
+   if (obj1 == obj2)
+      return true ;
+
+   //TODO
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+int BidirIndex<keyT,idxT>::compare_(const Object* obj1, const Object* obj2)
+{
+   if (obj1 == obj2)
+      return 0 ;
+
+   //TODO
+   return +1 ;
+}
+
+//----------------------------------------------------------------------------
+
+template <class keyT, typename idxT>
+int BidirIndex<keyT,idxT>::lessThan_(const Object* obj1, const Object* obj2)
+{
+   return compare_(obj1,obj2) < 0 ;
+}
+
+//----------------------------------------------------------------------------
+
 } // end namespace Fr
 
 // end of file bidindex.cc //

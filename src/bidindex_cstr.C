@@ -25,6 +25,9 @@
 namespace Fr
 {
 
+template  <>
+Allocator BidirIndex<CString,uint32_t>::s_allocator(FramepaC::Object_VMT<BidirIndex<CString,uint32_t>>::instance(),sizeof(BidirIndex<CString,uint32_t>)) ;
+
 // specializations
 template <>
 CString BidirIndex<CString,uint32_t>::getKey(uint32_t index) const
