@@ -129,28 +129,28 @@ bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mma
 	 fp.seek(header.m_wordmap + base_offset) ;
 	 success &= m_wordmap->load(fp,filename,false) ;
 	 }
-      if (header.m_wordbuf)
+      if (success && header.m_wordbuf)
 	 {
 	 fp.seek(header.m_wordbuf + base_offset) ;
 	 success &= m_wordbuf.load(fp,filename) ;
 	 }
-      if (header.m_fwdindex)
+      if (success && header.m_fwdindex)
 	 {
 	 fp.seek(header.m_fwdindex + base_offset) ;
 	 success &= m_fwdindex.load(fp,filename) ;
 	 }
-      if (header.m_revindex)
+      if (success && header.m_revindex)
 	 {
 	 fp.seek(header.m_revindex + base_offset) ;
 	 success &= m_revindex.load(fp,filename) ;
 	 }
-      if (header.m_freq)
+      if (success && header.m_freq)
 	 {
 	 fp.seek(header.m_freq + base_offset) ;
 	 m_freq = new IdxT[header.m_vocabsize] ;
 	 success &= fp.readValues(&m_freq,header.m_vocabsize) ;
 	 }
-      if (header.m_attributes)
+      if (success && header.m_attributes)
 	 {
 	 fp.seek(header.m_attributes + base_offset) ;
 	 m_attributes = new uint8_t[header.m_numwords] ;
@@ -160,7 +160,7 @@ bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mma
       }
    if (success)
       {
-
+      //TODO?
       }
    return success ;
 }
@@ -171,7 +171,7 @@ template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::load(const char *filename, bool allow_mmap)
 {
    CInputFile fp(filename) ;
-   return fp ? load(fp,filename,allow_mmap) : false ;
+   return load(fp,filename,allow_mmap) ;
 }
 
 //----------------------------------------------------------------------------
@@ -320,7 +320,7 @@ template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::save(const char *filename) const
 {
    COutputFile fp(filename) ;
-   return fp ? save(fp) : false ;
+   return save(fp) ;
 }
 
 //----------------------------------------------------------------------------

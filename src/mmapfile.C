@@ -21,6 +21,7 @@
 
 #include <cstdio>
 #include <sys/mman.h>
+#include <unistd.h>
 #include "framepac/file.h"
 #include "framepac/mmapfile.h"
 using namespace std ;
@@ -59,6 +60,13 @@ MemMappedFile::MemMappedFile(CFile &file, off_t start_offset,
 
 void MemMappedFile::init(int fd, off_t start_offset, off_t length, bool readonly)
 {
+   if (length == ~0)
+      {
+      off_t currpos = lseek(fd,0,SEEK_CUR) ;
+      off_t filelen = lseek(fd,0,SEEK_END) ;
+      lseek(fd,currpos,SEEK_SET) ;
+      length = filelen - start_offset ;
+      }
    int prot = readonly ? PROT_READ : PROT_READ|PROT_WRITE ;
    m_address = (char*)mmap(nullptr,length,prot,MAP_SHARED,fd,start_offset) ;
    if (m_address == MAP_FAILED)

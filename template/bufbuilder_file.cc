@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.08, last edit 2018-08-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -40,14 +40,19 @@ bool BufferBuilder<T,minsize>::load(CFile& fp, const char* filename)
    if (!fp || !fp.verifySignature(signature,filename,version,min_file_format))
       return false ;
    uint8_t tsize ;
-   if (!fp.readValue(&tsize))
+   size_t count ;
+   if (!fp.readValue(&tsize) || !fp.readValue(&count))
       return false ;
    if (tsize != sizeof(T))
       {
       SystemMessage::error("wrong data type - sizeof() does not match") ;
       return false ;
       }
-//TODO
+   if (!this->preallocate(count))
+      return false ;
+   if (!fp.readValues(&m_buffer,count))
+      return false ;
+   m_currsize = count ;
    return true ;
 }
 
@@ -59,7 +64,12 @@ bool BufferBuilder<T,minsize>::loadFromMmap(const void* mmap_base, size_t mmap_l
    size_t header_size = CFile::signatureSize(signature) + sizeof(uint8_t) ;
    if (!mmap_base || mmap_len < header_size)
       return false;
-//TODO
+   mmap_base = ((char*)mmap_base)+header_size ;
+   mmap_len -= header_size ;
+   if (*((uint8_t*)mmap_base) != sizeof(T))
+      return false ;
+   m_buffer = (T*)((char*)mmap_base + sizeof(uint8_t) + sizeof(m_currsize)) ;
+   m_currsize = *((size_t*)((char*)mmap_base + sizeof(uint8_t))) ;
    return true ;
 }
 
@@ -71,9 +81,9 @@ bool BufferBuilder<T,minsize>::save(CFile& fp) const
    if (!fp || !fp.writeSignature(signature,file_format))
       return false ;
    uint8_t tsize = sizeof(T) ;
-   if (!fp.writeValue(tsize))
+   if (!fp.writeValue(tsize) || !fp.writeValue(m_currsize) ||
+      !fp.writeValues(m_buffer,m_currsize))
       return false ;
-//TODO
    return true ;
 }
 

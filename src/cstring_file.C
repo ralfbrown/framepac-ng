@@ -54,8 +54,8 @@ bool CFile::readStringArray(class Fr::CString*& strings, size_t& count)
 
 bool CFile::writeStringArray(const class Fr::CString* strings, size_t count)
 {
-   uint32_t total_length { 0 } ;
-   uint32_t num_strings { (uint32_t)count } ;
+   uint64_t total_length { 0 } ;
+   uint64_t num_strings { (uint64_t)count } ;
    for (size_t i = 0 ; i < count ; ++i)
       {
       ++total_length ;			// account for terminating NUL character
