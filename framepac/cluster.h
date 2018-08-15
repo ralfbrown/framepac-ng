@@ -335,6 +335,8 @@ class ClusteringAlgo : public ClusteringAlgoBase
 	 { return nearestNeighbor(vector,centers,m_measure,threshold) ; }
       size_t assignToNearest(const Array* vectors, const Array* centers, ProgressIndicator *prog = nullptr,
 	 double threshold = -1.0) const ;
+      double findNearestCluster(const Array* clusters, const Vector<ValT>* vector, size_t& best_cluster,
+	 ProgressIndicator* prog = nullptr) const ;
       bool separateSeeds(const Array* vectors, RefArray*& seed, RefArray*& nonseed) const ;
       bool extractClusters(const Array* vectors, ClusterInfo**& clusters, size_t& num_clusters,
 	 RefArray* unassigned = nullptr) const ;

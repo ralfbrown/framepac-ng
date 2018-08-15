@@ -73,6 +73,7 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
 	 clusters->appendNoCopy(newclus) ;
 	 }
       }
+   ProgressIndicator* prog = this->makeProgressIndicator(nonseed->size()) ;
    // now iterate through the non-seed vectors, creating a new cluster if the nearest existing cluster is too
    //   far away and we haven't yet reached the cluster limit; otherwise, assign to the nearest existing cluster
    for (auto vec : *nonseed)
@@ -94,14 +95,18 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
 	 {
 	 // create a new cluster and add the vector as its initial member
 	 ClusterInfo* newclus = ClusterInfo::createSingleton(vector) ;
+	 newclus->genLabel() ;
 	 clusters->appendNoCopy(newclus) ;
 	 }
       else if (best_clus)
 	 {
 	 // add the vector to the nearest cluster
 	 best_clus->addMember(vector) ;
+	 vector->setLabel(best_clus->label()) ;
 	 }
+      prog->incr() ;
       }
+   delete prog ;
    return ClusterInfo::create(clusters) ;
 }
 

@@ -705,7 +705,7 @@ bool assign_vector_to_nearest_center(size_t index, va_list args)
 	 (*changes)++ ;
 	 }
       }
-   prog->incr() ;
+   if (prog) prog->incr() ;
    return true ;
 }
 
@@ -723,6 +723,53 @@ size_t ClusteringAlgo<IdxT,ValT>::assignToNearest(const Array* vectors, const Ar
       return changes ;
    else
       return 0 ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+bool compute_similarity(size_t index, va_list args)
+{
+   typedef VectorMeasure<IdxT,ValT> VM ;
+   auto clusters = va_arg(args,const Array*) ;
+   auto vector = va_arg(args,const Vector<ValT>*) ;
+   auto scores = va_arg(args,double*) ;
+   auto measure = va_arg(args,VM*) ;
+   auto prog = va_arg(args,ProgressIndicator*) ;
+   auto cluster = static_cast<ClusterInfo*>(clusters->getNth(index)) ;
+   scores[index] = cluster->similarity(vector,measure) ;
+   if (prog) prog->incr() ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+double ClusteringAlgo<IdxT,ValT>::findNearestCluster(const Array* clusters, const Vector<ValT>* vector,
+   size_t& best_cluster, ProgressIndicator* prog) const
+{
+   best_cluster = ~0 ;
+   ThreadPool *tp = ThreadPool::defaultPool() ;
+   if (!tp || !clusters || !vector)
+      {
+      return -HUGE_VAL ;
+      }
+   size_t num_clusters { clusters->size() } ;
+   LocalAlloc<double> scores(num_clusters) ;
+   double best_score = -HUGE_VAL ;
+   if (tp->parallelize(compute_similarity<IdxT,ValT>,num_clusters,clusters,vector,&scores,m_measure,prog))
+      {
+      // scan through the list of scores for the best
+      for (size_t i = 0 ; i < num_clusters ; ++i)
+	 {
+	 if (scores[i] > best_score)
+	    {
+	    best_cluster = i ;
+	    best_score = scores[i] ;
+	    }
+	 }
+      }
+   return best_score ;
 }
 
 //----------------------------------------------------------------------------
