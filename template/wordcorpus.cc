@@ -225,6 +225,7 @@ bool WordCorpusT<IdT,IdxT>::loadFromMmap(const char* mmap_base, size_t mmap_len)
       {
       m_attributes = (uint8_t*)((char*)mmap_base + header->m_attributes) ;
       }
+   m_mapped = true ;
    return true  ;
 }
 
