@@ -89,14 +89,10 @@ class SuffixArray
 
       operator bool () const { return m_index != nullptr ; }
 
-      // temporary FrankenpaC support
       void setSentinel(IdT sent) { m_sentinel = sent ; }
       void setFreqTable(IdxT* freq, bool external = true) { m_freq = freq ; m_external_freq = external ; }
-      IdxT* rawIndex() const { return m_index ; }
-      void rawIndex(IdxT* index) { m_index = index ; }
 
-   //protected:
-   public: //FrankenpaC
+   protected:
       struct Job
 	 {
 	    IdxT startpos ;
