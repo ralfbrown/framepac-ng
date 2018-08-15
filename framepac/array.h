@@ -30,25 +30,7 @@ namespace Fr {
 //----------------------------------------------------------------------------
 
 typedef Object** ArrayIter ;
-
-class RevArrayIter
-   {
-   private:
-      Object** m_array ;
-   public:
-      RevArrayIter(Object** o) : m_array(o) {}
-      RevArrayIter(const RevArrayIter&) = default ;
-      ~RevArrayIter() = default ;
-
-      Object* operator* () const { return *m_array ; }
-      Object* operator-> () const { return *m_array ; }
-      RevArrayIter& operator++ () { --m_array ; return *this ; }
-      RevArrayIter& operator-- () { ++m_array ; return *this ; }
-      Object*& operator [] (size_t n) const { return m_array[-n] ; }
-
-      bool operator== (const RevArrayIter& other) { return m_array == other.m_array ; }
-      bool operator!= (const RevArrayIter& other) { return m_array != other.m_array ; }
-   } ;
+typedef std::reverse_iterator<ArrayIter> RevArrayIter ;
 
 //----------------------------------------------------------------------------
 
