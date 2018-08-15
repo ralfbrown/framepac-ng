@@ -33,7 +33,7 @@ Allocator String::s_allocator(FramepaC::Object_VMT<String>::instance(),sizeof(St
 Initializer<String> String::s_initializer ;
 
 static constexpr unsigned allocator_sizes[] =
-   { 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 80, 88, 96, 112, 128, 144, 160 } ;
+   { 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32, 36, 40, 44, 48, 56, 64, 72, 80, 88, 96, 112, 128, 144, 160 } ;
 static constexpr unsigned num_allocators = lengthof(allocator_sizes) ;
 static constexpr unsigned max_small_alloc = allocator_sizes[num_allocators-1] ;
 
