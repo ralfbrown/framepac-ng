@@ -36,21 +36,27 @@ template <typename T>
 class NewPtr
    {
    public:
+      typedef T* pointer ;
+      typedef T element_type ;
+   public:
       NewPtr(unsigned N) { m_string = new T[N] ; }
       NewPtr(unsigned N, const T* s, unsigned copyN)
 	 { m_string = new T[N] ; std::copy(s,s+copyN,m_string) ; }
       NewPtr(T* s) { m_string = s ; }
       NewPtr(const NewPtr&) = delete ;
       NewPtr(NewPtr&& orig) { m_string = orig.move() ; }
-      ~NewPtr() { release() ; }
+      ~NewPtr() { reset(nullptr) ; }
       NewPtr& operator= (const NewPtr&) = delete ;
-      NewPtr& operator= (NewPtr&& orig) { release() ; m_string = orig.move() ; return *this ; }
-      NewPtr& operator= (T* new_s) { release() ; m_string = new_s ; return *this ; }
+      NewPtr& operator= (NewPtr&& orig) { reset(orig.release()) ; return *this ; }
+      NewPtr& operator= (T* new_s) { reset(new_s) ; return *this ; }
 
+      T* get() const noexcept { return m_string ; }
       T* move() { T* s = m_string ; clear() ; return s ; }
       void clear() { m_string = nullptr ; }
-      void release() { delete[] m_string ; m_string = nullptr ; }
+      void reset(T* ptr) { T* old = m_string ; m_string = ptr ; delete[] old ; }
+      T* release() { T* ptr = m_string ; clear() ; return ptr ; }
 
+      const T* operator-> () const { return m_string ; }
       const T* operator* () const { return m_string ; }
       explicit operator T* () const { return m_string ; }
       operator const T* () const { return m_string ; }
