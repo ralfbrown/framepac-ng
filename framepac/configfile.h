@@ -138,8 +138,8 @@ class Configuration
    protected: // data
       static bool s_instartup ;
       ConfigurationTable* m_currstate ;
-      char* m_infile_name ;
-      char* m_basedir ;
+      CharPtr m_infile_name { nullptr } ;
+      CharPtr m_basedir { nullptr } ;
       int   m_currline ;
       bool  m_valid ;
    } ;

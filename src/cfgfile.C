@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -97,10 +97,6 @@ Configuration::Configuration(const char* basedir)
 Configuration::~Configuration()
 {
    m_valid = false ;
-   delete[] m_basedir ;
-   m_basedir = nullptr ;
-   delete[] m_infile_name ;
-   m_infile_name = nullptr ;
    return ;
 }
 
@@ -497,8 +493,9 @@ const ConfigurationTable* Configuration::findParameter(const char* param_name, C
 
 void Configuration::warn(const char* msg) const
 {
-   SM::warning("Configuration error (%s line %d): %s",
-      m_infile_name?m_infile_name:"",m_currline,msg) ;
+   const char* name = m_infile_name ;
+   if (!name) name = "" ;
+   SM::warning("Configuration error (%s line %d): %s",name,m_currline,msg) ;
    return ;
 }
 
@@ -508,8 +505,9 @@ template <typename T>
 void Configuration::warn(const char* msg, const char* where, T value) const
 {
    CharPtr strvalue { as_string(value) } ;
-   SM::warning("Configuration error (%s line %d, %s): %s %s",
-      m_infile_name?m_infile_name:"",m_currline,where,msg,strvalue) ;
+   const char* name = m_infile_name ;
+   if (!name) name = "" ;
+   SM::warning("Configuration error (%s line %d, %s): %s %s",name,m_currline,where,msg,strvalue) ;
    return ;
 }
 
