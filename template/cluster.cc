@@ -104,6 +104,29 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid(const Array* vectors) const
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
+void ClusterInfo::updateRepresentative(Vector<ValT>* vector)
+{
+   if (!vector)
+      return ;
+   if (this->repType() == ClusterRep::centroid)
+      {
+      if (representative())
+	 {
+	 //TODO: add vector to existing centroid
+	 }
+      else // the new vector *is* the centroid
+	 this->m_rep = vector->clone().move() ;
+      }
+   else if (this->repType() == ClusterRep::newest)
+      {
+      this->m_rep = vector ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
 void ClusterInfo::setRepresentative(VectorMeasure<IdxT,ValT>* vm)
 {
    if (representative() && this->repType() != ClusterRep::newest)
@@ -128,7 +151,7 @@ void ClusterInfo::setRepresentative(VectorMeasure<IdxT,ValT>* vm)
 	 else if (this->subclusters())
 	    {
 	    auto sub = static_cast<ClusterInfo*>(this->subclusters()->getNth(0)) ;
-	    if (sub) sub->setRepresentative<IdxT,ValT>(vm) ;
+	    if (sub) sub->setRepresentative(vm) ;
 	    this->m_rep = sub->representative() ;
 	    }
 	 break ;
@@ -191,8 +214,8 @@ double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
       case ClusterRep::medioid:
       case ClusterRep::prototype:
       case ClusterRep::newest:
-	 this->setRepresentative<IdxT,ValT>(vm) ;
-	 other->setRepresentative<IdxT,ValT>(vm) ;
+	 this->setRepresentative(vm) ;
+	 other->setRepresentative(vm) ;
 	 return vm->similarity(static_cast<Vector<ValT>*>(this->representative()),
 	    static_cast<Vector<ValT>*>(other->representative())) ;
       case ClusterRep::average:
@@ -272,7 +295,7 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
       case ClusterRep::medioid:
       case ClusterRep::prototype:
       case ClusterRep::newest:
-	 this->setRepresentative<IdxT,ValT>(vm) ;
+	 this->setRepresentative(vm) ;
 	 return vm->similarity(static_cast<Vector<ValT>*>(this->representative()),other) ;
       case ClusterRep::average:
          {
@@ -333,7 +356,7 @@ double ClusterInfo::reverseSimilarity(const Vector<ValT>* other, VectorMeasure<I
       case ClusterRep::medioid:
       case ClusterRep::prototype:
       case ClusterRep::newest:
-	 this->setRepresentative<IdxT,ValT>(vm) ;
+	 this->setRepresentative(vm) ;
 	 return vm->similarity(other,static_cast<Vector<ValT>*>(this->representative())) ;
       case ClusterRep::average:
          {
@@ -394,8 +417,8 @@ double ClusterInfo::distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
       case ClusterRep::medioid:
       case ClusterRep::prototype:
       case ClusterRep::newest:
-	 this->setRepresentative<IdxT,ValT>(vm) ;
-	 other->setRepresentative<IdxT,ValT>(vm) ;
+	 this->setRepresentative(vm) ;
+	 other->setRepresentative(vm) ;
 	 return vm->distance(static_cast<Vector<ValT>*>(this->representative()),
 	    static_cast<Vector<ValT>*>(other->representative())) ;
       case ClusterRep::average:
@@ -475,7 +498,7 @@ double ClusterInfo::distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>
       case ClusterRep::medioid:
       case ClusterRep::prototype:
       case ClusterRep::newest:
-	 this->setRepresentative<IdxT,ValT>(vm) ;
+	 this->setRepresentative(vm) ;
 	 return vm->distance(static_cast<Vector<ValT>*>(this->representative()),other) ;
       case ClusterRep::average:
          {
@@ -536,7 +559,7 @@ double ClusterInfo::reverseDistance(const Vector<ValT>* other, VectorMeasure<Idx
       case ClusterRep::medioid:
       case ClusterRep::prototype:
       case ClusterRep::newest:
-	 this->setRepresentative<IdxT,ValT>(vm) ;
+	 this->setRepresentative(vm) ;
 	 return vm->distance(other,static_cast<Vector<ValT>*>(this->representative())) ;
       case ClusterRep::average:
          {

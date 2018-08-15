@@ -109,6 +109,8 @@ class ClusterInfo : public Object
       template <typename IdxT, typename ValT>
       double reverseDistance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm) ;
       template <typename IdxT, typename ValT>
+      void updateRepresentative(Vector<ValT>*) ;
+      template <typename IdxT, typename ValT>
       void setRepresentative(VectorMeasure<IdxT,ValT>* vm) ;
       RefArray* allMembers() const ;
       Array* allKeys() const ;
