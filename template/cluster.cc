@@ -104,7 +104,7 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid(const Array* vectors) const
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-void ClusterInfo::updateRepresentative(Vector<ValT>* vector)
+void ClusterInfo::updateRepresentative(Vector<ValT>* vector, VectorMeasure<IdxT,ValT>* vm)
 {
    if (!vector)
       return ;
@@ -112,7 +112,8 @@ void ClusterInfo::updateRepresentative(Vector<ValT>* vector)
       {
       if (representative())
 	 {
-	 //TODO: add vector to existing centroid
+	 // add the new vector to the existing centroid
+	 m_rep = static_cast<Vector<ValT>*>(m_rep)->incr(vector) ;
 	 }
       else // the new vector *is* the centroid
 	 this->m_rep = vector->clone().move() ;
@@ -120,6 +121,15 @@ void ClusterInfo::updateRepresentative(Vector<ValT>* vector)
    else if (this->repType() == ClusterRep::newest)
       {
       this->m_rep = vector ;
+      }
+   else if (this->repType() == ClusterRep::prototype && !representative())
+      {
+      this->m_rep = vector ;
+      }
+   else if (this->repType() == ClusterRep::medioid)
+      {
+      //TODO
+      (void)vm;
       }
    return ;
 }
