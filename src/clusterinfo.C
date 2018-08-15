@@ -51,8 +51,11 @@ static Atomic<size_t> next_cluster_ID { 0 } ;
 
 ClusterInfo::~ClusterInfo()
 {
-   if (m_rep && repType() != ClusterRep::prototype && repType() != ClusterRep::medioid)
+   if (m_rep && repType() != ClusterRep::prototype && repType() != ClusterRep::newest &&
+      repType() != ClusterRep::medioid)
+      {
       m_rep->free() ;
+      }
    m_rep = nullptr ;
    return ;
 }

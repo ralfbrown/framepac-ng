@@ -106,7 +106,7 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid(const Array* vectors) const
 template <typename IdxT, typename ValT>
 void ClusterInfo::setRepresentative(VectorMeasure<IdxT,ValT>* vm)
 {
-   if (representative())
+   if (representative() && this->repType() != ClusterRep::newest)
       return  ;
    switch (this->repType())
       {
@@ -129,6 +129,18 @@ void ClusterInfo::setRepresentative(VectorMeasure<IdxT,ValT>* vm)
 	    {
 	    auto sub = static_cast<ClusterInfo*>(this->subclusters()->getNth(0)) ;
 	    if (sub) sub->setRepresentative<IdxT,ValT>(vm) ;
+	    this->m_rep = sub->representative() ;
+	    }
+	 break ;
+      case ClusterRep::newest:
+	 if (this->members() && this->members()->size() > 0)
+	    {
+	    this->m_rep = this->members()->getNth(this->members()->size()-1) ;
+	    }
+	 else if (this->subclusters() && this->subclusters()->size() > 0)
+	    {
+	    auto sub = static_cast<ClusterInfo*>(this->subclusters()->getNth(this->subclusters()->size()-1)) ;
+	    if (sub) sub->setRepresentative(vm) ;
 	    this->m_rep = sub->representative() ;
 	    }
 	 break ;
