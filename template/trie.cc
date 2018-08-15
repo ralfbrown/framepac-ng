@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-11					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -84,10 +84,7 @@ IdxT Trie<T,IdxT,bits>::allocValuelessNode()
       ValuelessNode* new_nodes = new ValuelessNode[newcap] ;
       if (new_nodes)
 	 {
-	 for (size_t i = 0 ; i < m_capacity_valueless ; ++i)
-	    {
-	    new_nodes[i] = m_valueless[i] ;
-	    }
+	 std::copy(m_valueless,m_valueless+m_capacity_valueless,new_nodes) ;
 	 delete[] m_valueless ;
 	 m_valueless = new_nodes ;
 	 m_capacity_valueless = newcap ;
@@ -114,10 +111,7 @@ IdxT Trie<T,IdxT,bits>::allocNode()
       Node* new_nodes = new Node[newcap] ;
       if (new_nodes)
 	 {
-	 for (size_t i = 0 ; i < m_capacity_full ; ++i)
-	    {
-	    new_nodes[i] = m_nodes[i] ;
-	    }
+	 std::copy(m_nodes,m_nodes+m_capacity_full,new_nodes) ;
 	 delete[] m_nodes ;
 	 m_nodes = new_nodes ;
 	 m_capacity_full = newcap ;

@@ -89,8 +89,7 @@ class WorkOrder
 class WorkQueue
    {
    public:
-      WorkQueue()
-	 { for (size_t i = 0 ; i < lengthof(m_orders) ; ++i) m_orders[i] = nullptr ; }
+      WorkQueue() { std::fill(m_orders,m_orders+lengthof(m_orders),nullptr) ; }
       WorkQueue(const WorkQueue&) = delete ;
       ~WorkQueue() ;
       WorkQueue& operator= (const WorkQueue&) = delete ;

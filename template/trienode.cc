@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -32,8 +32,7 @@ namespace Fr
 template <typename IdxT, unsigned bits>
 TrieNodeValueless<IdxT,bits>::TrieNodeValueless()
 {
-   for (size_t i = 0 ; i < 1<<bits ; ++i)
-      m_children[i] = NULL_INDEX ;
+   std::fill(m_children,m_children + (1<<bits),NULL_INDEX) ;
    return  ;
 }
 

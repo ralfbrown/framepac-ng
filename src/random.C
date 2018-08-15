@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -182,10 +182,7 @@ bool* RandomSample(size_t total, size_t sample)
       sampled = false ;
       sample = total - sample ;
       }
-   for (size_t i = 0 ; i < total ; i++)
-      {
-      selected[i] = unsampled ;
-      }
+   std::fill(selected,selected+total,unsampled) ;
    RandomInteger rand(total) ;
    for (size_t i = 1 ; i <= sample ; i++)
       {

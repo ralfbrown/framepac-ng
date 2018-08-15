@@ -61,10 +61,7 @@ ObjectPtr DenseVector<ValT>::subseq_int(const Object* obj, size_t start, size_t 
       return nullptr ;
    auto orig = static_cast<const DenseVector<ValT>*>(obj) ;
    auto copy = DenseVector<ValT>::create(stop-start) ;
-   for (size_t i = start ; i < stop ; ++i)
-      {
-      copy->m_values[i-start] = orig->m_values[i] ;
-      }
+   std::copy(orig->m_values+start,orig->m_values+stop,copy->m_values) ;
    return copy ;
 }
 

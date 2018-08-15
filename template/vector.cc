@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-23					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -43,10 +43,7 @@ template <typename ValT>
 Vector<ValT>::Vector(const Vector& orig)
    : Vector(orig.size())
 {
-   for (size_t i = 0 ; i < orig.size() ; ++i)
-      {
-      this->m_values[i] = orig.m_values[i] ;
-      }
+   std::copy(orig.m_values,orig.m_values+orig.size(),this->m_values) ;
    this->m_size = orig.size() ;
    this->setKey(orig.key()) ;
    this->setLabel(orig.label()) ;

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-04-27					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -68,10 +68,7 @@ SparseVector<IdxT,ValT>::SparseVector(const SparseVector& orig)
    : Vector<ValT>(orig)
 {
    this->m_indices = new IdxT[this->capacity()] ;
-   for (size_t i = 0 ; i < orig.size() ; ++i)
-      {
-      this->m_indices[i] = orig.m_indices[i] ;
-      }
+   std::copy(orig.m_indices,orig.m_indices+orig.size(),this->m_indices) ;
    return ;
 }
 

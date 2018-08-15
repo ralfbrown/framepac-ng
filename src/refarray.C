@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-23					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -59,10 +59,7 @@ RefArray::RefArray(const Array* orig)
 RefArray::RefArray(const Object* obj, size_t repeat)
    : RefArray(repeat)
 {
-   for (size_t i = 0 ; i < repeat ; i++)
-      {
-      m_array[i] = const_cast<Object*>(obj) ;
-      }
+   std::fill(m_array,m_array+repeat,const_cast<Object*>(obj)) ;
    return ;
 }
 
@@ -119,8 +116,7 @@ void RefArray::clearArray(bool free_objects)
 	    m_array[i]->free() ;
 	 }
       }
-   for (size_t i = 0 ; i < size() ; ++i)
-      m_array[i] = nullptr ;
+   std::fill(m_array,m_array+size(),nullptr) ;
    return ;
 }
 

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -132,10 +132,7 @@ void String::StaticInitialization()
       {
       size_t size = allocator_sizes[i] ;
       SmallAlloc *alloc = SmallAlloc::create(size,1) ;
-      for (size_t j = prev_size ; j < size ; ++j)
-	 {
-	 allocators[j] = alloc ;
-	 }
+      std::fill(allocators+prev_size,allocators+size,alloc) ;
       prev_size = size ;
       }
    allocators_initialized = true ;
