@@ -98,28 +98,11 @@ typedef Ptr<String> StringPtr ;
 /************************************************************************/
 /************************************************************************/
 
-template <typename T>
-class StringIter_
-   {
-   private:
-      T *m_string ;
-   public:
-      StringIter_(T *s) : m_string(s) {}
-      StringIter_(const StringIter_&) = default ;
-      ~StringIter_() {}
-      StringIter_& operator= (const StringIter_&) = default ;
+typedef char* StringIter ;
+typedef const char* ConstStringIter ;
 
-      T& operator* () const { return *m_string ; }
-      T* operator-> () const { return m_string ; }
-      StringIter_& operator++ () { ++m_string ; return *this ; }
-      T& operator[] (size_t index) const { return m_string[index] ; }
-
-      bool operator== (const StringIter_& other) const { return m_string == other.m_string ; }
-      bool operator!= (const StringIter_& other) const { return m_string != other.m_string ; }
-   } ;
-
-typedef StringIter_<char> StringIter ;
-typedef StringIter_<const char> ConstStringIter ;
+typedef std::reverse_iterator<StringIter> RevStringIter ;
+typedef std::reverse_iterator<ConstStringIter> ConstRevStringIter ;
 
 /************************************************************************/
 /************************************************************************/
@@ -157,6 +140,10 @@ class String : public Object
       StringIter end() { return StringIter(c_str()+c_len()) ; }
       ConstStringIter cend() const { return ConstStringIter(c_str()+c_len()) ; }
       String *next() const { return nullptr ; }
+      RevStringIter rbegin() { return RevStringIter(end()) ; }
+      ConstRevStringIter crbegin() { return ConstRevStringIter(end()) ; }
+      RevStringIter rend() { return RevStringIter(begin()) ; }
+      ConstRevStringIter crend() { return ConstRevStringIter(begin()) ; }
 
       // *** operator/typecast overloads ***
       operator bool () const { return c_str() != nullptr ; }
