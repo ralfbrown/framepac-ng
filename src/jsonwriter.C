@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-04-06					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -124,10 +124,10 @@ void CFile::writeJSON(const List *json, int indent, bool recursive)
    else
       (*this) << "{\n" ;
    indent++ ;
-   for ( ; json ; json = json->next())
+   for (auto f : *json)
       {
-      List *field = (List*)json->front() ;
-      String *fieldname = (String*)field->front() ;
+      List *field = static_cast<List*>(f) ;
+      String *fieldname = static_cast<String*>(field->front()) ;
       List *value = field->next() ;
       printf("%*s\"%s\": ",(2*indent)," ",fieldname->stringValue()) ;
       if (value->size() > 1)

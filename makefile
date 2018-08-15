@@ -301,6 +301,7 @@ OBJS = \
 	build/init$(OBJ) \
 	build/integer$(OBJ) \
 	build/jsonreader$(OBJ) \
+	build/jsonwriter$(OBJ) \
 	build/linebatch$(OBJ) \
 	build/list$(OBJ) \
 	build/listbuilder$(OBJ) \
