@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-11					*/
+/* Version 0.08, last edit 2018-08-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -146,6 +146,25 @@ bool convert_string(const char*&input, double& value)
       return false ;
    char* past_end { nullptr } ;
    double v = strtod(input,&past_end) ;
+   if (past_end != input)
+      {
+      value = v ;
+      input = past_end ;
+      return true ;
+      }
+   value = 0.0 ;
+   return false ;
+}
+
+//----------------------------------------------------------------------------
+
+template <>
+bool convert_string(const char*&input, long double& value)
+{
+   if (!input || !*input)
+      return false ;
+   char* past_end { nullptr } ;
+   long double v = strtold(input,&past_end) ;
    if (past_end != input)
       {
       value = v ;

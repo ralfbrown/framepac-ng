@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-11					*/
+/* Version 0.08, last edit 2018-08-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -39,6 +39,7 @@ namespace Fr
    template <> bool convert_string(const char*& input, long& value) ;
    template <> bool convert_string(const char*& input, float& value) ;
    template <> bool convert_string(const char*& input, double& value) ;
+   template <> bool convert_string(const char*& input, long double& value) ;
    
 } // end namespace Fr
 
