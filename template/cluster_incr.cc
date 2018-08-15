@@ -53,12 +53,31 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
       return nullptr ;			// can't cluster: either no vector or not all same type
    // generate initial clusters by merging all seeds with the same label together
    Array* clusters = Array::create() ;
-
+   for (auto vec : *seed)
+      {
+      auto vector { static_cast<Vector<ValT>*>(vec) } ;
+      bool found { false } ;
+      for (auto cl : *clusters)
+	 {
+	 auto cluster = static_cast<ClusterInfo*>(cl) ;
+	 if (cluster->label() == vector->label())
+	    {
+	    cluster->addMember(vector) ;
+	    found = true ;
+	    break ;
+	    }
+	 }
+      if (!found)
+	 {
+	 ClusterInfo* newclus = ClusterInfo::createSingleton(vector) ;
+	 clusters->appendNoCopy(newclus) ;
+	 }
+      }
    // now iterate through the non-seed vectors, creating a new cluster if the nearest existing cluster is too
    //   far away and we haven't yet reached the cluster limit; otherwise, assign to the nearest existing cluster
    for (auto vec : *nonseed)
       {
-      auto vector = static_cast<const Vector<ValT>*>(vec) ;
+      auto vector = static_cast<Vector<ValT>*>(vec) ;
       double best_sim { -HUGE_VAL } ;
       ClusterInfo* best_clus { nullptr } ;
       for (auto clus : *clusters)
@@ -74,12 +93,13 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
       if (best_sim < m_clusterthresh && clusters->size() < this->desiredClusters())
 	 {
 	 // create a new cluster and add the vector as its initial member
-
+	 ClusterInfo* newclus = ClusterInfo::createSingleton(vector) ;
+	 clusters->appendNoCopy(newclus) ;
 	 }
       else if (best_clus)
 	 {
 	 // add the vector to the nearest cluster
-   //TODO
+	 best_clus->addMember(vector) ;
 	 }
       }
    return ClusterInfo::create(clusters) ;

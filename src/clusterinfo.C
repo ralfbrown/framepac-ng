@@ -118,11 +118,12 @@ ClusterInfo* ClusterInfo::create(Array* subclus)
       if (!sub)
 	 continue ;
       count += sub->size() ;
-      info->m_subclusters->append(sub) ;
+      info->m_subclusters->appendNoCopy(sub) ;
       subclus->setNth(i,nullptr) ;
       }
    info->m_size = count ;
    info->setFlag(Flags::group) ;	// subclusters only, no direct members
+   subclus->free() ;
    return info ;
 }
 
@@ -206,6 +207,16 @@ ClusterInfo* ClusterInfo::createSingletonClusters(const Array* vectors)
       info->setFlag(Flags::group) ;	// subclusters only, no direct members
       }
    return info ;
+}
+
+//----------------------------------------------------------------------------
+
+void ClusterInfo::addMember(Object* vector)
+{
+   if (!m_members)
+      m_members = RefArray::create() ;
+   m_members->append(vector) ;
+   return ;
 }
 
 //----------------------------------------------------------------------------
