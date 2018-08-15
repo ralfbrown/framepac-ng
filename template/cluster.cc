@@ -190,15 +190,30 @@ double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
       case ClusterRep::centroid:
       case ClusterRep::medioid:
       case ClusterRep::prototype:
+      case ClusterRep::newest:
 	 this->setRepresentative<IdxT,ValT>(vm) ;
 	 other->setRepresentative<IdxT,ValT>(vm) ;
 	 return vm->similarity(static_cast<Vector<ValT>*>(this->representative()),
 	    static_cast<Vector<ValT>*>(other->representative())) ;
-      case ClusterRep::newest:
-	 break ;
       case ClusterRep::average:
-	 //TODO
-	 break ;
+         {
+	 auto vectors1 = allMembers() ;
+	 auto vectors2 = other->allMembers() ;
+	 double sum { 0.0 } ;
+	 for (auto vec1 : *vectors1)
+	    {
+	    auto vector1 = static_cast<const Vector<ValT>*>(vec1) ;
+	    for (auto vec2 : *vectors2)
+	       {
+	       auto vector2 = static_cast<const Vector<ValT>*>(vec2) ;
+	       sum += vm->similarity(vector1,vector2) ;
+	       }
+	    }
+	 double combinations = vectors1->size() * vectors2->size() ;
+	 vectors1->free() ;
+	 vectors2->free() ;
+	 return sum / combinations ;
+	 }
       case ClusterRep::furthest:
 	 break ;
       case ClusterRep::nearest:
@@ -224,13 +239,22 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
       case ClusterRep::centroid:
       case ClusterRep::medioid:
       case ClusterRep::prototype:
+      case ClusterRep::newest:
 	 this->setRepresentative<IdxT,ValT>(vm) ;
 	 return vm->similarity(static_cast<Vector<ValT>*>(this->representative()),other) ;
-      case ClusterRep::newest:
-	 break ;
       case ClusterRep::average:
-	 //TODO
-	 break ;
+         {
+	 auto vectors = allMembers() ;
+	 double avg { 0.0 } ;
+	 double combinations { vectors->size() } ;
+	 for (auto vec : *vectors)
+	    {
+	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    avg += (vm->similarity(vector,other) / combinations) ;
+	    }
+	 vectors->free() ;
+	 return avg ;
+	 }
       case ClusterRep::furthest:
 	 break ;
       case ClusterRep::nearest:
@@ -256,13 +280,22 @@ double ClusterInfo::reverseSimilarity(const Vector<ValT>* other, VectorMeasure<I
       case ClusterRep::centroid:
       case ClusterRep::medioid:
       case ClusterRep::prototype:
+      case ClusterRep::newest:
 	 this->setRepresentative<IdxT,ValT>(vm) ;
 	 return vm->similarity(other,static_cast<Vector<ValT>*>(this->representative())) ;
-      case ClusterRep::newest:
-	 break ;
       case ClusterRep::average:
-	 //TODO
-	 break ;
+         {
+	 auto vectors = allMembers() ;
+	 double avg { 0.0 } ;
+	 double combinations { vectors->size() } ;
+	 for (auto vec : *vectors)
+	    {
+	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    avg += (vm->similarity(other,vector) / combinations) ;
+	    }
+	 vectors->free() ;
+	 return avg ;
+	 }
       case ClusterRep::furthest:
 	 break ;
       case ClusterRep::nearest:
@@ -288,15 +321,30 @@ double ClusterInfo::distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
       case ClusterRep::centroid:
       case ClusterRep::medioid:
       case ClusterRep::prototype:
+      case ClusterRep::newest:
 	 this->setRepresentative<IdxT,ValT>(vm) ;
 	 other->setRepresentative<IdxT,ValT>(vm) ;
 	 return vm->distance(static_cast<Vector<ValT>*>(this->representative()),
 	    static_cast<Vector<ValT>*>(other->representative())) ;
-      case ClusterRep::newest:
-	 break ;
       case ClusterRep::average:
-	 //TODO
-	 break ;
+         {
+	 auto vectors1 = allMembers() ;
+	 auto vectors2 = other->allMembers() ;
+	 double avg { 0.0 } ;
+	 double combinations { vectors1->size() * vectors2->size() } ;
+	 for (auto vec1 : *vectors1)
+	    {
+	    auto vector1 = static_cast<const Vector<ValT>*>(vec1) ;
+	    for (auto vec2 : *vectors2)
+	       {
+	       auto vector2 = static_cast<const Vector<ValT>*>(vec2) ;
+	       avg += (vm->distance(vector1,vector2) / combinations) ;
+	       }
+	    }
+	 vectors1->free() ;
+	 vectors2->free() ;
+	 return avg ;
+	 }
       case ClusterRep::furthest:
 	 break ;
       case ClusterRep::nearest:
@@ -322,13 +370,22 @@ double ClusterInfo::distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>
       case ClusterRep::centroid:
       case ClusterRep::medioid:
       case ClusterRep::prototype:
+      case ClusterRep::newest:
 	 this->setRepresentative<IdxT,ValT>(vm) ;
 	 return vm->distance(static_cast<Vector<ValT>*>(this->representative()),other) ;
-      case ClusterRep::newest:
-	 break ;
       case ClusterRep::average:
-	 //TODO
-	 break ;
+         {
+	 auto vectors = allMembers() ;
+	 double avg { 0.0 } ;
+	 double combinations { vectors->size() } ;
+	 for (auto vec : *vectors)
+	    {
+	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    avg += (vm->distance(vector,other) / combinations) ;
+	    }
+	 vectors->free() ;
+	 return avg ;
+	 }
       case ClusterRep::furthest:
 	 break ;
       case ClusterRep::nearest:
@@ -354,13 +411,22 @@ double ClusterInfo::reverseDistance(const Vector<ValT>* other, VectorMeasure<Idx
       case ClusterRep::centroid:
       case ClusterRep::medioid:
       case ClusterRep::prototype:
+      case ClusterRep::newest:
 	 this->setRepresentative<IdxT,ValT>(vm) ;
 	 return vm->distance(other,static_cast<Vector<ValT>*>(this->representative())) ;
-      case ClusterRep::newest:
-	 break ;
       case ClusterRep::average:
-	 //TODO
-	 break ;
+         {
+	 auto vectors = allMembers() ;
+	 double avg { 0.0 } ;
+	 double combinations { vectors->size() } ;
+	 for (auto vec : *vectors)
+	    {
+	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    avg += (vm->distance(other,vector) / combinations) ;
+	    }
+	 vectors->free() ;
+	 return avg ;
+	 }
       case ClusterRep::furthest:
 	 break ;
       case ClusterRep::nearest:
