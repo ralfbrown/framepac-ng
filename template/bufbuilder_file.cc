@@ -70,6 +70,7 @@ bool BufferBuilder<T,minsize>::loadFromMmap(const void* mmap_base, size_t mmap_l
       return false ;
    m_buffer = (T*)((char*)mmap_base + sizeof(uint8_t) + sizeof(m_currsize)) ;
    m_currsize = *((size_t*)((char*)mmap_base + sizeof(uint8_t))) ;
+   m_external_buffer = true ;
    return true ;
 }
 

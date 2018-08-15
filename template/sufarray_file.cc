@@ -185,6 +185,7 @@ bool SuffixArray<IdT,IdxT>::save(CFile& fp, bool include_ids) const
    SuffixArrayHeader header ;
    header.m_numids = m_numids ;
    header.m_types = m_types ;
+   header.m_ids = 0 ;
    header.m_sentinel = m_sentinel ;
    header.m_newline = m_newline ;
    header.m_last_linenum = m_last_linenum;

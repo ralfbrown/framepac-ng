@@ -137,7 +137,7 @@ bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mma
       if (success && header.m_fwdindex)
 	 {
 	 fp.seek(header.m_fwdindex + base_offset) ;
-	 success &= m_fwdindex.load(fp,filename) ;
+	 success &= m_fwdindex.load(fp,filename,m_wordbuf.currentBuffer()) ;
 	 }
       if (success && header.m_revindex)
 	 {
@@ -211,7 +211,7 @@ bool WordCorpusT<IdT,IdxT>::loadFromMmap(const char* mmap_base, size_t mmap_len)
       }
    if (header->m_fwdindex)
       {
-      m_fwdindex.loadFromMmap(mmap_base+header->m_fwdindex,mmap_len-header->m_fwdindex) ;
+      m_fwdindex.loadFromMmap(mmap_base+header->m_fwdindex,mmap_len-header->m_fwdindex,m_wordbuf.currentBuffer()) ;
       }
    if (header->m_revindex)
       {
@@ -293,9 +293,9 @@ bool WordCorpusT<IdT,IdxT>::save(CFile &fp) const
    header.m_contextmap = fp.tell() - base_offset ;
    success &= m_contextmap->save(fp) ;
    header.m_fwdindex = fp.tell() - base_offset ;
-   success &= m_fwdindex.save(fp) ;
+   success &= m_fwdindex.save(fp,false) ;
    header.m_revindex = fp.tell() - base_offset ;
-   success &= m_revindex.save(fp) ;
+   success &= m_revindex.save(fp,false) ;
    if (m_freq)
       {
       header.m_freq = fp.tell() - base_offset ;

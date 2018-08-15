@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-31					*/
+/* Version 0.08, last edit 2018-08-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -75,10 +75,14 @@ class BufferBuilder
       BufferBuilder &operator += (const BufferBuilder& buf) { append(buf) ; return *this ; }
 
    protected:
+      void freeBuffer() ;
+
+   protected:
       T        *m_buffer = m_localbuf ;
       size_t	m_alloc = minsize ;
       size_t	m_currsize = 0 ;
       T		m_localbuf[minsize] ;
+      bool	m_external_buffer { false } ;
 
       // magic values for serializing
       static constexpr auto signature = "\x7F""BufBuild" ;

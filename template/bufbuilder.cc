@@ -35,9 +35,20 @@ namespace Fr
 template <typename T, size_t minsize>
 BufferBuilder<T,minsize>::~BufferBuilder()
 {
-   if (m_buffer != m_localbuf)
-      delete[] m_buffer ;
+   freeBuffer() ;
    m_currsize = 0 ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, size_t minsize>
+void BufferBuilder<T,minsize>::freeBuffer()
+{
+   if (m_buffer != m_localbuf && !m_external_buffer)
+      {
+      delete[] m_buffer ;
+      }
    return ;
 }
 
@@ -50,12 +61,10 @@ bool BufferBuilder<T,minsize>::preallocate(size_t newsize)
    if (newbuf)
       {
       std::copy(m_buffer,m_buffer+m_currsize,newbuf) ;
-      if (m_buffer != m_localbuf)
-	 {
-	 delete[] m_buffer ;
-	 }
+      freeBuffer() ;
       m_buffer = newbuf ;
       m_alloc = newsize ;
+      m_external_buffer = false ;
       return true ;
       }
    return false ;
@@ -66,14 +75,11 @@ bool BufferBuilder<T,minsize>::preallocate(size_t newsize)
 template <typename T, size_t minsize>
 void BufferBuilder<T,minsize>::clear()
 {
-   // reset the buffer to be the initial buffer
-   if (m_buffer != m_localbuf)
-      {
-      delete[] m_buffer ;
-      }
+   freeBuffer() ;
    m_buffer = m_localbuf ;
    m_alloc = minsize ;
    m_currsize = 0 ;
+   m_external_buffer = false ;
    return ;
 }
 
