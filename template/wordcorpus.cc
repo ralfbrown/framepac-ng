@@ -463,19 +463,17 @@ void WordCorpusT<IdT,IdxT>::computeTermFrequencies()
    if (m_freq)
       return;
    size_t num_types = m_wordmap->size() ;
-   m_freq = new IdxT[num_types] ;
-   // zero out the frequencies
-   for (size_t i = 0 ; i < num_types ; ++i)
-      {
-      m_freq[i] = IdxT(0) ;
-      }
+   m_freq = new IdxT[num_types] { 0 } ;
    // scan the array of term IDs and accumulate counts
    const IdT* buf = m_wordbuf.currentBuffer() ;
-   for (size_t i = 0 ; i < m_wordbuf.size() ; ++i)
+   size_t tokens = m_wordbuf.size() ;
+   for (size_t i = 0 ; i < tokens ; ++i)
       {
       IdT id = buf[i] ;
       if (id < num_types)
 	 ++m_freq[id] ;
+      else if (id >= m_last_linenum)
+	 ++m_freq[m_newline] ;
       }
    return ;
 }
@@ -619,7 +617,6 @@ bool WordCorpusT<IdT,IdxT>::createIndex(bool bidirectional)
       {
       success &= createReverseIndex() ;
       }
-   m_wordmap->finalize() ;
    return success ;
 }
 
@@ -636,10 +633,10 @@ bool WordCorpusT<IdT,IdxT>::lookup(const IdT *key, unsigned keylen, IdxT& first_
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::enumerateForward(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc* fn, void* user)
 {
-   if (!createForwardIndex())
-      return false ;			// didn't have an index and couldn't create it, so fail
    if (!fn)
       return false ;			// can't enumerate without a function to call!
+   if (!createForwardIndex())
+      return false ;			// didn't have an index and couldn't create it, so fail
    return m_fwdindex.enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,minfreq,fn,user) ;
 }
 
@@ -660,10 +657,10 @@ template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::enumerateForwardParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
    SAEnumFunc* fn, void* user)
 {
-   if (!createForwardIndex())
-      return false ;			// didn't have an index and couldn't create it, so fail
    if (!fn)
       return false ;			// can't enumerate without a function to call!
+   if (!createForwardIndex())
+      return false ;			// didn't have an index and couldn't create it, so fail
    return m_fwdindex.enumerateParallel(minlen,maxlen,minfreq,fn,user) ;
 }
 
@@ -672,10 +669,10 @@ bool WordCorpusT<IdT,IdxT>::enumerateForwardParallel(unsigned minlen, unsigned m
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::enumerateReverse(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc* fn, void* user)
 {
-   if (!createReverseIndex())
-      return false ;			// didn't have an index and couldn't create it, so fail
    if (!fn)
       return false ;			// can't enumerate without a function to call!
+   if (!createReverseIndex())
+      return false ;			// didn't have an index and couldn't create it, so fail
    return m_revindex.enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,minfreq,fn,user) ;
 }
 
@@ -696,10 +693,10 @@ template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::enumerateReverseParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
    SAEnumFunc* fn, void* user)
 {
-   if (!createReverseIndex())
-      return false ;			// didn't have an index and couldn't create it, so fail
    if (!fn)
       return false ;			// can't enumerate without a function to call!
+   if (!createReverseIndex())
+      return false ;			// didn't have an index and couldn't create it, so fail
    return m_revindex.enumerateParallel(minlen,maxlen,minfreq,fn,user) ;
 }
 
@@ -715,6 +712,7 @@ bool WordCorpusT<IdT,IdxT>::createForwardIndex()
       // add the end-of-data sentinel
       addWord(m_sentinel) ;
       }
+   m_wordmap->finalize() ;
    computeTermFrequencies(); 
    m_fwdindex.generate(m_wordbuf.currentBuffer(),m_wordbuf.size(), m_wordmap->size(), m_newline, m_freq) ;
    m_fwdindex.setFreqTable(m_freq) ;
@@ -734,6 +732,7 @@ bool WordCorpusT<IdT,IdxT>::createReverseIndex()
       // add the end-of-data sentinel
       addWord(m_sentinel) ;
       }
+   m_wordmap->finalize() ;
    computeTermFrequencies(); 
    m_wordbuf.reverse() ;
    m_revindex.generate(m_wordbuf.currentBuffer(),m_wordbuf.size(), m_wordmap->size(), m_newline, m_freq) ;
