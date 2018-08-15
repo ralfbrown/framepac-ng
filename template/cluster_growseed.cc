@@ -50,24 +50,12 @@ class ClusteringAlgoGrowseed : public ClusteringAlgo<IdxT,ValT>
 template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(const Array* vectors) const
 {
-   if (!this->checkSparseOrDense(vectors))
+   RefArray* seed ;	// vectors with a cluster assignment at the outset
+   RefArray* nonseed ;	// vectors which need to be given a cluster assignment
+   if (!this->separateSeeds(vectors,seed,nonseed))
       {
       return nullptr ;			// vectors must be all dense or all sparse
       }
-   this->log(1,"Separating seed vectors from non-seed vectors") ;
-   RefArray* seed = RefArray::create() ;	// vectors with a cluster assignment at the outset
-   RefArray* nonseed = RefArray::create() ;	// vectors which need to be given a cluster assignment
-   for (auto obj : *vectors)
-      {
-      if (!obj || !obj->isVector())
-	 continue ;
-      Vector<ValT>* vec = static_cast<Vector<ValT>*>(obj) ;
-      if (vec->label())
-	 seed->append(vec) ;
-      else
-	 nonseed->append(vec) ;
-      }
-   this->log(1,"  %lu seed vectors and %lu non-seed vectors found",seed->size(),nonseed->size()) ;
    // assign each of the non-seed vectors to the same cluster as the
    //   nearest of the seed vectors, provided the similarity measure
    //   is above threshold

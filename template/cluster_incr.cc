@@ -37,8 +37,8 @@ class ClusteringAlgoIncr : public ClusteringAlgo<IdxT,ValT>
 
       virtual ClusterInfo* cluster(const Array* vectors) const ;
 
-   protected:
-
+   protected: // data
+      double m_clusterthresh ; //???
    } ;
 
 /************************************************************************/
@@ -47,7 +47,12 @@ class ClusteringAlgoIncr : public ClusteringAlgo<IdxT,ValT>
 template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
 {
-   (void)vectors;
+   RefArray* seed ;
+   RefArray* nonseed ;
+   if (!this->separateSeeds(vectors,seed,nonseed))
+      return nullptr ;			// can't cluster: either no vector or not all same type
+   //TODO
+
    return nullptr ; //TODO
 }
 

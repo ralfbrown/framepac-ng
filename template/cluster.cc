@@ -657,6 +657,30 @@ ClusterInfo* ClusteringAlgo<IdxT,ValT>::cluster(ArrayIter first, ArrayIter past_
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
+bool ClusteringAlgo<IdxT,ValT>::separateSeeds(const Array* vectors, RefArray*& seed, RefArray*& nonseed) const
+{
+   if (!vectors || vectors->size() == 0 || !this->checkSparseOrDense(vectors))
+      return false ;			// vectors must all be dense or all sparse
+   this->log(1,"Separating seed vectors from non-seed vectors") ;
+   seed = RefArray::create() ;		// vectors with a cluster assignment at the outset
+   nonseed = RefArray::create() ;	// vectors which need to be given a cluster assignment
+   for (auto obj : *vectors)
+      {
+      if (!obj || !obj->isVector())
+	 continue ;
+      Vector<ValT>* vec = static_cast<Vector<ValT>*>(obj) ;
+      if (vec->label())
+	 seed->append(vec) ;
+      else
+	 nonseed->append(vec) ;
+      }
+   this->log(1,"  %lu seed vectors and %lu non-seed vectors found",seed->size(),nonseed->size()) ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
 bool assign_vector_to_nearest_center(size_t index, va_list args)
 {
    typedef VectorMeasure<IdxT,ValT> VM ;
