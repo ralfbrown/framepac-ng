@@ -97,14 +97,26 @@ WordSplitter::boundary WordSplitterEnglish::boundaryType(const char* window_star
    //   of a single token (no boundary) or at a point where a string of non-whitespace characters needs to
    //   be split into multiple tokens (both word end and word start)
    char nextchar = (window_end > currpos+1) ? currpos[1] : ' ' ;
-   // special handling for decimal numbers: a period or comma is not a boundary if there are digits on both sides
-   if ((currchar == '.' || currchar == ',') && isdigit(prevchar) && isdigit(nextchar))
+   if (isdigit(prevchar))
       {
-      return no_boundary ;
+      // special handling for decimal numbers: a period or comma is not a boundary if there are digits on both sides
+      if ((currchar == '.' || currchar == ',') && isdigit(nextchar))
+	 {
+	 return no_boundary ;
+	 }
+      // a digit followed by an 'e' followed by an optional sign and more digits is part of a floating-point number
+      if ((currchar == 'e' || currchar == 'E'))
+	 {
+	 if (isdigit(nextchar))
+	    return no_boundary ;
+	 if (window_end > currpos+1 && (nextchar == '+' || nextchar == '-') && isdigit(currpos[2]))
+	    return no_boundary ;
+	 }
       }
-   // a period between to alpha characters is considered to be part of an abbreviation with periods, and thus
+   bool prev_alpha = isalpha(prevchar) ;
+   // a period between two alpha characters is considered to be part of an abbreviation with periods, and thus
    //   not a boundary
-   if (currchar == '.' && isalpha(prevchar))
+   if (currchar == '.' && prev_alpha)
       {
       if (isalnum(nextchar))
 	 return no_boundary ;
@@ -123,17 +135,24 @@ WordSplitter::boundary WordSplitterEnglish::boundaryType(const char* window_star
       {
       return no_boundary ;
       }
-   if (prevchar == '.' && isalpha(currchar))
+   if (isalnum(currchar))
       {
-      return keepingEmbeddedPeriods() ? no_boundary : word_start_and_end ;
-      }
-   // a digit followed by an 'e' followed by an optional sign and more digits is part of a floating-point number
-   if ((currchar == 'e' || currchar == 'E') && isdigit(prevchar))
-      {
-      if (window_end > currpos+1 && isdigit(currpos[2]))
-	 return no_boundary ;
-      if (window_end > currpos+2 && (currpos[2] == '+' || currpos[2] == '-') && isdigit(currpos[3]))
-	 return no_boundary ;
+      if (prevchar == '.')
+	 {
+	 if (keepingEmbeddedPeriods())
+	    return no_boundary ;
+	 // embedded period as in N.A.T.O. or foo.com or 2.3
+	 if (currpos > window_start + 1 && isalnum(currpos[-2]))
+	    return no_boundary ;
+	 else
+	    return word_start_and_end ;
+	 }
+      // check if hyphenated word or contraction; don't break after the hyphen/squote
+      if (prevchar == '-' || prevchar == '\'')
+	 {
+	 if (currpos > window_start + 1 && isalpha(currpos[-2]))
+	    return no_boundary ;
+	 }
       }
    // a plus or minus followed by digits stays attached to the digits
    if ((prevchar == '+' || prevchar == '-') && isdigit(currchar))
@@ -149,7 +168,7 @@ WordSplitter::boundary WordSplitterEnglish::boundaryType(const char* window_star
       if (prevchar == '-')
 	 return no_boundary ;
       // as do hyphenated words
-      else if (isalpha(prevchar) && isalpha(nextchar))
+      else if (prev_alpha && isalnum(nextchar))
 	 return no_boundary ;
       // in all other cases, split before the dash
       else
@@ -159,14 +178,8 @@ WordSplitter::boundary WordSplitterEnglish::boundaryType(const char* window_star
       {
       if (prevchar == '\'')
 	 return no_boundary ;   // repeated single quote
-      if (isalpha(prevchar) && isalpha(nextchar))
+      if (prev_alpha && isalpha(nextchar))
 	 return no_boundary ;	// contraction or ohina (Hawai'ian)
-      }
-   if (prevchar == '\'' && isalpha(currchar))
-      {
-      // check if contraction
-      if (currpos > window_start + 1 && isalpha(currpos[-2]))
-	 return no_boundary ;
       }
    if (currchar == '`')
       {
