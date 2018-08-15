@@ -51,9 +51,38 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
    RefArray* nonseed ;
    if (!this->separateSeeds(vectors,seed,nonseed))
       return nullptr ;			// can't cluster: either no vector or not all same type
-   //TODO
+   // generate initial clusters by merging all seeds with the same label together
+   Array* clusters = Array::create() ;
 
-   return nullptr ; //TODO
+   // now iterate through the non-seed vectors, creating a new cluster if the nearest existing cluster is too
+   //   far away and we haven't yet reached the cluster limit; otherwise, assign to the nearest existing cluster
+   for (auto vec : *nonseed)
+      {
+      auto vector = static_cast<const Vector<ValT>*>(vec) ;
+      double best_sim { -HUGE_VAL } ;
+      ClusterInfo* best_clus { nullptr } ;
+      for (auto clus : *clusters)
+	 {
+	 auto cluster = static_cast<ClusterInfo*>(clus) ;
+	 double sim = cluster->similarity(vector,this->m_measure) ;
+	 if (sim > best_sim)
+	    {
+	    best_sim = sim ;
+	    best_clus = cluster ;
+	    }
+	 }
+      if (best_sim < m_clusterthresh && clusters->size() < this->desiredClusters())
+	 {
+	 // create a new cluster and add the vector as its initial member
+
+	 }
+      else if (best_clus)
+	 {
+	 // add the vector to the nearest cluster
+   //TODO
+	 }
+      }
+   return ClusterInfo::create(clusters) ;
 }
 
 } // end of namespace Fr

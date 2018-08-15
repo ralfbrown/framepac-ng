@@ -105,6 +105,29 @@ ClusterInfo* ClusterInfo::create(Object** vectors, size_t num_vectors)
 
 //----------------------------------------------------------------------------
 
+ClusterInfo* ClusterInfo::create(Array* subclus)
+{
+   ClusterInfo* info = new ClusterInfo ;
+   if (!subclus || subclus->size() == 0)
+      return info  ;
+   info->m_subclusters = RefArray::create(subclus->size()) ;
+   size_t count { 0 } ;
+   for (size_t i = 0 ; i < subclus->size() ; ++i)
+      {
+      auto sub = static_cast<ClusterInfo*>(subclus->getNth(i)) ;
+      if (!sub)
+	 continue ;
+      count += sub->size() ;
+      info->m_subclusters->append(sub) ;
+      subclus->setNth(i,nullptr) ;
+      }
+   info->m_size = count ;
+   info->setFlag(Flags::group) ;	// subclusters only, no direct members
+   return info ;
+}
+
+//----------------------------------------------------------------------------
+
 ClusterInfo* ClusterInfo::create(ClusterInfo** subclus, size_t num_subclus)
 {
    ClusterInfo* info = new ClusterInfo ;

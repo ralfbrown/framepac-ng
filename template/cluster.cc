@@ -311,7 +311,7 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
          {
 	 auto vectors = allMembers() ;
 	 double avg { 0.0 } ;
-	 double combinations { vectors->size() } ;
+	 auto combinations { vectors->size() } ;
 	 for (auto vec : *vectors)
 	    {
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;

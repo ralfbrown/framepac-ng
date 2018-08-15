@@ -85,6 +85,7 @@ class ClusterInfo : public Object
       static ClusterInfo* create(const List* members, const List* subclusters = nullptr) ;
       static ClusterInfo* create(Object** vectors, size_t num_vectors) ;
       static ClusterInfo* create(ClusterInfo** subclus, size_t num_subclus) ;
+      static ClusterInfo* create(Array* subclus) ;
       static ClusterInfo* create(const ClusterInfo** subclus, size_t num_subclus) ;
       static ClusterInfo* createSingletonClusters(const Array* vectors) ;
       static ClusterInfo* createSingleton(const Object* vector) ;
