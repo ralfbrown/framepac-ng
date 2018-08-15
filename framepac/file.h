@@ -225,12 +225,12 @@ class CFile
       bool openWrite(const char *filenmae, int options) ;
 
    protected: // data
-      FILE *m_file ;
-      char *m_tempname ;	// if safe-overwrite chosen, write to temp file and
-      char *m_finalname ;	// move it to the final name on close
-      int   m_errcode = 0 ;
-      bool  m_piped = false ;
-      bool  m_complete = false ; // have we successfully finished writing?
+      FILE* m_file        { nullptr } ;
+      CharPtr m_tempname  { nullptr } ;	// if safe-overwrite chosen, write to temp file and
+      CharPtr m_finalname { nullptr } ; // move it to the final name on close
+      int   m_errcode     { 0 } ;
+      bool  m_piped       { false } ;
+      bool  m_complete    { false } ;   // have we successfully finished writing?
    } ;
 
 //----------------------------------------------------------------------------

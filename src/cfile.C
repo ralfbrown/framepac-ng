@@ -153,7 +153,6 @@ static CompressionType check_file_signature(const char *filename)
 /************************************************************************/
 
 CFile::CFile(const char *filename, bool writing, int options)
-   : m_file(nullptr), m_tempname(nullptr), m_finalname(nullptr)
 {
    if (writing)
       openWrite(filename,options) ;
@@ -165,7 +164,6 @@ CFile::CFile(const char *filename, bool writing, int options)
 //----------------------------------------------------------------------------
 
 CFile::CFile(String *filename, bool writing, int options)
-   : m_file(nullptr), m_tempname(nullptr), m_finalname(nullptr)
 {
    if (writing)
       openWrite(filename->c_str(),options) ;
@@ -177,7 +175,7 @@ CFile::CFile(String *filename, bool writing, int options)
 //----------------------------------------------------------------------------
 
 CFile::CFile(FILE* fileptr)
-   : m_file(fileptr), m_tempname(nullptr), m_finalname(nullptr)
+   : m_file(fileptr)
 {
    return ;
 }
@@ -347,8 +345,8 @@ bool CFile::close()
 	 unlink(m_tempname) ;
 	 }
       }
-   delete[] m_tempname ;
-   delete[] m_finalname ;
+   m_tempname = nullptr ;
+   m_finalname = nullptr ;
    return success && errno == 0 ;
 }
 
