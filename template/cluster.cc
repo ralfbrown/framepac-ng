@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-23					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -215,9 +215,41 @@ double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	 return sum / combinations ;
 	 }
       case ClusterRep::furthest:
-	 break ;
+         {
+	 auto vectors1 = allMembers() ;
+	 auto vectors2 = other->allMembers() ;
+	 double furthest { HUGE_VAL } ;
+	 for (auto vec1 : *vectors1)
+	    {
+	    auto vector1 = static_cast<const Vector<ValT>*>(vec1) ;
+	    for (auto vec2 : *vectors2)
+	       {
+	       auto vector2 = static_cast<const Vector<ValT>*>(vec2) ;
+	       furthest = std::min(furthest,vm->similarity(vector1,vector2)) ;
+	       }
+	    }
+	 vectors1->free() ;
+	 vectors2->free() ;
+	 return furthest ;
+	 }
       case ClusterRep::nearest:
-	 break ;
+         {
+	 auto vectors1 = allMembers() ;
+	 auto vectors2 = other->allMembers() ;
+	 double nearest { HUGE_VAL } ;
+	 for (auto vec1 : *vectors1)
+	    {
+	    auto vector1 = static_cast<const Vector<ValT>*>(vec1) ;
+	    for (auto vec2 : *vectors2)
+	       {
+	       auto vector2 = static_cast<const Vector<ValT>*>(vec2) ;
+	       nearest = std::max(nearest,vm->similarity(vector1,vector2)) ;
+	       }
+	    }
+	 vectors1->free() ;
+	 vectors2->free() ;
+	 return nearest ;
+	 }
       case ClusterRep::rms:
 	 break ;
       default:
@@ -256,9 +288,29 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
 	 return avg ;
 	 }
       case ClusterRep::furthest:
-	 break ;
+         {
+	 auto vectors = allMembers() ;
+	 double furthest { HUGE_VAL } ;
+	 for (auto vec : *vectors)
+	    {
+	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    furthest = std::min(furthest,vm->similarity(vector,other)) ;
+	    }
+	 vectors->free() ;
+	 return furthest ;
+	 }
       case ClusterRep::nearest:
-	 break ;
+         {
+	 auto vectors = allMembers() ;
+	 double nearest { -HUGE_VAL } ;
+	 for (auto vec : *vectors)
+	    {
+	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    nearest = std::max(nearest,vm->similarity(vector,other)) ;
+	    }
+	 vectors->free() ;
+	 return nearest ;
+	 }
       case ClusterRep::rms:
 	 break ;
       default:
@@ -297,9 +349,29 @@ double ClusterInfo::reverseSimilarity(const Vector<ValT>* other, VectorMeasure<I
 	 return avg ;
 	 }
       case ClusterRep::furthest:
-	 break ;
+         {
+	 auto vectors = allMembers() ;
+	 double furthest { HUGE_VAL } ;
+	 for (auto vec : *vectors)
+	    {
+	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    furthest = std::min(furthest,vm->similarity(other,vector)) ;
+	    }
+	 vectors->free() ;
+	 return furthest ;
+	 }
       case ClusterRep::nearest:
-	 break ;
+         {
+	 auto vectors = allMembers() ;
+	 double nearest { -HUGE_VAL } ;
+	 for (auto vec : *vectors)
+	    {
+	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    nearest = std::max(nearest,vm->similarity(other,vector)) ;
+	    }
+	 vectors->free() ;
+	 return nearest ;
+	 }
       case ClusterRep::rms:
 	 break ;
       default:
@@ -346,9 +418,41 @@ double ClusterInfo::distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	 return avg ;
 	 }
       case ClusterRep::furthest:
-	 break ;
+         {
+	 auto vectors1 = allMembers() ;
+	 auto vectors2 = other->allMembers() ;
+	 double furthest { -HUGE_VAL } ;
+	 for (auto vec1 : *vectors1)
+	    {
+	    auto vector1 = static_cast<const Vector<ValT>*>(vec1) ;
+	    for (auto vec2 : *vectors2)
+	       {
+	       auto vector2 = static_cast<const Vector<ValT>*>(vec2) ;
+	       furthest = std::max(furthest,vm->distance(vector1,vector2)) ;
+	       }
+	    }
+	 vectors1->free() ;
+	 vectors2->free() ;
+	 return furthest ;
+	 }
       case ClusterRep::nearest:
-	 break ;
+         {
+	 auto vectors1 = allMembers() ;
+	 auto vectors2 = other->allMembers() ;
+	 double nearest { HUGE_VAL } ;
+	 for (auto vec1 : *vectors1)
+	    {
+	    auto vector1 = static_cast<const Vector<ValT>*>(vec1) ;
+	    for (auto vec2 : *vectors2)
+	       {
+	       auto vector2 = static_cast<const Vector<ValT>*>(vec2) ;
+	       nearest = std::min(nearest,vm->distance(vector1,vector2)) ;
+	       }
+	    }
+	 vectors1->free() ;
+	 vectors2->free() ;
+	 return nearest ;
+	 }
       case ClusterRep::rms:
 	 break ;
       default:
@@ -387,9 +491,29 @@ double ClusterInfo::distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>
 	 return avg ;
 	 }
       case ClusterRep::furthest:
-	 break ;
+         {
+	 auto vectors = allMembers() ;
+	 double furthest { -HUGE_VAL } ;
+	 for (auto vec : *vectors)
+	    {
+	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    furthest = std::max(furthest,vm->distance(vector,other)) ;
+	    }
+	 vectors->free() ;
+	 return furthest ;
+	 }
       case ClusterRep::nearest:
-	 break ;
+         {
+	 auto vectors = allMembers() ;
+	 double nearest { HUGE_VAL } ;
+	 for (auto vec : *vectors)
+	    {
+	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    nearest = std::min(nearest,vm->distance(vector,other)) ;
+	    }
+	 vectors->free() ;
+	 return nearest ;
+	 }
       case ClusterRep::rms:
 	 break ;
       default:
@@ -428,9 +552,29 @@ double ClusterInfo::reverseDistance(const Vector<ValT>* other, VectorMeasure<Idx
 	 return avg ;
 	 }
       case ClusterRep::furthest:
-	 break ;
+         {
+	 auto vectors = allMembers() ;
+	 double furthest { -HUGE_VAL } ;
+	 for (auto vec : *vectors)
+	    {
+	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    furthest = std::max(furthest,vm->distance(other,vector)) ;
+	    }
+	 vectors->free() ;
+	 return furthest ;
+	 }
       case ClusterRep::nearest:
-	 break ;
+         {
+	 auto vectors = allMembers() ;
+	 double nearest { HUGE_VAL } ;
+	 for (auto vec : *vectors)
+	    {
+	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    nearest = std::min(nearest,vm->distance(other,vector)) ;
+	    }
+	 vectors->free() ;
+	 return nearest ;
+	 }
       case ClusterRep::rms:
 	 break ;
       default:
