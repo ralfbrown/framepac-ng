@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -47,8 +47,7 @@ BitVector::BitVector(size_t capacity)
    if (m_bits)
       {
       m_capacity = capacity * bits_per_sizet ;
-      for (size_t i = 0 ; i < capacity ; ++i)
-	 m_bits[i] = 0 ;
+      std::fill(m_bits,m_bits+capacity,0) ;
       }
    else
       {

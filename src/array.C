@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -43,8 +43,7 @@ Array::Array(size_t initial_size)
      m_size(0),
      m_alloc(initial_size ? initial_size : 1)
 {
-   for (size_t i = 0 ; i < initial_size ; i++)
-      m_array[i] = nullptr ;
+   std::fill(m_array,m_array+initial_size,nullptr) ;
    return ;
 }
 
@@ -206,10 +205,8 @@ bool Array::reserve(size_t N)
       Object** new_arr = new Object*[N] ;
       if (new_arr)
 	 {
-	 for (size_t i = 0 ; i < size() ; ++i)
-	    new_arr[i] = m_array[i] ;
-	 for (size_t i = size() ; i < N ; ++i)
-	    new_arr[i] = nullptr ;
+	 std::copy(m_array,m_array+size(),new_arr) ;
+	 std::fill(new_arr+size(),new_arr+N,nullptr) ;
 	 delete[] m_array ;
 	 m_array = new_arr ;
 	 m_alloc = N ;
@@ -226,13 +223,15 @@ void Array::resize(size_t N)
    Object** new_arr = new Object*[N] ;
    if (new_arr)
       {
-      for (size_t i = 0 ; i < size() && i < N ; ++i)
-	 new_arr[i] = m_array[i] ;
-      for (size_t i = size() ; i < N ; ++i)
-	 new_arr[i] = nullptr ;
+      size_t newsize = std::min(size(),N) ;
+      std::copy(m_array,m_array+newsize,new_arr) ;
+      if (N > size())
+	 {
+	 std::fill(new_arr+size(),new_arr+N,nullptr) ;
+	 }
       delete[] m_array ;
       m_array = new_arr ;
-      m_size = std::min(size(),N) ;
+      m_size = newsize ;
       m_alloc = N ;
       }
    return ;
@@ -245,13 +244,13 @@ void Array::resize(size_t N, Object* obj)
    Object** new_arr = new Object*[N] ;
    if (new_arr)
       {
-      for (size_t i = 0 ; i < size() && i < N ; ++i)
-	 new_arr[i] = m_array[i] ;
+      size_t newsize = std::min(size(),N) ;
+      std::copy(m_array,m_array+newsize,new_arr) ;
       for (size_t i = size() ; i < N ; ++i)
 	 new_arr[i] = obj ? obj->clone().move() : nullptr ;
       delete[] m_array ;
       m_array = new_arr ;
-      m_size = std::min(size(),N) ;
+      m_size = newsize ;
       m_alloc = N ;
       }
    return ;
@@ -263,12 +262,12 @@ void Array::shrink_to_fit()
 {
    if (size() < capacity())
       {
-      Object** new_arr = new Object*[size()] ;
+      size_t currsize = size() ;
+      Object** new_arr = new Object*[currsize] ;
       if (new_arr)
 	 {
-	 for (size_t i = 0 ; i < size() ; ++i)
-	    new_arr[i] = m_array[i] ;
-	 m_alloc = size() ;
+	 std::copy(m_array,m_array+currsize,new_arr) ;
+	 m_alloc = currsize ;
 	 delete[] m_array ;
 	 m_array = new_arr ;
 	 }
