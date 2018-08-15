@@ -79,18 +79,8 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
    for (auto vec : *nonseed)
       {
       auto vector = static_cast<Vector<ValT>*>(vec) ;
-      double best_sim { -HUGE_VAL } ;
-      ClusterInfo* best_clus { nullptr } ;
-      for (auto clus : *clusters)
-	 {
-	 auto cluster = static_cast<ClusterInfo*>(clus) ;
-	 double sim = cluster->similarity(vector,this->m_measure) ;
-	 if (sim > best_sim)
-	    {
-	    best_sim = sim ;
-	    best_clus = cluster ;
-	    }
-	 }
+      size_t best_clus ;
+      double best_sim = this->findNearestCluster(clusters,vector,best_clus,nullptr) ;
       if (best_sim < m_clusterthresh && clusters->size() < this->desiredClusters())
 	 {
 	 // create a new cluster and add the vector as its initial member
@@ -101,8 +91,9 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
       else if (best_clus)
 	 {
 	 // add the vector to the nearest cluster
-	 best_clus->addMember(vector) ;
-	 vector->setLabel(best_clus->label()) ;
+	 auto best_cluster = static_cast<ClusterInfo*>(clusters->getNth(best_clus)) ;
+	 best_cluster->addMember(vector) ;
+	 vector->setLabel(best_cluster->label()) ;
 	 }
       prog->incr() ;
       }
