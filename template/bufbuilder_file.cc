@@ -61,7 +61,7 @@ bool BufferBuilder<T,minsize>::load(CFile& fp, const char* filename)
 template <typename T, size_t minsize>
 bool BufferBuilder<T,minsize>::loadFromMmap(const void* mmap_base, size_t mmap_len)
 {
-   size_t header_size = CFile::signatureSize(signature) + sizeof(uint8_t) ;
+   size_t header_size = CFile::signatureSize(signature) ;
    if (!mmap_base || mmap_len < header_size)
       return false;
    mmap_base = ((char*)mmap_base)+header_size ;

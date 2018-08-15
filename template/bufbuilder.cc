@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-31					*/
+/* Version 0.08, last edit 2018-08-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -49,10 +49,7 @@ bool BufferBuilder<T,minsize>::preallocate(size_t newsize)
    T* newbuf { new T[newsize] };
    if (newbuf)
       {
-      for (size_t i = 0 ; i < m_currsize ; i++)
-	 {
-	 newbuf[i] = m_buffer[i] ;
-	 }
+      std::copy(m_buffer,m_buffer+m_currsize,newbuf) ;
       if (m_buffer != m_localbuf)
 	 {
 	 delete[] m_buffer ;
@@ -103,10 +100,7 @@ T* BufferBuilder<T,minsize>::move()
       {
       // we need to make a copy of the buffer
       buf = new T[this->capacity()] ;
-      for (size_t i = 0 ; i < m_currsize ; ++i)
-	 {
-	 buf[i] = m_buffer[i] ;
-	 }
+      std::copy(m_buffer,m_buffer+m_currsize,buf) ;
       }
    // reset our buffer
    m_buffer = m_localbuf ;
@@ -123,7 +117,8 @@ void BufferBuilder<T,minsize>::append(T value)
 {
    if (m_currsize >= m_alloc)
       {
-      preallocate(2*m_currsize) ;
+      size_t newalloc = m_currsize > 200000000 ? 5*m_currsize/4 : (m_currsize > 1000000 ? 3*m_currsize/2 : 2*m_currsize) ;
+      preallocate(newalloc) ;
       }
    m_buffer[m_currsize++] = value ;
    return ;
@@ -137,13 +132,12 @@ void BufferBuilder<T,minsize>::append(const BufferBuilder<T,minsize>& addbuf)
    size_t grow = addbuf.size() ;
    if (m_currsize + grow > m_alloc)
       {
-      size_t newalloc = (grow > m_currsize) ? 2 * (m_currsize + grow) : (2 * m_currsize) ;
+      size_t newalloc = (grow > m_currsize) ? m_currsize + grow : m_currsize ;
+      newalloc = newalloc > 200000000 ? 5*newalloc/4 : ((newalloc > 1000000) ? 3*newalloc/2 : 2*newalloc) ;
       preallocate(newalloc) ;
       }
-   for (size_t i = 0 ; i < grow ; ++i)
-      {
-      m_buffer[m_currsize++] = addbuf[i] ;
-      }
+   std::copy(addbuf.m_buffer,addbuf.m_buffer+grow,m_buffer+m_currsize) ;
+   m_currsize += grow ;
    return ;
 }
 
@@ -162,10 +156,7 @@ template <typename T, size_t minsize>
 T *BufferBuilder<T,minsize>::finalize() const
 {
    T *finalbuf { new T[m_currsize] };
-   for (size_t i = 0 ; i < m_currsize ; i++)
-      {
-      finalbuf[i] = m_buffer[i] ;
-      }
+   std::copy(m_buffer,m_buffer+m_currsize,finalbuf) ;
    return finalbuf ;
 }
 
