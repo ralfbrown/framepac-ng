@@ -709,7 +709,7 @@ template/sparsevector.cc:	framepac/fasthash64.h framepac/vector.h template/bufbu
 template/termvector.cc:	framepac/termvector.h framepac/charget.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/trie.cc:	framepac/trie.h
+template/trie.cc:	framepac/trie.h template/trienode.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/trienode.cc:	framepac/trie.h
