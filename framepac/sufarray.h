@@ -49,7 +49,8 @@ class SuffixArray
 	 if (!m_mmap && !m_readonly)	// if memory-mapped, we didn't allocate any arrays
 	    {
 	    delete[] m_index ;
-	    delete[] m_freq ;
+	    if (!m_external_freq)
+	       delete[] m_freq ;
 	    if (!m_external_ids)
 	       delete[] m_ids ;
 	    }
@@ -90,7 +91,7 @@ class SuffixArray
 
       // temporary FrankenpaC support
       void setSentinel(IdT sent) { m_sentinel = sent ; }
-      void setFreqTable(IdxT* freq) { m_freq = freq ; }
+      void setFreqTable(IdxT* freq, bool external = true) { m_freq = freq ; m_external_freq = external ; }
       IdxT* rawIndex() const { return m_index ; }
       void rawIndex(IdxT* index) { m_index = index ; }
 
@@ -141,6 +142,7 @@ class SuffixArray
       IdT        m_newline { IdT(-1) } ;
       IdxT       m_last_linenum { IdxT(-1) } ;
       bool       m_external_ids { true } ;
+      bool       m_external_freq { false } ;
       bool	 m_readonly { false } ;
 
       // magic values for serializing
