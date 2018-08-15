@@ -104,43 +104,63 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid(const Array* vectors) const
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-void ClusterInfo::setRepresentative()
+void ClusterInfo::setRepresentative(VectorMeasure<IdxT,ValT>* vm)
 {
-   if (!representative())
+   if (representative())
+      return  ;
+   switch (this->repType())
       {
-      switch (this->repType())
-	 {
-	 case ClusterRep::centroid:
-	    {
-	    auto vectors = this->allMembers() ;
-	    if (vectors->getNth(0)->isSparseVector())
-	       this->m_rep = this->createSparseCentroid<IdxT,ValT>(vectors) ;
-	    else
-	       this->m_rep = this->createDenseCentroid<ValT>(vectors) ;
-	    vectors->free() ;
-	    }
-	    break ;
-	 case ClusterRep::medioid:
-	    //TODO
-	    break ;
-	 case ClusterRep::prototype:
-	    if (this->members())
-	       {
-	       auto rep = this->members()->getNth(0) ;
-	       this->m_rep = rep ? rep->clone().move() : nullptr ;
-	       }
-	    else if (this->subclusters())
-	       {
-	       auto sub = static_cast<ClusterInfo*>(this->subclusters()->getNth(0)) ;
-	       if (sub) sub->setRepresentative<IdxT,ValT>() ;
-	       auto rep = sub->representative() ;
-	       this->m_rep = rep? rep->clone().move() : nullptr ;
-	       }
-	    break ;
-	 default:
-	    // do nothing, the representative is context-dependent
-	    break ;
+      case ClusterRep::centroid:
+         {
+	 auto vectors = this->allMembers() ;
+	 if (vectors->getNth(0)->isSparseVector())
+	    this->m_rep = this->createSparseCentroid<IdxT,ValT>(vectors) ;
+	 else
+	    this->m_rep = this->createDenseCentroid<ValT>(vectors) ;
+	 vectors->free() ;
 	 }
+         break ;
+      case ClusterRep::prototype:
+	 if (this->members())
+	    {
+	    this->m_rep = this->members()->getNth(0) ;
+	    }
+	 else if (this->subclusters())
+	    {
+	    auto sub = static_cast<ClusterInfo*>(this->subclusters()->getNth(0)) ;
+	    if (sub) sub->setRepresentative<IdxT,ValT>(vm) ;
+	    this->m_rep = sub->representative() ;
+	    }
+	 break ;
+      case ClusterRep::medioid:
+         {
+	 // compute the centroid of the cluster's members
+	 auto vectors = this->allMembers() ;
+	 Vector<ValT>* centroid ;
+	 if (vectors->getNth(0)->isSparseVector())
+	    centroid = this->createSparseCentroid<IdxT,ValT>(vectors) ;
+	 else
+	    centroid = this->createDenseCentroid<ValT>(vectors) ;
+	 // find the member vector closest to the centroid
+	 double best_sim = -HUGE_VAL ;
+	 Vector<ValT>* mediod = nullptr ;
+	 for (auto vec : *vectors)
+	    {
+	    Vector<ValT>* vector = static_cast<Vector<ValT>*>(vec) ;
+	    double sim = vm->similarity(vector,centroid) ;
+	    if (sim > best_sim)
+	       {
+	       best_sim = sim ;
+	       mediod = vector ;
+	       }
+	    }
+	 this->m_rep = mediod ;
+	 vectors->free() ;
+	 }
+         break ;
+      default:
+	 // do nothing, the representative is context-dependent
+	 break ;
       }
    return ;
 }
@@ -158,10 +178,174 @@ double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
       case ClusterRep::centroid:
       case ClusterRep::medioid:
       case ClusterRep::prototype:
-	 this->setRepresentative<IdxT,ValT>() ;
-	 other->setRepresentative<IdxT,ValT>() ;
+	 this->setRepresentative<IdxT,ValT>(vm) ;
+	 other->setRepresentative<IdxT,ValT>(vm) ;
 	 return vm->similarity(static_cast<Vector<ValT>*>(this->representative()),
 	    static_cast<Vector<ValT>*>(other->representative())) ;
+      case ClusterRep::newest:
+	 break ;
+      case ClusterRep::average:
+	 //TODO
+	 break ;
+      case ClusterRep::furthest:
+	 break ;
+      case ClusterRep::nearest:
+	 break ;
+      case ClusterRep::rms:
+	 break ;
+      default:
+	 cerr << "missed case" << endl;
+      }
+   return 0.0 ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm)
+{
+   if (!other || !vm) return -999.99 ;
+   switch (this->repType())
+      {
+      case ClusterRep::none:
+	 break ;
+      case ClusterRep::centroid:
+      case ClusterRep::medioid:
+      case ClusterRep::prototype:
+	 this->setRepresentative<IdxT,ValT>(vm) ;
+	 return vm->similarity(static_cast<Vector<ValT>*>(this->representative()),other) ;
+      case ClusterRep::newest:
+	 break ;
+      case ClusterRep::average:
+	 //TODO
+	 break ;
+      case ClusterRep::furthest:
+	 break ;
+      case ClusterRep::nearest:
+	 break ;
+      case ClusterRep::rms:
+	 break ;
+      default:
+	 cerr << "missed case" << endl;
+      }
+   return 0.0 ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+double ClusterInfo::reverseSimilarity(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm)
+{
+   if (!other || !vm) return -999.99 ;
+   switch (this->repType())
+      {
+      case ClusterRep::none:
+	 break ;
+      case ClusterRep::centroid:
+      case ClusterRep::medioid:
+      case ClusterRep::prototype:
+	 this->setRepresentative<IdxT,ValT>(vm) ;
+	 return vm->similarity(other,static_cast<Vector<ValT>*>(this->representative())) ;
+      case ClusterRep::newest:
+	 break ;
+      case ClusterRep::average:
+	 //TODO
+	 break ;
+      case ClusterRep::furthest:
+	 break ;
+      case ClusterRep::nearest:
+	 break ;
+      case ClusterRep::rms:
+	 break ;
+      default:
+	 cerr << "missed case" << endl;
+      }
+   return 0.0 ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+double ClusterInfo::distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
+{
+   if (!other || !vm) return -999.99 ;
+   switch (this->repType())
+      {
+      case ClusterRep::none:
+	 break ;
+      case ClusterRep::centroid:
+      case ClusterRep::medioid:
+      case ClusterRep::prototype:
+	 this->setRepresentative<IdxT,ValT>(vm) ;
+	 other->setRepresentative<IdxT,ValT>(vm) ;
+	 return vm->distance(static_cast<Vector<ValT>*>(this->representative()),
+	    static_cast<Vector<ValT>*>(other->representative())) ;
+      case ClusterRep::newest:
+	 break ;
+      case ClusterRep::average:
+	 //TODO
+	 break ;
+      case ClusterRep::furthest:
+	 break ;
+      case ClusterRep::nearest:
+	 break ;
+      case ClusterRep::rms:
+	 break ;
+      default:
+	 cerr << "missed case" << endl;
+      }
+   return 0.0 ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+double ClusterInfo::distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm)
+{
+   if (!other || !vm) return -999.99 ;
+   switch (this->repType())
+      {
+      case ClusterRep::none:
+	 break ;
+      case ClusterRep::centroid:
+      case ClusterRep::medioid:
+      case ClusterRep::prototype:
+	 this->setRepresentative<IdxT,ValT>(vm) ;
+	 return vm->distance(static_cast<Vector<ValT>*>(this->representative()),other) ;
+      case ClusterRep::newest:
+	 break ;
+      case ClusterRep::average:
+	 //TODO
+	 break ;
+      case ClusterRep::furthest:
+	 break ;
+      case ClusterRep::nearest:
+	 break ;
+      case ClusterRep::rms:
+	 break ;
+      default:
+	 cerr << "missed case" << endl;
+      }
+   return 0.0 ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+double ClusterInfo::reverseDistance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm)
+{
+   if (!other || !vm) return -999.99 ;
+   switch (this->repType())
+      {
+      case ClusterRep::none:
+	 break ;
+      case ClusterRep::centroid:
+      case ClusterRep::medioid:
+      case ClusterRep::prototype:
+	 this->setRepresentative<IdxT,ValT>(vm) ;
+	 return vm->distance(other,static_cast<Vector<ValT>*>(this->representative())) ;
+      case ClusterRep::newest:
+	 break ;
       case ClusterRep::average:
 	 //TODO
 	 break ;

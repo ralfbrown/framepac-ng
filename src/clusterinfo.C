@@ -49,6 +49,16 @@ static Atomic<size_t> next_cluster_ID { 0 } ;
 /************************************************************************/
 /************************************************************************/
 
+ClusterInfo::~ClusterInfo()
+{
+   if (m_rep && repType() != ClusterRep::prototype && repType() != ClusterRep::medioid)
+      m_rep->free() ;
+   m_rep = nullptr ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 ClusterInfo* ClusterInfo::create(const List* elts, const List* subclus)
 {
    size_t num_elts = elts ? elts->size() : 0 ;

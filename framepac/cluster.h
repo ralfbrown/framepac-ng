@@ -58,6 +58,8 @@ enum class ClusterRep
    centroid,
    medioid,
    prototype,			// first vector in cluster
+   // the following are not a fixed representative, but depend on the history of additions to the cluster
+   newest,			// most recently added member, e.g. members(numMembers()-1)
    // the following are not a fixed representative, but are relative to some other cluster
    average,
    furthest,
@@ -97,7 +99,17 @@ class ClusterInfo : public Object
       template <typename IdxT, typename ValT>
       double similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm) ;
       template <typename IdxT, typename ValT>
-      void setRepresentative() ;
+      double similarity(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm) ;
+      template <typename IdxT, typename ValT>
+      double reverseSimilarity(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm) ;
+      template <typename IdxT, typename ValT>
+      double distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm) ;
+      template <typename IdxT, typename ValT>
+      double distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm) ;
+      template <typename IdxT, typename ValT>
+      double reverseDistance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm) ;
+      template <typename IdxT, typename ValT>
+      void setRepresentative(VectorMeasure<IdxT,ValT>* vm) ;
       RefArray* allMembers() const ;
       Array* allKeys() const ;
 
@@ -165,7 +177,7 @@ class ClusterInfo : public Object
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       ClusterInfo() {}
-      ~ClusterInfo() {}
+      ~ClusterInfo() ;
       ClusterInfo& operator= (const ClusterInfo&) = delete ;
 
    protected: // implementation functions for virtual methods
