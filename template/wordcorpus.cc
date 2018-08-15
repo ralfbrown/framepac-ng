@@ -338,7 +338,9 @@ template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::discardAttributes()
 {
    if (!m_mapped)
+      {
       delete[] m_attributes ;
+      }
    m_attributes = nullptr ;
    return true ;
 }
@@ -482,7 +484,10 @@ void WordCorpusT<IdT,IdxT>::computeTermFrequencies()
 template <typename IdT, typename IdxT>
 void WordCorpusT<IdT,IdxT>::freeTermFrequencies()
 {
-   delete[] m_freq ;
+   if (!m_mapped)
+      {
+      delete[] m_freq ;
+      }
    m_freq = nullptr ;
    return ;
 }
