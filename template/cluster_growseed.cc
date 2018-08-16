@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.09, last edit 2018-08-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -70,14 +70,13 @@ ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(const Array* vectors) co
    this->log(0,"Collecting vectors into clusters") ;
    ClusterInfo** clusters ;
    size_t num_clusters ;
-   RefArray* unassigned = RefArray::create();
+   ScopedObject<RefArray> unassigned ;
    this->extractClusters(vectors,clusters,num_clusters,unassigned) ;
    this->log(0,"  %lu vectors were not assigned to a seed",unassigned->size()) ;
    // build a ClusterInfo structure with the subclusters, and all unassigned vectors inserted at the top level
    ClusterInfo* result_clusters = ClusterInfo::create(clusters,num_clusters) ;
    this->freeClusters(clusters,num_clusters) ;
    result_clusters->addVectors(unassigned) ;
-   unassigned->free() ;
    // the subclusters are the actual result, the unassigned vectors at the top level should (normally) be ignored
    result_clusters->setFlag(ClusterInfo::Flags::group) ;
    return result_clusters ;

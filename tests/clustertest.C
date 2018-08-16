@@ -124,7 +124,7 @@ int main(int argc, char** argv)
 	    if (!line)
 	       break  ;
 	    if (!**line) continue ;
-	    Vector<float>* v;
+	    Ptr<Vector<float>> v;
 	    if (use_sparse_vectors)
 	       {
 	       v = SparseVector<uint32_t,float>::create(line) ;
@@ -136,7 +136,6 @@ int main(int argc, char** argv)
 	    if (v)
 	       {
 	       vectors->append(v) ;
-	       v->free() ;
 	       }
 	    }
 	 }
@@ -161,7 +160,7 @@ int main(int argc, char** argv)
       }
    cout << "Starting " << clusterer->algorithmName() << " clustering using " << clusterer->measureName()
 	<< " similarity" << endl ;
-   ClusterInfo* clusters = clusterer->cluster(vectors->begin(),vectors->end()) ;
+   Ptr<ClusterInfo> clusters { clusterer->cluster(vectors->begin(),vectors->end()) } ;
    delete clusterer ;
    if (!clusters)
       {
@@ -182,7 +181,6 @@ int main(int argc, char** argv)
 	 }
       }
    show_clusters(clusters,0) ;
-   clusters->free() ;
    return 0 ;
 }
 

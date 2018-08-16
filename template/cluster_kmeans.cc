@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.09, last edit 2018-08-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -177,7 +177,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       {
       // select K vectors which are (approximately) maximally separated
       centers = RefArray::create() ;
-      RefArray* sample = vectors->randomSample(2*num_clusters) ;
+      Ptr<RefArray> sample { vectors->randomSample(2*num_clusters) } ;
       // start by arbitrarily picking the first vector in the sample
       centers->append(sample->getNth(0)) ;
       sample->setNth(0,nullptr) ;
@@ -190,7 +190,6 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
 	 centers->append(sample->getNth(selected)) ;
 	 sample->setNth(selected,nullptr) ;
 	 }
-      sample->free() ;
       }
    // assign a label to each of the selected centers
    for (auto v : *centers)

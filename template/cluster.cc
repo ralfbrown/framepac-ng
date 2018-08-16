@@ -598,16 +598,14 @@ template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgo<IdxT,ValT>::cluster(ObjectIter& first, ObjectIter& past_end) const
 {
    // collect the input vectors into an array
-   RefArray* vectors = RefArray::create() ;
+   ScopedObject<RefArray> vectors ;
    for ( ; first != past_end ; ++first)
       {
       Object* obj = *first ;
       if (obj && obj->isVector())
 	 vectors->append(obj) ;
       }
-   ClusterInfo* clusters = cluster(vectors) ;
-   vectors->free() ;
-   return clusters ;
+   return cluster(vectors) ;
 }
 
 //----------------------------------------------------------------------------
@@ -616,16 +614,14 @@ template <typename IdxT, typename ValT>
 ClusterInfo* ClusteringAlgo<IdxT,ValT>::cluster(ArrayIter first, ArrayIter past_end) const
 {
    // collect the input vectors into an array
-   RefArray* vectors = RefArray::create() ;
+   ScopedObject<RefArray> vectors ;
    for ( ; first != past_end ; ++first)
       {
       Object* obj = *first ;
       if (obj && obj->isVector())
 	 vectors->append(obj) ;
       }
-   ClusterInfo* clusters = cluster(vectors) ;
-   vectors->free() ;
-   return clusters ;
+   return cluster(vectors) ;
 }
 
 //----------------------------------------------------------------------------

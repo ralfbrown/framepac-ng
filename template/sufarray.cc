@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-27					*/
+/* Version 0.09, last edit 2018-08-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -170,7 +170,7 @@ bool SuffixArray<IdT,IdxT>::Create(const I* ids, IdxT* index, IdxT num_ids, IdT 
 {
    if (num_ids == IdxT(0))
       return false ;
-   Fr::BitVector *ls_types = Fr::BitVector::create(num_ids+2) ;
+   ScopedObject<BitVector> ls_types(num_ids+2) ;
    if (!ls_types)
       return false ;
    classifyLS(*ls_types,ids,num_ids,num_types) ;
@@ -315,7 +315,6 @@ bool SuffixArray<IdT,IdxT>::Create(const I* ids, IdxT* index, IdxT num_ids, IdT 
       }
    delete[] bucket_ends ;
    induce(ids, index, num_ids, num_types, buckets, *ls_types) ;
-   ls_types->free() ;
    return true ;
 }
 

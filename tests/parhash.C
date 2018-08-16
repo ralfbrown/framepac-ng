@@ -1435,12 +1435,11 @@ void hash_command(ostream &out, int threads, bool terse, uint32_t* randnums,
    //  expanding the symbol table to hold all the symbols we will
    //  create
    size_t needed = (size_t)(2.5*maxsize) ;
-   SymbolTable* symtab = SymbolTable::create(needed) ;
+   ScopedObject<SymbolTable> symtab(needed) ;
    symtab->select() ;
    hash_test(nullptr,out,"Preparing symbols",threads,1,(ObjHashTable*)nullptr,2*maxsize,&keys,Op_GENSYM,terse) ;
    hash_test(nullptr,out,"Checking symbols",threads,1,(ObjHashTable*)nullptr,2*maxsize,&keys,Op_CHECKSYMS,terse) ;
    run_tests<ObjHashTable>(threads,threads,startsize,maxsize,cycles,&keys,randnums,out,terse,throughput,time_limit) ;
-   symtab->free() ;
    return ;
 }
 
