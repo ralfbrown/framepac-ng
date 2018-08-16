@@ -44,7 +44,7 @@ enum class ClusteringAlgorithm
    dbscan,
    growseeds,
    kmeans,
-   kmediods,
+   kmedioids,
    multipass_single_link,	// INCR2 from first-gen FramepaC
    optics,
    single_link,			// INCR from first-gen FramepaC

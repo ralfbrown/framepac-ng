@@ -57,7 +57,7 @@ ClusteringAlgo<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::instantiate(const char* al
 	 clusterer = new ClusteringAlgoGrowseed<IdxT,ValT> ; break  ;
       case ClusteringAlgorithm::kmeans:
 	 clusterer = new ClusteringAlgoKMeans<IdxT,ValT> ; break  ;
-      case ClusteringAlgorithm::kmediods:
+      case ClusteringAlgorithm::kmedioids:
 	 clusterer = new ClusteringAlgoKMedioids<IdxT,ValT> ; break  ;
       case ClusteringAlgorithm::optics:
 	 clusterer = new ClusteringAlgoOPTICS<IdxT,ValT> ; break  ;
