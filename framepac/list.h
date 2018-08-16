@@ -56,6 +56,7 @@ class ListIter
 
 //----------------------------------------------------------------------------
 
+// singly-linkd list
 class List : public Object
    {
    public: // types
@@ -191,13 +192,57 @@ class List : public Object
    protected: // types
       typedef Fr::Initializer<List> Initializer ;
 
+   protected:
+      static List* empty_list ;
+      List*   m_next ;
+      Object* m_item ;
+
    private: // static members
       static Allocator s_allocator ;
       static Initializer s_init ;
-      static List* empty_list ;
-   private:
-      List*   m_next ;
-      Object* m_item ;
+   } ;
+
+/************************************************************************/
+/************************************************************************/
+
+// doubly-linked list
+class DblList : public List
+   {
+   public: // types
+      typedef List super ;
+   public:
+      // *** object factories ***
+      static DblList* create() ;
+      static DblList* create(Object*) ;
+      static DblList* create(Object*, Object*) ;
+      static DblList* create(Object*, Object*, Object*) ;
+      static DblList* create(Object*, Object*, Object*, Object*) ;
+      static DblList* create(Object*, Object*, Object*, Object*, Object*) ;
+
+      //TODO
+
+   protected: // construction/destruction
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
+      DblList() ;
+      DblList(const List*) ;
+      DblList(const List&) ;
+      ~DblList() {}
+      DblList& operator= (const DblList&) = delete ;
+
+   protected: // implementation functions for virtual methods
+      friend class FramepaC::Object_VMT<DblList> ;
+
+   protected: // types
+      typedef Fr::Initializer<DblList> Initializer ;
+
+   protected: // data members
+      DblList* m_prev { static_cast<DblList*>(List::empty_list) } ;
+
+   private: // static members
+      static Allocator s_allocator ;
+      static Initializer s_init ;
+      
    } ;
 
 /************************************************************************/
