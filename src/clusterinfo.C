@@ -511,6 +511,43 @@ bool ClusterInfo::addVectors(const RefArray* vectors)
 
 //----------------------------------------------------------------------------
 
+void ClusterInfo::compareMembership(const ClusterInfo* other, ObjectOrderingFn* cmp,
+   size_t& intersection, size_t& unionsize) const
+{
+   auto my_members = this->members() ;
+   auto other_members = other->members() ;
+   auto my_curr = my_members->begin() ;
+   auto my_last = my_members->end() ;
+   auto other_curr = other_members->begin() ;
+   auto other_last = other_members->end() ;
+   intersection = 0 ;
+   unionsize = 0 ;
+   while (my_curr != my_last && other_curr != other_last)
+      {
+      ++unionsize ;
+      int c = cmp(*my_curr,*other_curr) ;
+      if (c == 0)
+	 {
+	 ++intersection ;
+	 ++my_curr ;
+	 ++other_curr ;
+	 }
+      else if (c < 0)
+	 {
+	 ++my_curr ;
+	 }
+      else
+	 {
+	 ++other_curr ;
+	 }
+      }
+   unionsize += my_last - my_curr ;
+   unionsize += other_last - other_curr ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 void ClusterInfo::sortMembers(ObjectOrderingFn* cmp)
 {
    if (m_members)

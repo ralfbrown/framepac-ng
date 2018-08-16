@@ -100,6 +100,14 @@ class ClusterInfo : public Object
       bool flattenSubclusters() ;
       bool labelSubclusterPaths(bool (*setlabel_fn)(Object* vec,const char* label),
 	 const char* path_prefix = "", const char* sep = " ") ;
+
+      RefArray* allMembers() const ;
+      Array* allKeys() const ;
+
+      // note: only compares direct members, and requires them to have been sorted (as with sortMembers)
+      void compareMembership(const ClusterInfo* other, ObjectOrderingFn*,
+	 size_t& intersection, size_t& union_) const ;
+
       template <typename IdxT, typename ValT>
       double similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm) ;
       template <typename IdxT, typename ValT>
@@ -116,8 +124,6 @@ class ClusterInfo : public Object
       void updateRepresentative(Vector<ValT>*, VectorMeasure<IdxT,ValT>* vm) ;
       template <typename IdxT, typename ValT>
       void setRepresentative(VectorMeasure<IdxT,ValT>* vm) ;
-      RefArray* allMembers() const ;
-      Array* allKeys() const ;
 
       static Symbol* genLabel() ;
       static Symbol* numberLabel() ;
