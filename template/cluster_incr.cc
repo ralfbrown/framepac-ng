@@ -50,11 +50,11 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
       return nullptr ;			// can't cluster: either no vector or not all same type
    // generate initial clusters by merging all seeds with the same label together
    this->log(1,"Collecting seeds into clusters") ;
-   Array* clusters = Array::create() ;
+   auto clusters = Array::create() ;
    for (auto vec : *seed)
       {
       auto vector { static_cast<Vector<ValT>*>(vec) } ;
-      bool found { false } ;
+      auto found { false } ;
       for (auto cl : *clusters)
 	 {
 	 auto cluster = static_cast<ClusterInfo*>(cl) ;
@@ -67,23 +67,24 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
 	 }
       if (!found)
 	 {
-	 ClusterInfo* newclus = ClusterInfo::createSingleton(vector) ;
+	 auto newclus = ClusterInfo::createSingleton(vector) ;
+	 newclus->setLabel(vector->label()) ;
 	 clusters->appendNoCopy(newclus) ;
 	 }
       }
    this->log(0,"Clustering vectors") ;
-   ProgressIndicator* prog = this->makeProgressIndicator(nonseed->size()) ;
+   auto prog = this->makeProgressIndicator(nonseed->size()) ;
    // now iterate through the non-seed vectors, creating a new cluster if the nearest existing cluster is too
    //   far away and we haven't yet reached the cluster limit; otherwise, assign to the nearest existing cluster
    for (auto vec : *nonseed)
       {
-      auto vector = static_cast<Vector<ValT>*>(vec) ;
       size_t best_clus ;
-      double best_sim = this->findNearestCluster(clusters,vector,best_clus,nullptr) ;
+      auto vector = static_cast<Vector<ValT>*>(vec) ;
+      auto best_sim = this->findNearestCluster(clusters,vector,best_clus,nullptr) ;
       if (best_sim < this->clusterThreshold() && clusters->size() < this->desiredClusters())
 	 {
 	 // create a new cluster and add the vector as its initial member
-	 ClusterInfo* newclus = ClusterInfo::createSingleton(vector) ;
+	 auto newclus = ClusterInfo::createSingleton(vector) ;
 	 newclus->genLabel() ;
 	 clusters->appendNoCopy(newclus) ;
 	 }
