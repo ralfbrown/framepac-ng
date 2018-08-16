@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -24,10 +24,14 @@
 #include "framepac/cstring.h"
 #include "framepac/message.h"
 #include "framepac/progress.h"
+#include "framepac/signal.h"
 #include "framepac/texttransforms.h"
 
 namespace Fr
 {
+
+SignalHandler* ClusteringAlgoBase::s_sigint = nullptr ;
+std::sig_atomic_t ClusteringAlgoBase::abort_requested = 0 ;
 
 /************************************************************************/
 /*	Methods for class ClusteringAlgoBase				*/
@@ -158,6 +162,39 @@ ProgressIndicator* ClusteringAlgoBase::makeProgressIndicator(size_t limit) const
       }
    else
       return new NullProgressIndicator ;
+}
+
+//----------------------------------------------------------------------------
+
+void ClusteringAlgoBase::sigint_handler(int)
+{
+   if (!abort_requested)
+      {
+      abort_requested = 1 ;
+      SystemMessage::status("*** User interrupt: clustering will be terminated after the current iteration ***");
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void ClusteringAlgoBase::trapSigInt() const
+{
+   if (!s_sigint)
+      {
+      abort_requested = 0 ;
+      s_sigint = new SignalHandler(SIGINT,this->sigint_handler) ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void ClusteringAlgoBase::untrapSigInt() const
+{
+   delete s_sigint ;
+   s_sigint = nullptr ;
+   return ;
 }
 
 //----------------------------------------------------------------------------

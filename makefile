@@ -515,7 +515,7 @@ build/cfgfile$(OBJ):		src/cfgfile$(C) framepac/configfile.h framepac/charget.h f
 build/cfile$(OBJ):		src/cfile$(C) framepac/file.h framepac/message.h framepac/stringbuilder.h \
 				framepac/texttransforms.h
 build/cluster$(OBJ):		src/cluster$(C) framepac/cluster.h framepac/message.h framepac/progress.h \
-				framepac/texttransforms.h framepac/cstring.h framepac/convert.h
+				framepac/signal.h framepac/texttransforms.h framepac/cstring.h framepac/convert.h
 build/clusterinfo$(OBJ):	src/clusterinfo$(C) framepac/atomic.h framepac/cluster.h framepac/texttransforms.h
 build/cluster_name$(OBJ):	src/cluster_name$(C) framepac/cluster.h
 build/cluster_u32_dbl$(OBJ):	src/cluster_u32_dbl$(C) template/cluster_factory.cc
@@ -660,7 +660,7 @@ template/cluster_growseed.cc:	framepac/cluster.h framepac/progress.h framepac/ve
 template/cluster_incr.cc:	template/cluster.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/cluster_kmeans.cc:	framepac/cluster.h framepac/message.h framepac/signal.h framepac/threadpool.h
+template/cluster_kmeans.cc:	framepac/cluster.h framepac/threadpool.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster_optics.cc:	template/cluster.cc
@@ -669,7 +669,7 @@ template/cluster_optics.cc:	template/cluster.cc
 template/cluster_snn.cc:	template/cluster.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/cluster_tight.cc:	framepac/cluster.h framepac/message.h framepac/signal.h
+template/cluster_tight.cc:	framepac/cluster.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster_factory.cc: template/cluster.cc template/cluster_agglom.cc template/cluster_anneal.cc \

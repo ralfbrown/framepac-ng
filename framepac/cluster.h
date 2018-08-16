@@ -22,6 +22,7 @@
 #ifndef __FrCLUSTER_H_INCLUDED
 #define __FrCLUSTER_H_INCLUDED
 
+#include <csignal>
 #include "framepac/array.h"
 #include "framepac/list.h"
 #include "framepac/symbol.h"
@@ -32,6 +33,7 @@ namespace Fr {
 //----------------------------------------------------------------------------
 
 class ProgressIndicator ;
+class SignalHandler ;
 
 //----------------------------------------------------------------------------
 
@@ -272,6 +274,9 @@ class ClusteringAlgoBase
       void log(int level, const char* fmt, ...) const ;
       ProgressIndicator* makeProgressIndicator(size_t limit) const ;
 
+      void trapSigInt() const ;
+      void untrapSigInt() const ;
+
       void clusterThreshold(double thr) { m_threshold = thr ; }
       void desiredClusters(size_t N) { m_desired_clusters = N ; }
       void maxIterations(size_t N) { m_max_iterations = N ; }
@@ -293,8 +298,12 @@ class ClusteringAlgoBase
       bool ignoringExtraClusters() const { return m_ignore_extra ; }
       bool excludingSingletons() const { return m_no_singletons ; }
       double backoffStep() const { return m_backoff ; }
+      bool abortRequested() const { return abort_requested ; }
 
-   protected:
+   protected: // methods
+      static void sigint_handler(int) ;
+
+   protected: // data members
       double    m_alpha { 0 } ;
       double    m_beta { 0 } ;
       double    m_gamma { 0 } ;
@@ -309,7 +318,11 @@ class ClusteringAlgoBase
       bool      m_hard_limit { false } ;		// don't allow more than desired # of clusters no matter what
       bool      m_ignore_extra { false } ;
       bool      m_no_singletons { false } ;
-   } ;
+
+   protected: // static data members
+      static SignalHandler* s_sigint ;
+      static std::sig_atomic_t abort_requested ;
+} ;
 
 //----------------------------------------------------------------------------
 
