@@ -438,7 +438,7 @@ class ScopedPtr
       ScopedPtr(unsigned N) { m_item = new T[N] ; }
       ScopedPtr(unsigned N, const T* s, unsigned copyN)
 	 { m_item = new T[N] ; std::copy(s,s+copyN,m_item) ; }
-      ScopedPtr(T* item) { m_item = item ; }
+      ScopedPtr(T* item = nullptr) { m_item = item ; }
       ScopedPtr(const ScopedPtr&) = delete ;
       ScopedPtr(ScopedPtr&& orig) { m_item = orig.move() ; }
       ~ScopedPtr() { reset(nullptr) ; }
