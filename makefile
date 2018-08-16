@@ -662,12 +662,16 @@ template/cluster_kmeans.cc:	framepac/cluster.h framepac/message.h framepac/threa
 template/cluster_optics.cc:	template/cluster.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
+template/cluster_snn.cc:	template/cluster.cc
+	$(TOUCH) $@ $(BITBUCKET)
+
 template/cluster_tight.cc:	template/cluster.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster_factory.cc: template/cluster.cc template/cluster_agglom.cc template/cluster_anneal.cc \
 			template/cluster_dbscan.cc template/cluster_growseed.cc template/cluster_incr.cc \
-			template/cluster_kmeans.cc template/cluster_optics.cc template/cluster_tight.cc
+			template/cluster_kmeans.cc template/cluster_optics.cc template/cluster_snn.cc \
+			template/cluster_tight.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster.cc:	framepac/cluster.h framepac/hashtable.h framepac/progress.h framepac/threadpool.h

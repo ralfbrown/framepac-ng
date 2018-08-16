@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-03					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -27,6 +27,8 @@
 #include "template/cluster_incr.cc"
 #include "template/cluster_kmeans.cc"
 #include "template/cluster_optics.cc"
+#include "template/cluster_snn.cc"
+#include "template/cluster_tight.cc"
 
 namespace Fr
 {
@@ -63,6 +65,10 @@ ClusteringAlgo<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::instantiate(const char* al
 //	 clusterer = new ClusteringAlgo<IdxT,ValT> ; break  ;
       case ClusteringAlgorithm::single_link:
 	 clusterer = new ClusteringAlgoIncr<IdxT,ValT> ; break  ;
+      case ClusteringAlgorithm::snn:
+	 clusterer = new ClusteringAlgoSharedNN<IdxT,ValT> ; break ;
+      case ClusteringAlgorithm::tight:
+	 clusterer = new ClusteringAlgoTight<IdxT,ValT> ; break ;
       default:
 	 // missed case?
 	 break ;

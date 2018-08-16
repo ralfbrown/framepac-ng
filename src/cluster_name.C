@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-02					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -56,6 +56,10 @@ static ClusteringType clustering_types[] = {
    { "OPTICS", ClusteringAlgorithm::optics },
    { "Single-Link", ClusteringAlgorithm::single_link },
    { "SingleLink", ClusteringAlgorithm::single_link },
+   { "SNN", ClusteringAlgorithm::snn },
+   { "SharedNN", ClusteringAlgorithm::snn },
+   { "Shared-NN", ClusteringAlgorithm::snn },
+   { "Shared-Neighbors", ClusteringAlgorithm::snn },
    // the end-of-array sentinel
    { nullptr, ClusteringAlgorithm::none }
    } ;

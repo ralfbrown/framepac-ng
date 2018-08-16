@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-08					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -47,7 +47,9 @@ enum class ClusteringAlgorithm
    kmediods,
    multipass_single_link,	// INCR2 from first-gen FramepaC
    optics,
-   single_link			// INCR from first-gen FramepaC
+   single_link,			// INCR from first-gen FramepaC
+   snn,				// Shared Nearest Neighbors
+   tight			// TIGHT from first-gen FramepaC
    } ;
 
 //----------------------------------------------------------------------------
