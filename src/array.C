@@ -123,6 +123,18 @@ void Array::setNth(size_t N, const Object* val)
 
 //----------------------------------------------------------------------------
 
+void Array::setNthNoCopy(size_t N, Object* val)
+{
+   if (N < m_size)
+      {
+      if (m_array[N]) m_array[N]->free() ;
+      m_array[N] = val ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 bool Array::append(const Object* obj)
 {
    if (m_size >= m_alloc)

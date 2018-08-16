@@ -75,14 +75,14 @@ static bool update_centroid(size_t id, va_list args)
       // create a centroid of the members of the current cluster
       auto centroid = inf->createSparseCentroid<IdxT,ValT>() ;
       // make the centroid the new center for the cluster
-      centers->setNth(id,centroid) ;
+      centers->setNthNoCopy(id,centroid) ;
       }
    else
       {
       // create a centroid of the members of the current cluster
       auto centroid = inf->createDenseCentroid<ValT>() ;
       // make the centroid the new center for the cluster
-      centers->setNth(id,centroid) ;
+      centers->setNthNoCopy(id,centroid) ;
       }
    return true ;			// no errors, safe to continue processing
 }
@@ -104,7 +104,8 @@ static bool update_medioid(size_t id, va_list args)
       auto centroid = inf->createSparseCentroid<IdxT,ValT>() ;
       auto medioid = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(centroid,inf->members(),measure) ;
       // make the medioid the new center for the cluster
-      centers->setNth(id,medioid->clone()) ;
+      centers->setNth(id,medioid) ;
+      centroid->free() ;
       }
    else
       {
@@ -113,7 +114,8 @@ static bool update_medioid(size_t id, va_list args)
       // find nearest original vector in cluster
       auto medioid = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(centroid,inf->members(),measure) ;
       // make the medioid the new center for the cluster
-      centers->setNth(id,medioid->clone()) ;
+      centers->setNth(id,medioid) ;
+      centroid->free() ;
       }
    return true ;			// no errors, safe to continue processing
 }

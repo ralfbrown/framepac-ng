@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-08					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -49,6 +49,7 @@ class Array : public Object
       bool appendNoCopy(Object*) ;
       Object* getNth(size_t N) const { return N < m_size ? m_array[N] : nullptr ; }
       void setNth(size_t N, const Object* val) ;
+      void setNthNoCopy(size_t N, Object* val) ;
       bool elide(size_t N) ;
       bool removeNulls() ; // compact elements, skipping any null ptrs; returns whether or not anything changed
 
