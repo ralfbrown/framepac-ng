@@ -224,51 +224,24 @@ inline ObjectIter& Object::next_iter(const Object*,ObjectIter& it) { it.m_object
 /************************************************************************/
 
 template <typename T = Object>
-class ScopedObject
+class ScopedObject : public Ptr<T>
    {
    public:
-      ScopedObject() { m_object = T::create() ; }
-      ScopedObject(nullptr_t) { m_object = nullptr ; }
+      typedef Ptr<T> super ;
+   public:
+      ScopedObject() : super(T::create()) { }
+      ScopedObject(nullptr_t) : super(nullptr) { }
       template <typename ...Args>
-      ScopedObject(Args... args) { m_object = T::create(args...) ; }
-      ~ScopedObject() { if (m_object) m_object->free() ; }
+      ScopedObject(Args... args) : super(nullptr) { this->m_object = T::create(args...) ; }
 
       ScopedObject& operator = (ScopedObject&) = delete ;
+      ScopedObject& operator = (const ScopedObject&) = delete ;
+      ScopedObject& operator = (ScopedObject&& orig) { this->clear() ; this->m_object = orig.move() ; return *this ; }
       ScopedObject& operator = (ObjectPtr& op)
-	 { if (m_object) m_object->free() ; m_object = static_cast<T*>(&op) ; op.release() ; return *this ; }
-      ScopedObject& operator = (T* o) { if (m_object) m_object->free() ; m_object = o ; return *this ; }
-
-      void release() { m_object = nullptr ; }
-
-      operator bool () const { return m_object != nullptr ; }
-      operator T* () const { return m_object ; }
-      T* operator -> () const { return  m_object ; }
-
-   protected:
-      T* m_object ;
-   } ;
-
-/************************************************************************/
-/************************************************************************/
-
-template <typename T = Object>
-class ScopedObjectPtr
-   {
-   public:
-      ScopedObjectPtr(T* o) : m_object(o) { }
-      ~ScopedObjectPtr() { if (m_object) m_object->free() ; }
-
-      ScopedObjectPtr& operator= (T* o) { release() ; m_object = o ; return *this ; }
-
-      T* move() { T* o = m_object ; release() ; return o ; }
-      void release() { m_object = nullptr ; }
-
-      operator bool () const { return m_object != nullptr ; }
-      operator T* () const { return m_object ; }
-      T* operator -> () const { return  m_object ; }
-
-   protected:
-      T* m_object ;
+	 { if (this->m_object) this->m_object->free() ; this->m_object = op.move() ; return *this ; }
+      ScopedObject& operator = (ObjectPtr&& op)
+	 { if (this->m_object) this->m_object->free() ; this->m_object = op.move() ; return *this ; }
+      ScopedObject& operator = (T* o) { if (this->m_object) this->m_object->free() ; this->m_object = o ; return *this ; }
    } ;
 
 /************************************************************************/

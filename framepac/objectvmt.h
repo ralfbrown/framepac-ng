@@ -100,36 +100,40 @@ class Symbol ;
 template <typename T>
 class Ptr
    {
-   private:
-      T *m_object ;
    public:
-      Ptr(T *o = nullptr) : m_object(o) {}
-      Ptr(const Ptr &o) = delete ; 	// not copyable
-      Ptr(Ptr &&o) : m_object(o.m_object) { o.release() ; }	// grab ownership from other Ptr
+      Ptr() : m_object(nullptr) {}
+      Ptr(T* o = nullptr) : m_object(o) {}
+      Ptr(const Ptr& o) = delete ; 		// Ptr is not copyable
+      Ptr(Ptr&& o) : m_object(o.move()) { }	// grab ownership from other Ptr
       ~Ptr() { free() ; }
 
-      T& operator* () const { return *m_object ; }
-      T* operator-> () const { return m_object ; }
-      T* operator& () const { return m_object ; }
-      Ptr& operator= (Ptr &o)
+      Ptr& operator= (Ptr& o)
 	 {
-	 if (m_object != o.m_object) free() ;
+	 if (m_object != o.m_object) this->free() ;
 	 acquire(o) ;
 	 return *this ;
 	 }
       Ptr& operator= (T* o)
 	 {
-	 this->free() ;
+	 if (m_object != o) this->free() ;
 	 m_object = o ;
 	 return *this ;
 	 }
-      operator T* () const { return m_object ; }
-      operator bool () const { return m_object != nullptr ; }
 
-      void acquire(Ptr &o) { m_object = o.m_object ; o.release() ; }
+      T& operator* () const { return *m_object ; }
+      T* operator-> () const { return m_object ; }
+      T* operator& () const { return m_object ; }
+      explicit operator bool () const { return m_object != nullptr ; }
+      bool operator! () const { return m_object == nullptr ; }
+      operator T* () { return m_object ; }
+      operator const T* () const { return m_object ; }
+
+      void acquire(Ptr& o) { m_object = o.move() ; }
       void release() { m_object = nullptr ; }
       T* move() { T* o = m_object ; release() ; return o ; }
       inline void free() { if (m_object) { m_object->free() ; release() ; } }
+   protected:
+      T *m_object ;
    } ;
 
 typedef Ptr<Object> ObjectPtr ;
