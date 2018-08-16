@@ -660,7 +660,7 @@ template/cluster_growseed.cc:	framepac/cluster.h framepac/progress.h framepac/ve
 template/cluster_incr.cc:	template/cluster.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/cluster_kmeans.cc:	framepac/cluster.h framepac/message.h framepac/threadpool.h
+template/cluster_kmeans.cc:	framepac/cluster.h framepac/message.h framepac/signal.h framepac/threadpool.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster_optics.cc:	template/cluster.cc

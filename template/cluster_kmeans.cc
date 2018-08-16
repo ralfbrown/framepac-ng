@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-17					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -19,7 +19,10 @@
 /*									*/
 /************************************************************************/
 
+#include <csignal>
 #include "framepac/cluster.h"
+#include "framepac/message.h"
+#include "framepac/signal.h"
 #include "framepac/threadpool.h"
 
 using namespace Fr ;
@@ -43,10 +46,30 @@ class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
 
       // accessors
       bool usingMedioids() const { return m_use_medioids ; }
-   protected:
+
+   protected: // methods
+      static void sigint_handler(int)
+	 {
+	 if (!abort_requested)
+	    {
+	    abort_requested = 1 ;
+	    SystemMessage::status("*** User interrupt: clustering will be terminated after the current iteration ***");
+	    }
+	 }
+
+   protected: // data members
+      static SignalHandler* s_sigint ;
+      static std::sig_atomic_t abort_requested ;
       bool   m_use_medioids { false } ;
       bool   m_fast_init { false } ;
    } ;
+
+template <typename IdxT, typename ValT>
+SignalHandler* ClusteringAlgoKMeans<IdxT,ValT>::s_sigint = nullptr ;
+template <typename IdxT, typename ValT>
+std::sig_atomic_t ClusteringAlgoKMeans<IdxT,ValT>::abort_requested = 0 ;
+
+//----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
 class ClusteringAlgoKMedioids : public ClusteringAlgoKMeans<IdxT,ValT>
@@ -159,6 +182,8 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       {
       return nullptr ;			// we need a similarity measure
       }
+   // trap signals to allow graceful early termination
+   s_sigint = new SignalHandler(SIGINT,sigint_handler) ;
    RefArray* centers ;
    size_t num_clusters = this->desiredClusters() ;
    this->log(0,"Initializing %lu centers",num_clusters) ;
@@ -202,7 +227,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
    ClusterInfo** clusters(nullptr) ;
    num_clusters = 0 ;
    ThreadPool* tp = ThreadPool::defaultPool() ;
-   for (iteration = 1 ; iteration <= this->maxIterations() ; iteration++)
+   for (iteration = 1 ; iteration <= this->maxIterations() && !abort_requested ; iteration++)
       {
       this->log(0,"Iteration %lu",iteration) ;
       auto prog = this->makeProgressIndicator(vectors->size()) ;
@@ -227,6 +252,9 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
    // the subclusters are the actual result
    result_clusters->setFlag(ClusterInfo::Flags::group) ;
    centers->free() ;
+   // cleanup: untrap signals
+   delete s_sigint ;
+   s_sigint = nullptr ;
    return result_clusters ;
 }
 

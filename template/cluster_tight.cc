@@ -40,7 +40,7 @@ class ClusteringAlgoTight : public ClusteringAlgo<IdxT,ValT>
 
       virtual ClusterInfo* cluster(const Array* vectors) const ;
 
-   protected:
+   protected: // methods
       static void sigint_handler(int)
 	 {
 	 if (!abort_requested)
@@ -49,6 +49,8 @@ class ClusteringAlgoTight : public ClusteringAlgo<IdxT,ValT>
 	    SystemMessage::status("*** User interrupt: clustering will be terminated after the current iteration ***");
 	    }
 	 }
+
+   protected: // data members
       static SignalHandler* s_sigint ;
       static std::sig_atomic_t abort_requested ;
    } ;
