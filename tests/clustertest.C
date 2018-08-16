@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-08					*/
+/* Version 0.09, last edit 2018-08-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -108,7 +108,7 @@ int main(int argc, char** argv)
 //   VectorSimilarityMeasure vecsim = parse_vector_measure_name(vecsim_name) ;
 //   ClusteringAlgorithm algo = parse_cluster_algo_name(algo_name) ;
    auto clusterer = ClusteringAlgo<uint32_t,float>::instantiate(algo_name,cluster_options) ;
-   Array* vectors = Array::create() ;
+   ScopedObject<Array> vectors ;
    if (vector_file)
       {
       CInputFile vecfile(vector_file) ;
@@ -172,19 +172,17 @@ int main(int argc, char** argv)
       {
       CharPtr printed { clusters->cString() } ;
       cout << "Resulting ClusterInfo structure: " << endl << *printed << endl << endl ;
-      RefArray* members = clusters->allMembers() ;
+      auto members = clusters->allMembers() ;
       if (members)
 	 {
 	 for (auto v : *members)
 	    {
 	    cout << v << endl ;
 	    }
-	 members->free() ;
 	 }
       }
    show_clusters(clusters,0) ;
    clusters->free() ;
-   vectors->free() ;
    return 0 ;
 }
 

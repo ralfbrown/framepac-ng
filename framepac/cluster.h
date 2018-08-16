@@ -103,8 +103,8 @@ class ClusterInfo : public Object
       bool labelSubclusterPaths(bool (*setlabel_fn)(Object* vec,const char* label),
 	 const char* path_prefix = "", const char* sep = " ") ;
 
-      RefArray* allMembers() const ;
-      Array* allKeys() const ;
+      Ptr<RefArray> allMembers() const ;
+      Ptr<Array> allKeys() const ;
 
       // note: only compares direct members, and requires them to have been sorted (as with sortMembers)
       void compareMembership(const ClusterInfo* other, ObjectOrderingFn*,

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.09, last edit 2018-08-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -150,7 +150,6 @@ void ClusterInfo::setRepresentative(VectorMeasure<IdxT,ValT>* vm)
 	    this->m_rep = this->createSparseCentroid<IdxT,ValT>(vectors) ;
 	 else
 	    this->m_rep = this->createDenseCentroid<ValT>(vectors) ;
-	 vectors->free() ;
 	 }
          break ;
       case ClusterRep::prototype:
@@ -188,7 +187,7 @@ void ClusterInfo::setRepresentative(VectorMeasure<IdxT,ValT>* vm)
 	    centroid = this->createDenseCentroid<ValT>(vectors) ;
 	 // find the member vector closest to the centroid
 	 double best_sim = -HUGE_VAL ;
-	 Vector<ValT>* mediod = nullptr ;
+	 Vector<ValT>* medioid = nullptr ;
 	 for (auto vec : *vectors)
 	    {
 	    Vector<ValT>* vector = static_cast<Vector<ValT>*>(vec) ;
@@ -196,11 +195,10 @@ void ClusterInfo::setRepresentative(VectorMeasure<IdxT,ValT>* vm)
 	    if (sim > best_sim)
 	       {
 	       best_sim = sim ;
-	       mediod = vector ;
+	       medioid = vector ;
 	       }
 	    }
-	 this->m_rep = mediod ;
-	 vectors->free() ;
+	 this->m_rep = medioid ;
 	 }
          break ;
       default:
@@ -243,8 +241,6 @@ double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	       }
 	    }
 	 double combinations = vectors1->size() * vectors2->size() ;
-	 vectors1->free() ;
-	 vectors2->free() ;
 	 return sum / combinations ;
 	 }
       case ClusterRep::furthest:
@@ -261,8 +257,6 @@ double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	       furthest = std::min(furthest,vm->similarity(vector1,vector2)) ;
 	       }
 	    }
-	 vectors1->free() ;
-	 vectors2->free() ;
 	 return furthest ;
 	 }
       case ClusterRep::nearest:
@@ -279,8 +273,6 @@ double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	       nearest = std::max(nearest,vm->similarity(vector1,vector2)) ;
 	       }
 	    }
-	 vectors1->free() ;
-	 vectors2->free() ;
 	 return nearest ;
 	 }
       case ClusterRep::rms:
@@ -317,7 +309,6 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
 	    avg += (vm->similarity(vector,other) / combinations) ;
 	    }
-	 vectors->free() ;
 	 return avg ;
 	 }
       case ClusterRep::furthest:
@@ -329,7 +320,6 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
 	    furthest = std::min(furthest,vm->similarity(vector,other)) ;
 	    }
-	 vectors->free() ;
 	 return furthest ;
 	 }
       case ClusterRep::nearest:
@@ -341,7 +331,6 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
 	    nearest = std::max(nearest,vm->similarity(vector,other)) ;
 	    }
-	 vectors->free() ;
 	 return nearest ;
 	 }
       case ClusterRep::rms:
@@ -378,7 +367,6 @@ double ClusterInfo::reverseSimilarity(const Vector<ValT>* other, VectorMeasure<I
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
 	    avg += (vm->similarity(other,vector) / combinations) ;
 	    }
-	 vectors->free() ;
 	 return avg ;
 	 }
       case ClusterRep::furthest:
@@ -390,7 +378,6 @@ double ClusterInfo::reverseSimilarity(const Vector<ValT>* other, VectorMeasure<I
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
 	    furthest = std::min(furthest,vm->similarity(other,vector)) ;
 	    }
-	 vectors->free() ;
 	 return furthest ;
 	 }
       case ClusterRep::nearest:
@@ -402,7 +389,6 @@ double ClusterInfo::reverseSimilarity(const Vector<ValT>* other, VectorMeasure<I
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
 	    nearest = std::max(nearest,vm->similarity(other,vector)) ;
 	    }
-	 vectors->free() ;
 	 return nearest ;
 	 }
       case ClusterRep::rms:
@@ -446,8 +432,6 @@ double ClusterInfo::distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	       avg += (vm->distance(vector1,vector2) / combinations) ;
 	       }
 	    }
-	 vectors1->free() ;
-	 vectors2->free() ;
 	 return avg ;
 	 }
       case ClusterRep::furthest:
@@ -464,8 +448,6 @@ double ClusterInfo::distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	       furthest = std::max(furthest,vm->distance(vector1,vector2)) ;
 	       }
 	    }
-	 vectors1->free() ;
-	 vectors2->free() ;
 	 return furthest ;
 	 }
       case ClusterRep::nearest:
@@ -482,8 +464,6 @@ double ClusterInfo::distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	       nearest = std::min(nearest,vm->distance(vector1,vector2)) ;
 	       }
 	    }
-	 vectors1->free() ;
-	 vectors2->free() ;
 	 return nearest ;
 	 }
       case ClusterRep::rms:
@@ -520,7 +500,6 @@ double ClusterInfo::distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
 	    avg += (vm->distance(vector,other) / combinations) ;
 	    }
-	 vectors->free() ;
 	 return avg ;
 	 }
       case ClusterRep::furthest:
@@ -532,7 +511,6 @@ double ClusterInfo::distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
 	    furthest = std::max(furthest,vm->distance(vector,other)) ;
 	    }
-	 vectors->free() ;
 	 return furthest ;
 	 }
       case ClusterRep::nearest:
@@ -544,7 +522,6 @@ double ClusterInfo::distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
 	    nearest = std::min(nearest,vm->distance(vector,other)) ;
 	    }
-	 vectors->free() ;
 	 return nearest ;
 	 }
       case ClusterRep::rms:
@@ -581,7 +558,6 @@ double ClusterInfo::reverseDistance(const Vector<ValT>* other, VectorMeasure<Idx
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
 	    avg += (vm->distance(other,vector) / combinations) ;
 	    }
-	 vectors->free() ;
 	 return avg ;
 	 }
       case ClusterRep::furthest:
@@ -593,7 +569,6 @@ double ClusterInfo::reverseDistance(const Vector<ValT>* other, VectorMeasure<Idx
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
 	    furthest = std::max(furthest,vm->distance(other,vector)) ;
 	    }
-	 vectors->free() ;
 	 return furthest ;
 	 }
       case ClusterRep::nearest:
@@ -605,7 +580,6 @@ double ClusterInfo::reverseDistance(const Vector<ValT>* other, VectorMeasure<Idx
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
 	    nearest = std::min(nearest,vm->distance(other,vector)) ;
 	    }
-	 vectors->free() ;
 	 return nearest ;
 	 }
       case ClusterRep::rms:

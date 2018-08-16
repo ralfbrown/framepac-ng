@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.09, last edit 2018-08-16					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -252,14 +252,14 @@ ClusterInfo* ClusterInfo::merge(const ClusterInfo* other, bool flatten) const
 {
    if (!other)
       return static_cast<ClusterInfo*>(clone().move()) ;
-   ClusterInfo* info = ClusterInfo::create() ;
+   auto info = ClusterInfo::create() ;
    info->setLabel(genLabel()) ;
    info->m_size = this->m_size + other->m_size ;
    if (flatten)
       {
-      RefArray* our_vectors = this->allMembers() ;
-      RefArray* other_vectors = other->allMembers() ;
-      RefArray* vectors = RefArray::create(info->m_size) ;
+      auto our_vectors = this->allMembers() ;
+      auto other_vectors = other->allMembers() ;
+      auto vectors = RefArray::create(info->m_size) ;
       for (auto vec : *our_vectors)
 	 {
 	 vectors->append(vec) ;
@@ -272,7 +272,7 @@ ClusterInfo* ClusterInfo::merge(const ClusterInfo* other, bool flatten) const
       }
    else
       {
-      Array* subclus = Array::create(2) ;
+      auto subclus = Array::create(2) ;
       subclus->append(this) ;
       subclus->append(other) ;
       info->m_subclusters = subclus ;
@@ -322,9 +322,9 @@ bool ClusterInfo::allMembers(RefArray* mem) const
 
 //----------------------------------------------------------------------------
 
-RefArray* ClusterInfo::allMembers() const
+Ptr<RefArray> ClusterInfo::allMembers() const
 {
-   RefArray* mem = RefArray::create(this->m_size) ;
+   auto mem = RefArray::create(this->m_size) ;
    (void)allMembers(mem) ;
    return mem ;
 }
@@ -355,9 +355,9 @@ bool ClusterInfo::allKeys(Array* keys) const
 
 //----------------------------------------------------------------------------
 
-Array* ClusterInfo::allKeys() const
+Ptr<Array> ClusterInfo::allKeys() const
 {
-   Array* keys = Array::create(this->m_size) ;
+   auto keys = Array::create(this->m_size) ;
    (void)allKeys(keys) ;
    return keys ;
 }
@@ -371,10 +371,10 @@ bool ClusterInfo::flattenSubclusters()
    for (auto subclus : *m_subclusters)
       {
       auto subcluster = static_cast<ClusterInfo*>(subclus) ;
-      RefArray* members = subcluster->allMembers() ;
+      auto members = subcluster->allMembers() ;
       if (subcluster->m_members)
 	 subcluster->m_members->free() ;
-      subcluster->m_members = members ;
+      subcluster->m_members = members.move() ;
       if (subcluster->m_subclusters)
 	 {
 	 subcluster->m_subclusters->free() ;
