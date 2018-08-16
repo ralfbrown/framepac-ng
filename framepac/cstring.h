@@ -56,7 +56,9 @@ class NewPtr
       void reset(T* ptr) { T* old = m_string ; m_string = ptr ; delete[] old ; }
       T* release() { T* ptr = m_string ; clear() ; return ptr ; }
 
+      T* operator-> () { return m_string ; }
       const T* operator-> () const { return m_string ; }
+      T* operator* () { return m_string ; }
       const T* operator* () const { return m_string ; }
       explicit operator T* () const { return m_string ; }
       operator const T* () const { return m_string ; }
@@ -68,7 +70,6 @@ class NewPtr
       T* m_string ;
    } ;
 
-typedef NewPtr<char> ScopedCharPtr ;
 typedef NewPtr<char> CharPtr ;
 
 //----------------------------------------------------------------------------
