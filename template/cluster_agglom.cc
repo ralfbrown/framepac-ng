@@ -188,14 +188,15 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
 {
    if (!vectors || vectors->size() == 0)
       return ClusterInfo::create() ;
-   size_t num_vectors = vectors->size() ;
-   ClusterInfo* clusters = ClusterInfo::createSingletonClusters(vectors) ;
+   auto num_vectors = vectors->size() ;
+   auto clusters = ClusterInfo::createSingletonClusters(vectors) ;
    if (clusters->numSubclusters() <= this->desiredClusters())
       {
       this->log(0,"Nothing to be clustered - want %lu clusters, have only %lu vectors",
 	 this->desiredClusters(),clusters->numSubclusters()) ;
       return clusters ;
       }
+   this->trapSigInt() ;
    this->log(0,"Starting %s clustering using %s measure; %lu vectors to cluster",
       this->algorithmName(),this->measureName(),num_vectors) ;
    // until we've reached the desired number of clusters or the best similarity is below the threshold:
@@ -210,12 +211,12 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
    delete prog ;
    this->log(0,"Merging clusters") ;
    prog = this->makeProgressIndicator(num_vectors - this->desiredClusters()) ;
-   for ( ; ; )
+   for ( ; !this->abortRequested() ; )
       {
       auto numclus = clusters->numSubclusters() ;
-      double best_sim = similarities[0] ;
+      auto best_sim = similarities[0] ;
+      auto best_neighbor = neighbors[0] ;
       size_t best_clus = 0 ;
-      size_t best_neighbor = neighbors[0] ;
       for (size_t i = 1 ; i < numclus ; ++i)
 	 {
 	 if (similarities[i] > best_sim)
@@ -234,7 +235,7 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
       this->log(2,"  merging clusters %lu and %lu (similarity %g)",best_clus,best_neighbor,best_sim) ;
       if (best_clus > best_neighbor) std::swap(best_clus,best_neighbor) ;
       clusters->merge(best_clus,best_neighbor) ;
-      if (clusters->numSubclusters() <= this->desiredClusters())
+      if (clusters->numSubclusters() <= this->desiredClusters() || this->abortRequested())
 	 break ;
       // update nearest neighbors
       this->log(2,"  updating nearest neighbors") ;
@@ -254,6 +255,7 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
       clusters->labelSubclusterPaths(set_brown_label<IdxT,ValT>,"B","") ;
       }
    this->log(0,"Clustering complete") ;
+   this->untrapSigInt() ;
    return clusters ;
 }
 
