@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-18					*/
+/* Version 0.08, last edit 2018-08-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -39,9 +39,6 @@ class ClusteringAlgoGrowseed : public ClusteringAlgo<IdxT,ValT>
       virtual const char*algorithmName() const { return "GrowSeeds" ; }
 
       virtual ClusterInfo* cluster(const Array* vectors) const ;
-
-   protected: // data
-      double m_clusterthresh ;
    } ;
 
 /************************************************************************/
@@ -61,7 +58,7 @@ ClusterInfo* ClusteringAlgoGrowseed<IdxT,ValT>::cluster(const Array* vectors) co
    //   is above threshold
    this->log(0,"Assigning vectors to nearest seed") ;
    ProgressIndicator* prog = this->makeProgressIndicator(nonseed->size()) ;
-   this->assignToNearest(nonseed, seed, prog, m_clusterthresh) ;
+   this->assignToNearest(nonseed, seed, prog, this->clusterThreshold()) ;
    delete prog ;
    seed->free() ;
    nonseed->free() ;
