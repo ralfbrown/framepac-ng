@@ -325,6 +325,7 @@ OBJS = \
 	build/rational$(OBJ) \
 	build/refarray$(OBJ) \
 	build/set$(OBJ) \
+	build/signal$(OBJ) \
 	build/slab$(OBJ) \
 	build/slabgroup$(OBJ) \
 	build/smallalloc$(OBJ) \
@@ -579,6 +580,7 @@ build/random$(OBJ):		src/random$(C) framepac/message.h framepac/random.h
 build/rational$(OBJ):		src/rational$(C) framepac/rational.h
 build/refarray$(OBJ):		src/refarray$(C) framepac/array.h framepac/fasthash64.h framepac/random.h
 build/set$(OBJ):		src/set$(C) framepac/set.h
+build/signal$(OBJ):		src/signal$(C) framepac/signal.h framepac/message.h
 build/slab$(OBJ):		src/slab$(C) framepac/memory.h
 build/slabgroup$(OBJ):		src/slabgroup$(C) framepac/memory.h
 build/smallalloc$(OBJ):		src/smallalloc$(C) framepac/memory.h
@@ -667,7 +669,7 @@ template/cluster_optics.cc:	template/cluster.cc
 template/cluster_snn.cc:	template/cluster.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/cluster_tight.cc:	template/cluster.cc
+template/cluster_tight.cc:	framepac/cluster.h framepac/message.h framepac/signal.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/cluster_factory.cc: template/cluster.cc template/cluster_agglom.cc template/cluster_anneal.cc \
