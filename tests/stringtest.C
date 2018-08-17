@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-12					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -47,11 +47,17 @@ struct BatchInfo
 /************************************************************************/
 /************************************************************************/
 
+static const char* get_object_type(CreateStringFunc* create)
+{
+   ObjectPtr obj { create(" ") } ;
+   return obj->typeName() ;
+}
+
+//----------------------------------------------------------------------------
+
 static void run_serial(size_t num_strings, size_t repetitions, CreateStringFunc *create)
 {
-   Object* obj = create(" ") ;
-   const char *objtype = obj->typeName() ;
-   obj->free() ;
+   const char *objtype = get_object_type(create) ;
    cout << "Generating " << objtype << "s with numbers from 0 to " << num_strings << "-1, repeated "
 	<< repetitions << " times." << endl ;
    LocalAlloc<String*> strings(num_strings) ;
@@ -172,9 +178,7 @@ static void run_parallel(size_t threads, size_t num_strings, size_t repetitions,
    if (threads < 1) threads = 1 ;
    size_t batch_size = (num_strings + threads - 1) / threads ;
    num_strings = threads * batch_size ;
-   Object* obj = create(" ") ;
-   const char *objtype = obj->typeName() ;
-   obj->free() ;
+   const char *objtype = get_object_type(create) ;
    cout << "Generating " << objtype << "s with numbers from 0 to " << num_strings << "-1 in " << threads
 	<< " parallel batches\n"
 	<< "of " << batch_size << " each, repeated " << repetitions << " times." << endl  ;

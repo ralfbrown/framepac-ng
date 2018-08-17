@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2017-07-16					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -75,9 +75,9 @@ class Complex : public Number
       using Number::subseq_iter ;
 
       // *** destroying ***
-      static void free_(Object* obj) { delete (Complex*)obj ; }
+      static void free_(Object* obj) { delete static_cast<Complex*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object* obj) { delete (Complex*)obj ; }
+      static void shallowFree_(Object* obj) { Complex::free_(obj) ; }
       // (shallow and deep copies are the same for BigNums)
 
       // *** I/O ***

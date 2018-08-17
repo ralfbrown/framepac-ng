@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -32,7 +32,7 @@ template <typename IdxT, typename ValT>
 class ClusteringAlgoTight : public ClusteringAlgo<IdxT,ValT>
    {
    public:
-      virtual ~ClusteringAlgoTight() { delete this ; }
+      virtual ~ClusteringAlgoTight() = default ;
       virtual const char*algorithmName() const { return "Tight" ; }
 
       virtual ClusterInfo* cluster(const Array* vectors) const ;

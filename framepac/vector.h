@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -135,7 +135,7 @@ class Vector : public VectorBase
       // *** destroying ***
       static void free_(Object *obj) { delete static_cast<Vector*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object *obj) { delete static_cast<Vector*>(obj) ; }
+      static void shallowFree_(Object *obj) { free_(obj) ; }
 
       // *** I/O ***
       // generate printed representation into a buffer
@@ -236,7 +236,7 @@ class OneHotVector : public Vector<ValT>
       // *** destroying ***
       static void free_(Object *obj) { delete static_cast<OneHotVector*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object *obj) { delete static_cast<OneHotVector*>(obj) ; }
+      static void shallowFree_(Object *obj) { free_(obj) ; }
 
       // *** standard info functions ***
       static size_t size_(const Object *obj) { return static_cast<const OneHotVector*>(obj)->size() ; }
@@ -329,7 +329,7 @@ class SparseVector : public Vector<ValT>
       // *** destroying ***
       static void free_(Object *obj) { delete static_cast<SparseVector*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object *obj) { delete static_cast<SparseVector*>(obj) ; }
+      static void shallowFree_(Object *obj) { free_(obj) ; }
 
       // *** I/O ***
       // generate printed representation into a buffer

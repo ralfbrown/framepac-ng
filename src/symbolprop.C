@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -31,7 +31,7 @@ namespace Fr
 /************************************************************************/
 
 SymbolProperties::SymbolProperties()
-   : m_binding(nullptr), m_invrelation(nullptr), m_frame(nullptr), m_plist(List::emptyList())
+   : m_invrelation(nullptr), m_frame(nullptr), m_plist(List::emptyList())
 {
    return ;
 }
@@ -40,8 +40,6 @@ SymbolProperties::SymbolProperties()
 
 SymbolProperties::~SymbolProperties()
 {
-   if (m_binding)
-      m_binding->free() ;
    if (m_frame)
       m_frame->free() ;
    m_invrelation = nullptr ;
@@ -78,9 +76,7 @@ void SymbolProperties::setProperty(Symbol* propname, Object* value)
       List* tail = a->next() ;
       if (tail)
 	 {
-	 Object* oldvalue = tail->front() ;
-	 tail->setFront(value) ;
-	 if (oldvalue) oldvalue->free() ;
+	 tail->replaceFront(value) ;
 	 }
       else
 	 {

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-16					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -35,7 +35,7 @@ template <typename IdxT, typename ValT>
 class ClusteringAlgoGrowseed : public ClusteringAlgo<IdxT,ValT>
    {
    public:
-      virtual ~ClusteringAlgoGrowseed() { delete this ; }
+      virtual ~ClusteringAlgoGrowseed() = default ;
       virtual const char*algorithmName() const { return "GrowSeeds" ; }
 
       virtual ClusterInfo* cluster(const Array* vectors) const ;

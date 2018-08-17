@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-12					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -41,9 +41,8 @@ void HashTableHelper::initialize()
    if (!s_initialized.test_and_set())
       {
 #ifndef FrSINGLE_THREADED
-      std::thread* thr = new thread(helperFunction) ;
+      ScopedPtr<std::thread> thr { new thread(helperFunction) } ;
       thr->detach() ;
-      delete thr ;
 #endif /* !FrSINGLE_THREADED */
       }
    return ;

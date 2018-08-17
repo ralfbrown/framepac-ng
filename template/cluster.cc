@@ -161,19 +161,22 @@ void ClusterInfo::setRepresentative(VectorMeasure<IdxT,ValT>* vm)
 	    {
 	    auto sub = static_cast<ClusterInfo*>(this->subclusters()->getNth(0)) ;
 	    if (sub) sub->setRepresentative(vm) ;
-	    this->m_rep = sub->representative() ;
+	    this->m_rep.release() ;
+	    this->m_rep = const_cast<Object*>(sub->representative()) ;
 	    }
 	 break ;
       case ClusterRep::newest:
 	 if (this->members() && this->members()->size() > 0)
 	    {
+	    this->m_rep.release() ;
 	    this->m_rep = this->members()->getNth(this->members()->size()-1) ;
 	    }
 	 else if (this->subclusters() && this->subclusters()->size() > 0)
 	    {
 	    auto sub = static_cast<ClusterInfo*>(this->subclusters()->getNth(this->subclusters()->size()-1)) ;
 	    if (sub) sub->setRepresentative(vm) ;
-	    this->m_rep = sub->representative() ;
+	    this->m_rep.release() ;
+	    this->m_rep = const_cast<Object*>(sub->representative()) ;
 	    }
 	 break ;
       case ClusterRep::medioid:
@@ -198,7 +201,8 @@ void ClusterInfo::setRepresentative(VectorMeasure<IdxT,ValT>* vm)
 	       medioid = vector ;
 	       }
 	    }
-	 this->m_rep = medioid ;
+	 this->m_rep.release() ;
+	 this->m_rep.acquire(medioid) ;
 	 }
          break ;
       default:
@@ -224,8 +228,8 @@ double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
       case ClusterRep::newest:
 	 this->setRepresentative(vm) ;
 	 other->setRepresentative(vm) ;
-	 return vm->similarity(static_cast<Vector<ValT>*>(this->representative()),
-	    static_cast<Vector<ValT>*>(other->representative())) ;
+	 return vm->similarity(static_cast<const Vector<ValT>*>(this->representative()),
+	    static_cast<const Vector<ValT>*>(other->representative())) ;
       case ClusterRep::average:
          {
 	 auto vectors1 = allMembers() ;
@@ -298,7 +302,7 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
       case ClusterRep::prototype:
       case ClusterRep::newest:
 	 this->setRepresentative(vm) ;
-	 return vm->similarity(static_cast<Vector<ValT>*>(this->representative()),other) ;
+	 return vm->similarity(static_cast<const Vector<ValT>*>(this->representative()),other) ;
       case ClusterRep::average:
          {
 	 auto vectors = allMembers() ;

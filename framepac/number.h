@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -57,9 +57,9 @@ class Number : public Object
       static ObjectPtr subseq_iter(const Object *, ObjectIter start, ObjectIter stop) ;
 
       // *** destroying ***
-      static void free_(Object *obj) { delete (Number*)obj ; }
+      static void free_(Object *obj) { delete static_cast<Number*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object *obj) { delete (Number*)obj ; }
+      static void shallowFree_(Object *obj) { free_(obj) ; }
 
 #if 0
       // *** I/O ***
@@ -129,9 +129,9 @@ class Integer : public Number
       using Number::subseq_iter ;
 
       // *** destroying ***
-      static void free_(Object *obj) { delete (Integer*)obj ; }
+      static void free_(Object *obj) { delete static_cast<Integer*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object *obj) { delete (Integer*)obj ; }
+      static void shallowFree_(Object *obj) { free_(obj) ; }
 
       // *** I/O ***
       // generate printed representation into a buffer
@@ -205,9 +205,9 @@ class Float : public Number
       using Number::subseq_iter ;
 
       // *** destroying ***
-      static void free_(Object *obj) { delete (Float*)obj ; }
+      static void free_(Object *obj) { delete static_cast<Float*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object *obj) { delete (Float*)obj ; }
+      static void shallowFree_(Object *obj) { free_(obj) ; }
 
       // *** I/O ***
       // generate printed representation into a buffer

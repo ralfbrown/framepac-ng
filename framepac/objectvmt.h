@@ -127,7 +127,8 @@ class Ptr
       operator T* () { return m_object ; }
       operator const T* () const { return m_object ; }
 
-      void acquire(Ptr& o) { m_object = o.move() ; }
+      void acquire(Ptr& o) { if (m_object) m_object->free() ; acquire(o) ; }
+      void acquire(T* o) { if (m_object) m_object->free() ; m_object = o ; }
       void release() { m_object = nullptr ; }
       T* move() { T* o = m_object ; release() ; return o ; }
       inline void free() { if (m_object) { m_object->free() ; release() ; } }

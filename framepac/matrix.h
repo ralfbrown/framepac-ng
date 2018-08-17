@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-16					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -62,7 +62,7 @@ class Matrix : public Object
       // *** destroying ***
       static void free_(Object* obj) { delete static_cast<Matrix*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object* obj) { delete static_cast<Matrix*>(obj) ; }
+      static void shallowFree_(Object* obj) { free_(obj) ; }
 
       // *** I/O ***
       // generate printed representation into a buffer
@@ -126,7 +126,7 @@ class FullMatrix : public Matrix<T>
       // *** destroying ***
       static void free_(Object* obj) { delete static_cast<FullMatrix*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object* obj) { delete static_cast<FullMatrix*>(obj) ; }
+      static void shallowFree_(Object* obj) { free_(obj) ; }
 
    protected: // data members
       T* m_matrix ;

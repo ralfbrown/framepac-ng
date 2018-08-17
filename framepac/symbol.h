@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -64,13 +64,13 @@ class SymbolProperties
       static SymbolProperties* create() { return new SymbolProperties ; }
       void free() { delete this ; }
 
-      Object* binding() const { return m_binding ; }
+      const Object* binding() const { return m_binding ; }
       Frame* frame() const { return m_frame ; }
       Symbol* inverseRelation() const { return m_invrelation  ; }
       Object* getProperty(Symbol* key) const ;
       List* plist() const { return m_plist ; }
 
-      void binding(Object* b) { if (m_binding) m_binding->free() ; m_binding = b ; }
+      void binding(Object* b) { m_binding = b ; }
       void frame(Frame* f) ;
       void inverseRelation(Symbol* inv) { m_invrelation = inv ; }
       void setProperty(Symbol* key, Object* value) ;
@@ -78,10 +78,10 @@ class SymbolProperties
    private:
       static Allocator s_allocator ;
    protected:
-      Object* m_binding ;		// the symbol's value
-      Symbol* m_invrelation ;		// if the symbol is a relation, this is the inverse relation
-      Frame*  m_frame ;			// the frame associated with the symbol
-      List*   m_plist ;			// assoc-list of other properties
+      ObjectPtr m_binding ;		// the symbol's value
+      Symbol*   m_invrelation ;		// if the symbol is a relation, this is the inverse relation
+      Frame*    m_frame ;		// the frame associated with the symbol
+      List*     m_plist ;		// assoc-list of other properties
 
    protected: // methods
       void* operator new(size_t) { return s_allocator.allocate() ; }
@@ -109,7 +109,7 @@ class Symbol : public String
       static size_t hashValue(const char* name, size_t* len) ;
 
       // accessing the Symbol's properties
-      Object* binding() { SymbolProperties* prop = properties() ; return prop ? prop->binding() : nullptr ; }
+      const Object* binding() { SymbolProperties* prop = properties() ; return prop ? prop->binding() : nullptr ; }
       Frame* frame() { SymbolProperties* prop = properties() ; return prop ? prop->frame() : nullptr ; }
       Object* getProperty(Symbol* key) const
 	 { SymbolProperties* prop = properties() ; return prop ? prop->getProperty(key) : nullptr ; }

@@ -101,25 +101,21 @@ static bool update_medioid(size_t id, va_list args)
    auto centers = va_arg(args,RefArray*) ;
    int sparse = va_arg(args,int) ;
    auto measure = va_arg(args,VM*) ;
+   Ptr<Vector<ValT>> centroid ;
    if (sparse)
       {
       // create a centroid of the members of the current cluster
-      auto centroid = inf->createSparseCentroid<IdxT,ValT>() ;
-      auto medioid = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(centroid,inf->members(),measure) ;
-      // make the medioid the new center for the cluster
-      centers->setNth(id,medioid) ;
-      centroid->free() ;
+      centroid =  inf->createSparseCentroid<IdxT,ValT>() ;
       }
    else
       {
       // create a centroid of the members of the current cluster
-      auto centroid = inf->createDenseCentroid<ValT>() ;
-      // find nearest original vector in cluster
-      auto medioid = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(centroid,inf->members(),measure) ;
-      // make the medioid the new center for the cluster
-      centers->setNth(id,medioid) ;
-      centroid->free() ;
+      centroid = inf->createDenseCentroid<ValT>() ;
       }
+   // find nearest original vector in cluster
+   auto medioid = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(centroid,inf->members(),measure) ;
+   // make the medioid the new center for the cluster
+   centers->setNth(id,medioid) ;
    return true ;			// no errors, safe to continue processing
 }
 

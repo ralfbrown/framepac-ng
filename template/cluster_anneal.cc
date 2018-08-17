@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-17					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -32,7 +32,7 @@ template <typename IdxT, typename ValT>
 class ClusteringAlgoAnneal : public ClusteringAlgo<IdxT,ValT>
    {
    public:
-      virtual ~ClusteringAlgoAnneal() { delete this ; }
+      virtual ~ClusteringAlgoAnneal() = default ;
       virtual const char*algorithmName() const { return "Annealing" ; }
 
       virtual ClusterInfo* cluster(const Array* vectors) const ;

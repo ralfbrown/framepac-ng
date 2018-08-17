@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -153,7 +153,7 @@ class ClusterInfo : public Object
       bool contains(const Object*) const ; // is Object a member of the cluster?
 
       // *** access to internal state ***
-      Object* representative() const { return m_rep ; }
+      const Object* representative() const { return m_rep ; }
       ClusterRep repType() const { return  m_cluster_rep ; }
       const Array* members() const { return m_members ; }
       size_t numMembers() const { return m_members ? m_members->size() : 0 ; }
@@ -245,11 +245,11 @@ class ClusterInfo : public Object
       typedef Fr::Initializer<ClusterInfo> Initializer ;
 
    protected:
-      RefArray* m_members { nullptr } ;	// individual vectors in this cluster
-      Array* m_subclusters { nullptr };	// sub-clusters (if any) of this cluster
-      Object* m_rep { nullptr } ;	// representative element: centroid/mediod/etc.
-      Symbol* m_label { nullptr } ;	// cluster label
-      uint32_t m_size { 0 } ;		// number of elements in this cluster
+      RefArray* m_members { nullptr } ;		// individual vectors in this cluster
+      ArrayPtr  m_subclusters ;			// sub-clusters (if any) of this cluster
+      ObjectPtr m_rep ;				// representative element: centroid/mediod/etc.
+      Symbol*   m_label { nullptr } ;		// cluster label
+      uint32_t  m_size { 0 } ;			// number of elements in this cluster
       uint16_t m_flags { 0 } ;
       ClusterRep m_cluster_rep { ClusterRep::centroid } ; // what is the representative element for the cluster?
 

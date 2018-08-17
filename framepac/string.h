@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -181,7 +181,7 @@ class String : public Object
       // *** destroying ***
       static void free_(Object* obj) { delete static_cast<String*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object* obj) { delete static_cast<String*>(obj) ; }
+      static void shallowFree_(Object* obj) { free_(obj) ; }
 
       // *** I/O ***
       // generate printed representation into a buffer

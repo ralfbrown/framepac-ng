@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -27,10 +27,13 @@
 
 namespace Fr {
 
+class Array ;
+
 //----------------------------------------------------------------------------
 
 typedef Object** ArrayIter ;
 typedef std::reverse_iterator<ArrayIter> RevArrayIter ;
+typedef Ptr<Array> ArrayPtr ;
 
 //----------------------------------------------------------------------------
 
@@ -122,9 +125,9 @@ class Array : public Object
       static ObjectPtr subseq_iter(const Object*, ObjectIter start, ObjectIter stop) ;
 
       // *** destroying ***
-      static void free_(Object* obj) { delete (Array*)obj ; }
+      static void free_(Object* obj) { delete static_cast<Array*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object* obj) { delete (Array*)obj ; }
+      static void shallowFree_(Object* obj) { Array::free_(obj) ; }
 
       // *** I/O ***
       // generate printed representation into a buffer
@@ -215,7 +218,7 @@ class RefArray : public Array
       // *** destroying ***
       static void free_(Object* obj) { delete static_cast<RefArray*>(obj) ; }
       // use shallowFree() on a shallowCopy()
-      static void shallowFree_(Object* obj) { delete static_cast<RefArray*>(obj) ; }
+      static void shallowFree_(Object* obj) { RefArray::free_(obj) ; }
 
    } ;
 

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -28,6 +28,9 @@
 namespace Fr
 {
 
+// forward declaration
+class ElapsedTimer  ;
+
 /************************************************************************/
 /************************************************************************/
 
@@ -53,7 +56,7 @@ class ProgressIndicator
       virtual void updateDisplay(size_t curr) = 0 ;
 
    protected:
-      class ElapsedTimer* m_timer ;
+      ElapsedTimer*   m_timer ;
       size_t          m_limit ;
       size_t          m_interval ;
       Atomic<size_t>  m_count ;

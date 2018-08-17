@@ -32,7 +32,7 @@ template <typename IdxT, typename ValT>
 class ClusteringAlgoIncr : public ClusteringAlgo<IdxT,ValT>
    {
    public:
-      virtual ~ClusteringAlgoIncr() { delete this ; }
+      virtual ~ClusteringAlgoIncr() = default ;
       virtual const char*algorithmName() const { return "Single-Link" ; }
 
       virtual ClusterInfo* cluster(const Array* vectors) const ;

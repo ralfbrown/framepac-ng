@@ -56,6 +56,10 @@ class ListIter
 
 //----------------------------------------------------------------------------
 
+typedef Ptr<List> ListPtr ;
+
+//----------------------------------------------------------------------------
+
 // singly-linkd list
 class List : public Object
    {
@@ -89,6 +93,7 @@ class List : public Object
       List* removeIfNot(ObjectCompareFn*, const Object*) ;
 
       void setFront(Object* o) { m_item = o ? o : empty_list ; }
+      void replaceFront(Object* o) { m_item->free() ; setFront(o) ; }
 
       // *** standard info functions ***
       size_t size() const ;

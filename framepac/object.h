@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -236,12 +236,10 @@ class ScopedObject : public Ptr<T>
 
       ScopedObject& operator = (ScopedObject&) = delete ;
       ScopedObject& operator = (const ScopedObject&) = delete ;
-      ScopedObject& operator = (ScopedObject&& orig) { this->clear() ; this->m_object = orig.move() ; return *this ; }
-      ScopedObject& operator = (ObjectPtr& op)
-	 { if (this->m_object) this->m_object->free() ; this->m_object = op.move() ; return *this ; }
-      ScopedObject& operator = (ObjectPtr&& op)
-	 { if (this->m_object) this->m_object->free() ; this->m_object = op.move() ; return *this ; }
-      ScopedObject& operator = (T* o) { if (this->m_object) this->m_object->free() ; this->m_object = o ; return *this ; }
+      ScopedObject& operator = (ScopedObject&& orig) { this->acquire(orig) ; return *this ; }
+      ScopedObject& operator = (ObjectPtr& op) { this->acquire(op) ; return *this ; }
+      ScopedObject& operator = (ObjectPtr&& op) { this->acquire(op) ; return *this ; }
+      ScopedObject& operator = (T* o) { this->acquire(o) ; return *this ; }
    } ;
 
 /************************************************************************/

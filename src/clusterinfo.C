@@ -51,12 +51,12 @@ static Atomic<size_t> next_cluster_ID { 0 } ;
 
 ClusterInfo::~ClusterInfo()
 {
-   if (m_rep && repType() != ClusterRep::prototype && repType() != ClusterRep::newest &&
-      repType() != ClusterRep::medioid)
+   if (repType() == ClusterRep::prototype || repType() == ClusterRep::newest ||
+      repType() == ClusterRep::medioid)
       {
-      m_rep->free() ;
+      // don't free the item pointed at, since we have other pointers to it....
+      m_rep.release() ;
       }
-   m_rep = nullptr ;
    return ;
 }
 
@@ -375,11 +375,7 @@ bool ClusterInfo::flattenSubclusters()
       if (subcluster->m_members)
 	 subcluster->m_members->free() ;
       subcluster->m_members = members.move() ;
-      if (subcluster->m_subclusters)
-	 {
-	 subcluster->m_subclusters->free() ;
-	 subcluster->m_subclusters = nullptr ;
-	 }
+      subcluster->m_subclusters = nullptr ;
       }
    return true ;
 }
@@ -572,7 +568,8 @@ ObjectPtr ClusterInfo::clone_(const Object* orig)
    auto copy = ClusterInfo::create() ;
    copy->m_members = info->m_members ? static_cast<RefArray*>(info->m_members->clone().move()) : nullptr ;
    copy->m_subclusters = info->m_subclusters ? static_cast<RefArray*>(info->m_subclusters->clone().move()) : nullptr ;
-   copy->m_rep = info->m_rep ? info->m_rep->clone().move() : nullptr ;
+   if (info->m_rep)
+      copy->m_rep.acquire(info->m_rep->clone()) ;
    copy->m_label = info->m_label ;
    copy->m_size = info->m_size ;
    copy->m_flags = info->m_flags ;
