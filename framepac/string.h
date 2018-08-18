@@ -38,7 +38,7 @@ class PointerPlus16
    // x86_64 currently only uses 48-bit virtual addresses, so we can
    //   stuff an additional 16-bit value into a 64-bit pointer field.
    public:
-      PointerPlus16(T* ptr = nullptr) { m_pointer = (uintptr_t)ptr ; }
+      PointerPlus16(T* ptr = nullptr) { m_pointer = ((uintptr_t)ptr) & POINTER_MASK ; }
       PointerPlus16(T* ptr, uint16_t val)
 	 {
 	    m_pointer = (((uintptr_t)ptr) & POINTER_MASK) | (((uintptr_t)val) << VALUE_SHIFT) ;

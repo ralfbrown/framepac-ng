@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -166,6 +166,9 @@ void Trie<T,IdxT,bits>::insertChild(IdxT &index, uint8_t keybyte)
 	 {
 	 // insert a ValuelessNode
 	 IdxT new_idx = allocValuelessNode() ;
+	 // allocValuelessNode can move the nodes array, so we need to reload 'n' if it's a valueless node
+	 if (shift != (iter-1)*bits)
+	    n = valuelessNode(index) ;
 	 index = n->setChild(childnum,new_idx) ;
 	 if (index != new_idx)
 	    {
@@ -174,10 +177,7 @@ void Trie<T,IdxT,bits>::insertChild(IdxT &index, uint8_t keybyte)
 	    releaseValuelessNode(new_idx) ;
 	    }
 	 }
-      if (shift > bits)
-	 n = valuelessNode(index) ;
-      else
-	 n = node(index) ;
+      n = valuelessNode(index) ;
       }
    // insert the final full Node
    keybyte &= mask ;
@@ -188,7 +188,7 @@ void Trie<T,IdxT,bits>::insertChild(IdxT &index, uint8_t keybyte)
    else
       {
       IdxT new_idx = allocNode() ;
-      index = n->setChild(index,new_idx) ;
+      index = n->setChild(keybyte,new_idx) ;
       if (index != new_idx)
 	 {
 	 // someone else already inserted a child, so use that one instead
@@ -236,12 +236,9 @@ bool Trie<T,IdxT,bits>::extendKey(IdxT& index, uint8_t keybyte) const
       childindex = n->childIndex(childnum) ;
       if (childindex == NULL_INDEX)
 	 return false ;
-      if (shift > bits)
-	 n = valuelessNode(childindex) ;
-      else
-	 n = node(childindex) ;
+      n = valuelessNode(childindex) ;
       }
-   // process the final full node
+   // retrieve the final full node
    childindex = n->childIndex(keybyte & mask) ;
    if (childindex == NULL_INDEX)
       return false ;
