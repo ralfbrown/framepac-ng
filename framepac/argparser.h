@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -53,8 +53,11 @@ class ArgOptBase
       bool repeatable() const { return m_delimiter != nullptr ; }
       const char* repeatDelimiter() const { return m_delimiter ; }
 
-      const char* shortName() const { return m_shortname ; }
-      const char* fullName() const { return m_fullname ; }
+      bool haveDefault() const { return m_have_defvalue ; }
+      bool haveRange() const { return m_have_minmax ; }
+
+      const char* shortName() const { return m_shortname && *m_shortname ? m_shortname : nullptr ; }
+      const char* fullName() const { return m_fullname && *m_fullname ? m_fullname : nullptr ; }
       const char* description() const { return m_description ; }
       CharPtr describeDefault() const ;
       CharPtr describeRange() const ;
@@ -251,8 +254,11 @@ class ArgParser
 	 { addOpt(new ArgOptFunc<Callable>(fn,shortname,fullname,desc),true) ; return *this ; }
 
       ArgParser& repeatable(const char* delim = nullptr) ;
+      ArgParser& banner(const char* text) { m_banner = text ; return *this ; }
+      ArgParser& usage(const char* text) { m_usage = text ; return *this ; }
 
       void addOpt(ArgOptBase* opt, bool must_delete = false) ;
+
       bool parseArgs(int& argc, char**& argv, bool show_help_on_error = false) ;
 
       bool unknownOption(const char* name) const ;
@@ -260,11 +266,16 @@ class ArgParser
 
    protected:
       void init() ;
+      void reverseArgList() ;
       ArgOptBase* matchingArg(const char* arg) const ;
-
+      
    protected:
-      ArgOptBase* m_options ;
-      ArgParser*  m_self ;
+      ArgOptBase* m_options { nullptr } ;
+      ArgParser*  m_self    { nullptr } ;
+      const char* m_banner  { nullptr } ;
+      const char* m_usage   { nullptr } ;
+      const char* m_argv0   { nullptr } ;
+      bool        m_finalized { false } ;
    } ;
 
 //----------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -49,7 +49,7 @@ bool ArgOpt<bool>::convert(const char* arg, const char* /*delim*/)
       return false ;
    if (*arg == '=' || strcasecmp(arg,"default") == 0)
       {
-      if (m_have_defvalue)
+      if (haveDefault())
 	 {
 	 m_value = m_defvalue ;
 	 return true ;

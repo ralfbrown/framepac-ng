@@ -50,12 +50,12 @@ int main(int argc, char** argv)
    bool bool_option = false ;
    cmdline
       .add(long_option,"l","long","set long variable, min = -6, max = 12",-6L,12L)
-      .add(sizet_option,"L","ulong","set size_t variable, default = 9, min = 1, max = 17",9UL,1UL,17UL)
-      .add(double_option,"d","double","set double variable, no default, min = -12.8, max = 19.01",
+      .add(sizet_option,"L","ulong","set size_t variable",9UL,1UL,17UL)
+      .add(double_option,"d","double","VAL\vset double variable to VAL",
 	   -12.8,19.01)
-      .add(string_option,"s","string","set char* variable, default=Default","Default")
+      .add(string_option,"s","string","S\vset char* variable to S, default=Default","Default")
       .add(bool_option,"b","bool","set boolean flag")
-      .addFunc(parse_flag,"p","parse","pass value to function to parse")
+      .addFunc(parse_flag,"p","parse","X\vpass value X to function to parse")
       .addHelp("","longhelp", "show detailed help",true) ;
    bool success = cmdline.parseArgs(argc,argv) ;
    cout << "parse status = " << (success ? "OK" : "error") << endl ;

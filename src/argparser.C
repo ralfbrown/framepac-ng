@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -167,7 +167,7 @@ void ArgOptBase::invalidValue(const char* opt) const
 	 cerr << " (--" << fullName() << ")" ;
 	 }
       }
-   else
+   else if (fullName())
       cerr << "--" << fullName() ;
    cerr << endl ;
    CharPtr range { describeRange() } ;
@@ -182,7 +182,7 @@ void ArgOptBase::invalidValue(const char* opt) const
 
 CharPtr ArgOptBase::describeDefault() const
 {
-   if (!m_have_defvalue) return nullptr ;
+   if (!haveDefault()) return nullptr ;
    std::ostringstream s ;
    describeDefault(s) ;
    return dup_string(s.str().c_str()) ;
@@ -192,7 +192,7 @@ CharPtr ArgOptBase::describeDefault() const
 
 CharPtr ArgOptBase::describeRange() const
 {
-   if (!m_have_minmax) return nullptr ;
+   if (!haveRange()) return nullptr ;
    std::ostringstream s ;
    describeRange(s) ;
    return dup_string(s.str().c_str()) ;
@@ -352,7 +352,7 @@ ArgOptBase* ArgParser::matchingArg(const char* arg) const
       // do we have an exact match of a short flag name? (implies that the value is in the next argv[] element)
       for (ArgOptBase* opt = m_options ; opt ; opt = opt->next())
 	 {
-	 if (strcmp(opt->shortName(),arg) == 0)
+	 if (opt->shortName() && strcmp(opt->shortName(),arg) == 0)
 	    return opt ;
 	 }
       // otherwise, find the longest matching short name
@@ -361,6 +361,7 @@ ArgOptBase* ArgParser::matchingArg(const char* arg) const
       for (ArgOptBase* opt = m_options ; opt ; opt = opt->next())
 	 {
 	 const char* name = opt->shortName() ;
+	 if (!name) continue ;
 	 size_t matchlen = 0 ;
 	 for ( ; name[matchlen] && arg[matchlen] ; ++matchlen)
 	    {
@@ -382,7 +383,7 @@ ArgOptBase* ArgParser::matchingArg(const char* arg) const
       if (equal) len = (equal - arg - 2) ;
       for (ArgOptBase* opt = m_options ; opt ; opt = opt->next())
 	 {
-	 if (strncmp(opt->fullName(),arg+2,len) == 0)
+	 if (opt->fullName() && strncmp(opt->fullName(),arg+2,len) == 0)
 	    return opt ;
 	 }
       }
@@ -391,9 +392,33 @@ ArgOptBase* ArgParser::matchingArg(const char* arg) const
 
 //----------------------------------------------------------------------------
 
+void ArgParser::reverseArgList()
+{
+   if (!m_finalized)
+      {
+      // adding args with .add() etc left the chain in the reverse order from which we want to use it,
+      //   so reverse the list
+      ArgOptBase* prev = nullptr ;
+      ArgOptBase* curr = m_options ;
+      while (curr)
+	 {
+	 ArgOptBase* next = curr->next() ;
+	 curr->next(prev) ;
+	 prev = curr ;
+	 curr = next ;
+	 }
+      m_options = prev ;
+      m_finalized = true ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 bool ArgParser::parseArgs(int& argc, char**& argv, bool show_help_on_error)
 {
    init() ;
+   reverseArgList() ;
    bool success = true ;
    while (success && argc > 1 && argv[1] != nullptr && argv[1][0] == '-')
       {
@@ -444,15 +469,161 @@ bool ArgParser::unknownOption(const char*name) const
 
 //----------------------------------------------------------------------------
 
+static size_t widest_flag(const ArgOptBase* options)
+{
+   size_t width = 1 ;
+   for ( ; options ; options = options->next())
+      {
+      size_t meta = 0 ;
+      const char* desc = options->description() ;
+      if (desc)
+	 {
+	 const char* meta_end = strchr(desc,'\v') ;
+	 if (meta_end)
+	    {
+	    meta = meta_end - desc ;
+	    //desc = meta_end + 1 ;
+	    }
+	 }
+      if (options->shortName() && *options->shortName())
+	 {
+	 size_t w = strlen(options->shortName()) + 2 + meta ;
+	 if (meta && options->haveDefault())
+	    w++ ;
+	 width = std::max(w,width) ;
+	 }
+      if (options->fullName() && *options->fullName())
+	 {
+	 if (meta) ++meta ;
+	 size_t w = strlen(options->fullName()) + 2 + meta ;
+	 width = std::max(w,width) ;
+	 }
+      }
+   return width ;
+}
+
+//----------------------------------------------------------------------------
+
+static void show_arg_name(const char* arg, bool full, bool have_def, const char* meta, size_t pad_to)
+{
+   if (!arg || !*arg)
+      return  ;
+   cout << "  -" ;
+   size_t width = 0 ;
+   if (full)
+      {
+      cout << "-" ;
+      ++width ;
+      }
+   cout << arg ;
+   width += strlen(arg) ;
+   if (meta)
+      {
+      const char* meta_end = strchr(meta,'\v') ;
+      if (meta_end)
+	 {
+	 const char* closing = "" ;
+	 ++width ;
+	 if (full)
+	    {
+	    cout << '=' ;
+	    }
+	 else if (have_def)
+	    {
+	    cout << '[' ;
+	    closing = "]" ;
+	    ++width ;
+	    }
+	 else
+	    {
+	    cout << ' ' ;
+	    }
+	 width += meta_end - meta ;
+	 for ( ; meta < meta_end ; ++meta)
+	    {
+	    cout << *meta ;
+	    }
+	 cout << closing ;
+	 }
+      }
+   while (width++ < pad_to)
+      {
+      cout << ' ' ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+static bool show_arg(const char* arg, bool full, bool have_def, size_t column_width,
+   const char* desc, const char* meta)
+{
+   if (!arg || !*arg)
+      return false ;
+   show_arg_name(arg,full,have_def,meta,column_width) ;
+   if (desc && *desc)
+      {
+      const char* meta_end = strchr(desc,'\v') ;
+      if (meta_end)
+	 desc = meta_end + 1 ;
+      cout << desc ;
+      }
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
 bool ArgParser::showHelp(bool longhelp) const
 {
-   if (longhelp)
+   if (m_banner)
+      cout << m_banner << endl ;
+   const char* argv0 = m_argv0 ? m_argv0 : "program" ;
+   cout << "Usage: " << argv0 <<  " {options} " ;
+   if (m_usage)
+      cout << m_usage ;
+   cout << endl  ;
+   cout << "\nAvailable option flags:" << endl ;
+   size_t col_width = widest_flag(m_options) ;
+   for (auto opt = m_options ; opt ; opt = opt->next())
       {
-      cerr << "[longhelp]" << endl ;
-      }
-   else
-      {
-      cerr << "[briefhelp]" << endl ;
+      const char* desc = opt->description() ;
+      if (!desc) desc = "(no description available)" ;
+      bool have_def = opt->haveDefault() ;
+      if (longhelp)
+	 {
+	 show_arg_name(opt->shortName(),false,have_def,desc,0) ;
+	 if (opt->shortName() && opt->fullName())
+	    cout <<  "," ;
+	 show_arg_name(opt->fullName(),true,have_def,desc,0) ;
+	 if (strchr(desc,'\v'))
+	    desc = strchr(desc,'\v')+1 ;
+	 cout << "\n\t" << desc ;
+	 cout << "\n\t" ;
+	 auto def_desc { opt->describeDefault() } ;
+	 if (!def_desc) def_desc = dup_string("(none)") ;
+	 auto range_desc { opt->describeRange() } ;
+	 if (!range_desc) range_desc = dup_string("(no limits)") ;
+	 cout << "Default value: " << def_desc << "\tRange: " << range_desc << endl ;
+	 }
+      else if (opt->shortName() && opt->fullName())
+	 {
+#if 0
+	 if (show_arg(opt->shortName(),false,have_def,col_width,nullptr,desc))
+	    cout << endl ;
+	 if (show_arg(opt->fullName(),true,have_def,col_width,desc,desc))
+	    cout << endl ;
+#else
+	 show_arg(opt->shortName(),false,have_def,col_width,desc,desc) ;
+	 cout << endl ;
+#endif
+	 }
+      else
+	 {
+	 if (show_arg(opt->shortName(),false,have_def,col_width,desc,desc))
+	    cout << endl ;
+	 if (show_arg(opt->fullName(),true,have_def,col_width,desc,desc))
+	    cout << endl ;
+	 }
       }
    return false ;
 }
