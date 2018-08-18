@@ -881,6 +881,13 @@ void ObjectReader::StaticInitialization()
 /*	Additional methods for class Object				*/
 /************************************************************************/
 
+ObjectPtr Object::create(char*& printed)
+{
+   return ObjectPtr(ObjectReader::current()->readObject(printed)) ;
+}
+
+//----------------------------------------------------------------------------
+
 ObjectPtr Object::create(const char*& printed)
 {
    return ObjectPtr(ObjectReader::current()->readObject(printed)) ;

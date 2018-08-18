@@ -59,6 +59,7 @@ class Object
       Object() {}
    public:
       ~Object() {}
+      static ObjectPtr create(char*& printed_representation) ;
       static ObjectPtr create(const char*& printed_representation) ;
       static ObjectPtr create(const Object*) ;
       static ObjectPtr create(FILE*) ;

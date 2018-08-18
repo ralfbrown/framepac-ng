@@ -74,6 +74,8 @@ void ListBuilder::prependList(List* l)
 
 void ListBuilder::append(Object* o)
 {
+   if (!o)
+      o = List::emptyList() ;
    if (m_list == List::emptyList())
       {
       m_list = List::create(o) ;
@@ -103,9 +105,8 @@ void ListBuilder::appendClone(Object* o)
 {
    if (o)
       {
-      o = o->clone().move() ;
+      append(o->clone().move()) ;
       }
-   append(o) ;
    return ;
 }
 
