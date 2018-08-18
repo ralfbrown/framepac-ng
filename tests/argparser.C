@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-04					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -49,6 +49,7 @@ int main(int argc, char** argv)
    double double_option = 0.1 ;
    bool bool_option = false ;
    cmdline
+      .banner("This is the banner text for the help display")
       .add(long_option,"l","long","set long variable, min = -6, max = 12",-6L,12L)
       .add(sizet_option,"L","ulong","set size_t variable",9UL,1UL,17UL)
       .add(double_option,"d","double","VAL\vset double variable to VAL",
