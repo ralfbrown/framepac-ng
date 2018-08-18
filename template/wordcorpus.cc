@@ -308,11 +308,13 @@ bool WordCorpusT<IdT,IdxT>::save(CFile &fp) const
       }
    // now that we've written all the other data, we have a complete header, so return to the start of the file
    //   and update the header
+   off_t lastpos = fp.tell() ;
    fp.seek(headerpos) ;
    if (!fp.writeValue(header))
-      return false ;
+      success = false ;
    fp.flush() ;
-   return true ;
+   fp.seek(lastpos) ;
+   return success ;
 }
 
 //----------------------------------------------------------------------------

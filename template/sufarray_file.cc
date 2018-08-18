@@ -211,11 +211,14 @@ bool SuffixArray<IdT,IdxT>::save(CFile& fp, bool include_ids) const
       }
    // now that we've written all the other data, we have a complete header, so return to the start of the file
    //   and update the header
+   off_t lastpos = fp.tell() ;
    fp.seek(header_offset) ;
+   bool success = true ;
    if (!fp.writeValue(header))
-      return false ;
+      success = false ;
    fp.flush() ;
-   return true ;
+   fp.seek(lastpos) ;
+   return success ;
 }
 
 //----------------------------------------------------------------------------
