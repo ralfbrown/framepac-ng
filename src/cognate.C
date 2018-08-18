@@ -305,10 +305,10 @@ bool CognateData::setCognateScoring(const char* cognates)
 {
    if (!cognates || !*cognates)
       return true ;			// trivially successful
-   Object* cogdata = Object::create(cognates) ;
+   auto cogdata = Object::create(cognates) ;
    if (cogdata == nullptr || !cogdata->isList())
       return false ;			// couldn't parse string into a list
-   return setCognateScoring(reinterpret_cast<List*>(cogdata)) ;
+   return setCognateScoring(reinterpret_cast<List*>(&cogdata)) ;
 }
 
 //----------------------------------------------------------------------------

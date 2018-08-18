@@ -262,6 +262,7 @@ class ArgParser
       bool parseArgs(int& argc, char**& argv, bool show_help_on_error = false) ;
 
       bool unknownOption(const char* name) const ;
+      void showBanner(std::ostream&) const ;
       bool showHelp(bool longhelp = false) const ;
 
    protected:
@@ -276,6 +277,7 @@ class ArgParser
       const char* m_usage   { nullptr } ;
       const char* m_argv0   { nullptr } ;
       bool        m_finalized { false } ;
+      mutable bool m_showed_help { false } ;
    } ;
 
 //----------------------------------------------------------------------------

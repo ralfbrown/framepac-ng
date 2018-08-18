@@ -106,18 +106,8 @@ class Ptr
       Ptr(Ptr&& o) : m_object(o.move()) { }	// grab ownership from other Ptr
       ~Ptr() { free() ; }
 
-      Ptr& operator= (Ptr& o)
-	 {
-	 if (m_object != o.m_object) this->free() ;
-	 acquire(o) ;
-	 return *this ;
-	 }
-      Ptr& operator= (T* o)
-	 {
-	 if (m_object != o) this->free() ;
-	 m_object = o ;
-	 return *this ;
-	 }
+      Ptr& operator= (Ptr& o) { acquire(o) ; return *this ; }
+      Ptr& operator= (T* o) { acquire(o) ; return *this ; }
 
       T& operator* () const { return *m_object ; }
       T* operator-> () const { return m_object ; }
@@ -127,8 +117,8 @@ class Ptr
       operator T* () { return m_object ; }
       operator const T* () const { return m_object ; }
 
-      void acquire(Ptr& o) { if (m_object) m_object->free() ; acquire(o) ; }
-      void acquire(T* o) { if (m_object) m_object->free() ; m_object = o ; }
+      void acquire(Ptr& o) { if (m_object && m_object != o.m_object) m_object->free() ; m_object = o.move() ; }
+      void acquire(T* o) { if (m_object && m_object != o) m_object->free() ; m_object = o ; }
       void update(T* o) { m_object = o ; } // use with caution to avoid leaks!
       void release() { m_object = nullptr ; }
       T* move() { T* o = m_object ; release() ; return o ; }

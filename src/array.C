@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.09, last edit 2018-08-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -113,8 +113,10 @@ Object*& Array::operator [] (size_t N)
 
 void Array::setNth(size_t N, const Object* val)
 {
-   if (N < m_size)
+   if (N < m_alloc)
       {
+      if (N >= m_size)
+	 m_size = N+1 ;
       if (m_array[N]) m_array[N]->free() ;
       m_array[N] = val ? val->clone().move() : nullptr ;
       }
@@ -125,8 +127,10 @@ void Array::setNth(size_t N, const Object* val)
 
 void Array::setNthNoCopy(size_t N, Object* val)
 {
-   if (N < m_size)
+   if (N < m_alloc)
       {
+      if (N >= m_size)
+	 m_size = N+1 ;
       if (m_array[N]) m_array[N]->free() ;
       m_array[N] = val ;
       }

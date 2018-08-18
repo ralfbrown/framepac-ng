@@ -469,6 +469,17 @@ bool ArgParser::unknownOption(const char*name) const
 
 //----------------------------------------------------------------------------
 
+void ArgParser::showBanner(ostream& out) const
+{
+   if (m_banner && *m_banner)
+      {
+      out << m_banner << endl ;
+      }
+   return  ;
+}
+
+//----------------------------------------------------------------------------
+
 static size_t widest_flag(const ArgOptBase* options)
 {
    size_t width = 1 ;
@@ -575,6 +586,9 @@ static bool show_arg(const char* arg, bool full, bool have_def, size_t column_wi
 
 bool ArgParser::showHelp(bool longhelp) const
 {
+   if (m_showed_help)
+      return false ;
+   m_showed_help = true ;
    if (m_banner)
       cout << m_banner << endl ;
    const char* argv0 = m_argv0 ? m_argv0 : "program" ;
@@ -625,7 +639,7 @@ bool ArgParser::showHelp(bool longhelp) const
 	    cout << endl ;
 	 }
       }
-   return false ;
+   return true ;
 }
 
 
