@@ -173,6 +173,7 @@ bool List::member(const Object* o) const
       {
       Object* f = l->front() ;
       if (!f && !o) return true ;
+      if (f == empty_list && o == empty_list) return true ;
       if (f->equal(o)) return true ;
       }
    return false ;
@@ -650,7 +651,7 @@ bool List::equal_(const Object *obj, const Object *other)
       return false ;
    auto l1 = static_cast<const List*>(obj) ;
    auto l2 = static_cast<const List*>(other) ;
-   while (l1 && l2)
+   while (l1 != empty_list && l2 != empty_list)
       {
       auto o1 = l1->front() ;
       auto o2 = l2->front() ;
@@ -659,7 +660,7 @@ bool List::equal_(const Object *obj, const Object *other)
       l1 = l1->next() ;
       l2 = l2->next() ;
       }
-   return !l1 && !l2 ;			// lists are equal if we've consumed both in their entirety
+   return l1 == empty_list && l2 == empty_list ;// lists are equal if we've consumed both in their entirety
 }
 
 //----------------------------------------------------------------------------
