@@ -160,9 +160,11 @@ class Symbol : public String
       uint16_t symtabID() const { return m_properties.extra() >> 4 ; }
       uint8_t flags() const { return m_properties.extra() & 0x0F ; }
 
-      void symtabID(uint16_t id) ;
       void setFlag(uint8_t flag) ;
       void clearFlag(uint8_t flag) ;
+
+   public: // for now...
+      void symtabID(uint16_t id) ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<Symbol> ;

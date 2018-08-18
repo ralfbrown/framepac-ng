@@ -1189,7 +1189,9 @@ inline const Symbol* HashTable<const Symbol*,NullObject>::createSymbol(const cha
 {
    if (!name) return nullKey() ;
    Symbol* sym = Symbol::create(name) ;
-   //sym->setTableID(...) ;
+   // mark symbol as belonging to the current symbol table
+   //FIXME: set proper table ID
+   sym->symtabID(1) ;
    return sym ;
 }
 

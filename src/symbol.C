@@ -164,6 +164,14 @@ void Symbol::setFlag(uint8_t flag)
 
 //----------------------------------------------------------------------------
 
+void Symbol::symtabID(uint16_t id)
+{
+   m_properties.extra((m_properties.extra()&0x0F) | (id<<4)) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 void Symbol::clearFlag(uint8_t flag)
 {
    m_properties.extra(m_properties.extra() & ~flag) ;
