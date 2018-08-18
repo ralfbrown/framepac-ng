@@ -37,7 +37,7 @@ WordCorpusT<IdT,IdxT>::WordCorpusT()
    m_wordmap = BiMap::create() ;
    m_contextmap = Map::create() ;
    m_sentinel = findOrAddID("<end_of_data>") ;
-   m_newline = findOrAddID("<newline>") ;
+   m_newline = findOrAddID("<eol>") ;
    setContextSizes(0,0) ;
    return ;
 }
@@ -853,22 +853,19 @@ bool WordCorpusT<IdT,IdxT>::printWords(CFile& fp, size_t max) const
    for (size_t i = 0 ; i < max ; ++i)
       {
       const char* word = getWordForLoc(i) ;
+      if (!line_start)
+	 fp.putc(' ') ;
       if (!word)
 	 {
-	 fp.putc('\n') ;
-	 line_start = true ;
-	 }
-      else if (strcmp(word,"<newline>") == 0)
-	 {
-	 fp.puts("<newline>\n") ;
+	 fp.puts("<eol>\n") ;
 	 line_start = true ;
 	 }
       else
 	 {
-	 if (!line_start)
-	    fp.putc(' ') ;
 	 fp.puts(word) ;
-	 line_start = false ;
+	 line_start = (strcmp(word,"<eol>") == 0) ;
+	 if (line_start)
+	    fp.putc('\n') ;
 	 }
       }
    // unless the last thing we printed was a newline, terminate the current line
