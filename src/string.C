@@ -44,8 +44,7 @@ static bool allocators_initialized ;
 /************************************************************************/
 
 String::String(const char* s, size_t len)
-   : Object(),
-     m_buffer()
+   : Object()
 {
    this->init(s,len) ;
    return ;

@@ -213,7 +213,13 @@ bool Trie<T,IdxT,bits>::insert(const uint8_t* key, unsigned keylength, T value)
    if (index != NULL_INDEX || keylength > 0)
       {
       Node* n = node(index) ;
-      if (n) n->setValue(value) ;
+      if (n)
+	 {
+	 n->setValue(value) ;
+	 n->markAsLeaf() ;
+	 if (keylength > m_maxkey)
+	    m_maxkey = keylength ;
+	 }
       return true ;
       }
    return false ;
