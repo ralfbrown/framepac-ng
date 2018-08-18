@@ -93,21 +93,27 @@ class ArgOptFunc : public ArgOptBase
    public:
       typedef ArgOptBase super ;
    public:
-      ArgOptFunc(ArgParser& parser, Callable& fn, const char* shortname, const char* fullname, const char* desc)
+      ArgOptFunc(ArgParser& parser, Callable& fn, const char* shortname, const char* fullname, const char* desc,
+	 bool optional_arg = false)
 	 : ArgOptBase(parser,shortname,fullname,desc), m_func(fn)
 	 {
-	 m_func = &fn ; 
+	 m_func = &fn ;
+	 this->m_have_defvalue = optional_arg ;
 	 }
-      ArgOptFunc(Callable& fn, const char* shortname, const char* fullname, const char* desc)
+      ArgOptFunc(Callable& fn, const char* shortname, const char* fullname, const char* desc,
+	 bool optional_arg = false)
 	 : ArgOptBase(shortname,fullname,desc), m_func(fn)
 	 {
 	 m_func = &fn ; 
+	 this->m_have_defvalue = optional_arg ;
 	 }
       ~ArgOptFunc() {}
 
+      virtual bool optional() const { return this->m_have_defvalue ; } ;
+
    protected:
       virtual bool convert(const char* arg, const char* /*delim*/) { return m_func(arg) ; }
-      virtual bool setDefaultValue() { return false ; }
+      virtual bool setDefaultValue() { return this->m_have_defvalue ? m_func("") : false ; }
       virtual bool validateValue() { return true ; }
    protected:
       Callable* m_func ;
@@ -250,8 +256,9 @@ class ArgParser
       ArgParser& addHelp(const char* shortname, const char* fullname, const char* desc, bool longhelp = false)
 	 { addOpt(new ArgHelp(shortname,fullname,desc,longhelp),true) ; return *this ; }
       template <typename Callable>
-      ArgParser& addFunc(Callable& fn, const char* shortname, const char* fullname, const char* desc)
-	 { addOpt(new ArgOptFunc<Callable>(fn,shortname,fullname,desc),true) ; return *this ; }
+      ArgParser& addFunc(Callable& fn, const char* shortname, const char* fullname, const char* desc,
+	 bool optional_arg = false)
+	 { addOpt(new ArgOptFunc<Callable>(fn,shortname,fullname,desc,optional_arg),true) ; return *this ; }
 
       ArgParser& repeatable(const char* delim = nullptr) ;
       ArgParser& banner(const char* text) { m_banner = text ; return *this ; }

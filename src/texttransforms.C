@@ -56,6 +56,7 @@ CharPtr dup_string(const char* s, size_t len)
 {
    if (!s)
       return nullptr ;
+   len = std::min(len,strlen(s)) ;
    char* copy = new char[len+1] ;
    if (copy)
       {
@@ -67,13 +68,11 @@ CharPtr dup_string(const char* s, size_t len)
 
 //----------------------------------------------------------------------------
 
-CharPtr dup_string_n(const char* s, size_t maxlen)
+CharPtr dup_string_n(const char* s, size_t len)
 {
    if (!s)
       return nullptr ;
-   size_t len = strlen(s) ;
-   if (len > maxlen)
-      len = maxlen ;
+   len = std::min(len,strlen(s)) ;
    char* copy = new char[len+1] ;
    if (copy)
       {

@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include <cstring>
+#include <unistd.h>
 #include "framepac/file.h"
 #include "framepac/texttransforms.h"
 
@@ -42,6 +43,20 @@ FilePath::FilePath(const char *pathname)
       if (len > 1) --len ;  // swallow trailing slash
       m_directory = dup_string(pathname, len) ;
       pathname = last_slash + 1 ;
+      }
+   else
+      {
+      // set the directory to be the current working directory
+      // TODO: figoure out where PATH_MAX is defined, so that we don't have to rely on the GNU glibc extension
+      //   of dynamically allocating a buffer
+      char * dir = getcwd(nullptr,0) ;
+      if (dir)
+	 {
+	 m_directory = dup_string(dir) ;
+	 ::free(dir) ;
+	 }
+      else
+	 m_directory = dup_string(".") ;
       }
    const char *last_period = strrchr(pathname,'.') ;
    if (last_period)
@@ -115,7 +130,8 @@ bool FilePath::defaultExtension(const char* ext)
 
 const char *FilePath::generatePath() const
 {
-   m_path = nullptr ; //FIXME   
+   if (!m_basename) generateBasename() ;
+   m_path = aprintf("%s/%s",*m_directory,*m_basename) ;
    return m_path ;
 }
 
@@ -123,21 +139,8 @@ const char *FilePath::generatePath() const
 
 const char *FilePath::generateBasename() const
 {
-   m_basename = nullptr ;
-   size_t len_r = strlen(m_root) ;
    size_t len_e = strlen(m_extension) ;
-   size_t len = len_r + len_e + (len_e?1:0) ;
-   char *base = new char[len+1] ;
-   if (base)
-      {
-      memcpy(base,*m_root,len_r) ;
-      if (len_e)
-	 {
-	 base[len_r++] = '.' ;
-	 memcpy(base+len_r,*m_extension,len_e+1) ;
-	 }
-      m_basename = base ;
-      }
+   m_basename = len_e ? aprintf("%s.%s",*m_root,*m_extension) : dup_string(*m_root) ;
    return m_basename ;
 }
 
