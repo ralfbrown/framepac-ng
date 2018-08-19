@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -51,8 +51,6 @@ class NonObject : public Object
 
       // type determination predicates
       static bool isObject_(const Object*) { return false ; }
-      // name of the actual type of the current object
-      static const char* typeName_(const Object *) { return "NonObject" ; }
       
       // *** standard info functions ***
       static size_t size_(const Object* o) { return FramepaC::Slab::slab(o)->objectSize() ; }
@@ -67,7 +65,7 @@ class NonObject : public Object
       static size_t jsonStringLength_(const Object* obj,bool wrap,size_t indent) ;
 
    private:
-      // no data members
+      static const char s_typename[] ;
 } ;
 
 

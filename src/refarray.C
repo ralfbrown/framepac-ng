@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -30,6 +30,7 @@ namespace Fr
 /************************************************************************/
 
 Allocator RefArray::s_allocator(FramepaC::Object_VMT<RefArray>::instance(),sizeof(RefArray)) ;
+const char RefArray::s_typename[] = "RefArray" ;
 
 /************************************************************************/
 /************************************************************************/

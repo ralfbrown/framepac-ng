@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -179,6 +179,10 @@ class ObjectVMT
       ObjectVMT() = default ;
       ~ObjectVMT() = default ;
 
+      // *** put type name first to make it easier for GDB pretty-printer to find and to avoid breaking
+      //     it when adding other new pointers ***
+      const char* type_name ;
+
       // *** destroying ***
       void (*free_)(Fr::Object*) ;
       // use shallowFree() on a shallowCopy()
@@ -218,8 +222,6 @@ class ObjectVMT
       double (*nthFloat_)(const Fr::Object*,size_t) ;
 
       // *** dynamic type determination ***
-      // name of the actual type of the current object
-      const char* (*typeName_)(const Fr::Object*) ;
       // get label (if any) applied to the object
       Fr::Symbol* (*label_)(const Fr::Object*) ;
       // type determination predicates
@@ -269,6 +271,7 @@ class Object_VMT : public ObjectVMT
       // the singleton instance
       static constexpr ObjectVMT s_instance
 	 {
+	    ObjT::s_typename,
 	    &ObjT::free_,
 	    &ObjT::shallowFree_,
 	    &ObjT::size_,
@@ -293,7 +296,6 @@ class Object_VMT : public ObjectVMT
 	    &ObjT::rationalValue_,
 	    &ObjT::nthInt_,
 	    &ObjT::nthFloat_,
-	    &ObjT::typeName_,
 	    &ObjT::label_,
 	    &ObjT::isArray_,
 	    &ObjT::isBigNum_,

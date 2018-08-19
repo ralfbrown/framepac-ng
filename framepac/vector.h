@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -123,7 +123,7 @@ class Vector : public VectorBase
 
       // type determination predicates
       static bool isVector_(const Object *) { return true ; }
-      static const char* typeName_(const Object*) { return Vector::s_typename ; }
+      static const char* typeName_(const Object*) { return s_typename ; }
       static Symbol* label_(const Object* obj) { return static_cast<const Vector*>(obj)->m_label ; }
 
       // *** copying ***
@@ -189,8 +189,8 @@ class Vector : public VectorBase
 
    private:
       static Allocator s_allocator ;
-      static const char* s_typename ;
    protected:
+      static const char s_typename[] ;
       ValT*    m_values { nullptr } ;
    } ;
 
@@ -264,7 +264,7 @@ class OneHotVector : public Vector<ValT>
 
    private:
       static Allocator s_allocator ;
-      static const char* s_typename ;
+      static const char s_typename[] ;
    protected:
       IdxT m_index ;
       ValT m_value ;
@@ -318,7 +318,7 @@ class SparseVector : public Vector<ValT>
 
       // type determination predicates
       static bool isSparseVector_(const Object *) { return true ; }
-      static const char* typeName_(const Object*) { return SparseVector::s_typename ; }
+      static const char* typeName_(const Object*) { return s_typename ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object *) ;
@@ -385,7 +385,7 @@ class SparseVector : public Vector<ValT>
 
    private:
       static Allocator s_allocator ;
-      static const char* s_typename ;
+      static const char s_typename[] ;
    protected:
       IdxT*  m_indices ;
    } ;
@@ -444,7 +444,7 @@ class DenseVector : public Vector<ValT>
       friend class FramepaC::Object_VMT<DenseVector> ;
 
       // type determination predicates
-      static const char* typeName_(const Object*) { return DenseVector::s_typename ; }
+      static const char* typeName_(const Object*) { return s_typename ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object *) ;
@@ -452,9 +452,11 @@ class DenseVector : public Vector<ValT>
       static ObjectPtr subseq_int(const Object *,size_t start, size_t stop) ;
       static ObjectPtr subseq_iter(const Object *,ObjectIter start, ObjectIter stop) ;
 
+   protected:
+      static const char s_typename[] ;
+
    private:
       static Allocator s_allocator ;
-      static const char* s_typename ;
    } ;
 
 extern template class DenseVector<uint32_t> ;

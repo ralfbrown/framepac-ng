@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.sedu>				*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -44,10 +44,6 @@ class BigNum : public Number
       static BigNum *create(const Object *) ;
       static BigNum *create(const char *) ;
 
-   private: // static members
-      static Allocator s_allocator ;
-   private:
-      mpz_t m_value ;
    protected: // creation/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void *blk,size_t) { s_allocator.release(blk) ; }
@@ -63,7 +59,6 @@ class BigNum : public Number
 
       // type determination predicates
       static bool isBigNum_(const Object *) { return true ; }
-      static const char *typeName_(const Object *) { return "BigNum" ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object *obj)
@@ -91,6 +86,13 @@ class BigNum : public Number
       static long int intValue(const Object *) ;
       static double floatValue(const Object *) ;
       static mpz_t bignumValue(const Object *) ;
+
+   private: // static members
+      static Allocator s_allocator ;
+      static const char s_typename[] ;
+
+   protected:
+      mpz_t m_value ;
    } ;
 
 } ; // end namespace Fr

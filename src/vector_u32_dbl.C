@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-19					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -35,13 +35,13 @@ template <>
 Allocator DenseVector<double>::s_allocator(FramepaC::Object_VMT<DenseVector<double>>::instance(),
    sizeof(DenseVector<double>)) ;
 template <>
-const char* DenseVector<double>::s_typename = "DenseVector_dbl" ;
+const char DenseVector<double>::s_typename[] = "DenseVector_dbl" ;
 
 template <>
 Allocator SparseVector<uint32_t,double>::s_allocator(FramepaC::Object_VMT<SparseVector<uint32_t,double>>::instance(),
    sizeof(SparseVector<uint32_t,double>)) ;
 template <>
-const char* SparseVector<uint32_t,double>::s_typename = "SparseVector_u32dbl" ;
+const char SparseVector<uint32_t,double>::s_typename[] = "SparseVector_u32dbl" ;
 
 
 } // end namespace Fr

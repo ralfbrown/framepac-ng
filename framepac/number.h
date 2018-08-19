@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -48,7 +48,6 @@ class Number : public Object
 
       // type determination predicates
       static bool isNumber_(const Object *) { return true ; }
-      static const char *typeName_(const Object *) { return "Number" ; }
 
       // *** copying ***
       using Object::clone_ ;
@@ -87,7 +86,7 @@ class Number : public Object
       using Object::lessThan_ ;
 
    private:
-      // no data members //
+      static const char s_typename[] ;
    } ;
 
 /************************************************************************/
@@ -119,7 +118,6 @@ class Integer : public Number
 
       // type determination predicates
       static bool isInteger_(const Object *) { return true ; }
-      static const char *typeName_(const Object *) { return "Integer" ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object *obj)
@@ -165,6 +163,8 @@ class Integer : public Number
 
    private: // static members
       static Allocator s_allocator ;
+      static const char s_typename[] ;
+
    protected:
       long int m_value ;
    } ;
@@ -195,7 +195,6 @@ class Float : public Number
 
       // type determination predicates
       static bool isInteger_(const Object *) { return true ; }
-      static const char *typeName_(const Object *) { return "Float" ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object *obj)
@@ -241,6 +240,8 @@ class Float : public Number
 
    private: // static members
       static Allocator s_allocator ;
+      static const char s_typename[] ;
+
    protected:
       double m_value ;
    } ;

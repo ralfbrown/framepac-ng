@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-16					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -35,6 +35,7 @@ namespace Fr
 // define the static members of ClusterInfo
 Allocator ClusterInfo::s_allocator(FramepaC::Object_VMT<ClusterInfo>::instance(),sizeof(ClusterInfo)) ;
 ClusterInfo::Initializer ClusterInfo::s_init ;
+const char ClusterInfo::s_typename[] = "ClusterInfo" ;
 
 // register initialization and cleanup functions for the ClusterInfo class as a whole
 // these will be called by Fr::Initialize() and Fr::Shutdown()

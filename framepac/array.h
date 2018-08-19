@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -116,7 +116,6 @@ class Array : public Object
 
       // type determination predicates
       static bool isArray_(const Object*) { return true ; }
-      static const char *typeName_(const Object*) { return "Array" ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object*) ;
@@ -164,6 +163,7 @@ class Array : public Object
 
    private: // static members
       static Allocator s_allocator ;
+      static const char s_typename[] ;
    protected:
       Object** m_array ;
       size_t   m_size ;
@@ -192,8 +192,6 @@ class RefArray : public Array
       // STL compatibility
       void pop_back() ;  	// remove last element of array
 
-   private: // static members
-      static Allocator s_allocator ;
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
@@ -206,9 +204,6 @@ class RefArray : public Array
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<RefArray> ;
 
-      // type determination predicates
-      static const char *typeName_(const Object*) { return "RefArray" ; }
-
       // *** copying ***
       static ObjectPtr clone_(const Object*) ;
       static Object *shallowCopy_(const Object*obj) { return clone_(obj) ; }
@@ -220,6 +215,9 @@ class RefArray : public Array
       // use shallowFree() on a shallowCopy()
       static void shallowFree_(Object* obj) { RefArray::free_(obj) ; }
 
+   private: // static members
+      static Allocator s_allocator ;
+      static const char s_typename[] ;
    } ;
 
 } ; // end namespace Fr

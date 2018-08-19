@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-14					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -79,9 +79,6 @@ class BidirIndex : public HashTable<keyT,idxT>
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<BidirIndex> ;
 
-      // type determination predicates
-      static const char *typeName_(const Object*) { return "BidirIndex" ; }
-
       // *** copying ***
       static ObjectPtr clone_(const Object*) { return nullptr ; } //TODO
       static Object* shallowCopy_(const Object* obj) { return clone_(obj) ; }
@@ -139,6 +136,7 @@ class BidirIndex : public HashTable<keyT,idxT>
 
    private: // static members
       static Allocator s_allocator ;
+      static const char s_typename[] ;
    } ;
 
 } // end namespace Fr

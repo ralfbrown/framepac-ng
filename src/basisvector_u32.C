@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-04-27					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -29,6 +29,8 @@ template class BasisVector<uint32_t> ;
 template <>
 Allocator BasisVector<uint32_t>::s_allocator(FramepaC::Object_VMT<BasisVector<uint32_t>>::instance(),
    sizeof(BasisVector<uint32_t>)) ;
+template <>
+const char BasisVector<uint32_t>::s_typename[] = "BasisVector<i8>" ;
 
 } // end namespace Fr
 

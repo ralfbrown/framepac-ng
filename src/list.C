@@ -34,6 +34,7 @@ namespace Fr
 // define the static members of List
 Allocator List::s_allocator(FramepaC::Object_VMT<List>::instance(),sizeof(List)) ;
 List::Initializer List::s_init ;
+const char List::s_typename[] = "List" ;
 List* List::empty_list ;
 
 // register initialization and cleanup functions for the List class as a whole

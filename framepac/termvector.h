@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -57,7 +57,7 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
 
       // type determination predicates
       static bool isTermVector_(const Object*) { return true ; }
-      static const char* typeName_(const Object*) ;
+      static const char* typeName_(const Object*) { return s_typename ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object*) ;
@@ -68,6 +68,8 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
       // use shallowFree() on a shallowCopy()
       static void shallowFree_(Object* obj) { free_(obj) ; }
 
+   protected:
+      static const char s_typename[] ;
    private: // static members
       static Allocator s_allocator ;
 
@@ -75,16 +77,10 @@ class TermVectorT : public SparseVector<uint32_t,ValT>
 
 //----------------------------------------------------------------------------
 
-template <>
-inline const char* TermVectorT<uint32_t>::typeName_(const Object*) { return "TermCountVector" ; }
-
 typedef TermVectorT<uint32_t> TermCountVector ;
 extern template class TermVectorT<uint32_t> ;
 
 //----------------------------------------------------------------------------
-
-template <>
-inline const char* TermVectorT<float>::typeName_(const Object*) { return "TermVector" ; }
 
 typedef TermVectorT<float> TermVector ;
 extern template class TermVectorT<float> ;

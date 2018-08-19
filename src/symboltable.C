@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -38,6 +38,7 @@ namespace Fr
 
 Allocator SymbolTable::s_allocator(FramepaC::Object_VMT<SymbolTable>::instance(),sizeof(SymbolTable)) ;
 SymbolTable::Initializer SymbolTable::s_init ;
+const char SymbolTable::s_typename[] = "SymbolTable" ;
 
 static Atomic<SymbolTable*> symbol_tables[256] ;
 Atomic<unsigned> current_symbol_table ;

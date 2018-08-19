@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -44,14 +44,11 @@ class BasisVector : public SparseVector<IdxT,ValT>
       BasisVector(const BasisVector&) ;
       ~BasisVector() {}
 
-   private:
-      static Allocator s_allocator ;
-
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<BasisVector> ;
 
       // type determination predicates
-      static const char* typeName_(const Object*) { return "BasisVector" ; }
+      static const char* typeName_(const Object*) { return s_typename ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object *obj) { return new BasisVector(*static_cast<const BasisVector*>(obj)) ; }
@@ -61,6 +58,12 @@ class BasisVector : public SparseVector<IdxT,ValT>
       static void free_(Object *obj) { delete static_cast<BasisVector*>(obj) ; }
       // use shallowFree() on a shallowCopy()
       static void shallowFree_(Object *obj) { delete static_cast<BasisVector*>(obj) ; }
+
+   private:
+      static Allocator s_allocator ;
+
+   protected:
+      static const char s_typename[] ;
    } ;
 
 //----------------------------------------------------------------------------

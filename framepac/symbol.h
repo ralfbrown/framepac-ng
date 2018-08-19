@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -178,7 +178,7 @@ class Symbol : public String
 
       // type determination predicates
       static bool isSymbol_(const Object*) { return true ; }
-      static const char* typeName_(const Object*) { return "Symbol" ; }
+      static const char* typeName_(const Object*) { return s_typename ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object* obj) { return ObjectPtr(const_cast<Object*>(obj)) ; }
@@ -218,6 +218,7 @@ class Symbol : public String
 
    private: // static members
       static Allocator s_allocator ;
+      static const char s_typename[] ;
    protected:
       // we pack a pointer to the symbol's properties, its symboltable
       //   ID, and some bitflags, into a single 64-bit field to save

@@ -31,6 +31,7 @@ namespace Fr
 
 Allocator String::s_allocator(FramepaC::Object_VMT<String>::instance(),sizeof(String)) ;
 Initializer<String> String::s_initializer ;
+const char String::s_typename[] = "String" ;
 
 static constexpr unsigned allocator_sizes[] =
    { 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32, 36, 40, 44, 48, 56, 64, 72, 80, 88, 96, 112, 128, 144, 160 } ;

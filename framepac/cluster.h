@@ -199,7 +199,6 @@ class ClusterInfo : public Object
       
       // type determination predicates
       static bool isCluster_(const Object*) { return true ; }
-      static const char* typeName_(const Object*) { return "ClusterInfo" ; }
       static Symbol* label_(const Object* obj) { return static_cast<const ClusterInfo*>(obj)->m_label ; }
 
       // *** copying ***
@@ -256,6 +255,7 @@ class ClusterInfo : public Object
    private: // static members
       static Allocator s_allocator ;
       static Initializer s_init ;
+      static const char s_typename[] ;
    } ;
 
 //----------------------------------------------------------------------------

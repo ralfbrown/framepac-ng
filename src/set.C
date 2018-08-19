@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-15					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017 Carnegie Mellon University			*/
@@ -31,6 +31,8 @@ namespace Fr
 {
 
 Allocator Set::s_allocator(FramepaC::Object_VMT<Set>::instance(),sizeof(Set)) ;
+const char Set::s_typename[] = "Set" ;
+
 
 /************************************************************************/
 /************************************************************************/

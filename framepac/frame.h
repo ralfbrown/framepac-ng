@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -46,7 +46,6 @@ class Frame : public Object
 
       // type determination predicates
       static bool isFrame_(const Object *) { return true ; }
-      static const char *typeName_(const Object *) { return "Frame" ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object *) ;
@@ -85,6 +84,7 @@ class Frame : public Object
 
    private: // static members
       static Allocator s_allocator ;
+      static const char s_typename[] ;
 
    } ;
 

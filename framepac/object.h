@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -50,13 +50,6 @@ typedef int ObjectOrderingFn(const Object*, const Object*) ;
 
 class Object
    {
-   private:
-      // no data members //
-   protected:
-      Object(const Object*) {}
-      Object(const Object&) {}
-      Object(const Object&&) {}
-      Object() {}
    public:
       ~Object() {}
       static ObjectPtr create(char*& printed_representation) ;
@@ -87,7 +80,7 @@ class Object
 
       // *** dynamic type determination ***
       // name of the actual type of the current object
-      FrVIRTFUNC0(const char*,typeName,typeName_,const) ;
+      const char* typeName() const { return FramepaC::Slab::VMT(this)->type_name ; }
       // get label (if any) applied to the object
       FrVIRTFUNC0(Symbol*,label,label_,const) ;
       // type determination predicates
@@ -177,12 +170,23 @@ class Object
 	 { const void* v = this ; // work around "non-null pointer compared against null" warning
            return v != nullptr && !this->empty() ; }
       operator const char* () const { return stringValue() ; }
+
+   protected:
+      Object(const Object*) {}
+      Object(const Object&) {}
+      Object(const Object&&) {}
+      Object() {}
+
+   private:
+      static const char s_typename[] ;
+
+   protected: // static data
+      friend class FramepaC::Object_VMT<Object>  ;
    } ;
 
 inline Object* Object::shallowCopy_(const Object* obj) { return clone_(obj) ; }
 inline void Object::free_(Object*) {}
 inline void Object::shallowFree_(Object* obj) { free_(obj) ; }
-inline const char* Object::typeName_(const Object*) { return "Object" ; }
 inline Symbol* Object::label_(const Object*) { return nullptr ; }
 inline bool Object::isArray_(const Object*) { return false ; }
 inline bool Object::isBigNum_(const Object*) { return false ; }

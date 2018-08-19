@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -57,7 +57,6 @@ class Rational : public Number
 
       // type determination predicates
       static bool isRational_(const Object*) { return true ; }
-      static const char *typeName_(const Object*) { return "Rational" ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object* obj)
@@ -94,6 +93,8 @@ class Rational : public Number
 
    private: // static members
       static Allocator s_allocator ;
+      static const char s_typename[] ;
+
    protected:
       mpq_t m_value ;
 } ;

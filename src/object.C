@@ -30,6 +30,8 @@ using namespace Fr ;
 namespace Fr
 {
 
+const char Object::s_typename[] = "Object" ;
+
 // /*static*/ const FramepaC::Object_VMT<Object> object_vmt ;
 
 /************************************************************************/

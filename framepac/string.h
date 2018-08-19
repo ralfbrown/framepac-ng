@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -170,7 +170,7 @@ class String : public Object
 
       // type determination predicates
       static bool isString_(const Object*) { return true ; }
-      static const char* typeName_(const Object*) { return "String" ; }
+      static const char* typeName_(const Object*) { return s_typename ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object*) ;
@@ -215,6 +215,7 @@ class String : public Object
    private: // static members
       static Allocator s_allocator ;
       static Initializer<String> s_initializer ;
+      static const char s_typename[] ;
    protected: // data members
       // pack pointer to the actual string plus 16 bits of length into a single 64-bit value.  If the stored
       //   length is 0xFFFF, then the initial size_t of the buffer is the actual length of the string.

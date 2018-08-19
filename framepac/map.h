@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-14					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -109,7 +109,6 @@ class Map : public ObjHashTable
 
       // type determination predicates
       static bool isMap_(const Object*) { return true ; }
-      static const char *typeName_(const Object*) { return "Map" ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object*) ;
@@ -149,6 +148,8 @@ class Map : public ObjHashTable
 
    private: // static members
       static Allocator s_allocator ;
+      static const char s_typename[] ;
+
    protected:
       size_t       m_size { 0 } ;
    } ;

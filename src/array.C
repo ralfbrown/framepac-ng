@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -34,6 +34,7 @@ namespace Fr
 /************************************************************************/
 
 Allocator Array::s_allocator(FramepaC::Object_VMT<Array>::instance(),sizeof(Array)) ;
+const char Array::s_typename[] = "Array" ;
 
 /************************************************************************/
 /************************************************************************/
