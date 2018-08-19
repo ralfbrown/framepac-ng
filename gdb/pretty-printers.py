@@ -18,6 +18,10 @@
 
 import gdb.printing
 
+RECURSIVE_CALL = False
+
+##########################################################################
+
 class StdMutexPrinter(gdb.printing.PrettyPrinter):
    "Print a std::mutex"
 
@@ -35,7 +39,7 @@ class StdMutexPrinter(gdb.printing.PrettyPrinter):
    def display_hint(self):
        return 'struct'
 
-RECURSIVE_CALL = False
+##########################################################################
 
 class FrAtomicPrinter(gdb.printing.PrettyPrinter):
    "Print a Fr::Atomic object"
@@ -48,6 +52,8 @@ class FrAtomicPrinter(gdb.printing.PrettyPrinter):
 
    def display_hint(self):
       return 'integer'
+
+##########################################################################
 
 class FrArrayPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::Array object"
@@ -80,6 +86,8 @@ class FrArrayPrinter(gdb.printing.PrettyPrinter):
     def children(self):
         return (c for c in self.make_children())
 
+##########################################################################
+
 class FrBitvectorPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::BitVector object"
 
@@ -91,6 +99,8 @@ class FrBitvectorPrinter(gdb.printing.PrettyPrinter):
 
     def display_hint(self):
         return 'number'
+
+##########################################################################
 
 class FrIntegerPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::Integer object"
@@ -104,6 +114,8 @@ class FrIntegerPrinter(gdb.printing.PrettyPrinter):
     def display_hint(self):
         return 'number'
 
+##########################################################################
+
 class FrFloatPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::Float object"
 
@@ -115,6 +127,8 @@ class FrFloatPrinter(gdb.printing.PrettyPrinter):
 
     def display_hint(self):
         return 'number'
+
+##########################################################################
 
 class FrListPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::List object"
@@ -160,6 +174,8 @@ class FrListPrinter(gdb.printing.PrettyPrinter):
 
     def children(self):
         return (c for c in self.make_children())
+
+##########################################################################
 
 class FrStringPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::String object"
@@ -210,6 +226,8 @@ class FrStringPrinter(gdb.printing.PrettyPrinter):
     def display_hint(self):
         return 'array'
 
+##########################################################################
+
 class FrSymbolPrinter(FrStringPrinter):
     "Print a Fr::Symbol object"
 
@@ -231,6 +249,8 @@ class FrSymbolPrinter(FrStringPrinter):
     def display_hint(self):
         return 'array'
 
+##########################################################################
+
 class FrVectorPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::Vector<> object"
 
@@ -245,6 +265,8 @@ class FrVectorPrinter(gdb.printing.PrettyPrinter):
 
     def children(self):
         return [] ##FIXME
+
+##########################################################################
 
 class FrObjectPrinter(gdb.printing.PrettyPrinter):
     "Print an arbitrary Fr::Object object"
@@ -299,7 +321,7 @@ class FrObjectPrinter(gdb.printing.PrettyPrinter):
     def to_string(self):
         if self.printer:
             return self.printer.to_string()
-        return "{} object @ {}".format(self.objtype,self.val.address)
+        return "{} @ {}".format(self.objtype,self.val.address)
 
     def display_hint(self):
         if self.printer:
@@ -310,6 +332,8 @@ class FrObjectPrinter(gdb.printing.PrettyPrinter):
         if self.printer and getattr(self.printer, 'children', None):
             return self.printer.children()
         return []  ## no children
+
+##########################################################################
 
 def build_pretty_printer():
    pp = gdb.printing.RegexpCollectionPrettyPrinter("FramepaC-ng")
@@ -328,3 +352,4 @@ def build_pretty_printer():
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(),build_pretty_printer())
 
+### end of file ###
