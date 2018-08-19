@@ -1,3 +1,21 @@
+##########################################################################
+## Version 0.09, last edit 2018-08-19					##
+##	by Ralf Brown <ralf@cs.cmu.edu>					##
+##									##
+## (c) Copyright 2018 Carnegie Mellon University			##
+##	This program may be redistributed and/or modified under the	##
+##	terms of the GNU General Public License, version 3, or an	##
+##	alternative license agreement as detailed in the accompanying	##
+##	file LICENSE.  You should also have received a copy of the	##
+##	GPL (file COPYING) along with this program.  If not, see	##
+##	http://www.gnu.org/licenses/					##
+##									##
+##	This program is distributed in the hope that it will be		##
+##	useful, but WITHOUT ANY WARRANTY; without even the implied	##
+##	warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR		##
+##	PURPOSE.  See the GNU General Public License for more details.	##
+##########################################################################
+
 import gdb.printing
 
 class StdMutexPrinter(gdb.printing.PrettyPrinter):
@@ -17,6 +35,8 @@ class StdMutexPrinter(gdb.printing.PrettyPrinter):
    def display_hint(self):
        return 'struct'
 
+RECURSIVE_CALL = False
+
 class FrAtomicPrinter(gdb.printing.PrettyPrinter):
    "Print a Fr::Atomic object"
 
@@ -34,45 +54,97 @@ class FrArrayPrinter(gdb.printing.PrettyPrinter):
 
     def __init__(self, val):
         self.val = val
+        self.members = self.val['m_array']
+        self.arrsize = int(self.val['m_size'])
+        self.curaddr = str(val.address)
 
     def to_string(self):
-        return "array of size {}, capacity {}".format(int(self.val['m_size']),int(self.val['m_alloc']))
+        return "Array({}/{})".format(self.arrsize,int(self.val['m_alloc']))
 
     def display_hint(self):
         return 'array'
 
+    def make_children(self):
+        global RECURSIVE_CALL
+        RECURSIVE_CALL = True
+        count = 0
+        while count < self.arrsize:
+            yield str(count),self.members[count].dereference()
+            count = count + 1
+        RECURSIVE_CALL = False
+        return
+
     def children(self):
-        return [] ##FIXME
+        return (c for c in self.make_children())
+
+class FrIntegerPrinter(gdb.printing.PrettyPrinter):
+    "Print a Fr::Integer object"
+
+    def __init__(self, val):
+        self.val = val
+        
+    def to_string(self):
+        return str(int(str(self.val['m_value']),16))
+
+    def display_hint(self):
+        return 'number'
+
+class FrFloatPrinter(gdb.printing.PrettyPrinter):
+    "Print a Fr::Float object"
+
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        return self.val['m_value']
+
+    def display_hint(self):
+        return 'number'
 
 class FrListPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::List object"
 
-    def __init__(self, val, generic=False):
-        self.objptr = gdb.lookup_type('Fr::Object').pointer()
-        if generic:
-            # we were recursively called by FrObjectPrinter, so 'val' is not of the correct type
-            self.lst = gdb.lookup_type('Fr::List')
-            self.lstptr = self.lst.pointer()
-            self.val = val.cast(self.lst)
-        else:
-            self.val = val
-
+    def __init__(self, val):
+        self.val = val
+        self.voidptr = gdb.lookup_type('void').pointer()
+        self.curraddr =  str(val.address)
+        self.no_children = self.is_empty_list()
+        
+    def is_empty_list(self):
+        self.nextaddr = str(self.val['m_next'].cast(self.voidptr))
+        return self.curraddr == self.nextaddr
+    
     def to_string(self):
-        if not self.val:
-            return 'NULL'
-        next = self.val['m_next']
-        nextptr = next.cast(self.lstptr)
-        if nextptr['m_next'] == next:
-#        if nextptr == self.val.cast(self.lstptr):
-            return "NIL"
-        head = self.val['m_item']
-        return "List({} ...)".format(FrObjectPrinter(head.cast(self.objptr)).to_string())
+        global RECURSIVE_CALL
+        if self.is_empty_list():
+            if RECURSIVE_CALL:
+                return '()'
+            else:
+                return 'empty List'
+        RECURSIVE_CALL = True
+        return 'List'
 
     def display_hint(self):
         return 'array'
 
+    def make_children(self):
+        global RECURSIVE_CALL
+        if self.no_children:
+            return
+        count = 0
+        while count < 32 and not self.is_empty_list():
+            head = self.val['m_item'].dereference()
+            self.curraddr = self.nextaddr
+            self.val = self.val['m_next'].dereference()
+            yield str(count),head
+            count = count + 1
+        if not self.is_empty_list():
+            yield str(count),gdb.Value('...')
+        RECURSIVE_CALL = False
+        return
+
     def children(self):
-        return [] ##FIXME
+        return (c for c in self.make_children())
 
 class FrStringPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::String object"
@@ -80,7 +152,7 @@ class FrStringPrinter(gdb.printing.PrettyPrinter):
     def __init__(self, val):
         self.val = val
 
-    def escape_byte(b):
+    def escape_byte(self, b):
         value = ord(b)
         if value == 9 or value >= 32:
             return chr(value)
@@ -94,7 +166,7 @@ class FrStringPrinter(gdb.printing.PrettyPrinter):
             return '\\e'
         return "^" + chr(value+64)
         
-    def collect_string(self, addr, len):
+    def collect_string(self, addr, len, quote = True):
         ellipsis = ''
         if len > 64:
             len = 61
@@ -103,14 +175,20 @@ class FrStringPrinter(gdb.printing.PrettyPrinter):
             bytes = gdb.selected_inferior().read_memory(addr,len)
         except gdb.MemoryError:
             return '(unreadable memory)'
-        chars = ['"'] + [self.escape_byte(b) for b in bytes] + [ellipsis, '"']
+        if quote:
+            chars = ['"'] + [self.escape_byte(b) for b in bytes] + [ellipsis, '"']
+        else:
+            chars = [self.escape_byte(b) for b in bytes] + [ellipsis]
         return ''.join(chars)
     
     def to_string(self):
         packedptr = self.val['m_buffer']['m_pointer'] ;
         len = (int(packedptr) >> 48) & 0xFFFF
         ptr = int(packedptr) & 0x0000FFFFFFFFFFFF
-        return "String({},{})".format(len,self.collect_string(ptr,len))
+        if RECURSIVE_CALL:
+            return self.collect_string(ptr,len)
+        else:
+            return "String({},{})".format(len,self.collect_string(ptr,len))
 
     def display_hint(self):
         return 'array'
@@ -128,7 +206,10 @@ class FrSymbolPrinter(FrStringPrinter):
         ptr = int(packedptr) & 0x0000FFFFFFFFFFFF
         propflags = (int(propptr) >> 48) & 0x0F
         symtab = (int(propptr) >> 52) & 0xFFF
-        return "Symbol({},{},{},{})".format(len,symtab,propflags,self.collect_string(ptr,len))
+        if RECURSIVE_CALL:
+            return self.collect_string(ptr,len,False)
+        else:
+            return "Symbol({},{},{},{})".format(len,symtab,propflags,self.collect_string(ptr,len))
 
     def display_hint(self):
         return 'array'
@@ -177,13 +258,23 @@ class FrObjectPrinter(gdb.printing.PrettyPrinter):
         self.printer = None
         self.objtype = self.get_typename(val.address)
         if self.objtype == 'String':
-            self.printer = FrStringPrinter(val)
+            strptr = gdb.lookup_type('Fr::String')
+            self.printer = FrStringPrinter(val.cast(strptr))
         elif self.objtype == 'Symbol':
-            self.printer = FrSymbolPrinter(val)
+            symptr = gdb.lookup_type('Fr::Symbol')
+            self.printer = FrSymbolPrinter(val.cast(symptr))
         elif self.objtype == 'Array':
-            self.printer = FrArrayPrinter(val)
+            arrptr = gdb.lookup_type('Fr::Array')
+            self.printer = FrArrayPrinter(val.cast(arrptr))
+        elif self.objtype == 'Float':
+            arrptr = gdb.lookup_type('Fr::Float')
+            self.printer = FrFloatPrinter(val.cast(arrptr))
+        elif self.objtype == 'Integer':
+            arrptr = gdb.lookup_type('Fr::Integer')
+            self.printer = FrIntegerPrinter(val.cast(arrptr))
         elif self.objtype == 'List':
-            self.printer = FrListPrinter(val,True)
+            lstptr = gdb.lookup_type('Fr::List')
+            self.printer = FrListPrinter(val.cast(lstptr))
 
     def to_string(self):
         if self.printer:
@@ -205,6 +296,8 @@ def build_pretty_printer():
    pp.add_printer('std::mutex', '^std::mutex$', StdMutexPrinter)
    pp.add_printer('Fr::Atomic', '^Fr::Atomic<', FrAtomicPrinter)
    pp.add_printer('Fr::Array', '^Fr::Array$', FrArrayPrinter)
+   pp.add_printer('Fr::Float', '^Fr::Float$', FrFloatPrinter)
+   pp.add_printer('Fr::Integer', '^Fr::Integer$', FrIntegerPrinter)
    pp.add_printer('Fr::List', '^Fr::List$', FrListPrinter)
    pp.add_printer('Fr::Object', '^Fr::Object *$', FrObjectPrinter)
    pp.add_printer('Fr::String', '^Fr::String$', FrStringPrinter)
