@@ -69,13 +69,28 @@ class FrArrayPrinter(gdb.printing.PrettyPrinter):
         RECURSIVE_CALL = True
         count = 0
         while count < self.arrsize:
-            yield str(count),self.members[count].dereference()
+            member = self.members[count]
+            if str(member.address) == '0x0':
+                yield str(count),'NULL'
+            yield str(count),member.dereference()
             count = count + 1
         RECURSIVE_CALL = False
         return
 
     def children(self):
         return (c for c in self.make_children())
+
+class FrBitvectorPrinter(gdb.printing.PrettyPrinter):
+    "Print a Fr::BitVector object"
+
+    def __init__(self, val):
+        self.val = val
+        
+    def to_string(self):
+        return 'BitVector({}/{})'.format(int(str(self.val['m_size'])),int(str(self.val['m_capacity'])))
+
+    def display_hint(self):
+        return 'number'
 
 class FrIntegerPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::Integer object"
@@ -154,6 +169,8 @@ class FrStringPrinter(gdb.printing.PrettyPrinter):
 
     def escape_byte(self, b):
         value = ord(b)
+        if value == ord('\\'):
+            return '\\\\'
         if value == 9 or value >= 32:
             return chr(value)
         if value == 0:
@@ -221,7 +238,7 @@ class FrVectorPrinter(gdb.printing.PrettyPrinter):
         self.val = val
 
     def to_string(self):
-        return self.val['m_size'].string()
+        return 'Vector({})'.format(int(self.val['m_size']))
 
     def display_hint(self):
         return 'array'
@@ -266,12 +283,15 @@ class FrObjectPrinter(gdb.printing.PrettyPrinter):
         elif self.objtype == 'Array':
             arrptr = gdb.lookup_type('Fr::Array')
             self.printer = FrArrayPrinter(val.cast(arrptr))
+        elif self.objtype == 'BitVector':
+            bvptr = gdb.lookup_type('Fr::BitVector')
+            self.printer = FrBitvectorPrinter(val.cast(bvptr))
         elif self.objtype == 'Float':
-            arrptr = gdb.lookup_type('Fr::Float')
-            self.printer = FrFloatPrinter(val.cast(arrptr))
+            fltptr = gdb.lookup_type('Fr::Float')
+            self.printer = FrFloatPrinter(val.cast(fltptr))
         elif self.objtype == 'Integer':
-            arrptr = gdb.lookup_type('Fr::Integer')
-            self.printer = FrIntegerPrinter(val.cast(arrptr))
+            intptr = gdb.lookup_type('Fr::Integer')
+            self.printer = FrIntegerPrinter(val.cast(intptr))
         elif self.objtype == 'List':
             lstptr = gdb.lookup_type('Fr::List')
             self.printer = FrListPrinter(val.cast(lstptr))
@@ -296,6 +316,7 @@ def build_pretty_printer():
    pp.add_printer('std::mutex', '^std::mutex$', StdMutexPrinter)
    pp.add_printer('Fr::Atomic', '^Fr::Atomic<', FrAtomicPrinter)
    pp.add_printer('Fr::Array', '^Fr::Array$', FrArrayPrinter)
+   pp.add_printer('Fr::BitVector', '^Fr::BitVector$', FrBitvectorPrinter)
    pp.add_printer('Fr::Float', '^Fr::Float$', FrFloatPrinter)
    pp.add_printer('Fr::Integer', '^Fr::Integer$', FrIntegerPrinter)
    pp.add_printer('Fr::List', '^Fr::List$', FrListPrinter)
