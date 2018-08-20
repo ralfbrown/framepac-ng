@@ -90,7 +90,7 @@ bool WordCorpusT<IdT,IdxT>::isCorpusFile(const char* filename)
 {
    CInputFile fp(filename,CFile::binary) ;
    int version = file_format ;
-   return fp && fp.verifySignature(signature,filename,version,min_file_format) ;
+   return fp && fp.verifySignature(signature,filename,version,min_file_format,true) ;
 }
 
 //----------------------------------------------------------------------------
