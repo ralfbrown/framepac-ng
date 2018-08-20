@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.09, last edit 2018-08-20					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -57,14 +57,14 @@ class CpuTimer : public TimerBase
       using TimerBase::formattedTime ;
       char *formattedTime(bool use_colons = false) const ;
    private:
-#ifdef _POSIX_CPUTIME
+#ifdef CLOCK_PROCESS_CPUTIME_ID
       struct timespec m_start_time ;
       struct timespec currTime() const
 	 { struct timespec tm ; clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&tm) ; return tm ; }
 #else
       std::clock_t m_start_time ;
       std::clock_t currTime() const { return std::clock() ; }
-#endif /* _POSIX_CPUTIME */
+#endif /* CLOCK_PROCESS_CPUTIME_ID */
    } ;
 
 //----------------------------------------------------------------------------

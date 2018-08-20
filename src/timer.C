@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-03-28					*/
+/* Version 0.09, last edit 2018-08-20					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -107,7 +107,7 @@ std::ostream& TimerBase::formatTime(std::ostream& out, double elapsed, bool use_
 
 double CpuTimer::seconds() const
 {
-#ifdef _POSIX_CPUTIME
+#ifdef CLOCK_PROCESS_CPUTIME_ID
    struct timespec now = currTime() ;
    time_t seconds = now.tv_sec - m_start_time.tv_sec ;
    long nanos = now.tv_nsec - m_start_time.tv_nsec ;
@@ -120,7 +120,7 @@ double CpuTimer::seconds() const
 #else
    std::clock_t now = currTime() ;
    return (now - m_start_time) / (double)(CLOCKS_PER_SEC) ;
-#endif /* _POSIX_CPUTIME */
+#endif /* CLOCK_PROCESS_CPUTIME_ID */
 }
 
 //----------------------------------------------------------------------------
