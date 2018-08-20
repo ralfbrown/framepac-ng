@@ -751,30 +751,6 @@ class HashTable : public HashTableBase
 #endif /* FrSINGLE_THREADED */
          } ;
       //------------------------
-   protected: // members
-      Atomic<Table*>   	    m_table ;			// pointer to currently-active m_tables[] entry
-      Atomic<Table*>	    m_oldtables { nullptr } ;	// start of list of currently-live hash arrays
-      Atomic<Table*>	    m_freetables { nullptr } ;
-      Table		    m_tables[FrHT_NUM_TABLES] ;	// hash array, chains, and associated data
-      HashTableCleanupFunc* cleanup_fn ;		// invoke on destruction of obj
-      HashKVFunc*           remove_fn ; 		// invoke on removal of entry/value
-      void*                 m_userdata ;		// available for use by isEqual, hashValue, hashValueFull
-      static Fr::ThreadInitializer<HashTable> initializer ;
-#ifndef FrSINGLE_THREADED
-      static TablePtr*    s_thread_entries ;
-      static thread_local TablePtr* s_thread_record ;
-      static thread_local Table*    s_table ; // thread's announcement which hash table it's using
-#endif /* FrSINGLE_THREADED */
-#ifdef FrHASHTABLE_STATS
-      mutable HashTable_Stats	  m_stats ;
-      static thread_local HashTable_Stats* s_stats ;
-#endif /* FrHASHTABLE_STATS */
-
-      // magic values for serializing
-      static constexpr auto signature = "\x7FHshTable" ;
-      static constexpr unsigned file_format = 1 ;
-      static constexpr unsigned min_file_format = 1 ;
-
    protected: // debug methods
 #if FrHASHTABLE_VERBOSITY > 1
       [[gnu::format(printf,1,2)]] 
@@ -887,8 +863,6 @@ class HashTable : public HashTableBase
       // *** object factories ***
       static HashTable* create(size_t initial_size = 257)
 	 { return new HashTable(initial_size) ; }
-      // *** destroying ***
-      static void free_(Object* obj) { delete static_cast<HashTable*>(obj) ; }
       
       bool resizeTo(size_t newsize) { DELEGATE(resize(newsize)) ; }
       bool reserve_(size_t newsize) { DELEGATE(resize(newsize)) ; }
@@ -1115,13 +1089,12 @@ class HashTable : public HashTableBase
 #endif
 
       // ============= Fr::Object support =============
-      const char* typeName_() const { return "HashTable" ; }
-      HashTable* shallowCopy_() const { return new HashTable(*this) ; }
-      HashTable* clone_() const { return new HashTable(*this) ; }
-      void free_() { delete this ; }
-      void shallowFree_() { free_() ; }
-      size_t size_() const { return currentSize() ; }
-      size_t hashValue_() const { return 0 ; } //FIXME
+      static ObjectPtr clone_(const Object* o) { return new HashTable(*static_cast<const HashTable*>(o)) ; }
+      static Object* shallowCopy_(const Object* o) { return clone_(o) ; }
+      static void free_(Object* o) { delete static_cast<HashTable*>(o) ; }
+      static void shallowFree_(Object* o) { free_(o) ; }
+      static size_t size_(const Object* o) { return static_cast<const HashTable*>(o)->currentSize() ; }
+      static size_t hashValue_(const Object*) { return 0 ; } //FIXME
 
       virtual ostream &printValue(ostream &output) const { DELEGATE(printValue(output)) ; }
 
@@ -1129,12 +1102,42 @@ class HashTable : public HashTableBase
       // NOTE: will not be valid if there are any add/remove/resize calls between calling
       //   this function and using displayValue(); user must ensure locking if multithreaded
       size_t cStringLength_(size_t wrap_at, size_t indent) const { DELEGATE(cStringLength(wrap_at,indent)) ; }
+      static size_t cStringLength_(const Object* o, size_t wrap_at, size_t indent, size_t /*wrapped_indent*/)
+	 { return o ? static_cast<const HashTable*>(o)->cStringLength_(wrap_at,indent) : 0 ; }
       virtual char* displayValue(char *buffer) const { DELEGATE(displayValue(buffer)) ; }
 
       //  =========== Debugging Support ============
       [[gnu::cold]] bool verify() const { DELEGATE(verify()) }
 
+   protected: // members of HashTable
+      Atomic<Table*>   	    m_table ;			// pointer to currently-active m_tables[] entry
+      Atomic<Table*>	    m_oldtables { nullptr } ;	// start of list of currently-live hash arrays
+      Atomic<Table*>	    m_freetables { nullptr } ;
+      Table		    m_tables[FrHT_NUM_TABLES] ;	// hash array, chains, and associated data
+      HashTableCleanupFunc* cleanup_fn ;		// invoke on destruction of obj
+      HashKVFunc*           remove_fn ; 		// invoke on removal of entry/value
+      void*                 m_userdata ;		// available for use by isEqual, hashValue, hashValueFull
+      static Fr::ThreadInitializer<HashTable> initializer ;
+#ifndef FrSINGLE_THREADED
+      static TablePtr*    s_thread_entries ;
+      static thread_local TablePtr* s_thread_record ;
+      static thread_local Table*    s_table ; // thread's announcement which hash table it's using
+#endif /* FrSINGLE_THREADED */
+#ifdef FrHASHTABLE_STATS
+      mutable HashTable_Stats	  m_stats ;
+      static thread_local HashTable_Stats* s_stats ;
+#endif /* FrHASHTABLE_STATS */
+
+      // magic values for serializing
+      static constexpr auto signature = "\x7FHshTable" ;
+      static constexpr unsigned file_format = 1 ;
+      static constexpr unsigned min_file_format = 1 ;
+   private:
+      static const char s_typename[] ;
    } ;
+
+template <typename KeyT, typename ValT>
+const char HashTable<KeyT,ValT>::s_typename[] = "HashTable" ;
 
 #ifndef FrSINGLE_THREADED
 template <typename KeyT, typename ValT>
@@ -1243,7 +1246,9 @@ class HashTableIterBase
       typename HashTable<KeyT,ValT>::Table* m_table ;
       size_t                       m_index ;
    } ;
-   
+
+//----------------------------------------------------------------------------
+
 template <typename KeyT, typename ValT, typename RetT>
 class HashTableIter : public HashTableIterBase<KeyT,ValT>
    {
