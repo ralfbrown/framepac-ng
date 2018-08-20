@@ -78,7 +78,8 @@ class FrArrayPrinter(gdb.printing.PrettyPrinter):
             member = self.members[count]
             if str(member.address) == '0x0':
                 yield str(count),'NULL'
-            yield str(count),member.dereference()
+            else:
+                yield str(count),member.dereference()
             count = count + 1
         RECURSIVE_CALL = False
         return
@@ -228,6 +229,20 @@ class FrStringPrinter(gdb.printing.PrettyPrinter):
 
 ##########################################################################
 
+class FrRefArrayPrinter(FrArrayPrinter):
+    "Print a Fr::RefArray object"
+
+    def __init__(self, val):
+        self.val = val
+        self.members = self.val['m_array']
+        self.arrsize = int(self.val['m_size'])
+        self.curaddr = str(val.address)
+
+    def to_string(self):
+        return "RefArray({}/{})".format(self.arrsize,int(self.val['m_alloc']))
+
+##########################################################################
+
 class FrSymbolPrinter(FrStringPrinter):
     "Print a Fr::Symbol object"
 
@@ -305,6 +320,9 @@ class FrObjectPrinter(gdb.printing.PrettyPrinter):
         elif self.objtype == 'Array':
             arrptr = gdb.lookup_type('Fr::Array')
             self.printer = FrArrayPrinter(val.cast(arrptr))
+        elif self.objtype == 'RefArray':
+            arrptr = gdb.lookup_type('Fr::RefArray')
+            self.printer = FrRefArrayPrinter(val.cast(arrptr))
         elif self.objtype == 'BitVector':
             bvptr = gdb.lookup_type('Fr::BitVector')
             self.printer = FrBitvectorPrinter(val.cast(bvptr))
@@ -345,6 +363,7 @@ def build_pretty_printer():
    pp.add_printer('Fr::Integer', '^Fr::Integer$', FrIntegerPrinter)
    pp.add_printer('Fr::List', '^Fr::List$', FrListPrinter)
    pp.add_printer('Fr::Object', '^Fr::Object *$', FrObjectPrinter)
+   pp.add_printer('Fr::RefArray', '^Fr::RefArray$', FrArrayPrinter)
    pp.add_printer('Fr::String', '^Fr::String$', FrStringPrinter)
    pp.add_printer('Fr::Symbol', '^Fr::Symbol$', FrSymbolPrinter)
    pp.add_printer('Fr::Vector', '^Fr::Vector<', FrVectorPrinter)

@@ -689,7 +689,8 @@ template <typename IdxT, typename ValT>
 size_t ClusteringAlgo<IdxT,ValT>::assignToNearest(const Array* vectors, const Array* centers,
    ProgressIndicator* prog, double threshold) const
 {
-   ThreadPool *tp = ThreadPool::defaultPool() ;
+//   ThreadPool *tp = ThreadPool::defaultPool() ;
+   ThreadPool *tp = new ThreadPool(0) ;
    if (!tp) return false ;
    size_t changes { 0 } ;
    if (tp->parallelize(assign_vector_to_nearest_center<IdxT,ValT>,vectors->size(),vectors,

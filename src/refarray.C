@@ -123,6 +123,19 @@ void RefArray::clearArray(bool free_objects)
 
 //----------------------------------------------------------------------------
 
+void RefArray::setNth(size_t N, Object* val)
+{
+   if (N < m_alloc)
+      {
+      if (N >= m_size)
+	 m_size = N+1 ;
+      m_array[N] = val ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 bool RefArray::append(Object* obj)
 {
    if (m_size >= m_alloc)

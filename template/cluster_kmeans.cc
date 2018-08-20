@@ -175,6 +175,8 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       centers = RefArray::create() ;
       Ptr<RefArray> sample { vectors->randomSample(2*num_clusters) } ;
       // start by arbitrarily picking the first vector in the sample
+      Vector<ValT>* vec = static_cast<Vector<ValT>*>(sample->getNth(0)) ;
+      cout << "center: " << vec << endl ;
       centers->append(sample->getNth(0)) ;
       sample->setNth(0,nullptr) ;
       // until we've accumulated desiredClusters() vectors, search for
@@ -183,6 +185,8 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       for (size_t i = 1 ; i < num_clusters ; ++i)
 	 {
 	 size_t selected = find_least_similar<IdxT,ValT>(sample, centers,this->m_measure) ;
+	 Vector<ValT>* v = static_cast<Vector<ValT>*>(sample->getNth(selected)) ;
+	 cout << "center: " << v << endl ;
 	 centers->append(sample->getNth(selected)) ;
 	 sample->setNth(selected,nullptr) ;
 	 }
