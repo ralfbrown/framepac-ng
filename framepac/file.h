@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-27					*/
+/* Version 0.09, last edit 2018-08-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -139,7 +139,7 @@ class CFile
       static size_t signatureSize(const char* sigstring) ;
       int verifySignature(const char* sigstring) ;
       // returns format version stored in header, -1 on read error, -2 if wrong signature, -3 if wrong endianness
-      bool verifySignature(const char* sigstring, const char* filename, int& currver, int minver) ;
+      bool verifySignature(const char* sigstring, const char* filename, int& currver, int minver, bool silent = false);
       bool writeSignature(const char* sigstring, int version) ;
 
       template <typename T>

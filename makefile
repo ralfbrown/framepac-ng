@@ -179,7 +179,7 @@ LINKFLAGS +=$(LINKSAN)
 ifeq ($(BUILD_DBG),2)
   CFLAGS += -ggdb3 -O0 -fno-inline -g3
 else ifeq ($(BUILD_DBG),1)
-  CFLAGS += -ggdb3 -O -g3 -fno-extern-tls-init
+  CFLAGS += -ggdb3 -Og -g3 -fno-extern-tls-init
 else
   CFLAGS += -O3 -fexpensive-optimizations -fno-extern-tls-init -g$(DBGLVL) $(GDB)
 # CFLAGS += -fweb -ftracer -fgcse-sm -fgcse-las -fno-math-errno

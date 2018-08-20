@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.09, last edit 2018-08-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -547,32 +547,37 @@ int CFile::verifySignature(const char* sigstring)
 
 //----------------------------------------------------------------------------
 
-bool CFile::verifySignature(const char* sigstring, const char* filename, int &currver, int minver)
+bool CFile::verifySignature(const char* sigstring, const char* filename, int &currver, int minver, bool silent)
 {
    int ver = verifySignature(sigstring) ;
    if (ver == -1)
       {
-      SystemMessage::error("read error on %s",filename) ;
+      if (!silent)
+	 SystemMessage::error("read error on %s",filename) ;
       return false ;
       }
    else if (ver == -2)
       {
-      SystemMessage::error("wrong file type for %s",filename) ;
+      if (!silent)
+	 SystemMessage::error("wrong file type for %s",filename) ;
       return false ;
       }
    else if (ver == -3)
       {
-      SystemMessage::error("file '%s' was written by a system with a different byte order",filename) ;
+      if (!silent)
+	 SystemMessage::error("file '%s' was written by a system with a different byte order",filename) ;
       return false ;
       }
    else if (ver < minver)
       {
-      SystemMessage::error("file '%s' is in an obsolete format",filename) ;
+      if (!silent)
+	 SystemMessage::error("file '%s' is in an obsolete format",filename) ;
       return false ;
       }
    else if (ver > currver)
       {
-      SystemMessage::error("file '%s' is from a newer version of the program",filename) ;
+      if (!silent)
+	 SystemMessage::error("file '%s' is from a newer version of the program",filename) ;
       return false ;
       }
    currver = ver ;
