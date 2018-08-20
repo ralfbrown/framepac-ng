@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-05-14					*/
+/* Version 0.09, last edit 2018-08-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -1394,44 +1394,7 @@ bool HashTable<KeyT,ValT>::Table::verify() const
 
 //----------------------------------------------------------------------------
 
-template <typename KeyT, typename ValT>
-ostream &HashTable<KeyT,ValT>::Table::printKeyValue(ostream &output, KeyT key) const
-{
-   return output << key ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename KeyT, typename ValT>
-ostream &HashTable<KeyT,ValT>::Table::printValue(ostream &output) const
-{
-   output << "#H(" ;
-   size_t orig_indent = FramepaC::initial_indent ;
-   FramepaC::initial_indent += 3 ; //strlen("#H(")
-   size_t loc = FramepaC::initial_indent ;
-   bool first = true ;
-   for (size_t i = 0 ; i < capacity() ; ++i)
-      {
-      KeyT key = getKey(i) ;
-      if (key == Entry::DELETED())
-	 continue ;
-      size_t len = keyDisplayLength(key) ;
-      loc += len ;
-      if (loc > FramepaC_display_width && !first)
-	 {
-	 output << '\n' << setw(FramepaC::initial_indent) << " " ;
-	 loc = FramepaC::initial_indent + len ;
-	 }
-      output << key << ' ' ;
-      first = false ;
-      }
-   output << ")" ;
-   FramepaC::initial_indent = orig_indent ;
-   return output ;
-}
-
-//----------------------------------------------------------------------------
-
+//TODO: convert to toCString_()
 template <typename KeyT, typename ValT>
 char* HashTable<KeyT,ValT>::Table::displayValue(char* buffer) const
 {
@@ -1775,9 +1738,10 @@ void HashTable<KeyT,ValT>::threadCleanup()
 //----------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-bool HashTable<KeyT,ValT>::assistResize()
+bool HashTable<KeyT,ValT>::doAssistResize(HashTableBase* htb)
 {
-   Table *tab = m_oldtables.load() ;
+   HashTable* ht = static_cast<HashTable*>(htb) ;
+   Table *tab = ht->m_oldtables.load() ;
    while (tab && tab->next())
       {
       if (!tab->resizingDone())
@@ -1786,16 +1750,16 @@ bool HashTable<KeyT,ValT>::assistResize()
 	 }
       tab = tab->next() ;
       }
-   tab = m_oldtables.load() ;
-   if (tab->resizingDone() && !stillLive(tab))
+   tab = ht->m_oldtables.load() ;
+   if (tab->resizingDone() && !ht->stillLive(tab))
       {
       Table* nxt = tab->next() ;
-      if (m_oldtables.compare_exchange_strong(tab,nxt))
+      if (ht->m_oldtables.compare_exchange_strong(tab,nxt))
 	 {
-	 releaseTable(tab) ;
+	 ht->releaseTable(tab) ;
 	 }
       }
-   return m_oldtables.load() != m_table.load() ;
+   return ht->m_oldtables.load() != ht->m_table.load() ;
 }
 
 /************************************************************************/

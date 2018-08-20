@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-26					*/
+/* Version 0.09, last edit 2018-08-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -282,17 +282,18 @@ class HashTableBase : public Object
    public: // types
       typedef Object super ;
    public:
-      HashTableBase() : m_active_resizes(0) {}
+      HashTableBase(bool (*assist)(HashTableBase*) = nullptr) : m_active_resizes(0), m_assist(assist) {}
       ~HashTableBase() ;
 
       void startResize() ;
       void finishResize() ;
 
       unsigned activeResizes() const { return m_active_resizes ; }
+      bool assistResize() { return m_assist ? m_assist(this) : false ; }
 
-      virtual bool assistResize() { return false ; }
    protected:
       atom_int	     m_active_resizes ;
+      bool         (*m_assist)(HashTableBase*) { nullptr } ;
    } ;
 
 /************************************************************************/
@@ -641,8 +642,6 @@ class HashTable : public HashTableBase
 	 [[gnu::cold]] bool verify() const ;
 
 	 // ============= Object support =============
-	 ostream &printValue(ostream &output) const ;
-	 ostream &printKeyValue(ostream &output, KeyT key) const ;
 
 	 template <typename RetT = size_t>
 	 typename std::enable_if<std::is_integral<KeyT>::value,RetT>::type
@@ -848,13 +847,13 @@ class HashTable : public HashTableBase
       // ============== The public API for HashTable ================
    public:
       HashTable(size_t initial_size = 1031)
-	 : HashTableBase(), m_table(nullptr)
+	 : HashTableBase(doAssistResize), m_table(nullptr)
 	 {
 	    init(initial_size) ;
 	    return ;
 	 }
       HashTable(const HashTable &ht) ;
-      virtual ~HashTable() ;
+      ~HashTable() ;
 
       bool load(CFile&, const char* filename) ;
       bool load(const char* mmap_base, size_t mmap_len) ;
@@ -1019,7 +1018,7 @@ class HashTable : public HashTableBase
       HashKVFunc *onRemoveFunc() const { return remove_fn ; }
 
       // =============== Background Processing =================
-      virtual bool assistResize() ;
+      static bool doAssistResize(HashTableBase*) ;
 
       // =============== Operational Statistics ================
       [[gnu::cold]] void clearGlobalStats()
@@ -1096,15 +1095,14 @@ class HashTable : public HashTableBase
       static size_t size_(const Object* o) { return static_cast<const HashTable*>(o)->currentSize() ; }
       static size_t hashValue_(const Object*) { return 0 ; } //FIXME
 
-      virtual ostream &printValue(ostream &output) const { DELEGATE(printValue(output)) ; }
-
       // get size of buffer needed to display the string representation of the hash table
       // NOTE: will not be valid if there are any add/remove/resize calls between calling
       //   this function and using displayValue(); user must ensure locking if multithreaded
       size_t cStringLength_(size_t wrap_at, size_t indent) const { DELEGATE(cStringLength(wrap_at,indent)) ; }
       static size_t cStringLength_(const Object* o, size_t wrap_at, size_t indent, size_t /*wrapped_indent*/)
 	 { return o ? static_cast<const HashTable*>(o)->cStringLength_(wrap_at,indent) : 0 ; }
-      virtual char* displayValue(char *buffer) const { DELEGATE(displayValue(buffer)) ; }
+      //TODO: convert displayValue to toCString_()
+      char* displayValue(char *buffer) const { DELEGATE(displayValue(buffer)) ; }
 
       //  =========== Debugging Support ============
       [[gnu::cold]] bool verify() const { DELEGATE(verify()) }
