@@ -777,18 +777,18 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInf
 {
    clusters = nullptr ;
    // count the number of unique labels on the vectors, and assign each one an index
-   ObjCountHashTable label_map ;
+   ScopedObject<ObjCountHashTable> label_map ;
    for (auto vec : *vectors)
       {
       if (!vec) continue ;
       auto vector = static_cast<Vector<ValT>*>(vec) ;
       Symbol* label = vector->label() ;
-      if (label && !label_map.contains(label))
+      if (label && !label_map->contains(label))
 	 {
-	 label_map.add(label,label_map.currentSize()) ;
+	 label_map->add(label,label_map->currentSize()) ;
 	 }
       }
-   num_clusters = label_map.currentSize() ;
+   num_clusters = label_map->currentSize() ;
    if (num_clusters)
       {
       clusters = new ClusterInfo*[num_clusters] ;
@@ -804,7 +804,7 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInf
 	 Symbol* label = vector->label() ;
 	 if (!label && unassigned)
 	    unassigned->append(vector) ;
-	 size_t index = label_map.lookup(label) ;
+	 size_t index = label_map->lookup(label) ;
 	 clusters[index]->addVector(vector) ;
 	 clusters[index]->setLabel(vector->label()) ;
 	 }

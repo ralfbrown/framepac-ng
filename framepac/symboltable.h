@@ -33,10 +33,10 @@ namespace Fr
 
 //----------------------------------------------------------------------------
 
-class SymbolTable : public Object
+class SymbolTable : public SymHashSet
    {
    public: // types
-      typedef Object super ;
+      typedef SymHashSet super ;
    public:
       static SymbolTable* create(size_t capacity = 0) ;
       static SymbolTable* current() ;
@@ -46,15 +46,15 @@ class SymbolTable : public Object
 
       Symbol* gensym(const char* basename = nullptr, const char* suffix = nullptr) ;
 
-      Symbol* add(const char* name) { return name ? const_cast<Symbol*>(m_symbols.addKey(name)) : nullptr ; }
+      Symbol* add(const char* name) { return name ? const_cast<Symbol*>(this->addKey(name)) : nullptr ; }
       Symbol* add(const String* name) { return name ? add(name->c_str()) : nullptr ; }
       Symbol* add(const Object* obj) { return obj ? add(obj->stringValue()) : nullptr ; }
 
-      Symbol* find(const char* name) const { return const_cast<Symbol*>(m_symbols.lookupKey(name)) ; }
+      Symbol* find(const char* name) const { return const_cast<Symbol*>(this->lookupKey(name)) ; }
       Symbol* find(const String* name) const { return name ? find(name->c_str()) : nullptr ; }
 
-      bool exists(const char* name) const { return m_symbols.contains(name) ; }
-      bool exists(const String* name) const { return name ? m_symbols.contains(name->c_str()) : false ; }
+      bool exists(const char* name) const { return this->contains(name) ; }
+      bool exists(const String* name) const { return name ? this->contains(name->c_str()) : false ; }
 
       void tableName(const char* name) ;
       const char* tableName() const { return m_name ; }
@@ -96,7 +96,7 @@ class SymbolTable : public Object
 				size_t indent) ;
 
       // *** standard info functions ***
-      static size_t size_(const Object* obj) { return static_cast<const SymbolTable*>(obj)->m_symbols.size() ; }
+      static size_t size_(const Object* obj) { return static_cast<const SymbolTable*>(obj)->size() ; }
       static bool empty_(const Object* obj) { return size_(obj) != 0 ; }
 
       // *** standard access functions ***
@@ -121,7 +121,6 @@ class SymbolTable : public Object
       static const char s_typename[] ;
 
    protected:
-      SymHashSet m_symbols ;
       unsigned   m_table_id ;
       char*      m_name { nullptr } ;
    } ;

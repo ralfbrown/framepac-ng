@@ -266,6 +266,7 @@ class STLset : public unordered_set<INTEGER_TYPE>
 	 {
 	 }
       ~STLset() = default ;
+      static STLset* create(size_t init_size) { return new STLset(init_size) ; }
       void free() { delete this ; }
 
       bool add(INTEGER_TYPE key)
@@ -401,6 +402,8 @@ class HopscotchMap
 	 {
 	 }
       ~HopscotchMap() = default ;
+      static HopscotchMap* create(size_t init_size,size_t concur = g_Hopscotch_Concurrency)
+	 { return new HopscotchMap(init_size,concur) ; }
       void free() { delete this ; }
 
       bool add(INTEGER_TYPE key) { (void)ht.putIfAbsent(key,0) ; return false; }
@@ -1332,7 +1335,7 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
    size_t* neighborhoods[5] ;
    size_t max_neighbors[5] ;
 
-   Ptr<HashT> ht { new HashT(startsize) } ;
+   Ptr<HashT> ht { HashT::create(startsize) } ;
    ThreadPool tpool(threads) ;
    if (!terse)
       out << "Checking overhead (NOP) " << endl ;
@@ -1372,12 +1375,12 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
    if (throughput < 0)
       {
       hash_test(&tpool,out,"Lookups in empty table",threads,cycles,&ht,maxsize,keys,Op_CHECKMISS,terse,overhead) ;
-      ht = new HashT(startsize) ;
+      ht = HashT::create(startsize) ;
       hash_test(&tpool,out,"Random additions",writethreads,half_cycles,&ht,maxsize,keys,Op_RANDOM_ADDONLY,terse,overhead,true,
 	 randnums) ;
       if_SHOW_CHAINS(chains[1] = ht->chainLengths(max_chain[1])) ;
       hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
-      ht = new HashT(startsize) ;
+      ht = HashT::create(startsize) ;
       hash_test(&tpool,out,"Random ops (del=1)",writethreads,half_cycles,&ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
 	 randnums + maxsize/2 - 1) ;
       if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
@@ -1385,14 +1388,14 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
 	 	randnums + maxsize/2 - 1) ;
       if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
       hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
-      ht = new HashT(startsize) ;
+      ht = HashT::create(startsize) ;
       hash_test(&tpool,out,"Random ops (del=3)",writethreads,cycles,&ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
 	 randnums + maxsize - 1) ;
       if_SHOW_CHAINS(chains[3] = ht->chainLengths(max_chain[3])) ;
       if (show_neighbors)
 	 neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1]) ;
       hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
-      ht = new HashT(startsize) ;
+      ht = HashT::create(startsize) ;
       hash_test(&tpool,out,"Random ops (del=7)",writethreads,cycles,&ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
 	 randnums + maxsize - 1) ;
       if_SHOW_CHAINS(chains[4] = ht->chainLengths(max_chain[4])) ;

@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.02, last edit 2017-07-27					*/
+/* Version 0.09, last edit 2018-08-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -30,9 +30,8 @@ namespace Fr
 
 SpellCorrectionData::SpellCorrectionData(const ObjHashTable* gw, const SymCountHashTable* wc,
    LetterConfusionMatrix* cm, ObjHashTable* subst, size_t maxsubst)
+   : m_good_words(gw), m_wordcounts(wc)
 {
-   m_good_words = gw ;
-   m_wordcounts = wc ;
    m_confmatrix = cm ;
    m_substitutions = subst ;
    m_maxsubst = maxsubst ;
@@ -44,8 +43,8 @@ SpellCorrectionData::SpellCorrectionData(const ObjHashTable* gw, const SymCountH
 SpellCorrectionData::~SpellCorrectionData()
 {
    m_good_words = nullptr ;
+   m_wordcounts = nullptr  ;
    m_substitutions = nullptr ;
-   m_wordcounts = nullptr ;
    m_confmatrix = nullptr ;
    m_maxsubst = 0 ;
    return ;

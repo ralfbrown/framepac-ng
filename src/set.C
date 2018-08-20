@@ -4,7 +4,7 @@
 /* Version 0.09, last edit 2018-08-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -37,10 +37,8 @@ const char Set::s_typename[] = "Set" ;
 /************************************************************************/
 /************************************************************************/
 
-Set::Set(size_t initial_size)
-   : m_size(0), m_set()
+Set::Set(size_t initial_size) : super(initial_size), m_size(0)
 {
-   (void)initial_size ; //FIXME
    //FIXME
 
    return ;
@@ -48,7 +46,7 @@ Set::Set(size_t initial_size)
 
 //----------------------------------------------------------------------------
 
-Set::Set(const Set *) : Object(), m_size(0), m_set()
+Set::Set(const Set *orig) : super(*orig), m_size(0)
 {
 
    return ;
@@ -56,7 +54,7 @@ Set::Set(const Set *) : Object(), m_size(0), m_set()
 
 //----------------------------------------------------------------------------
 
-Set::Set(const Set &) : Object(), m_size(0), m_set()
+Set::Set(const Set &orig) : super(orig), m_size(0)
 {
 
    return ;
@@ -101,9 +99,9 @@ size_t Set::cStringLength_(const Object* obj, size_t wrap_at, size_t indent, siz
 {
    size_t len = indent + 4 ;
    bool first { true } ;
-   for (const auto key : static_cast<const Set*>(obj)->m_set)
+   for (const auto key : *static_cast<const Set*>(obj))
       {
-      len += key.first->cStringLength(wrap_at,indent,wrapped_indent) ;
+      len += key->cStringLength(wrap_at,indent,wrapped_indent) ;
       if (first)
 	 first = false ;
       else
@@ -121,13 +119,13 @@ char* Set::toCstring_(const Object* obj, char* buffer, size_t buflen, size_t wra
    char* bufend = buffer + buflen ;
    buffer += snprintf(buffer,buflen,"%*s",(int)indent,"#H(") ;
    bool first { true } ;
-   for (const auto key : static_cast<const Set*>(obj)->m_set)
+   for (const auto key : *static_cast<const Set*>(obj))
       {
       if (first)
 	 first = false ;
       else
 	 *buffer++ = ' ' ;
-      buffer = key.first->toCstring(buffer,bufend-buffer,wrap_at,0,wrapped_indent) ;
+      buffer = key->toCstring(buffer,bufend-buffer,wrap_at,0,wrapped_indent) ;
       }
    *buffer++ = ')' ;
    return buffer ;

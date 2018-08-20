@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-18					*/
+/* Version 0.09, last edit 2018-08-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -49,14 +49,14 @@ Atomic<size_t> gensym_count ;
 /*	Methods for class SymbolTable					*/
 /************************************************************************/
 
-SymbolTable::SymbolTable(size_t initial_size) : m_symbols(initial_size)
+SymbolTable::SymbolTable(size_t initial_size) : super(initial_size)
 {
    return ;
 }
 
 //----------------------------------------------------------------------------
 
-SymbolTable::SymbolTable(const SymbolTable &orig) : Object(), m_symbols(orig.m_symbols.bucket_count())
+SymbolTable::SymbolTable(const SymbolTable &orig) : super(orig.bucket_count())
 {
    return ;
 }
@@ -141,7 +141,7 @@ Symbol* SymbolTable::gensym(const char* basename, const char* suffix)
       size_t count = gensym_count++ ;
       // generate the symbol's name
       CharPtr name { aprintf("%s%ld%s",basename,count,suffix) } ;
-      sym = m_symbols.addKey(name,&existed) ;
+      sym = addKey(name,&existed) ;
       } while (!sym || existed) ; // loop until the generated name was not already a symbol in the table
    return const_cast<Symbol*>(sym) ;
 }

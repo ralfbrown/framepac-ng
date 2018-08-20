@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-18					*/
+/* Version 0.09, last edit 2018-08-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -56,16 +56,39 @@ class SetIter
 
 //----------------------------------------------------------------------------
 
-class Set : public Object
+class ConstSetIter
+   {
+   private:
+      const Set *m_set ;
+      size_t     m_index ;
+   public:
+      ConstSetIter(const Set *s,size_t idx) : m_set(s), m_index(idx) {}
+      ConstSetIter(const ConstSetIter &) = default ;
+      ~ConstSetIter() = default ;
+
+      Object* operator* () const ;
+      const Object* operator-> () ;
+      ConstSetIter& operator++ () { ++m_index ; return *this ; }
+      const Object* operator[] (size_t index) const ;
+
+      bool operator== (const ConstSetIter& other) const { return m_set == other.m_set && m_index == other.m_index ; }
+      bool operator!= (const ConstSetIter& other) const { return m_set != other.m_set || m_index != other.m_index ; }
+   } ;
+
+//----------------------------------------------------------------------------
+
+class Set : public ObjHashSet
    {
    public: // types
-      typedef Object super ;
+      typedef ObjHashSet super ;
+      typedef SetIter iterator ;
+      typedef ConstSetIter const_iterator ;
    public:
       static Set *create(size_t capacity = 0) { return new Set(capacity) ; }
       static Set *create(const List *) ;
       static Set *create(const Set *orig) { return new Set(orig) ; }
 
-      bool add(Object* key) { return m_set.add(key) ; }
+      bool add(Object* key) { return add(key) ; }
 
       // *** standard info functions ***
       size_t size() const { return m_size ; }
@@ -76,10 +99,12 @@ class Set : public Object
       Set *subseq(SetIter start, SetIter stop, bool shallow = false) const ;
 
       // *** iterator support ***
-      SetIter begin() { return SetIter(this,0) ; }
-      SetIter cbegin() const { return SetIter(const_cast<Set*>(this),0) ; }
-      SetIter end() { return SetIter(this,size()) ; }
-      SetIter cend() const { return SetIter(const_cast<Set*>(this),size()) ; }
+      iterator begin() { return iterator(this,0) ; }
+      const_iterator begin() const { return const_iterator(this,0) ; }
+      const_iterator cbegin() const { return const_iterator(this,0) ; }
+      iterator end() { return iterator(this,size()) ; }
+      const_iterator end() const { return const_iterator(this,size()) ; }
+      const_iterator cend() const { return const_iterator(this,size()) ; }
 
       // STL compatibility
       bool reserve(size_t n) ;
@@ -137,7 +162,6 @@ class Set : public Object
 
    protected:
       size_t     m_size ;
-      ObjHashSet m_set ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -146,6 +170,8 @@ class Set : public Object
 //inline const Object* SetIter::operator* () const { return m_set->getIndex(m_index) ; }
 inline Object* SetIter::operator* () { return nullptr ; } //FIXME
 inline const Object* SetIter::operator* () const { return nullptr ; } //FIXME
+
+inline Object* ConstSetIter::operator* () const { return nullptr ; } //FIXME
 
 } ; // end namespace Fr
 

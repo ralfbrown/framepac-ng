@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.09, last edit 2018-08-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -183,8 +183,10 @@ class SpellCorrectionData
       ~SpellCorrectionData() ;
 
       // modifiers
-      void setWordCounts(const SymCountHashTable* wc) { delete m_wordcounts ; m_wordcounts = wc ; }
-      void setGoodWords(const ObjHashTable* gw) { delete m_good_words ; m_good_words = gw ; }
+      void setWordCounts(const SymCountHashTable* wc)
+	 { if (m_wordcounts) const_cast<SymCountHashTable*>(m_wordcounts)->free() ; m_wordcounts = wc ; }
+      void setGoodWords(const ObjHashTable* gw)
+	 { if (m_good_words) const_cast<ObjHashTable*>(m_good_words)->free() ; m_good_words = gw ; }
 
       // accessors
       size_t longestSubstitution() const { return m_maxsubst ; }
@@ -203,8 +205,8 @@ class SpellCorrectionData
 
    protected:
       const ObjHashTable* m_good_words ;
-      ObjHashTable* m_substitutions ;
       const SymCountHashTable* m_wordcounts ;
+      ObjHashTable* m_substitutions ;
       LetterConfusionMatrix* m_confmatrix ;
       size_t m_maxsubst ;
    } ;

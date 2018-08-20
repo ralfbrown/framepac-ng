@@ -844,9 +844,8 @@ class HashTable : public HashTableBase
 	    return m_table.load()->delegate ;
 #endif /* FrSINGLE_THREADED */
 
-      // ============== The public API for HashTable ================
-   public:
-      HashTable(size_t initial_size = 1031)
+   protected:
+      HashTable(size_t initial_size = 257)
 	 : HashTableBase(doAssistResize), m_table(nullptr)
 	 {
 	    init(initial_size) ;
@@ -855,14 +854,16 @@ class HashTable : public HashTableBase
       HashTable(const HashTable &ht) ;
       ~HashTable() ;
 
+      // ============== The public API for HashTable ================
+   public:
       bool load(CFile&, const char* filename) ;
       bool load(const char* mmap_base, size_t mmap_len) ;
       bool save(CFile&) const ;
 
       // *** object factories ***
-      static HashTable* create(size_t initial_size = 257)
-	 { return new HashTable(initial_size) ; }
-      
+      static HashTable* create(size_t initial_size = 257) { return new HashTable(initial_size) ; }
+      static HashTable* create(const HashTable& ht) { return new HashTable(ht) ; }
+
       bool resizeTo(size_t newsize) { DELEGATE(resize(newsize)) ; }
       bool reserve_(size_t newsize) { DELEGATE(resize(newsize)) ; }
 
@@ -1131,11 +1132,18 @@ class HashTable : public HashTableBase
       static constexpr unsigned file_format = 1 ;
       static constexpr unsigned min_file_format = 1 ;
    private:
+      friend class FramepaC::Object_VMT<HashTable> ;
+      void* operator new(size_t) { return s_allocator.allocate() ; }
+      void operator delete(void* blk) { s_allocator.release(blk) ; }
+      static Allocator s_allocator ;
       static const char s_typename[] ;
    } ;
 
 template <typename KeyT, typename ValT>
 const char HashTable<KeyT,ValT>::s_typename[] = "HashTable" ;
+
+template <typename KeyT, typename ValT>
+Allocator HashTable<KeyT,ValT>::s_allocator(FramepaC::Object_VMT<HashTable<KeyT,ValT>>::instance(),sizeof(HashTable<KeyT,ValT>)) ;
 
 #ifndef FrSINGLE_THREADED
 template <typename KeyT, typename ValT>
