@@ -93,6 +93,7 @@ class Object
       FrVIRTFUNC0(bool,isInteger,isInteger_,const) ;
       FrVIRTFUNC0(bool,isList,isList_,const) ;
       FrVIRTFUNC0(bool,isMap,isMap_,const) ;
+      FrVIRTFUNC0(bool,isMatrix,isMatrix_,const) ;
       FrVIRTFUNC0(bool,isNumber,isNumber_,const) ;
       FrVIRTFUNC0(bool,isObject,isObject_,const) ;
       FrVIRTFUNC0(bool,isOneHotVector,isOneHotVector_,const) ;
@@ -146,6 +147,9 @@ class Object
       FrVIRTFUNC0(mpq_t,rationalValue,rationalValue_,const) ;
       FrVIRTFUNC1(long,nthInt,nthInt_,const,size_t,N) ;
       FrVIRTFUNC1(double,nthFloat,nthFloat_,const,size_t,N) ;
+      FrVIRTFUNC2(double,matrixGet,matrixGet_,const,size_t,row,size_t,col) ;
+      FrVIRTFUNC3(void,matrixSet,matrixSet_,,size_t,row,size_t,col,double,val) ;
+      FrVIRTFUNC2(void*,matrixElt,matrixElt_,const,size_t,row,size_t,col) ;
 
       // *** comparison functions ***
       FrVIRTFUNC0(size_t,hashValue,hashValue_,const) ;
@@ -197,6 +201,7 @@ inline bool Object::isFloat_(const Object*) { return false ; }
 inline bool Object::isInteger_(const Object*) { return false ; }
 inline bool Object::isList_(const Object*) { return false ; }
 inline bool Object::isMap_(const Object*) { return false ; }
+inline bool Object::isMatrix_(const Object*) { return false ; }
 inline bool Object::isNumber_(const Object*) { return false ; }
 inline bool Object::isObject_(const Object*) { return true ; }
 inline bool Object::isOneHotVector_(const Object*) { return false ; }
@@ -219,6 +224,9 @@ inline double Object::imagValue_(const Object*) { return 0.0 ; }
 inline long Object::intValue_(const Object*) { return 0 ; }
 inline long Object::nthInt_(const Object*,size_t) { return 0 ; }
 inline double Object::nthFloat_(const Object*,size_t) { return 0.0 ; }
+inline void Object::matrixSet_(Object*, size_t, size_t, double) { return ; }
+inline double Object::matrixGet_(const Object*, size_t, size_t) { return 0.0 ; }
+inline void* Object::matrixElt_(const Object*, size_t, size_t) { return nullptr ; }
 
 inline bool Object::equal_(const Object* obj, const Object* other) { return obj == other ; }
 

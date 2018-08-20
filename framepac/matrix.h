@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.09, last edit 2018-08-20					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -55,7 +55,6 @@ class Matrix : public Object
 
       // *** type determination predicates ***
       static bool isMatrix_(const Object*) { return true ; }
-      static const char* typeName_(const Object*) { return "Matrix" ; }
 
       // *** copying ***
 
@@ -76,7 +75,11 @@ class Matrix : public Object
       static size_t empty_(const Object* obj) { return Matrix::size_(obj) == 0 ; }
 
       // *** standard access functions ***
-      
+      static void matrixSet_(Object* o, size_t row, size_t col, double value)
+	 { static_cast<Matrix*>(o)(row,col) = T(value) ; }
+      static double matrixGet_(const Object* o, size_t row, size_t col)
+	 { return static_cast<Matrix*>(o)(row,col) ; }
+
       // *** comparison functions ***
 
       // *** iterator support ***
@@ -88,10 +91,13 @@ class Matrix : public Object
       size_t m_cols ;
    private: // static data
       static Allocator s_allocator ;
+      static const char s_typename[] ;
    } ;
 
 template <typename T>
 Allocator Matrix<T>::s_allocator(FramepaC::Object_VMT<Matrix<T>>::instance(),sizeof(Matrix<T>)) ;
+template <typename T>
+const char Matrix<T>::s_typename[] = "Matrix" ;
 
 /************************************************************************/
 /************************************************************************/
@@ -118,9 +124,6 @@ class FullMatrix : public Matrix<T>
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<FullMatrix> ;
 
-      // *** type determination predicates ***
-      static const char* typeName_(const Object*) { return "FullMatrix" ; }
-
       // *** copying ***
 
       // *** destroying ***
@@ -132,10 +135,13 @@ class FullMatrix : public Matrix<T>
       T* m_matrix ;
    private: // static data
       static Allocator s_allocator ;
+      static const char s_typename[] ;
    } ;
 
 template <typename T>
 Allocator FullMatrix<T>::s_allocator(FramepaC::Object_VMT<FullMatrix<T>>::instance(),sizeof(FullMatrix<T>)) ;
+template <typename T>
+const char FullMatrix<T>::s_typename[] = "FullMatrix" ;
 
 /************************************************************************/
 /************************************************************************/
@@ -159,7 +165,11 @@ class SparseMatrix : public Matrix<T>
 
    private: // static data
       static Allocator s_allocator ;
+      static const char s_typename[] ;
    } ;
+
+template <typename T>
+const char SparseMatrix<T>::s_typename[] = "SparseMatrix" ;
 
 /************************************************************************/
 /************************************************************************/
@@ -195,7 +205,11 @@ class UpperTriangMatrix : public Matrix<T>
       T** m_matrix_rows ;
    private: // static data
       static Allocator s_allocator ;
+      static const char s_typename[] ;
    } ;
+
+template <typename T>
+const char UpperTriangMatrix<T>::s_typename[] = "UpperTriangMatrix" ;
 
 /************************************************************************/
 /************************************************************************/
@@ -223,7 +237,11 @@ class LowerTriangMatrix : public Matrix<T>
       T** m_matrix_cols ;
    private: // static data
       static Allocator s_allocator ;
+      static const char s_typename[] ;
    } ;
+
+template <typename T>
+const char LowerTriangMatrix<T>::s_typename[] = "LowerTriangMatrix" ;
 
 /************************************************************************/
 /************************************************************************/
@@ -254,7 +272,11 @@ class SymmetricMatrix : public UpperTriangMatrix<T>
 
    private: // static data
       static Allocator s_allocator ;
+      static const char s_typename[] ;
    } ;
+
+template <typename T>
+const char SymmetricMatrix<T>::s_typename[] = "SymmetricMatrix" ;
 
 /************************************************************************/
 /************************************************************************/
@@ -287,7 +309,11 @@ class DiagonalMatrix : public Matrix<T>
       T  m_dummy ;
    private: // static data
       static Allocator s_allocator ;
+      static const char s_typename[] ;
    } ;
+
+template <typename T>
+const char DiagonalMatrix<T>::s_typename[] = "DiagonalMatrix" ;
 
 //----------------------------------------------------------------------------
 

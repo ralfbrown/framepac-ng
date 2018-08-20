@@ -234,6 +234,7 @@ class ObjectVMT
       bool (*isInteger_)(const Fr::Object*) ;
       bool (*isList_)(const Fr::Object*) ;
       bool (*isMap_)(const Fr::Object*) ;
+      bool (*isMatrix_)(const Fr::Object*) ;
       bool (*isNumber_)(const Fr::Object*) ;
       bool (*isObject_)(const Fr::Object*) ;
       bool (*isOneHotVector_)(const Fr::Object*) ;
@@ -253,6 +254,11 @@ class ObjectVMT
       char* (*toCstring_)(const Fr::Object*, char* buffer, size_t buflen, size_t wrap_at,
 	 size_t indent, size_t wrapped_indent) ;
       bool (*toJSONString_)(const Fr::Object*, char* buffer, size_t buflen, bool wrap, size_t indent) ;
+
+      // matrix helper functions
+      void (*matrixSet_)(Fr::Object*, size_t row, size_t col, double value) ;
+      double (*matrixGet_)(const Fr::Object*, size_t row, size_t col) ;
+      void* (*matrixElt_)(const Fr::Object*, size_t row, size_t col) ;
 } ;
 
 //----------------------------------------------------------------------------
@@ -306,6 +312,7 @@ class Object_VMT : public ObjectVMT
 	    &ObjT::isInteger_,
 	    &ObjT::isList_,
 	    &ObjT::isMap_,
+	    &ObjT::isMatrix_,
 	    &ObjT::isNumber_,
 	    &ObjT::isObject_,
 	    &ObjT::isOneHotVector_,
@@ -320,7 +327,10 @@ class Object_VMT : public ObjectVMT
 	    &ObjT::cStringLength_,
 	    &ObjT::jsonStringLength_,
 	    &ObjT::toCstring_,
-	    &ObjT::toJSONString_
+	    &ObjT::toJSONString_,
+	    &ObjT::matrixSet_,
+	    &ObjT::matrixGet_,
+	    &ObjT::matrixElt_
 	    } ;
    private:
       // don't allow allocation on the heap
