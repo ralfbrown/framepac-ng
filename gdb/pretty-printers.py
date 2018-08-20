@@ -32,9 +32,9 @@ class StdMutexPrinter(gdb.printing.PrettyPrinter):
        data = self.val['_M_mutex']['__data']
        count = data['__count']
        owner = data['__owner']
-       nusers = data['__nusers']
-       spins = data['__spins']
-       return "mutex(owner={},count={},users={},spins={})".format(owner,count,nusers,spins)
+       nusers = int(data['__nusers'])
+       spins = int(data['__spins'])
+       return "mutex(own={},cnt={},users={},spins={})".format(owner,count,nusers,spins)
 
    def display_hint(self):
        return 'struct'
@@ -48,7 +48,7 @@ class FrAtomicPrinter(gdb.printing.PrettyPrinter):
       self.val = val
 
    def to_string(self):
-      return "atomic, value = {}".format(self.val['v'])
+      return "atm({})".format(self.val['v'])
 
    def display_hint(self):
       return 'integer'
