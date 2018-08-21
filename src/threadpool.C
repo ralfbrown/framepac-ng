@@ -345,6 +345,12 @@ ThreadPool::ThreadPool(unsigned num_threads)
 #else
    m_numCPUs = std::thread::hardware_concurrency() ;
    m_queues = new WorkQueue[num_threads] ;
+   if (num_threads == 0)
+      {
+      m_pool = nullptr ;
+      m_queues = nullptr ;
+      return ;
+      }
    m_pool = new thread*[num_threads] ;
    if (!m_queues || !m_pool)
       {
