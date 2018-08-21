@@ -1361,7 +1361,7 @@ bool HashTable<KeyT,ValT>::Table::iterateVA(HashKeyValueFunc* func, std::va_list
 template <typename KeyT, typename ValT>
 List* HashTable<KeyT,ValT>::Table::allKeys() const
 {
-   List* keys = nullptr ;
+   List* keys = List::emptyList() ;
    for (size_t i = 0 ; i < capacity() ; ++i)
       {
       if (activeEntry(i))

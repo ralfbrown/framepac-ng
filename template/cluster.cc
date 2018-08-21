@@ -775,7 +775,6 @@ template <typename IdxT, typename ValT>
 bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInfo**& clusters, size_t& num_clusters,
    RefArray* unassigned) const
 {
-   clusters = nullptr ;
    // count the number of unique labels on the vectors, and assign each one an index
    ScopedObject<ObjCountHashTable> label_map ;
    for (auto vec : *vectors)
@@ -789,21 +788,23 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInf
 	 }
       }
    num_clusters = label_map->currentSize() ;
-   if (num_clusters)
+   clusters = new ClusterInfo*[num_clusters] ;
+   for (size_t i = 0 ; i < num_clusters ; ++i)
       {
-      clusters = new ClusterInfo*[num_clusters] ;
-      for (size_t i = 0 ; i < num_clusters ; ++i)
+      clusters[i] = ClusterInfo::create() ;
+      }
+   // collect the vectors into the appropriate cluster
+   for (auto vec : *vectors)
+      {
+      if (!vec) continue ;
+      auto vector = static_cast<Vector<ValT>*>(vec) ;
+      Symbol* label = vector->label() ;
+      if (!label && unassigned)
 	 {
-	 clusters[i] = ClusterInfo::create() ;
+	 unassigned->append(vector) ;
 	 }
-      // collect the vectors into the appropriate cluster
-      for (auto vec : *vectors)
+      else
 	 {
-	 if (!vec) continue ;
-	 auto vector = static_cast<Vector<ValT>*>(vec) ;
-	 Symbol* label = vector->label() ;
-	 if (!label && unassigned)
-	    unassigned->append(vector) ;
 	 size_t index = label_map->lookup(label) ;
 	 clusters[index]->addVector(vector) ;
 	 clusters[index]->setLabel(vector->label()) ;
