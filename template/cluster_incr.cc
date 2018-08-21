@@ -84,7 +84,6 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
       if (best_sim < this->clusterThreshold() && clusters->size() < this->desiredClusters())
 	 {
 	 // create a new cluster and add the vector as its initial member
-cout<<"creating new cluster"<<endl;
 	 auto newclus = ClusterInfo::createSingleton(vector) ;
 	 newclus->genLabel() ;
 	 clusters->appendNoCopy(newclus) ;
