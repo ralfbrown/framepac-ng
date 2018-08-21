@@ -178,7 +178,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       Vector<ValT>* vec = static_cast<Vector<ValT>*>(sample->getNth(0)) ;
       cout << "center: " << vec << endl ;
       centers->append(sample->getNth(0)) ;
-      sample->setNth(0,nullptr) ;
+      sample->clearNth(0) ;
       // until we've accumulated desiredClusters() vectors, search for
       //   the as-yet-unselected vector with the smallest maximal
       //   similarity to any already-selected vector
@@ -188,7 +188,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
 	 Vector<ValT>* v = static_cast<Vector<ValT>*>(sample->getNth(selected)) ;
 	 cout << "center: " << v << endl ;
 	 centers->append(sample->getNth(selected)) ;
-	 sample->setNth(selected,nullptr) ;
+	 sample->clearNth(selected) ;
 	 }
       }
    // assign a label to each of the selected centers

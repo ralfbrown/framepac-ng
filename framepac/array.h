@@ -53,6 +53,8 @@ class Array : public Object
       Object* getNth(size_t N) const { return N < m_size ? m_array[N] : nullptr ; }
       void setNth(size_t N, const Object* val) ;
       void setNthNoCopy(size_t N, Object* val) ;
+      void clearNth(size_t N) { if (N < m_size) m_array[N] = nullptr ; }
+
       bool elide(size_t N) ;
       bool removeNulls() ; // compact elements, skipping any null ptrs; returns whether or not anything changed
 

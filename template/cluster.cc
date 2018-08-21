@@ -724,7 +724,7 @@ double ClusteringAlgo<IdxT,ValT>::findNearestCluster(const Array* clusters, cons
 {
    best_cluster = ~0 ;
    ThreadPool *tp = ThreadPool::defaultPool() ;
-   if (!tp || !clusters || !vector)
+   if (!tp || !clusters || clusters->size() == 0 || !vector)
       {
       return -HUGE_VAL ;
       }

@@ -84,16 +84,17 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
       if (best_sim < this->clusterThreshold() && clusters->size() < this->desiredClusters())
 	 {
 	 // create a new cluster and add the vector as its initial member
+cout<<"creating new cluster"<<endl;
 	 auto newclus = ClusterInfo::createSingleton(vector) ;
 	 newclus->genLabel() ;
 	 clusters->appendNoCopy(newclus) ;
 	 }
-      else if (best_clus)
+      else if (best_clus != ~0U)
 	 {
 	 // add the vector to the nearest cluster
 	 auto best_cluster = static_cast<ClusterInfo*>(clusters->getNth(best_clus)) ;
-	 best_cluster->addMember(vector) ;
 	 vector->setLabel(best_cluster->label()) ;
+	 best_cluster->addMember(vector) ;
 	 }
       prog->incr() ;
       }

@@ -305,7 +305,7 @@ class ClusteringAlgoBase
       double    m_alpha { 0 } ;
       double    m_beta { 0 } ;
       double    m_gamma { 0 } ;
-      double	m_threshold { -999.99 } ;
+      double	m_threshold { 0.1 } ;
       double    m_backoff { 0.05 } ;
       size_t    m_desired_clusters { 2 } ;
       size_t    m_min_points { 0 } ;

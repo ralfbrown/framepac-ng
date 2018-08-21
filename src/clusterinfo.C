@@ -120,7 +120,7 @@ ClusterInfo* ClusterInfo::create(Array* subclus)
 	 continue ;
       count += sub->size() ;
       info->m_subclusters->appendNoCopy(sub) ;
-      subclus->setNth(i,nullptr) ;
+      subclus->clearNth(i) ;
       }
    info->m_size = count ;
    info->setFlag(Flags::group) ;	// subclusters only, no direct members
