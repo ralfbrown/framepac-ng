@@ -175,9 +175,11 @@ class WordCorpusT
 	 { return (attributes(word) & (1<<bit)) != 0 ; }
 
       void setContextSizes(unsigned lcontext, unsigned rcontext) ;
+      unsigned leftContextSize() const { return m_left_context ; }
       unsigned totalContextSize() const { return m_total_context ; }
       IdT positionalID(IdT word, int offset) const ;
       int offsetOfPosition(IdT position) const ;
+      static int offsetOfPosition(IdT position, unsigned left_context, unsigned total_context) ;
       IdT wordForPositionalID(IdT position) const ;
 
       size_t longestContextEquiv() const { return m_max_context ; }

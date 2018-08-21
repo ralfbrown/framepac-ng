@@ -802,6 +802,15 @@ int WordCorpusT<IdT,IdxT>::offsetOfPosition(IdT pos) const
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
+int WordCorpusT<IdT,IdxT>::offsetOfPosition(IdT pos, unsigned left_context, unsigned total_context)
+{
+   int offset = (int)(pos % total_context) - left_context ;
+   return offset + (offset >= 0) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::wordForPositionalID(IdT pos) const
 {
    return pos / m_total_context ;
