@@ -421,8 +421,11 @@ ThreadPool* ThreadPool::defaultPool()
 
 void ThreadPool::defaultPool(ThreadPool* pool)
 {
-   delete s_defaultpool ;
-   s_defaultpool = pool ;
+   if (pool != s_defaultpool)
+      {
+      delete s_defaultpool ;
+      s_defaultpool = pool ;
+      }
    return ;
 }
 
