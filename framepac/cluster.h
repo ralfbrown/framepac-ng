@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-20					*/
+/* Version 0.09, last edit 2018-08-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -265,19 +265,21 @@ class ClusteringAlgoBase
    {
    public:
       ClusteringAlgoBase() {}
-      virtual ~ClusteringAlgoBase() {}
+      virtual ~ClusteringAlgoBase() { delete[] m_logprefix ; }
 
       bool parseOptions(const char* opt) ;
       virtual bool applyOption(const char* /*optname*/, const char* /*optvalue*/) { return true ; }
 
       static bool checkSparseOrDense(const Array* vectors) ;
       static void freeClusters(ClusterInfo** clusters, size_t num_clusters) ;
+      [[gnu::format(gnu_printf,3,4)]]
       void log(int level, const char* fmt, ...) const ;
       ProgressIndicator* makeProgressIndicator(size_t limit) const ;
 
       void trapSigInt() const ;
       void untrapSigInt() const ;
 
+      void setLoggingPrefix(const char* pre) ;
       void clusterThreshold(double thr) { m_threshold = thr ; }
       void desiredClusters(size_t N) { m_desired_clusters = N ; }
       void maxIterations(size_t N) { m_max_iterations = N ; }
@@ -303,6 +305,7 @@ class ClusteringAlgoBase
       static void sigint_handler(int) ;
 
    protected: // data members
+      char*     m_logprefix { nullptr } ;
       double    m_alpha { 0 } ;
       double    m_beta { 0 } ;
       double    m_gamma { 0 } ;

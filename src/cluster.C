@@ -140,13 +140,28 @@ void ClusteringAlgoBase::freeClusters(ClusterInfo** clusters, size_t num_cluster
 
 //----------------------------------------------------------------------------
 
+void ClusteringAlgoBase::setLoggingPrefix(const char* pre)
+{
+   delete[] m_logprefix ;
+   m_logprefix = dup_string(pre).move() ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 void ClusteringAlgoBase::log(int level, const char* fmt, ...) const
 {
    if (level <= m_verbosity)
       {
       va_list args ;
       va_start(args,fmt) ;
-      SystemMessage::status(fmt,args) ;
+      if (m_logprefix)
+	 {
+	 CharPtr msg = vaprintf(fmt,args) ;
+	 SystemMessage::status("%s%s",m_logprefix,*msg) ;
+	 }
+      else
+	 SystemMessage::status(fmt,args) ;
       }
    return ;
 }
