@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-16					*/
+/* Version 0.09, last edit 2018-08-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -71,7 +71,7 @@ static bool update_centroid(size_t id, va_list args)
 {
    auto o = va_arg(args,const ClusterInfo**) ;
    auto inf = o[id] ;
-   auto centers = va_arg(args,RefArray*) ;
+   auto centers = va_arg(args,Array*) ;
    int sparse = va_arg(args,int) ;
    if (sparse)
       {
@@ -160,19 +160,19 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       }
    // trap signals to allow graceful early termination
    this->trapSigInt() ;
-   RefArray* centers ;
+   Array* centers ;
    size_t num_clusters = this->desiredClusters() ;
    this->log(0,"Initializing %lu centers",num_clusters) ;
    if (this->m_fast_init)
       {
       // do a quick and dirty init -- just randomly select K vectors
       this->log(1,"Selecting random sample of vectors as centers") ;
-      centers = vectors->randomSample(num_clusters) ;
+      centers = Array::create(vectors->randomSample(num_clusters)) ;
       }
    else
       {
       // select K vectors which are (approximately) maximally separated
-      centers = RefArray::create() ;
+      centers = Array::create(num_clusters) ;
       Ptr<RefArray> sample { vectors->randomSample(2*num_clusters) } ;
       // start by arbitrarily picking the first vector in the sample
       Vector<ValT>* vec = static_cast<Vector<ValT>*>(sample->getNth(0)) ;
@@ -213,17 +213,17 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       size_t changes = this->assignToNearest(vectors, centers, prog) ;
       delete prog ;
       this->log(0,"  %lu vectors changed cluster",changes) ;
+      this->freeClusters(clusters,num_clusters) ;
       this->extractClusters(vectors,clusters,num_clusters) ;
       if (!changes)
 	 break ;			// we've converged!
-      if (iteration != 1)
-	 centers->clearArray(true) ;
+//      if (iteration != 1)
+//!!!	 centers->clearArray(true) ;
       auto fn = update_centroid<IdxT,ValT> ;
       if (usingMedioids())
 	 fn = update_medioid<IdxT,ValT> ;
       this->log(1,"  updating centers") ;
       tp->parallelize(fn,num_clusters,clusters,centers,using_sparse_vectors,this->m_measure) ;
-      this->freeClusters(clusters,num_clusters) ;
       }
    // build the final cluster result from the extracted clusters
    ClusterInfo* result_clusters = ClusterInfo::create(clusters,num_clusters) ;

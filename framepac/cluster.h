@@ -127,7 +127,8 @@ class ClusterInfo : public Object
       template <typename IdxT, typename ValT>
       void setRepresentative(VectorMeasure<IdxT,ValT>* vm) ;
 
-      static Symbol* genLabel() ;
+      bool addGeneratedLabel() ;  // call genLabel() if no label yet
+      [[nodiscard]] static Symbol* genLabel() ;
       static Symbol* numberLabel() ;
       static bool isGeneratedLabel(const char* name) ;
       static bool isGeneratedLabel(const Symbol *name) { return name ? isGeneratedLabel(name->c_str()) : false ; }

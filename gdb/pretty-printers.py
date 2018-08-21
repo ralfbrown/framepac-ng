@@ -431,7 +431,7 @@ def build_pretty_printer():
    pp.add_printer('Fr::Integer', '^Fr::Integer$', FrIntegerPrinter)
    pp.add_printer('Fr::List', '^Fr::List$', FrListPrinter)
    pp.add_printer('Fr::Object', '^Fr::Object *$', FrObjectPrinter)
-   pp.add_printer('Fr::RefArray', '^Fr::RefArray$', FrArrayPrinter)
+   pp.add_printer('Fr::RefArray', '^Fr::RefArray$', FrRefArrayPrinter)
    pp.add_printer('Fr::SparseVector', '^Fr::SparseVector<', FrSparseVectorPrinter)
    pp.add_printer('Fr::String', '^Fr::String$', FrStringPrinter)
    pp.add_printer('Fr::Symbol', '^Fr::Symbol$', FrSymbolPrinter)

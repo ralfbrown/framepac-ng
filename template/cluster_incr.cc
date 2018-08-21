@@ -85,14 +85,19 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
 	 {
 	 // create a new cluster and add the vector as its initial member
 	 auto newclus = ClusterInfo::createSingleton(vector) ;
-	 newclus->genLabel() ;
+	 newclus->addGeneratedLabel() ;
+	 auto currlabel = vector->label() ;
+	 if (!currlabel || ClusterInfo::isGeneratedLabel(currlabel))
+	    vector->setLabel(newclus->label()) ;
 	 clusters->appendNoCopy(newclus) ;
 	 }
       else if (best_clus != ~0U)
 	 {
 	 // add the vector to the nearest cluster
 	 auto best_cluster = static_cast<ClusterInfo*>(clusters->getNth(best_clus)) ;
-	 vector->setLabel(best_cluster->label()) ;
+	 auto currlabel = vector->label() ;
+	 if (!currlabel || ClusterInfo::isGeneratedLabel(currlabel))
+	    vector->setLabel(best_cluster->label()) ;
 	 best_cluster->addMember(vector) ;
 	 }
       prog->incr() ;

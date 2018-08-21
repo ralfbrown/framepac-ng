@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-20					*/
+/* Version 0.09, last edit 2018-08-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -277,9 +277,9 @@ void Array::resize(size_t N, Object* obj)
 
 void Array::shrink_to_fit()
 {
-   if (size() < capacity())
+   size_t currsize = size() ;
+   if (currsize < capacity())
       {
-      size_t currsize = size() ;
       Object** new_arr = new Object*[currsize] ;
       if (new_arr)
 	 {
@@ -300,7 +300,10 @@ void Array::pop_back()
       {
       --m_size ;
       if (m_array[m_size])
+	 {
 	 m_array[m_size]->free() ;
+	 m_array[m_size] = nullptr ;
+	 }
       }
    return ;
 }

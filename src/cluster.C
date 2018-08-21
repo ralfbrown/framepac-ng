@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.09, last edit 2018-08-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -127,6 +127,8 @@ bool ClusteringAlgoBase::checkSparseOrDense(const Array* vectors)
 
 void ClusteringAlgoBase::freeClusters(ClusterInfo** clusters, size_t num_clusters)
 {
+   if (!clusters)
+      return ;
    for (size_t i = 0 ; i < num_clusters ; ++i)
       {
       if (clusters[i])

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-18					*/
+/* Version 0.09, last edit 2018-08-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -431,6 +431,16 @@ Symbol* ClusterInfo::genLabel()
 
 //----------------------------------------------------------------------------
 
+bool ClusterInfo::addGeneratedLabel()
+{
+   if (label())
+      return false ;
+   setLabel(genLabel()) ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
 static Symbol* number ;
 
 Symbol* ClusterInfo::numberLabel()
@@ -477,6 +487,7 @@ bool ClusterInfo::addVector(Object* v)
    if (!m_members)
       m_members = RefArray::create() ;
    m_members->append(v) ;
+   ++m_size ;
    return true ;
 }
 

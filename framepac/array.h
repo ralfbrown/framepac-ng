@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-20					*/
+/* Version 0.09, last edit 2018-08-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -45,8 +45,8 @@ class Array : public Object
       typedef Object super ;
    public:
       static Array* create(size_t initial_size = 0) { return new Array(initial_size) ; }
-      static Array* create(const Object*) ;
-      static Array* create(const Array*) ;
+      static Array* create(const Object* o, size_t rpt = 1) { return new Array(o,rpt) ; }
+      static Array* create(const Array* a) { return new Array(a) ; }
 
       bool append(const Object*) ;
       bool appendNoCopy(Object*) ;
@@ -187,6 +187,7 @@ class RefArray : public Array
 
       bool append(Object*) ;
       void setNth(size_t N, Object* val) ;
+      void setNthNoCopy(size_t N, Object* val) { setNth(N,val) ; }
       bool elide(size_t N) ;
 
       void clearArray(bool free_objects = false) ;
