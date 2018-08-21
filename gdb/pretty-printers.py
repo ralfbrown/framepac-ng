@@ -178,6 +178,62 @@ class FrListPrinter(gdb.printing.PrettyPrinter):
 
 ##########################################################################
 
+class FrRefArrayPrinter(FrArrayPrinter):
+    "Print a Fr::RefArray object"
+
+    def __init__(self, val):
+        self.val = val
+        self.members = self.val['m_array']
+        self.arrsize = int(self.val['m_size'])
+        self.curaddr = str(val.address)
+
+    def to_string(self):
+        return "RefArray({}/{})".format(self.arrsize,int(self.val['m_alloc']))
+
+##########################################################################
+
+class FrSparseVectorPrinter(gdb.printing.PrettyPrinter):
+    "Print a Fr::SparseVector<> object"
+
+    def __init__(self, val):
+        self.val = val
+        self.vecsize = int(self.val['m_size'])
+        self.members = self.val['m_values']
+        self.indices = self.val['m_indices']
+
+    def to_string(self):
+        keystr = self.val['m_key']
+        if keystr and keystr.address and int(str(keystr.address),16) != 0:
+            keystr = keystr.dereference()
+        else:
+            keystr = 'NULL'
+        lblstr = self.val['m_label']
+        if lblstr and lblstr.address and int(str(lblstr.address),16) != 0:
+            lblstr = lblstr.dereference()
+        else:
+            lblstr = 'NULL'
+        return 'SparseVector({}/{} key={} label={})'.format(int(self.val['m_size']),int(self.val['m_capacity']),
+                                                      keystr,lblstr)
+
+    def display_hint(self):
+        return 'map'
+
+    def make_children(self):
+        global RECURSIVE_CALL
+        RECURSIVE_CALL = True
+        count = 0
+        while count < self.vecsize:
+            yield str(count),self.indices[count]
+            yield str(count),self.members[count]
+            count = count + 1
+        RECURSIVE_CALL = False
+        return
+    
+    def children(self):
+        return (c for c in self.make_children())
+
+##########################################################################
+
 class FrStringPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::String object"
 
@@ -226,20 +282,6 @@ class FrStringPrinter(gdb.printing.PrettyPrinter):
 
     def display_hint(self):
         return 'array'
-
-##########################################################################
-
-class FrRefArrayPrinter(FrArrayPrinter):
-    "Print a Fr::RefArray object"
-
-    def __init__(self, val):
-        self.val = val
-        self.members = self.val['m_array']
-        self.arrsize = int(self.val['m_size'])
-        self.curaddr = str(val.address)
-
-    def to_string(self):
-        return "RefArray({}/{})".format(self.arrsize,int(self.val['m_alloc']))
 
 ##########################################################################
 
@@ -358,6 +400,9 @@ class FrObjectPrinter(gdb.printing.PrettyPrinter):
         elif self.objtype == 'List':
             lstptr = gdb.lookup_type('Fr::List')
             self.printer = FrListPrinter(val.cast(lstptr))
+        elif self.objtype == 'SparseVector_u32flt':
+            svptr = gdb.lookup_type('Fr::SparseVector<unsigned int, float>')
+            self.printer = FrSparseVectorPrinter(val.cast(svptr))
 
     def to_string(self):
         if self.printer:
@@ -387,6 +432,7 @@ def build_pretty_printer():
    pp.add_printer('Fr::List', '^Fr::List$', FrListPrinter)
    pp.add_printer('Fr::Object', '^Fr::Object *$', FrObjectPrinter)
    pp.add_printer('Fr::RefArray', '^Fr::RefArray$', FrArrayPrinter)
+   pp.add_printer('Fr::SparseVector', '^Fr::SparseVector<', FrSparseVectorPrinter)
    pp.add_printer('Fr::String', '^Fr::String$', FrStringPrinter)
    pp.add_printer('Fr::Symbol', '^Fr::Symbol$', FrSymbolPrinter)
    pp.add_printer('Fr::Vector', '^Fr::Vector<', FrVectorPrinter)
