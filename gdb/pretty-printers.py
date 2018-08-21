@@ -271,15 +271,38 @@ class FrVectorPrinter(gdb.printing.PrettyPrinter):
 
     def __init__(self, val):
         self.val = val
+        self.vecsize = int(self.val['m_size'])
+        self.members = self.val['m_values']
 
     def to_string(self):
-        return 'Vector({})'.format(int(self.val['m_size']))
+        keystr = self.val['m_key']
+        if keystr and keystr.address and int(str(keystr.address),16) != 0:
+            keystr = keystr.dereference()
+        else:
+            keystr = 'NULL'
+        lblstr = self.val['m_label']
+        if lblstr and lblstr.address and int(str(lblstr.address),16) != 0:
+            lblstr = lblstr.dereference()
+        else:
+            lblstr = 'NULL'
+        return 'Vector({}/{} key={} label={})'.format(int(self.val['m_size']),int(self.val['m_capacity']),
+                                                      keystr,lblstr)
 
     def display_hint(self):
         return 'array'
 
+    def make_children(self):
+        global RECURSIVE_CALL
+        RECURSIVE_CALL = True
+        count = 0
+        while count < self.vecsize:
+            yield str(count),self.members[count]
+            count = count + 1
+        RECURSIVE_CALL = False
+        return
+    
     def children(self):
-        return [] ##FIXME
+        return (c for c in self.make_children())
 
 ##########################################################################
 
