@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.09, last edit 2018-08-20					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -158,7 +158,7 @@ class ClusterInfo : public Object
       const Array* members() const { return m_members ; }
       size_t numMembers() const { return m_members ? m_members->size() : 0 ; }
       const Array* subclusters() const { return m_subclusters ; }
-      size_t numSubclusters() const { return m_subclusters->size() ; }
+      size_t numSubclusters() const { return m_subclusters ? m_subclusters->size() : 0 ; }
       uint32_t flags() const { return m_flags ; }
       bool hasFlag(Flags f) const ;
 
@@ -280,7 +280,6 @@ class ClusteringAlgoBase
       void clusterThreshold(double thr) { m_threshold = thr ; }
       void desiredClusters(size_t N) { m_desired_clusters = N ; }
       void maxIterations(size_t N) { m_max_iterations = N ; }
-      void numThreads(size_t thr) { m_threads = thr ; }
       void verbosity(int v) { m_verbosity = v ; }
       void limitClusters(bool limit) { m_hard_limit = limit ; }
       void useSparseVectors(bool use) { m_use_sparse_vectors = use ; }
@@ -291,7 +290,6 @@ class ClusteringAlgoBase
       double clusterThreshold() const { return m_threshold ; }
       size_t desiredClusters() const { return m_desired_clusters ; }
       size_t maxIterations() const { return m_max_iterations ; }
-      size_t numThreads() const { return m_threads ; }
       int verbosity() const { return m_verbosity ; }
       bool usingSparseVectors() const { return m_use_sparse_vectors ; }
       bool hardLimitOnClusters() const { return m_hard_limit ; }
@@ -312,7 +310,6 @@ class ClusteringAlgoBase
       size_t    m_desired_clusters { 2 } ;
       size_t    m_min_points { 0 } ;
       size_t    m_max_iterations { 5 } ;
-      size_t    m_threads { 2 } ;
       int	m_verbosity { 0 } ;
       bool	m_use_sparse_vectors { false } ;
       bool      m_hard_limit { false } ;		// don't allow more than desired # of clusters no matter what

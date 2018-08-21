@@ -217,6 +217,7 @@ void ClusterInfo::addMember(Object* vector)
    if (!m_members)
       m_members = RefArray::create() ;
    m_members->append(vector) ;
+   m_size++ ;
    return ;
 }
 
