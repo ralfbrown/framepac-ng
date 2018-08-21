@@ -98,7 +98,7 @@ static bool update_medioid(size_t id, va_list args)
    typedef VectorMeasure<IdxT,ValT> VM ;
    auto o = va_arg(args,const ClusterInfo**) ;
    auto inf = o[id] ;
-   auto centers = va_arg(args,RefArray*) ;
+   auto centers = va_arg(args,Array*) ;
    int sparse = va_arg(args,int) ;
    auto measure = va_arg(args,VM*) ;
    Ptr<Vector<ValT>> centroid ;
@@ -115,7 +115,8 @@ static bool update_medioid(size_t id, va_list args)
    // find nearest original vector in cluster
    auto medioid = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(centroid,inf->members(),measure) ;
    // make the medioid the new center for the cluster
-   centers->setNth(id,medioid) ;
+   centers->clearNth(id) ;
+   centers->setNthNoCopy(id,medioid) ;
    return true ;			// no errors, safe to continue processing
 }
 
@@ -217,8 +218,6 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       this->extractClusters(vectors,clusters,num_clusters) ;
       if (!changes)
 	 break ;			// we've converged!
-//      if (iteration != 1)
-//!!!	 centers->clearArray(true) ;
       auto fn = update_centroid<IdxT,ValT> ;
       if (usingMedioids())
 	 fn = update_medioid<IdxT,ValT> ;
@@ -230,6 +229,13 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
    this->freeClusters(clusters,num_clusters) ;
    // the subclusters are the actual result
    result_clusters->setFlag(ClusterInfo::Flags::group) ;
+   if (usingMedioids())
+      {
+      // clear the pointers in the 'centers' array so that they don't get freed when the array is freed,
+      //   since they are just references to vectors which are still in use
+      for (size_t i = 0 ; i < centers->size() ; ++i)
+	 centers->clearNth(i) ;
+      }
    centers->free() ;
    // cleanup: untrap signals
    this->untrapSigInt() ;
