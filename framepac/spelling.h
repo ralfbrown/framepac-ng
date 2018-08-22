@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-19					*/
+/* Version 0.09, last edit 2018-08-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -178,19 +178,19 @@ class LetterConfusionMatrix
 class SpellCorrectionData
    {
    public:
-      SpellCorrectionData(const ObjHashTable* gw = nullptr, const SymCountHashTable* wc = nullptr,
+      SpellCorrectionData(const SymHashTable* gw = nullptr, const SymCountHashTable* wc = nullptr,
 	 LetterConfusionMatrix* cm = nullptr, ObjHashTable* subst = nullptr, size_t maxsubst = 0) ;
       ~SpellCorrectionData() ;
 
       // modifiers
       void setWordCounts(const SymCountHashTable* wc)
 	 { if (m_wordcounts) const_cast<SymCountHashTable*>(m_wordcounts)->free() ; m_wordcounts = wc ; }
-      void setGoodWords(const ObjHashTable* gw)
-	 { if (m_good_words) const_cast<ObjHashTable*>(m_good_words)->free() ; m_good_words = gw ; }
+      void setGoodWords(const SymHashTable* gw)
+	 { if (m_good_words) const_cast<SymHashTable*>(m_good_words)->free() ; m_good_words = gw ; }
 
       // accessors
       size_t longestSubstitution() const { return m_maxsubst ; }
-      const ObjHashTable* goodWords() const { return m_good_words ; }
+      const SymHashTable* goodWords() const { return m_good_words ; }
       const SymCountHashTable* wordCounts() const { return m_wordcounts ; }
       const ObjHashTable* substitutions() const { return m_substitutions ; }
       const LetterConfusionMatrix* confusionMatrix() const { return m_confmatrix ; }
@@ -204,7 +204,7 @@ class SpellCorrectionData
 	 bool allow_self = true) const ;
 
    protected:
-      const ObjHashTable* m_good_words ;
+      const SymHashTable* m_good_words ;
       const SymCountHashTable* m_wordcounts ;
       ObjHashTable* m_substitutions ;
       LetterConfusionMatrix* m_confmatrix ;

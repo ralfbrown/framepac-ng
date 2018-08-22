@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-19					*/
+/* Version 0.09, last edit 2018-08-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -28,7 +28,7 @@ namespace Fr
 /*	Methods for class SpellCorrectionData				*/
 /************************************************************************/
 
-SpellCorrectionData::SpellCorrectionData(const ObjHashTable* gw, const SymCountHashTable* wc,
+SpellCorrectionData::SpellCorrectionData(const SymHashTable* gw, const SymCountHashTable* wc,
    LetterConfusionMatrix* cm, ObjHashTable* subst, size_t maxsubst)
    : m_good_words(gw), m_wordcounts(wc)
 {
