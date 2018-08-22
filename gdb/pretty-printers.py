@@ -172,10 +172,12 @@ class FrHashTablePrinter(FrPrinter):
             key = self.safe_dereference(entries[i]['m_key']['v'])
             try:
                 x = str(key)
+                yield 'key', key
+                yield 'val', self.safe_dereference(entries[i]['m_value'][0].cast(objptr))
             except:
-                key = 'EMPTY'
-            yield 'key', key
-            yield 'val', self.safe_dereference(entries[i]['m_value'][0].cast(objptr))
+                # empty slots have a key pointing at 0xfff..fff, which generates an exception when we try
+                #   to convert it to a string.  Skip empy slots.
+                pass
         return
 
     def children(self):
