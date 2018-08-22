@@ -164,20 +164,24 @@ class FrHashTablePrinter(FrPrinter):
         return 'map'
 
     def make_children(self):
+        global RECURSIVE_CALL
+        RECURSIVE_CALL = True
         table = self.val['m_table']['v']
         entries = table['m_entries']
         objptr = gdb.lookup_type('Fr::Object').pointer()
         size = int(table['m_size'])
         for i in range(size):
-            key = self.safe_dereference(entries[i]['m_key']['v'])
             try:
-                x = str(key)
+                # get the key; no need for safe_dereference() since were in a try block anyway
+                key = entries[i]['m_key']['v'].dereference()
+                x = str(key)  # cause an exception if the slot is empty
                 yield 'key', key
                 yield 'val', self.safe_dereference(entries[i]['m_value'][0].cast(objptr))
             except:
                 # empty slots have a key pointing at 0xfff..fff, which generates an exception when we try
                 #   to convert it to a string.  Skip empy slots.
                 pass
+        RECURSIVE_CALL = False
         return
 
     def children(self):
@@ -329,13 +333,18 @@ class FrVectorPrinter(FrPrinter):
         self.val = val
         self.vectype = ''
         self.vecsize = int(self.val['m_size'])
-        self.members = self.val['m_values']
+        self.indices = None
 
     def to_string(self):
+        global RECURSIVE_CALL
         keystr = self.safe_dereference(self.val['m_key'])
         lblstr = self.safe_dereference(self.val['m_label'])
-        return '{}Vector({}/{} key={} label={})'.format(self.vectype,self.vecsize,int(self.val['m_capacity']),
-                                                        keystr,lblstr)
+        if RECURSIVE_CALL:
+            return '{}Vector({}/{} key={} label={}) @ {}'.format(self.vectype,self.vecsize,int(self.val['m_capacity']),
+                                                            keystr,lblstr,self.val.address)
+        else:
+            return '{}Vector({}/{} key={} label={})'.format(self.vectype,self.vecsize,int(self.val['m_capacity']),
+                                                            keystr,lblstr)
 
     def display_hint(self):
         return 'array'
@@ -343,14 +352,20 @@ class FrVectorPrinter(FrPrinter):
     def make_children(self):
         global RECURSIVE_CALL
         RECURSIVE_CALL = True
+        members = self.val['m_values']
         count = 0
         while count < self.vecsize:
-            yield str(count),self.members[count]
+            if self.indices:
+                yield str(count), self.indices[count]
+            yield str(count), members[count]
             count = count + 1
         RECURSIVE_CALL = False
         return
     
     def children(self):
+        global RECURSIVE_CALL
+        if RECURSIVE_CALL:
+            return []
         return self.make_children()
 
 ##########################################################################
@@ -363,31 +378,32 @@ class FrSparseVectorPrinter(FrVectorPrinter):
         self.val = val
         self.vectype = 'Sparse'
         self.vecsize = int(self.val['m_size'])
-        self.members = self.val['m_values']
         self.indices = self.val['m_indices']
 
     def display_hint(self):
         return 'map'
-
-    def make_children(self):
-        global RECURSIVE_CALL
-        RECURSIVE_CALL = True
-        count = 0
-        while count < self.vecsize:
-            yield str(count),self.indices[count]
-            yield str(count),self.members[count]
-            count = count + 1
-        RECURSIVE_CALL = False
-        return
     
-    def children(self):
-        return self.make_children()
-
 ##########################################################################
 
 class FrObjectPrinter(gdb.printing.PrettyPrinter):
     "Print an arbitrary Fr::Object object"
     enabled = True
+    printers = { 'String'   : ('Fr::String', FrStringPrinter),
+                 'Array'    : ('Fr::Array', FrArrayPrinter),
+                 'BitVector': ('Fr::BitVector', FrBitvectorPrinter),
+                 'Float'    : ('Fr::Float', FrFloatPrinter),
+                 'Integer'  : ('Fr::Integer', FrIntegerPrinter),
+                 'List'     : ('Fr::List', FrListPrinter),
+                 'RefArray' : ('Fr::RefArray', FrRefArrayPrinter),
+                 'Symbol'   : ('Fr::Symbol', FrSymbolPrinter),
+                 'ObjHashTable' : ('Fr::HashTable<Fr::Object*, Fr::Object*>', FrHashTablePrinter),
+                 'ObjCountHashTable' : ('Fr::HashTable<Fr::Object*, unsigned long>', FrHashTablePrinter),
+                 'SymHashTable' : ('Fr::HashTable<Fr::Symbol*, Fr::Object*>', FrHashTablePrinter),
+                 'SymCountHashTable' : ('Fr::HashTable<Fr::Symbol*, unsigned long>', FrHashTablePrinter),
+                 'HashTable_u32u32' : ('Fr::HashTable<unsigned int, unsigned int>', FrHashTablePrinter),
+                 'SparseVector_u32flt': ('Fr::SparseVector<unsigned int, float>', FrSparseVectorPrinter),
+                 'WcTermVectorSparse' : ('Fr::SparseVector<unsigned int, float>', FrSparseVectorPrinter)
+                 }
 
     def read_ASCIZ(self, addr):
         charptr = gdb.lookup_type('char').pointer()
@@ -414,39 +430,11 @@ class FrObjectPrinter(gdb.printing.PrettyPrinter):
         self.val = val
         self.printer = None
         self.objtype = self.get_typename(val.address)
-        if self.objtype == 'String':
-            strptr = gdb.lookup_type('Fr::String')
-            self.printer = FrStringPrinter(val.cast(strptr))
-        elif self.objtype == 'Symbol':
-            symptr = gdb.lookup_type('Fr::Symbol')
-            self.printer = FrSymbolPrinter(val.cast(symptr))
-        elif self.objtype == 'Array':
-            arrptr = gdb.lookup_type('Fr::Array')
-            self.printer = FrArrayPrinter(val.cast(arrptr))
-        elif self.objtype == 'RefArray':
-            arrptr = gdb.lookup_type('Fr::RefArray')
-            self.printer = FrRefArrayPrinter(val.cast(arrptr))
-        elif self.objtype == 'BitVector':
-            bvptr = gdb.lookup_type('Fr::BitVector')
-            self.printer = FrBitvectorPrinter(val.cast(bvptr))
-        elif self.objtype == 'Float':
-            fltptr = gdb.lookup_type('Fr::Float')
-            self.printer = FrFloatPrinter(val.cast(fltptr))
-        elif self.objtype == 'Integer':
-            intptr = gdb.lookup_type('Fr::Integer')
-            self.printer = FrIntegerPrinter(val.cast(intptr))
-        elif self.objtype == 'ObjHashTable':
-            htptr = gdb.lookup_type('Fr::HashTable<Fr::Object*, Fr::Object*>')
-            self.printer = FrHashTablePrinter(val.cast(htptr))
-        elif self.objtype == 'SymHashTable':
-            htptr = gdb.lookup_type('Fr::HashTable<Fr::Symbol*, Fr::Object*>')
-            self.printer = FrHashTablePrinter(val.cast(htptr))
-        elif self.objtype == 'List':
-            lstptr = gdb.lookup_type('Fr::List')
-            self.printer = FrListPrinter(val.cast(lstptr))
-        elif self.objtype == 'SparseVector_u32flt':
-            svptr = gdb.lookup_type('Fr::SparseVector<unsigned int, float>')
-            self.printer = FrSparseVectorPrinter(val.cast(svptr))
+        if self.objtype in self.printers:
+            typestr, pr = self.printers[self.objtype]
+            datatype = gdb.lookup_type(typestr)
+            self.printer = pr(val.cast(datatype))
+        return
 
     def to_string(self):
         if self.printer:
