@@ -50,7 +50,10 @@ class FrPrinter(gdb.printing.PrettyPrinter):
         if val and val.address:
             addr = str(val.address).split(' ')
             if int(addr[0],16) != 0:
-                return val.dereference()
+                try:
+                    return val.dereference()
+                except:
+                    return '@'+addr[0]
         return 'NULL'
 
 ##########################################################################
@@ -146,7 +149,41 @@ class FrFloatPrinter(gdb.printing.PrettyPrinter):
 
 ##########################################################################
 
-class FrListPrinter(gdb.printing.PrettyPrinter):
+class FrHashTablePrinter(FrPrinter):
+    "Print a Fr::HashTable object"
+    enabled = True
+
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        table = self.val['m_table']['v']
+        return 'HashTable({}) @ {}'.format(table['m_size'],self.val.address)
+
+    def display_hint(self):
+        return 'map'
+
+    def make_children(self):
+        table = self.val['m_table']['v']
+        entries = table['m_entries']
+        objptr = gdb.lookup_type('Fr::Object').pointer()
+        size = int(table['m_size'])
+        for i in range(size):
+            key = self.safe_dereference(entries[i]['m_key']['v'])
+            try:
+                x = str(key)
+            except:
+                key = 'EMPTY'
+            yield 'key', key
+            yield 'val', self.safe_dereference(entries[i]['m_value'][0].cast(objptr))
+        return
+
+    def children(self):
+        return self.make_children()
+
+##########################################################################
+
+class FrListPrinter(FrPrinter):
     "Print a Fr::List object"
     enabled = True
 
@@ -396,6 +433,12 @@ class FrObjectPrinter(gdb.printing.PrettyPrinter):
         elif self.objtype == 'Integer':
             intptr = gdb.lookup_type('Fr::Integer')
             self.printer = FrIntegerPrinter(val.cast(intptr))
+        elif self.objtype == 'ObjHashTable':
+            htptr = gdb.lookup_type('Fr::HashTable<Fr::Object*, Fr::Object*>')
+            self.printer = FrHashTablePrinter(val.cast(htptr))
+        elif self.objtype == 'SymHashTable':
+            htptr = gdb.lookup_type('Fr::HashTable<Fr::Symbol*, Fr::Object*>')
+            self.printer = FrHashTablePrinter(val.cast(htptr))
         elif self.objtype == 'List':
             lstptr = gdb.lookup_type('Fr::List')
             self.printer = FrListPrinter(val.cast(lstptr))
@@ -458,6 +501,7 @@ def build_pretty_printer():
    pp.add_printer('Fr::Array', '^Fr::Array$', FrArrayPrinter)
    pp.add_printer('Fr::BitVector', '^Fr::BitVector$', FrBitvectorPrinter)
    pp.add_printer('Fr::Float', '^Fr::Float$', FrFloatPrinter)
+   pp.add_printer('Fr::HashTable', '^Fr::HashTable<', FrHashTablePrinter)
    pp.add_printer('Fr::Integer', '^Fr::Integer$', FrIntegerPrinter)
    pp.add_printer('Fr::List', '^Fr::List$', FrListPrinter)
    pp.add_printer('Fr::Object', '^Fr::Object *$', FrObjectPrinter)
