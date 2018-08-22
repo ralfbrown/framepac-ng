@@ -63,12 +63,10 @@ class FrArrayPrinter(gdb.printing.PrettyPrinter):
 
     def __init__(self, val):
         self.val = val
-        self.members = self.val['m_array']
-        self.arrsize = int(self.val['m_size'])
-        self.curaddr = str(val.address)
+        self.arrtype = ''
 
     def to_string(self):
-        return "Array({}/{})".format(self.arrsize,int(self.val['m_alloc']))
+        return "{}Array({}/{})".format(self.arrtype,int(self.val['m_size']),int(self.val['m_alloc']))
 
     def display_hint(self):
         return 'array'
@@ -77,8 +75,10 @@ class FrArrayPrinter(gdb.printing.PrettyPrinter):
         global RECURSIVE_CALL
         RECURSIVE_CALL = True
         count = 0
-        while count < self.arrsize:
-            member = self.members[count]
+        members = self.val['m_array']
+        arrsize = int(self.val['m_size'])
+        while count < arrsize:
+            member = members[count]
             if str(member.address) == '0x0':
                 yield str(count),'NULL'
             else:
@@ -191,12 +191,7 @@ class FrRefArrayPrinter(FrArrayPrinter):
 
     def __init__(self, val):
         self.val = val
-        self.members = self.val['m_array']
-        self.arrsize = int(self.val['m_size'])
-        self.curaddr = str(val.address)
-
-    def to_string(self):
-        return "RefArray({}/{})".format(self.arrsize,int(self.val['m_alloc']))
+        self.arrtype = 'Ref'
 
 ##########################################################################
 
