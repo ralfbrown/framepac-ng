@@ -245,7 +245,7 @@ class ScopedObject : public Ptr<T>
       ScopedObject() : super(T::create()) { }
       ScopedObject(nullptr_t) : super(nullptr) { }
       template <typename ...Args>
-      ScopedObject(Args... args) : super(nullptr) { this->m_object = T::create(args...) ; }
+      ScopedObject(Args... args) : super(T::create(args...)) {}
 
       ScopedObject& operator = (ScopedObject&) = delete ;
       ScopedObject& operator = (const ScopedObject&) = delete ;

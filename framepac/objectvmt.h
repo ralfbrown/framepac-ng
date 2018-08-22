@@ -103,6 +103,7 @@ class Ptr
    public:
       Ptr(T* o = nullptr) : m_object(o) {}
       Ptr(const Ptr& o) = delete ; 		// Ptr is not copyable
+      Ptr(Ptr& o) : m_object(o.move()) {} 	// Ptr is not copyable -- move it instead
       Ptr(Ptr&& o) : m_object(o.move()) { }	// grab ownership from other Ptr
       ~Ptr() { free() ; }
 
