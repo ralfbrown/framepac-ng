@@ -23,40 +23,43 @@ RECURSIVE_CALL = False
 ##########################################################################
 
 class StdMutexPrinter(gdb.printing.PrettyPrinter):
-   "Print a std::mutex"
+    "Print a std::mutex"
+    enabled = True
 
-   def __init__(self, val):
-       self.val = val
+    def __init__(self, val):
+        self.val = val
 
-   def to_string(self):
-       data = self.val['_M_mutex']['__data']
-       count = data['__count']
-       owner = data['__owner']
-       nusers = int(data['__nusers'])
-       spins = int(data['__spins'])
-       return "mutex(own={},cnt={},users={},spins={})".format(owner,count,nusers,spins)
+    def to_string(self):
+        data = self.val['_M_mutex']['__data']
+        count = data['__count']
+        owner = data['__owner']
+        nusers = int(data['__nusers'])
+        spins = int(data['__spins'])
+        return "mutex(own={},cnt={},users={},spins={})".format(owner,count,nusers,spins)
 
-   def display_hint(self):
-       return 'struct'
+    def display_hint(self):
+        return 'struct'
 
 ##########################################################################
 
 class FrAtomicPrinter(gdb.printing.PrettyPrinter):
-   "Print a Fr::Atomic object"
+    "Print a Fr::Atomic object"
+    enabled = True
 
-   def __init__(self, val):
-      self.val = val
+    def __init__(self, val):
+        self.val = val
 
-   def to_string(self):
-      return "atm({})".format(self.val['v'])
+    def to_string(self):
+        return "atm({})".format(self.val['v'])
 
-   def display_hint(self):
-      return 'integer'
+    def display_hint(self):
+        return 'integer'
 
 ##########################################################################
 
 class FrArrayPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::Array object"
+    enabled = True
 
     def __init__(self, val):
         self.val = val
@@ -91,6 +94,7 @@ class FrArrayPrinter(gdb.printing.PrettyPrinter):
 
 class FrBitvectorPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::BitVector object"
+    enabled = True
 
     def __init__(self, val):
         self.val = val
@@ -105,6 +109,7 @@ class FrBitvectorPrinter(gdb.printing.PrettyPrinter):
 
 class FrIntegerPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::Integer object"
+    enabled = True
 
     def __init__(self, val):
         self.val = val
@@ -119,6 +124,7 @@ class FrIntegerPrinter(gdb.printing.PrettyPrinter):
 
 class FrFloatPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::Float object"
+    enabled = True
 
     def __init__(self, val):
         self.val = val
@@ -133,6 +139,7 @@ class FrFloatPrinter(gdb.printing.PrettyPrinter):
 
 class FrListPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::List object"
+    enabled = True
 
     def __init__(self, val):
         self.val = val
@@ -180,6 +187,7 @@ class FrListPrinter(gdb.printing.PrettyPrinter):
 
 class FrRefArrayPrinter(FrArrayPrinter):
     "Print a Fr::RefArray object"
+    enabled = True
 
     def __init__(self, val):
         self.val = val
@@ -194,6 +202,7 @@ class FrRefArrayPrinter(FrArrayPrinter):
 
 class FrSparseVectorPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::SparseVector<> object"
+    enabled = True
 
     def __init__(self, val):
         self.val = val
@@ -236,6 +245,7 @@ class FrSparseVectorPrinter(gdb.printing.PrettyPrinter):
 
 class FrStringPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::String object"
+    enabled = True
 
     def __init__(self, val):
         self.val = val
@@ -287,6 +297,7 @@ class FrStringPrinter(gdb.printing.PrettyPrinter):
 
 class FrSymbolPrinter(FrStringPrinter):
     "Print a Fr::Symbol object"
+    enabled = True
 
     def __init__(self, val):
         self.val = val
@@ -310,6 +321,7 @@ class FrSymbolPrinter(FrStringPrinter):
 
 class FrVectorPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::Vector<> object"
+    enabled = True
 
     def __init__(self, val):
         self.val = val
@@ -350,6 +362,7 @@ class FrVectorPrinter(gdb.printing.PrettyPrinter):
 
 class FrObjectPrinter(gdb.printing.PrettyPrinter):
     "Print an arbitrary Fr::Object object"
+    enabled = True
 
     def read_ASCIZ(self, addr):
         charptr = gdb.lookup_type('char').pointer()
@@ -423,6 +436,7 @@ class FrObjectPrinter(gdb.printing.PrettyPrinter):
 
 class FrPtrObjectPrinter(gdb.printing.PrettyPrinter):
     "Print the object pointed at by an ObjectPtr"
+    enabled = True
 
     def __init__(self, val):
         self.val = val
@@ -446,6 +460,7 @@ class FrPtrObjectPrinter(gdb.printing.PrettyPrinter):
 
 class FrScopedObjectPrinter(FrPtrObjectPrinter):
     "Print the object pointed at by a ScopedObject"
+    enabled = True
 
     def __init__(self, val):
         self.val = val
