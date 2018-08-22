@@ -301,7 +301,7 @@ class FrSymbolPrinter(FrStringPrinter):
         if RECURSIVE_CALL:
             return self.collect_string(ptr,len,False)
         else:
-            return "Symbol({},{},{},{})".format(len,symtab,propflags,self.collect_string(ptr,len))
+            return "Symbol({},{},{})".format(self.collect_string(ptr,len),symtab,propflags)
 
     def display_hint(self):
         return 'array'
@@ -421,6 +421,38 @@ class FrObjectPrinter(gdb.printing.PrettyPrinter):
 
 ##########################################################################
 
+class FrPtrObjectPrinter(gdb.printing.PrettyPrinter):
+    "Print the object pointed at by an ObjectPtr"
+
+    def __init__(self, val):
+        self.val = val
+        self.typestr = '->Object'
+
+    def to_string(self):
+        ptr = self.val['m_object']
+        return '{} @ {}'.format(self.typestr,ptr.address)
+
+    def display_hint(self):
+        return 'struct'
+
+    def children(self):
+        ptr = self.val['m_object']
+        if ptr and ptr.address and int(str(ptr.address),16) != 0:
+            return [('object',self.val['m_object'].dereference())]
+        else:
+            return [('object','NULL')]
+
+##########################################################################
+
+class FrScopedObjectPrinter(FrPtrObjectPrinter):
+    "Print the object pointed at by a ScopedObject"
+
+    def __init__(self, val):
+        self.val = val
+        self.typestr = 'ScopedObject'
+        
+##########################################################################
+
 def build_pretty_printer():
    pp = gdb.printing.RegexpCollectionPrettyPrinter("FramepaC-ng")
    pp.add_printer('std::mutex', '^std::mutex$', StdMutexPrinter)
@@ -436,6 +468,8 @@ def build_pretty_printer():
    pp.add_printer('Fr::String', '^Fr::String$', FrStringPrinter)
    pp.add_printer('Fr::Symbol', '^Fr::Symbol$', FrSymbolPrinter)
    pp.add_printer('Fr::Vector', '^Fr::Vector<', FrVectorPrinter)
+   pp.add_printer('Fr::ObjectPtr', '^Fr::Ptr<Object>$', FrPtrObjectPrinter)
+   pp.add_printer('Fr::ScopedObject', '^Fr::ScopedObject<', FrScopedObjectPrinter)
    return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(),build_pretty_printer())
