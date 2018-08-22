@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-15					*/
+/* Version 0.09, last edit 2018-08-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -24,6 +24,9 @@
 
 namespace Fr
 {
+
+template <>
+const char HashTable<Object*,NullObject>::s_typename[] = "ObjHashSet" ;
 
 // request explicit instantiation
 template class HashTable<Object*,NullObject> ;

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-26					*/
+/* Version 0.09, last edit 2018-08-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -24,6 +24,9 @@
 
 namespace Fr
 {
+
+template <>
+const char HashTable<uint32_t,uint32_t>::s_typename[] = "HashTable_u32u32" ;
 
 // request explicit instantiation
 template class HashTable<uint32_t,uint32_t> ;
