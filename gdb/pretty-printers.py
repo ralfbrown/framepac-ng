@@ -42,6 +42,19 @@ class StdMutexPrinter(gdb.printing.PrettyPrinter):
 
 ##########################################################################
 
+class FrPrinter(gdb.printing.PrettyPrinter):
+    "A parent class to store utility functions"
+
+    @staticmethod
+    def safe_dereference(val):
+        if val and val.address:
+            addr = str(val.address).split(' ')
+            if int(addr[0],16) != 0:
+                return val.dereference()
+        return 'NULL'
+
+##########################################################################
+
 class FrAtomicPrinter(gdb.printing.PrettyPrinter):
     "Print a Fr::Atomic object"
     enabled = True
@@ -57,7 +70,7 @@ class FrAtomicPrinter(gdb.printing.PrettyPrinter):
 
 ##########################################################################
 
-class FrArrayPrinter(gdb.printing.PrettyPrinter):
+class FrArrayPrinter(FrPrinter):
     "Print a Fr::Array object"
     enabled = True
 
@@ -78,17 +91,13 @@ class FrArrayPrinter(gdb.printing.PrettyPrinter):
         members = self.val['m_array']
         arrsize = int(self.val['m_size'])
         while count < arrsize:
-            member = members[count]
-            if str(member.address) == '0x0':
-                yield str(count),'NULL'
-            else:
-                yield str(count),member.dereference()
+            yield str(count), self.safe_dereference(members[count])
             count = count + 1
         RECURSIVE_CALL = False
         return
 
     def children(self):
-        return (c for c in self.make_children())
+        return self.make_children()
 
 ##########################################################################
 
@@ -169,8 +178,8 @@ class FrListPrinter(gdb.printing.PrettyPrinter):
         if self.no_children:
             return
         count = 0
-        while count < 32 and not self.is_empty_list():
-            head = self.val['m_item'].dereference()
+        while count < 64 and not self.is_empty_list():
+            head = self.safe_dereference(self.val['m_item'])
             self.curraddr = self.nextaddr
             self.val = self.val['m_next'].dereference()
             yield str(count),head
@@ -181,7 +190,7 @@ class FrListPrinter(gdb.printing.PrettyPrinter):
         return
 
     def children(self):
-        return (c for c in self.make_children())
+        return self.make_children()
 
 ##########################################################################
 
@@ -192,49 +201,6 @@ class FrRefArrayPrinter(FrArrayPrinter):
     def __init__(self, val):
         self.val = val
         self.arrtype = 'Ref'
-
-##########################################################################
-
-class FrSparseVectorPrinter(gdb.printing.PrettyPrinter):
-    "Print a Fr::SparseVector<> object"
-    enabled = True
-
-    def __init__(self, val):
-        self.val = val
-        self.vecsize = int(self.val['m_size'])
-        self.members = self.val['m_values']
-        self.indices = self.val['m_indices']
-
-    def to_string(self):
-        keystr = self.val['m_key']
-        if keystr and keystr.address and int(str(keystr.address),16) != 0:
-            keystr = keystr.dereference()
-        else:
-            keystr = 'NULL'
-        lblstr = self.val['m_label']
-        if lblstr and lblstr.address and int(str(lblstr.address),16) != 0:
-            lblstr = lblstr.dereference()
-        else:
-            lblstr = 'NULL'
-        return 'SparseVector({}/{} key={} label={})'.format(int(self.val['m_size']),int(self.val['m_capacity']),
-                                                      keystr,lblstr)
-
-    def display_hint(self):
-        return 'map'
-
-    def make_children(self):
-        global RECURSIVE_CALL
-        RECURSIVE_CALL = True
-        count = 0
-        while count < self.vecsize:
-            yield str(count),self.indices[count]
-            yield str(count),self.members[count]
-            count = count + 1
-        RECURSIVE_CALL = False
-        return
-    
-    def children(self):
-        return (c for c in self.make_children())
 
 ##########################################################################
 
@@ -274,6 +240,8 @@ class FrStringPrinter(gdb.printing.PrettyPrinter):
             chars = ['"'] + [self.escape_byte(b) for b in bytes] + [ellipsis, '"']
         else:
             chars = [self.escape_byte(b) for b in bytes] + [ellipsis]
+            if set(''.join(chars)) - set('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_'):
+                chars = ['|'] + chars + ['|']
         return ''.join(chars)
     
     def to_string(self):
@@ -314,28 +282,21 @@ class FrSymbolPrinter(FrStringPrinter):
 
 ##########################################################################
 
-class FrVectorPrinter(gdb.printing.PrettyPrinter):
+class FrVectorPrinter(FrPrinter):
     "Print a Fr::Vector<> object"
     enabled = True
 
     def __init__(self, val):
         self.val = val
+        self.vectype = ''
         self.vecsize = int(self.val['m_size'])
         self.members = self.val['m_values']
 
     def to_string(self):
-        keystr = self.val['m_key']
-        if keystr and keystr.address and int(str(keystr.address),16) != 0:
-            keystr = keystr.dereference()
-        else:
-            keystr = 'NULL'
-        lblstr = self.val['m_label']
-        if lblstr and lblstr.address and int(str(lblstr.address),16) != 0:
-            lblstr = lblstr.dereference()
-        else:
-            lblstr = 'NULL'
-        return 'Vector({}/{} key={} label={})'.format(int(self.val['m_size']),int(self.val['m_capacity']),
-                                                      keystr,lblstr)
+        keystr = self.safe_dereference(self.val['m_key'])
+        lblstr = self.safe_dereference(self.val['m_label'])
+        return '{}Vector({}/{} key={} label={})'.format(self.vectype,self.vecsize,int(self.val['m_capacity']),
+                                                        keystr,lblstr)
 
     def display_hint(self):
         return 'array'
@@ -351,7 +312,37 @@ class FrVectorPrinter(gdb.printing.PrettyPrinter):
         return
     
     def children(self):
-        return (c for c in self.make_children())
+        return self.make_children()
+
+##########################################################################
+
+class FrSparseVectorPrinter(FrVectorPrinter):
+    "Print a Fr::SparseVector<> object"
+    enabled = True
+
+    def __init__(self, val):
+        self.val = val
+        self.vectype = 'Sparse'
+        self.vecsize = int(self.val['m_size'])
+        self.members = self.val['m_values']
+        self.indices = self.val['m_indices']
+
+    def display_hint(self):
+        return 'map'
+
+    def make_children(self):
+        global RECURSIVE_CALL
+        RECURSIVE_CALL = True
+        count = 0
+        while count < self.vecsize:
+            yield str(count),self.indices[count]
+            yield str(count),self.members[count]
+            count = count + 1
+        RECURSIVE_CALL = False
+        return
+    
+    def children(self):
+        return self.make_children()
 
 ##########################################################################
 
@@ -429,7 +420,7 @@ class FrObjectPrinter(gdb.printing.PrettyPrinter):
 
 ##########################################################################
 
-class FrPtrObjectPrinter(gdb.printing.PrettyPrinter):
+class FrPtrObjectPrinter(FrPrinter):
     "Print the object pointed at by an ObjectPtr"
     enabled = True
 
@@ -445,11 +436,8 @@ class FrPtrObjectPrinter(gdb.printing.PrettyPrinter):
         return 'struct'
 
     def children(self):
-        ptr = self.val['m_object']
-        if ptr and ptr.address and int(str(ptr.address),16) != 0:
-            return [('object',self.val['m_object'].dereference())]
-        else:
-            return [('object','NULL')]
+        ptr = self.safe_dereference(self.val['m_object'])
+        return [('obj',ptr)]
 
 ##########################################################################
 
@@ -480,6 +468,7 @@ def build_pretty_printer():
    pp.add_printer('Fr::Vector', '^Fr::Vector<', FrVectorPrinter)
    pp.add_printer('Fr::ObjectPtr', '^Fr::Ptr<Object>$', FrPtrObjectPrinter)
    pp.add_printer('Fr::ScopedObject', '^Fr::ScopedObject<', FrScopedObjectPrinter)
+   pp.add_printer('TermVectorSparse', 'TermVectorSparse', FrSparseVectorPrinter)
    return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(),build_pretty_printer())
