@@ -56,6 +56,63 @@ class FrPrinter(gdb.printing.PrettyPrinter):
                     return '@'+addr[0]
         return 'NULL'
 
+    @staticmethod
+    def escape_byte(b):
+        value = ord(b)
+        if value == ord('\\'):
+            return '\\\\'
+        if value == 9 or value >= 32:
+            return chr(value)
+        if value == 0:
+            return '\\0'
+        if value == 10:
+            return '\\n'
+        if value == 13:
+            return '\\r'
+        if value == 27:
+            return '\\e'
+        return "^" + chr(value+64)
+        
+    def collect_string(self, addr, len, quote = True):
+        ellipsis = ''
+        if len > 64:
+            len = 61
+            ellipsis = '...'
+        try:
+            bytes = gdb.selected_inferior().read_memory(addr,len)
+        except gdb.MemoryError:
+            return '(unreadable memory)'
+        if quote:
+            chars = ['"'] + [self.escape_byte(b) for b in bytes] + [ellipsis, '"']
+        else:
+            chars = [self.escape_byte(b) for b in bytes] + [ellipsis]
+            if set(''.join(chars)) - set('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_'):
+                chars = ['|'] + chars + ['|']
+        return ''.join(chars)
+
+    @staticmethod
+    def read_ASCIZ(addr):
+        charptr = gdb.lookup_type('char').pointer()
+        strptr = gdb.Value(addr).cast(charptr)
+        try:
+            return strptr.string()
+        except:
+            return '(memerr)'
+
+    @staticmethod
+    def get_typename(addr):
+        if addr is None:
+            return '(unknown)'
+        # str(addr) is the address of the value
+        addr = int(str(addr),16)
+        vmt = addr & 0xfffffffff000
+        charptrptr = gdb.lookup_type('char').pointer().pointer().pointer()
+        try:
+            vmtaddr = gdb.Value(vmt).cast(charptrptr).dereference().dereference()
+            return vmtaddr.string()
+        except:
+            return '(invalid)'
+
 ##########################################################################
 
 class FrAtomicPrinter(gdb.printing.PrettyPrinter):
@@ -112,10 +169,29 @@ class FrBitvectorPrinter(gdb.printing.PrettyPrinter):
         self.val = val
         
     def to_string(self):
-        return 'BitVector({}/{})'.format(int(str(self.val['m_size'])),int(str(self.val['m_capacity'])))
+        size = int(str(self.val['m_size']))
+        if size > 0:
+            bits = '{:b}'.format(int(str(self.val['m_bits'][0])))[::-1]
+        return 'BitVector({}/{}:{})'.format(size,int(str(self.val['m_capacity'])),bits)
 
     def display_hint(self):
         return 'number'
+
+##########################################################################
+
+class FrCharPtrPrinter(FrPrinter):
+    "Print a CharPtr (NewPtr<char>) object"
+    enabled = True
+
+    def __init__(self, val):
+        self.val = val
+        self.arrtype = 'Ref'
+
+    def to_string(self):
+        return 'CharPtr'
+
+    def children(self):
+        return [('str',self.val['m_string'])]
 
 ##########################################################################
 
@@ -174,7 +250,7 @@ class FrHashTablePrinter(FrPrinter):
             try:
                 # get the key; no need for safe_dereference() since were in a try block anyway
                 key = entries[i]['m_key']['v'].dereference()
-                x = str(key)  # cause an exception if the slot is empty
+                x = str(key)  # causes an exception if the slot is empty
                 yield 'key', key
                 yield 'val', self.safe_dereference(entries[i]['m_value'][0].cast(objptr))
             except:
@@ -247,46 +323,13 @@ class FrRefArrayPrinter(FrArrayPrinter):
 
 ##########################################################################
 
-class FrStringPrinter(gdb.printing.PrettyPrinter):
+class FrStringPrinter(FrPrinter):
     "Print a Fr::String object"
     enabled = True
 
     def __init__(self, val):
         self.val = val
 
-    def escape_byte(self, b):
-        value = ord(b)
-        if value == ord('\\'):
-            return '\\\\'
-        if value == 9 or value >= 32:
-            return chr(value)
-        if value == 0:
-            return '\\0'
-        if value == 10:
-            return '\\n'
-        if value == 13:
-            return '\\r'
-        if value == 27:
-            return '\\e'
-        return "^" + chr(value+64)
-        
-    def collect_string(self, addr, len, quote = True):
-        ellipsis = ''
-        if len > 64:
-            len = 61
-            ellipsis = '...'
-        try:
-            bytes = gdb.selected_inferior().read_memory(addr,len)
-        except gdb.MemoryError:
-            return '(unreadable memory)'
-        if quote:
-            chars = ['"'] + [self.escape_byte(b) for b in bytes] + [ellipsis, '"']
-        else:
-            chars = [self.escape_byte(b) for b in bytes] + [ellipsis]
-            if set(''.join(chars)) - set('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_'):
-                chars = ['|'] + chars + ['|']
-        return ''.join(chars)
-    
     def to_string(self):
         packedptr = self.val['m_buffer']['m_pointer'] ;
         len = (int(packedptr) >> 48) & 0xFFFF
@@ -385,7 +428,7 @@ class FrSparseVectorPrinter(FrVectorPrinter):
     
 ##########################################################################
 
-class FrObjectPrinter(gdb.printing.PrettyPrinter):
+class FrObjectPrinter(FrPrinter):
     "Print an arbitrary Fr::Object object"
     enabled = True
     printers = { 'String'   : ('Fr::String', FrStringPrinter),
@@ -404,27 +447,6 @@ class FrObjectPrinter(gdb.printing.PrettyPrinter):
                  'SparseVector_u32flt': ('Fr::SparseVector<unsigned int, float>', FrSparseVectorPrinter),
                  'WcTermVectorSparse' : ('Fr::SparseVector<unsigned int, float>', FrSparseVectorPrinter)
                  }
-
-    def read_ASCIZ(self, addr):
-        charptr = gdb.lookup_type('char').pointer()
-        strptr = gdb.Value(addr).cast(charptr)
-        try:
-            return strptr.string()
-        except:
-            return '(invalid)'
-
-    def get_typename(self, addr):
-        if addr is None:
-            return '(unknown)'
-        # str(addr) is the address of the value
-        addr = int(str(addr),16)
-        vmt = addr & 0xfffffffff000
-        charptrptr = gdb.lookup_type('char').pointer().pointer().pointer()
-        try:
-            vmtaddr = gdb.Value(vmt).cast(charptrptr).dereference().dereference()
-            return vmtaddr.string()
-        except:
-            return '(invalid)'
 
     def __init__(self, val):
         self.val = val
@@ -490,6 +512,7 @@ def build_pretty_printer():
    pp.add_printer('Fr::Atomic', '^Fr::Atomic<', FrAtomicPrinter)
    pp.add_printer('Fr::Array', '^Fr::Array$', FrArrayPrinter)
    pp.add_printer('Fr::BitVector', '^Fr::BitVector$', FrBitvectorPrinter)
+   pp.add_printer('Fr::CharPtr', '^Fr::NewPtr<char>$', FrCharPtrPrinter)
    pp.add_printer('Fr::Float', '^Fr::Float$', FrFloatPrinter)
    pp.add_printer('Fr::HashTable', '^Fr::HashTable<', FrHashTablePrinter)
    pp.add_printer('Fr::Integer', '^Fr::Integer$', FrIntegerPrinter)
