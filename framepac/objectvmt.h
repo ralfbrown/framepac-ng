@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-18					*/
+/* Version 0.09, last edit 2018-08-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -124,6 +124,7 @@ class Ptr
       void release() { m_object = nullptr ; }
       T* move() { T* o = m_object ; release() ; return o ; }
       inline void free() { if (m_object) { m_object->free() ; release() ; } }
+      Ptr& swap(Ptr& other) { T* tmp = other.m_object ; other.m_object = m_object ; m_object = tmp ; return *this ; }
 
    protected:
       T *m_object ;
@@ -347,6 +348,13 @@ template <typename T>
 constexpr ObjectVMT Object_VMT<T>::s_instance ;
 
 } // end namespace FramepaC
+
+namespace std
+{
+template<typename T>
+void swap(Fr::Ptr<T>& p1, Fr::Ptr<T>& p2) { p1.swap(p2) ; }
+
+} // end namespace std
 
 #endif /* !_Fr_OBJECTVMT_H_INCLUDED */
 
