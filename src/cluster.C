@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-21					*/
+/* Version 0.09, last edit 2018-08-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -26,6 +26,8 @@
 #include "framepac/progress.h"
 #include "framepac/signal.h"
 #include "framepac/texttransforms.h"
+#include "framepac/utility.h"
+#include "framepac/words.h"
 
 namespace Fr
 {
@@ -34,77 +36,140 @@ SignalHandler* ClusteringAlgoBase::s_sigint = nullptr ;
 std::sig_atomic_t ClusteringAlgoBase::abort_requested = 0 ;
 
 /************************************************************************/
+/************************************************************************/
+
+static const char* base_clustering_options[] =
+   {
+   "a",
+   "alpha",
+   "b",
+   "beta",
+   "epsilon",
+   "gamma",
+   "it",
+   "iterations",
+   "k",
+   "minpoints",
+   "minpts",
+   "numclusters",
+   "points",
+   "pts",
+   "thr",
+   "threshold",
+   "v",
+   "verbosity"
+   } ;
+
+/************************************************************************/
 /*	Methods for class ClusteringAlgoBase				*/
 /************************************************************************/
 
-bool ClusteringAlgoBase::parseOptions(const char* opt)
+bool ClusteringAlgoBase::parseOptions(const char* optlist)
 {
-   if (!opt)
+   if (!optlist)
       return true ;
+   WordSplitterDelimiter splitter(optlist,':') ;
+   ListPtr options = splitter.allWords() ;
    bool all_parsed = true ;
-   while (*opt)
+   PrefixMatcher matcher(base_clustering_options) ;
+   for (const auto option : *options)
       {
-      opt = skip_whitespace(opt) ;
+      const String* optstr = static_cast<const String*>(option) ;
+      const char* opt = skip_whitespace(optstr->c_str()) ;
+      char optflag = '\0' ;
+      if (*opt == '+')
+	 {
+	 optflag = '+' ;
+	 ++opt ;
+	 }
+      else if (*opt == '-')
+	 {
+	 optflag = '-' ;
+	 ++opt ;
+	 }
+      else if (*opt == '^' || *opt == '!')
+	 {
+	 optflag = '!' ;
+	 ++opt ;
+	 }
       size_t len = 0 ;
-      while (opt[len] && opt[len] != '=' && opt[len] != ':')
+      while (opt[len] && opt[len] != '=')
 	 len++ ;
       CharPtr optname { dup_string_n(opt,len) } ;
       lowercase_string((char*)optname) ;
       opt += len ;
-      char* optvalue_orig ;
-      if (*opt == '=')
+      const char* canon_name = matcher.match(optname) ;
+      if (canon_name)
 	 {
-	 opt = skip_whitespace(opt+1) ;
-	 len = 0 ;
-	 while (opt[len] && opt[len] != ':')
-	    len++ ;
-	 optvalue_orig = dup_string_n(opt,len).move() ;
-	 opt += len ;
+	 if (*opt == '=')
+	    ++opt ;
+	 opt = skip_whitespace(opt) ;
+	 // pass the option name and value down to the actual clustering algorithm to be used as it sees fit
+	 all_parsed &= applyOption(canon_name,opt,optflag) ;
 	 }
       else
-	 optvalue_orig = dup_string("").move() ;
-      const char* optvalue = optvalue_orig ;
-      if (strcmp(optname,"a") == 0 || strcmp(optname,"alpha") == 0)
 	 {
-	 all_parsed &= convert_string(optvalue,m_alpha) ;
+	 if (matcher.status() == PrefixMatcher::NoMatch)
+	    {
+	    cerr << "Option " << *optname << " is not recognized" << endl ;
+	    }
+	 else if (matcher.status() == PrefixMatcher::Ambiguous)
+	    {
+	    cerr << "Option " << *optname << " is ambiguous, and matches:" ;
+	    ListPtr matches = matcher.enumerateMatches(optname) ;
+	    for (auto match : *matches)
+	       {
+	       cerr << ' ' << match->printableName() ;
+	       }
+	    cerr << endl ;
+	    }
 	 }
-      else if (strcmp(optname,"b") == 0 || strcmp(optname,"beta") == 0)
-	 {
-	 all_parsed &= convert_string(optvalue,m_beta) ;
-	 }
-      else if (strcmp(optname,"gamma") == 0)
-	 {
-	 all_parsed &= convert_string(optvalue,m_gamma) ;
-	 }
-      else if (strcmp(optname,"k") == 0 || strcmp(optname,"numclusters") == 0)
-	 {
-	 all_parsed &= convert_string(optvalue,m_desired_clusters) ;
-	 }
-      else if (strcmp(optname,"it") == 0 || strcmp(optname,"iter") == 0)
-	 {
-	 all_parsed &= convert_string(optvalue,m_max_iterations) ;
-	 }
-      else if (strcmp(optname,"eps") == 0 || strcmp(optname,"thr") == 0 || strcmp(optname,"threshold") == 0)
-	 {
-	 all_parsed &= convert_string(optvalue,m_threshold) ;
-	 }
-      else if (strcmp(optname,"minpts") == 0 || strcmp(optname,"pts") == 0)
-	 {
-	 all_parsed &= convert_string(optvalue,m_min_points) ;
-	 }
-      else if (strcmp(optname,"v") == 0 || strcmp(optname,"verbosity") == 0)
-	 {
-	 all_parsed &= convert_string(optvalue,m_verbosity) ;
-	 }
-      //TODO: any other standard options to be parsed?
-      // pass the option name and value down to the actual clustering algorithm to be used as it sees fit
-      if (!applyOption(optname,optvalue))
-	 all_parsed = false ;
-      delete[] optvalue_orig ;
-      if (*opt == ':')
-	 opt++ ;
       }
    return all_parsed ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ClusteringAlgoBase::applyOption(const char* optname, const char* optvalue, char optflag)
+{
+   if (strcmp(optname,"a") == 0 || strcmp(optname,"alpha") == 0)
+      {
+      return convert_string(optvalue,m_alpha) ;
+      }
+   else if (strcmp(optname,"b") == 0 || strcmp(optname,"beta") == 0)
+      {
+      return convert_string(optvalue,m_beta) ;
+      }
+   else if (strcmp(optname,"gamma") == 0)
+      {
+      return convert_string(optvalue,m_gamma) ;
+      }
+   else if (strcmp(optname,"k") == 0 || strcmp(optname,"numclusters") == 0)
+      {
+      return convert_string(optvalue,m_desired_clusters) ;
+      }
+   else if (strcmp(optname,"it") == 0 || strcmp(optname,"iter") == 0)
+      {
+      return convert_string(optvalue,m_max_iterations) ;
+      }
+   else if (strcmp(optname,"eps") == 0 || strcmp(optname,"thr") == 0 || strcmp(optname,"threshold") == 0)
+      {
+      return convert_string(optvalue,m_threshold) ;
+      }
+   else if (strcmp(optname,"minpts") == 0 || strcmp(optname,"pts") == 0)
+      {
+      return convert_string(optvalue,m_min_points) ;
+      }
+   else if (strcmp(optname,"v") == 0 || strcmp(optname,"verbosity") == 0)
+      {
+      if (optflag == '-')
+	 m_verbosity = 0 ;
+      else if (optflag == '+' && !*optvalue)
+	 m_verbosity++ ;
+      else
+	 return convert_string(optvalue,m_verbosity) ;
+      }
+   return false ;
 }
 
 //----------------------------------------------------------------------------

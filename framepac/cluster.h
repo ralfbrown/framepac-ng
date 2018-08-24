@@ -264,11 +264,13 @@ class ClusterInfo : public Object
 class ClusteringAlgoBase
    {
    public:
+      typedef ProgressIndicator* makePIFunc(size_t) ;
+   public:
       ClusteringAlgoBase() {}
       virtual ~ClusteringAlgoBase() { delete[] m_logprefix ; }
 
       bool parseOptions(const char* opt) ;
-      virtual bool applyOption(const char* /*optname*/, const char* /*optvalue*/) { return true ; }
+      virtual bool applyOption(const char* optname, const char* optvalue, char optflag) ;
 
       static bool checkSparseOrDense(const Array* vectors) ;
       static void freeClusters(ClusterInfo** clusters, size_t num_clusters) ;
@@ -289,6 +291,8 @@ class ClusteringAlgoBase
       void ignoreExtraClusters(bool ignore) { m_ignore_extra = ignore ; }
       void backoffSet(double b) { m_backoff = b ; }
       void excludeSingletons(bool excl) { m_no_singletons = excl ; }
+      void setMakePIFunc(makePIFunc* fn) { m_makepi = fn ; }
+      bool registerOption(const char* optname) ;  // used by derived classes to add private options to the parser
 
       double clusterThreshold() const { return m_threshold ; }
       size_t desiredClusters() const { return m_desired_clusters ; }
@@ -305,20 +309,21 @@ class ClusteringAlgoBase
       static void sigint_handler(int) ;
 
    protected: // data members
-      char*     m_logprefix { nullptr } ;
-      double    m_alpha { 0 } ;
-      double    m_beta { 0 } ;
-      double    m_gamma { 0 } ;
-      double	m_threshold { 0.2 } ;
-      double    m_backoff { 0.05 } ;
-      size_t    m_desired_clusters { 2 } ;
-      size_t    m_min_points { 0 } ;
-      size_t    m_max_iterations { 5 } ;
-      int	m_verbosity { 0 } ;
-      bool	m_use_sparse_vectors { false } ;
-      bool      m_hard_limit { false } ;		// don't allow more than desired # of clusters no matter what
-      bool      m_ignore_extra { false } ;
-      bool      m_no_singletons { false } ;
+      char*       m_logprefix { nullptr } ;
+      makePIFunc* m_makepi { nullptr } ;
+      double      m_alpha { 0 } ;
+      double      m_beta { 0 } ;
+      double      m_gamma { 0 } ;
+      double	  m_threshold { 0.2 } ;
+      double      m_backoff { 0.05 } ;
+      size_t      m_desired_clusters { 2 } ;
+      size_t      m_min_points { 0 } ;
+      size_t      m_max_iterations { 5 } ;
+      int	  m_verbosity { 0 } ;
+      bool	  m_use_sparse_vectors { false } ;
+      bool        m_hard_limit { false } ;		// don't allow more than desired # of clusters no matter what
+      bool        m_ignore_extra { false } ;
+      bool        m_no_singletons { false } ;
 
    protected: // static data members
       static SignalHandler* s_sigint ;

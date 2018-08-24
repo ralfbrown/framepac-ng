@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-29					*/
+/* Version 0.09, last edit 2018-08-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -29,6 +29,42 @@ namespace Fr
 
 /************************************************************************/
 /************************************************************************/
+
+static const char* stringarray_keyfunc(const void* obj)
+{
+   auto stringarr = (const char**)obj ;
+   return stringarr[0] ;
+}
+
+//----------------------------------------------------------------------------
+
+static const void* stringarray_nextfunc(const void* obj)
+{
+   auto stringarr = (const char**)obj ;
+   return stringarr+1 ;
+}
+
+//----------------------------------------------------------------------------
+
+PrefixMatcher::PrefixMatcher(const char**keys, bool casefold)
+   : m_keys(keys), m_keyfunc(stringarray_keyfunc), m_nextfunc(stringarray_nextfunc), m_casefold(casefold)
+{
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+const char* PrefixMatcher::match(const char* key) const
+{
+   if (!m_keys || !key)
+      {
+      m_status = KeyError ;
+      return nullptr ;
+      }
+   return reinterpret_cast<const char*>(match(key,m_keys)) ;
+}
+
+//----------------------------------------------------------------------------
 
 const void* PrefixMatcher::match(const char* key, const void* obj) const
 {
@@ -98,6 +134,64 @@ const void* PrefixMatcher::match(const char* key, const void* obj) const
 	 }
       }
    return best_match ;
+}
+
+//----------------------------------------------------------------------------
+
+ListPtr PrefixMatcher::enumerateKeys(const void* obj) const
+{
+   ListBuilder lb ;;
+   if (!m_keyfunc || !m_nextfunc)
+      {
+      m_status = FuncError ;
+      return lb.move() ;
+      }
+   m_status = Successful ;
+   for ( ; obj ; obj = m_nextfunc(obj))
+      {
+      lb += m_keyfunc(obj) ;
+      }
+   return lb.move() ;
+}
+
+//----------------------------------------------------------------------------
+
+ListPtr PrefixMatcher::enumerateKeys() const
+{
+   return enumerateKeys(m_keys) ;
+}
+
+//----------------------------------------------------------------------------
+
+ListPtr PrefixMatcher::enumerateMatches(const char* prefix, const void* obj) const
+{
+   ListBuilder lb ;;
+   if (!m_keyfunc || !m_nextfunc)
+      {
+      m_status = FuncError ;
+      return lb.move() ;
+      }
+   m_status = Successful ;
+   size_t len = strlen(prefix) ;
+   for ( ; obj ; obj = m_nextfunc(obj))
+      {
+      const char* key = m_keyfunc(obj) ;
+      if (m_casefold)
+	 {
+	 if (strncasecmp(prefix,key,len) == 0)
+	    lb += key ;
+	 }
+      else if (strncmp(prefix,key,len) == 0)
+	 lb += key ;
+      }
+   return lb.move() ;
+}
+
+//----------------------------------------------------------------------------
+
+ListPtr PrefixMatcher::enumerateMatches(const char* prefix) const
+{
+   return enumerateMatches(prefix,m_keys) ;
 }
 
 } // end namespace Fr
