@@ -44,9 +44,11 @@ class NewPtr
 	 { m_string = new T[N] ; std::copy(s,s+copyN,m_string) ; }
       NewPtr(T* s) { m_string = s ; }
       NewPtr(const NewPtr&) = delete ;
+      NewPtr(NewPtr& orig) { m_string = orig.move() ; }
       NewPtr(NewPtr&& orig) { m_string = orig.move() ; }
       ~NewPtr() { reset(nullptr) ; }
       NewPtr& operator= (const NewPtr&) = delete ;
+      NewPtr& operator= (NewPtr& orig) { reset(orig.release()) ; return *this ; }
       NewPtr& operator= (NewPtr&& orig) { reset(orig.release()) ; return *this ; }
       NewPtr& operator= (T* new_s) { reset(new_s) ; return *this ; }
 
