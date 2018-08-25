@@ -45,7 +45,7 @@ CharPtr vaprintf(const char *fmt, va_list args)
       va_copy(argcopy,args) ;
       vsnprintf((char*)buf,len+1,fmt,args) ;
       va_end(argcopy) ;
-      buf[len+1] = '\0' ;
+      buf[len] = '\0' ;
       }
    return buf ;
 }
