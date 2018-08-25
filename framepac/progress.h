@@ -42,6 +42,8 @@ class ProgressIndicator
       ProgressIndicator(const ProgressIndicator&) = delete ;
       ProgressIndicator& operator= (const ProgressIndicator&) = delete ;
 
+      void free() { delete this ; }
+
       virtual void finalize() { return ; }
 
       // configuration
