@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-21					*/
+/* Version 0.09, last edit 2018-08-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -177,7 +177,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       Ptr<RefArray> sample { vectors->randomSample(2*num_clusters) } ;
       // start by arbitrarily picking the first vector in the sample
       Vector<ValT>* vec = static_cast<Vector<ValT>*>(sample->getNth(0)) ;
-      cout << "center: " << vec << endl ;
+      this->log(2,"center: %s",*vec->cString()) ;
       centers->append(sample->getNth(0)) ;
       sample->clearNth(0) ;
       // until we've accumulated desiredClusters() vectors, search for
@@ -187,7 +187,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
 	 {
 	 size_t selected = find_least_similar<IdxT,ValT>(sample, centers,this->m_measure) ;
 	 Vector<ValT>* v = static_cast<Vector<ValT>*>(sample->getNth(selected)) ;
-	 cout << "center: " << v << endl ;
+	 this->log(2,"center: %s",*v->cString()) ;
 	 centers->append(sample->getNth(selected)) ;
 	 sample->clearNth(selected) ;
 	 }

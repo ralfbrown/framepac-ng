@@ -788,6 +788,7 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInf
 	 }
       }
    num_clusters = label_map->currentSize() ;
+   this->log(2,"   extracting %lu clusters",num_clusters) ;
    clusters = new ClusterInfo*[num_clusters] ;
    for (size_t i = 0 ; i < num_clusters ; ++i)
       {
