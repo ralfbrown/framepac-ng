@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-24					*/
+/* Version 0.09, last edit 2018-08-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -225,6 +225,7 @@ static SimMeasure measure_names[] = {
    { "WilsonShmida", VectorSimilarityMeasure::wilson_shmida },
    { "WS", VectorSimilarityMeasure::wilson_shmida },
 //   { "", VectorSimilarityMeasure:: },
+   { "User", VectorSimilarityMeasure::user },
    // the end-of-array sentinel
    { nullptr, VectorSimilarityMeasure::none }
    } ;

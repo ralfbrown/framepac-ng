@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-27					*/
+/* Version 0.09, last edit 2018-08-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -21,6 +21,7 @@
 
 #include <cmath>
 #include <float.h>
+#include "framepac/message.h"
 #include "template/vecsim.cc"
 #include "template/vecsim_ct.cc"
 
@@ -340,7 +341,10 @@ VectorMeasure<IdxT,ValT>* VectorMeasure<IdxT,ValT>::create(VectorSimilarityMeasu
 	 meas = new VectorMeasure<IdxT,ValT> ;
 	 break ;
       case VectorSimilarityMeasure::none:
+      case VectorSimilarityMeasure::user:
+	 return nullptr ;
       default:
+	 SystemMessage::missed_case("VectorMeasure::create") ;
 	 return nullptr ;
       }
    if (meas)

@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 15jul2018
+# Last change: 25aug2018
 
 #########################################################################
 # define the locations of all the files
@@ -730,7 +730,7 @@ template/vecsim.cc:	framepac/vecsim.h
 template/vecsim_ct.cc:	framepac/vecsim.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/vecsim_factory.cc:	template/vecsim.cc template/vecsim_ct.cc
+template/vecsim_factory.cc:	framepac/message.h template/vecsim.cc template/vecsim_ct.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/vector.cc:	framepac/fasthash64.h framepac/vector.h

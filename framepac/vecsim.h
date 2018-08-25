@@ -155,6 +155,7 @@ enum VectorSimilarityMeasure
       williams,
       williams2,
       wilson_shmida,
+      user			// user-defined
    } ;
 
 /* Other measures covered on Wikipedia:
