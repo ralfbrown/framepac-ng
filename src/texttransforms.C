@@ -43,10 +43,10 @@ CharPtr dup_string(const char* s)
 {
    if (!s)
       return nullptr ;
-   size_t len = strlen(s) ;
+   size_t len = strlen(s) + 1 ;
    char* copy = new char[len+1] ;
    if (copy)
-      memcpy(copy,s,len+1) ;
+      memcpy(copy,s,len) ;
    return copy ;
 }
 
