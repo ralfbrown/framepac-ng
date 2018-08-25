@@ -413,6 +413,7 @@ inline uint32_t abs_value(uint32_t v)
 
 //----------------------------------------------------------------------------
 
+ListPtr enumerate_vector_measure_names(const char* prefix = nullptr) ;
 VectorSimilarityMeasure parse_vector_measure_name(const char* name) ;
 
 } ; // end of namespace Fr

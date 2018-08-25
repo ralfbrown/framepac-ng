@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.09, last edit 2018-08-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -35,6 +35,12 @@ struct ClusteringType
       ClusteringAlgorithm algo ;
    } ;
 
+struct RepType
+   {
+      const char* name ;
+      ClusterRep  rep ;
+   } ;
+
 /************************************************************************/
 /*	Global data for this module					*/
 /************************************************************************/
@@ -64,6 +70,19 @@ static ClusteringType clustering_types[] = {
    { nullptr, ClusteringAlgorithm::none }
    } ;
 
+static RepType rep_types[] = {
+   { "Average", ClusterRep::average },
+   { "Centroid", ClusterRep::centroid },
+   { "Furthest", ClusterRep::furthest },
+   { "Medioid", ClusterRep::medioid },
+   { "Nearest", ClusterRep::nearest },
+   { "Newest", ClusterRep::newest },
+   { "Prototype", ClusterRep::prototype },
+   { "RMS", ClusterRep::rms },
+   // the end-of-array sentinel
+   { nullptr, ClusterRep::none },
+   } ;
+
 /************************************************************************/
 /************************************************************************/
 
@@ -84,6 +103,17 @@ static const char* get_key(const void* ptr)
 
 //----------------------------------------------------------------------------
 
+ListPtr enumerate_cluster_algo_names(const char* prefix)
+{
+   PrefixMatcher matcher(get_key,next_name) ;
+   if (prefix && *prefix)
+      return matcher.enumerateMatches(prefix,clustering_types) ;
+   else
+      return matcher.enumerateKeys(clustering_types) ;
+}
+
+//----------------------------------------------------------------------------
+
 ClusteringAlgorithm parse_cluster_algo_name(const char* name)
 {
    if (!name || !*name)
@@ -93,6 +123,27 @@ ClusteringAlgorithm parse_cluster_algo_name(const char* name)
    return found ? reinterpret_cast<const ClusteringType*>(found)->algo : ClusteringAlgorithm::none ;
 }
 
+//----------------------------------------------------------------------------
+
+ListPtr enumerate_cluster_rep_names(const char* prefix)
+{
+   PrefixMatcher matcher(get_key,next_name) ;
+   if (prefix && *prefix)
+      return matcher.enumerateMatches(prefix,rep_types) ;
+   else
+      return matcher.enumerateKeys(rep_types) ;
+}
+
+//----------------------------------------------------------------------------
+
+ClusterRep parse_cluster_rep_name(const char* name)
+{
+   if (!name || !*name)
+      return ClusterRep::none ;
+   PrefixMatcher matcher(get_key,next_name) ;
+   const void* found = matcher.match(name,rep_types) ;
+   return found ? reinterpret_cast<const RepType*>(found)->rep : ClusterRep::none ;
+}
 
 } // end namespace Fr
 

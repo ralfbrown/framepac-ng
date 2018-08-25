@@ -110,7 +110,9 @@ bool ClusteringAlgoBase::parseOptions(const char* optlist, bool validate_only)
 	    ++opt ;
 	 opt = skip_whitespace(opt) ;
 	 // pass the option name and value down to the actual clustering algorithm to be used as it sees fit
-	 if (!validate_only)
+	 if (validate_only)
+	    all_parsed &= validateOption(canon_name,opt,optflag) ;
+	 else
 	    all_parsed &= applyOption(canon_name,opt,optflag) ;
 	 }
       else
@@ -129,6 +131,7 @@ bool ClusteringAlgoBase::parseOptions(const char* optlist, bool validate_only)
 	       }
 	    cerr << endl ;
 	    }
+	 all_parsed = false ;
 	 }
       }
    return all_parsed ;
@@ -147,6 +150,31 @@ static void set_flag(bool& flag, char option, bool def = true)
    else
       flag = def ;
    return ;
+}
+
+//----------------------------------------------------------------------------
+
+bool ClusteringAlgoBase::validateOption(const char* optname, const char* optvalue, char optflag) const
+{
+   (void)optflag ;
+   if (strcmp(optname,"measure") == 0 && parse_vector_measure_name(optvalue) == VectorSimilarityMeasure::none)
+      {
+      cerr << "Unknown clustering measure '" << optvalue << "'.  Known names are:" << endl ;
+      for (auto name : *enumerate_vector_measure_names())
+	 cerr << ' ' << name->printableName() ;
+      cerr << endl  ;
+      return false ;
+      }
+   if (strcmp(optname,"representative") == 0 && parse_cluster_rep_name(optvalue) == ClusterRep::none)
+      {
+      cerr << "Unknown cluster representative '" << optvalue << "'.  Known names are:" << endl ;
+      for (auto name : *enumerate_cluster_rep_names())
+	 cerr << ' ' << name->printableName() ;
+      cerr << endl  ;
+      return false ;
+      }
+   //TODO: verify value is within allowable range; for now, always say OK
+   return true ;
 }
 
 //----------------------------------------------------------------------------
@@ -179,11 +207,11 @@ bool ClusteringAlgoBase::applyOption(const char* optname, const char* optvalue, 
       }
    else if (strcmp(optname,"representative") == 0)
       {
-      //TODO
+      m_representative = parse_cluster_rep_name(optvalue) ;
       }
    else if (strcmp(optname,"measure") == 0)
       {
-      //TODO
+      m_measure = parse_vector_measure_name(optvalue) ;
       }
    else if (strcmp(optname,"k") == 0 || strcmp(optname,"numclusters") == 0)
       {

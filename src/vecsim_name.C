@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-29					*/
+/* Version 0.09, last edit 2018-08-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -245,6 +245,17 @@ static const char* get_key(const void* ptr)
 {
    const SimMeasure* name = reinterpret_cast<const SimMeasure*>(ptr) ;
    return name->name ;
+}
+
+//----------------------------------------------------------------------------
+
+ListPtr enumerate_vector_measure_names(const char* prefix)
+{
+   PrefixMatcher matcher(get_key,next_name) ;
+   if (prefix && *prefix)
+      return matcher.enumerateMatches(prefix,measure_names) ;
+   else
+      return matcher.enumerateKeys(measure_names) ;
 }
 
 //----------------------------------------------------------------------------

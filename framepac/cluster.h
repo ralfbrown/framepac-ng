@@ -270,6 +270,7 @@ class ClusteringAlgoBase
       virtual ~ClusteringAlgoBase() { delete[] m_logprefix ; }
 
       bool parseOptions(const char* opt, bool validate_only = false) ;
+      virtual bool validateOption(const char* optname, const char* optvalue, char optflag) const ;
       virtual bool applyOption(const char* optname, const char* optvalue, char optflag) ;
 
       static bool checkSparseOrDense(const Array* vectors) ;
@@ -377,7 +378,10 @@ class ClusteringAlgo : public ClusteringAlgoBase
 /************************************************************************/
 /************************************************************************/
 
+ListPtr enumerate_cluster_algo_names(const char* prefix = nullptr) ;
 ClusteringAlgorithm parse_cluster_algo_name(const char* name) ;
+ListPtr enumerate_cluster_rep_names(const char* prefix = nullptr) ;
+ClusterRep parse_cluster_rep_name(const char* name) ;
 
 } ; // end of namespace Fr
 
