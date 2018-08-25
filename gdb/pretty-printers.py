@@ -18,7 +18,7 @@
 
 import gdb.printing
 
-RECURSIVE_CALL = False
+RECURSIVE_CALL = 0
 
 ##########################################################################
 
@@ -146,14 +146,14 @@ class FrArrayPrinter(FrPrinter):
 
     def make_children(self):
         global RECURSIVE_CALL
-        RECURSIVE_CALL = True
+        RECURSIVE_CALL += 1
         count = 0
         members = self.val['m_array']
         arrsize = int(self.val['m_size'])
         while count < arrsize:
             yield str(count), self.safe_dereference(members[count])
             count = count + 1
-        RECURSIVE_CALL = False
+        RECURSIVE_CALL -= 1
         return
 
     def children(self):
@@ -241,7 +241,7 @@ class FrHashTablePrinter(FrPrinter):
 
     def make_children(self):
         global RECURSIVE_CALL
-        RECURSIVE_CALL = True
+        RECURSIVE_CALL += 1
         table = self.val['m_table']['v']
         entries = table['m_entries']
         objptr = gdb.lookup_type('Fr::Object').pointer()
@@ -257,7 +257,7 @@ class FrHashTablePrinter(FrPrinter):
                 # empty slots have a key pointing at 0xfff..fff, which generates an exception when we try
                 #   to convert it to a string.  Skip empy slots.
                 pass
-        RECURSIVE_CALL = False
+        RECURSIVE_CALL -= 1
         return
 
     def children(self):
@@ -281,21 +281,21 @@ class FrListPrinter(FrPrinter):
     
     def to_string(self):
         global RECURSIVE_CALL
-        if self.is_empty_list():
-            if RECURSIVE_CALL:
+        if self.no_children:
+            if RECURSIVE_CALL > 0:
                 return '()'
             else:
                 return 'empty List'
-        RECURSIVE_CALL = True
         return 'List'
 
     def display_hint(self):
         return 'array'
 
-    def make_children(self):
+    def children(self):
         global RECURSIVE_CALL
         if self.no_children:
             return
+        RECURSIVE_CALL += 1
         count = 0
         while count < 64 and not self.is_empty_list():
             head = self.safe_dereference(self.val['m_item'])
@@ -305,11 +305,27 @@ class FrListPrinter(FrPrinter):
             count = count + 1
         if not self.is_empty_list():
             yield str(count),gdb.Value('...')
-        RECURSIVE_CALL = False
+        RECURSIVE_CALL -= 1
         return
 
+##########################################################################
+
+class FrListBuilderPrinter(FrPrinter):
+    "Print the contents of a ListBuilder"
+    enabled = True
+
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        return 'ListBuilder @ {}'.format(self.val.address)
+
     def children(self):
-        return self.make_children()
+        global RECURSIVE_CALL
+        RECURSIVE_CALL += 1
+        yield 'l', self.safe_dereference(self.val['m_list'])
+        RECURSIVE_CALL -= 1
+        return
 
 ##########################################################################
 
@@ -334,7 +350,7 @@ class FrStringPrinter(FrPrinter):
         packedptr = self.val['m_buffer']['m_pointer'] ;
         len = (int(packedptr) >> 48) & 0xFFFF
         ptr = int(packedptr) & 0x0000FFFFFFFFFFFF
-        if RECURSIVE_CALL:
+        if RECURSIVE_CALL > 0:
             return self.collect_string(ptr,len)
         else:
             return "String({},{})".format(len,self.collect_string(ptr,len))
@@ -358,7 +374,7 @@ class FrSymbolPrinter(FrStringPrinter):
         ptr = int(packedptr) & 0x0000FFFFFFFFFFFF
         propflags = (int(propptr) >> 48) & 0x0F
         symtab = (int(propptr) >> 52) & 0xFFF
-        if RECURSIVE_CALL:
+        if RECURSIVE_CALL > 0:
             return self.collect_string(ptr,len,False)
         else:
             return "Symbol({},{},{})".format(self.collect_string(ptr,len),symtab,propflags)
@@ -382,7 +398,7 @@ class FrVectorPrinter(FrPrinter):
         global RECURSIVE_CALL
         keystr = self.safe_dereference(self.val['m_key'])
         lblstr = self.safe_dereference(self.val['m_label'])
-        if RECURSIVE_CALL:
+        if RECURSIVE_CALL > 0:
             return '{}Vector({}/{} key={} label={}) @ {}'.format(self.vectype,self.vecsize,int(self.val['m_capacity']),
                                                             keystr,lblstr,self.val.address)
         else:
@@ -394,7 +410,7 @@ class FrVectorPrinter(FrPrinter):
 
     def make_children(self):
         global RECURSIVE_CALL
-        RECURSIVE_CALL = True
+        RECURSIVE_CALL += 1
         members = self.val['m_values']
         count = 0
         while count < self.vecsize:
@@ -402,12 +418,12 @@ class FrVectorPrinter(FrPrinter):
                 yield str(count), self.indices[count]
             yield str(count), members[count]
             count = count + 1
-        RECURSIVE_CALL = False
+        RECURSIVE_CALL -= 1
         return
     
     def children(self):
         global RECURSIVE_CALL
-        if RECURSIVE_CALL:
+        if RECURSIVE_CALL > 0:
             return []
         return self.make_children()
 
@@ -482,6 +498,7 @@ class FrPtrObjectPrinter(FrPrinter):
     def __init__(self, val):
         self.val = val
         self.typestr = '->Object'
+        self.label = 'obj'
 
     def to_string(self):
         ptr = self.val['m_object']
@@ -492,7 +509,40 @@ class FrPtrObjectPrinter(FrPrinter):
 
     def children(self):
         ptr = self.safe_dereference(self.val['m_object'])
-        return [('obj',ptr)]
+        return [(self.label,ptr)]
+
+##########################################################################
+
+class FrPtrArrayPrinter(FrPtrObjectPrinter):
+    "Print the object pointed at by an ArrayPtr"
+    enabled = True
+
+    def __init__(self, val):
+        self.val = val
+        self.typestr = '->Array'
+        self.label = 'arr'
+
+##########################################################################
+
+class FrPtrListPrinter(FrPtrObjectPrinter):
+    "Print the object pointed at by a ListPtr"
+    enabled = True
+
+    def __init__(self, val):
+        self.val = val
+        self.typestr = '->List'
+        self.label = 'l'
+
+##########################################################################
+
+class FrPtrStringPrinter(FrPtrObjectPrinter):
+    "Print the object pointed at by a StringPtr"
+    enabled = True
+
+    def __init__(self, val):
+        self.val = val
+        self.typestr = '->String'
+        self.label = 's'
 
 ##########################################################################
 
@@ -503,7 +553,8 @@ class FrScopedObjectPrinter(FrPtrObjectPrinter):
     def __init__(self, val):
         self.val = val
         self.typestr = 'ScopedObject'
-        
+        self.label = 'obj'
+
 ##########################################################################
 
 def build_pretty_printer():
@@ -511,16 +562,20 @@ def build_pretty_printer():
    pp.add_printer('std::mutex', '^std::mutex$', StdMutexPrinter)
    pp.add_printer('Fr::Atomic', '^Fr::Atomic<', FrAtomicPrinter)
    pp.add_printer('Fr::Array', '^Fr::Array$', FrArrayPrinter)
+   pp.add_printer('Fr::ArrayPtr', '^Fr::Ptr<Array>$', FrPtrArrayPrinter)
    pp.add_printer('Fr::BitVector', '^Fr::BitVector$', FrBitvectorPrinter)
    pp.add_printer('Fr::CharPtr', '^Fr::NewPtr<char>$', FrCharPtrPrinter)
    pp.add_printer('Fr::Float', '^Fr::Float$', FrFloatPrinter)
    pp.add_printer('Fr::HashTable', '^Fr::HashTable<', FrHashTablePrinter)
    pp.add_printer('Fr::Integer', '^Fr::Integer$', FrIntegerPrinter)
    pp.add_printer('Fr::List', '^Fr::List$', FrListPrinter)
+   pp.add_printer('Fr::ListBuilder', '^Fr::ListBuilder$', FrListBuilderPrinter)
+   pp.add_printer('Fr::ListPtr', '^Fr::Ptr<List>$', FrPtrListPrinter)
    pp.add_printer('Fr::Object', '^Fr::Object *$', FrObjectPrinter)
    pp.add_printer('Fr::RefArray', '^Fr::RefArray$', FrRefArrayPrinter)
    pp.add_printer('Fr::SparseVector', '^Fr::SparseVector<', FrSparseVectorPrinter)
    pp.add_printer('Fr::String', '^Fr::String$', FrStringPrinter)
+   pp.add_printer('Fr::StringPtr', '^Fr::Ptr<String>$', FrPtrStringPrinter)
    pp.add_printer('Fr::Symbol', '^Fr::Symbol$', FrSymbolPrinter)
    pp.add_printer('Fr::Vector', '^Fr::Vector<', FrVectorPrinter)
    pp.add_printer('Fr::ObjectPtr', '^Fr::Ptr<Object>$', FrPtrObjectPrinter)
