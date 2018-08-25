@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-24					*/
+/* Version 0.09, last edit 2018-08-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -85,7 +85,9 @@ const void* PrefixMatcher::match(const char* key, const void* obj) const
    for ( ; obj ; obj = m_nextfunc(obj))
       {
       const char* obj_key = m_keyfunc(obj) ;
-      if (!obj_key || strlen(obj_key) < keylen) continue ;
+      if (!obj_key)
+	 break  ;
+      if (strlen(obj_key) < keylen) continue ;
       if (m_casefold)
 	 {
 	 // check for exact match
