@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-21					*/
+/* Version 0.09, last edit 2018-08-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -146,9 +146,9 @@ class ClusterInfo : public Object
 
       // *** iterator support ***
       ArrayIter begin() const { return members()->begin() ; }
-      ArrayIter cbegin() const { return members()->cbegin() ; }
+      ConstArrayIter cbegin() const { return members()->cbegin() ; }
       ArrayIter end() { return members()->end() ; }
-      ArrayIter cend() { return members()->cend() ; }
+      ConstArrayIter cend() { return members()->cend() ; }
 
       // *** utility functions ***
       bool contains(const Object*) const ; // is Object a member of the cluster?
@@ -269,7 +269,7 @@ class ClusteringAlgoBase
       ClusteringAlgoBase() {}
       virtual ~ClusteringAlgoBase() { delete[] m_logprefix ; }
 
-      bool parseOptions(const char* opt) ;
+      bool parseOptions(const char* opt, bool validate_only = false) ;
       virtual bool applyOption(const char* optname, const char* optvalue, char optflag) ;
 
       static bool checkSparseOrDense(const Array* vectors) ;
@@ -290,7 +290,7 @@ class ClusteringAlgoBase
       void useSparseVectors(bool use) { m_use_sparse_vectors = use ; }
       void ignoreExtraClusters(bool ignore) { m_ignore_extra = ignore ; }
       void backoffSet(double b) { m_backoff = b ; }
-      void excludeSingletons(bool excl) { m_no_singletons = excl ; }
+      void excludeSingletons(bool excl) { m_allow_singletons = !excl ; }
       void setMakePIFunc(makePIFunc* fn) { m_makepi = fn ; }
       bool registerOption(const char* optname) ;  // used by derived classes to add private options to the parser
 
@@ -301,7 +301,7 @@ class ClusteringAlgoBase
       bool usingSparseVectors() const { return m_use_sparse_vectors ; }
       bool hardLimitOnClusters() const { return m_hard_limit ; }
       bool ignoringExtraClusters() const { return m_ignore_extra ; }
-      bool excludingSingletons() const { return m_no_singletons ; }
+      bool excludingSingletons() const { return !m_allow_singletons ; }
       double backoffStep() const { return m_backoff ; }
       bool abortRequested() const { return abort_requested ; }
 
@@ -323,7 +323,9 @@ class ClusteringAlgoBase
       bool	  m_use_sparse_vectors { false } ;
       bool        m_hard_limit { false } ;		// don't allow more than desired # of clusters no matter what
       bool        m_ignore_extra { false } ;
-      bool        m_no_singletons { false } ;
+      bool        m_allow_singletons { true } ;
+      ClusterRep  m_representative { ClusterRep::centroid } ;
+      VectorSimilarityMeasure m_measure { VectorSimilarityMeasure::cosine } ;
 
    protected: // static data members
       static SignalHandler* s_sigint ;

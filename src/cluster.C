@@ -46,14 +46,19 @@ static const char* base_clustering_options[] =
    "beta",
    "epsilon",
    "gamma",
+   "hardlimit",
+   "ignoreextra",
    "it",
    "iterations",
    "k",
+   "measure",
    "minpoints",
    "minpts",
    "numclusters",
    "points",
    "pts",
+   "representative",
+   "singletons",
    "thr",
    "threshold",
    "v",
@@ -64,7 +69,7 @@ static const char* base_clustering_options[] =
 /*	Methods for class ClusteringAlgoBase				*/
 /************************************************************************/
 
-bool ClusteringAlgoBase::parseOptions(const char* optlist)
+bool ClusteringAlgoBase::parseOptions(const char* optlist, bool validate_only)
 {
    if (!optlist)
       return true ;
@@ -105,7 +110,8 @@ bool ClusteringAlgoBase::parseOptions(const char* optlist)
 	    ++opt ;
 	 opt = skip_whitespace(opt) ;
 	 // pass the option name and value down to the actual clustering algorithm to be used as it sees fit
-	 all_parsed &= applyOption(canon_name,opt,optflag) ;
+	 if (!validate_only)
+	    all_parsed &= applyOption(canon_name,opt,optflag) ;
 	 }
       else
 	 {
@@ -130,6 +136,21 @@ bool ClusteringAlgoBase::parseOptions(const char* optlist)
 
 //----------------------------------------------------------------------------
 
+static void set_flag(bool& flag, char option, bool def = true)
+{
+   if (option == '-')
+      flag = false ;
+   else if (option  == '+')
+      flag = true ;
+   else if (option == '!')
+      flag = !flag ;
+   else
+      flag = def ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 bool ClusteringAlgoBase::applyOption(const char* optname, const char* optvalue, char optflag)
 {
    if (strcmp(optname,"a") == 0 || strcmp(optname,"alpha") == 0)
@@ -143,6 +164,26 @@ bool ClusteringAlgoBase::applyOption(const char* optname, const char* optvalue, 
    else if (strcmp(optname,"gamma") == 0)
       {
       return convert_string(optvalue,m_gamma) ;
+      }
+   else if (strcmp(optname,"hardlimit") == 0)
+      {
+      set_flag(m_hard_limit,optflag) ;
+      }
+   else if (strcmp(optname,"ignoreextra") == 0)
+      {
+      set_flag(m_ignore_extra,optflag) ;
+      }
+   else if (strcmp(optname,"singletons") == 0)
+      {
+      set_flag(m_allow_singletons,optflag) ;
+      }
+   else if (strcmp(optname,"representative") == 0)
+      {
+      //TODO
+      }
+   else if (strcmp(optname,"measure") == 0)
+      {
+      //TODO
       }
    else if (strcmp(optname,"k") == 0 || strcmp(optname,"numclusters") == 0)
       {

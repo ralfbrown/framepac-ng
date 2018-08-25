@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-21					*/
+/* Version 0.09, last edit 2018-08-24					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -32,7 +32,9 @@ class Array ;
 //----------------------------------------------------------------------------
 
 typedef Object** ArrayIter ;
+typedef const Object** ConstArrayIter ;
 typedef std::reverse_iterator<ArrayIter> RevArrayIter ;
+typedef std::reverse_iterator<ConstArrayIter> ConstRevArrayIter ;
 typedef Ptr<Array> ArrayPtr ;
 
 //----------------------------------------------------------------------------
@@ -43,6 +45,8 @@ class Array : public Object
    {
    public:
       typedef Object super ;
+      typedef ArrayIter iterator ;
+      typedef ConstArrayIter const_iterator ;
    public:
       static Array* create(size_t initial_size = 0) { return new Array(initial_size) ; }
       static Array* create(const Object* o, size_t rpt = 1) { return new Array(o,rpt) ; }
@@ -74,10 +78,10 @@ class Array : public Object
       Array* subseq(ArrayIter start, ArrayIter stop, bool shallow = false) const ;
 
       // *** iterator support ***
-      ArrayIter begin() const { return ArrayIter(m_array) ; }
-      ArrayIter cbegin() const { return ArrayIter(m_array) ; }
-      ArrayIter end() const { return ArrayIter(m_array + size()) ; }
-      ArrayIter cend() const { return ArrayIter(m_array + size()) ; }
+      iterator begin() const { return iterator(m_array) ; }
+      const_iterator cbegin() const { return const_iterator(m_array) ; }
+      iterator end() const { return iterator(m_array + size()) ; }
+      const_iterator cend() const { return const_iterator(m_array + size()) ; }
 
       RevArrayIter rbegin() { return RevArrayIter(m_array + size() - 1) ; }
       RevArrayIter crbegin() const { return RevArrayIter(m_array + size() - 1) ; }
