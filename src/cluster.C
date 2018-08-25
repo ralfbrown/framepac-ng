@@ -63,7 +63,8 @@ static const char* base_clustering_options[] =
    "thr",
    "threshold",
    "v",
-   "verbosity"
+   "verbosity",
+   nullptr,
    } ;
 
 /************************************************************************/
@@ -248,7 +249,7 @@ bool ClusteringAlgoBase::applyOption(const char* optname, const char* optvalue, 
       {
       return convert_string(optvalue,m_desired_clusters) ;
       }
-   else if (strcmp(optname,"it") == 0 || strcmp(optname,"iter") == 0)
+   else if (strcmp(optname,"it") == 0 || strcmp(optname,"iterations") == 0)
       {
       return convert_string(optvalue,m_max_iterations) ;
       }
