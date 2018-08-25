@@ -294,6 +294,8 @@ class ClusteringAlgoBase
       void excludeSingletons(bool excl) { m_allow_singletons = !excl ; }
       void setMakePIFunc(makePIFunc* fn) { m_makepi = fn ; }
       bool registerOption(const char* optname) ;  // used by derived classes to add private options to the parser
+      ClusterRep clusteringRep() const { return  m_representative ; }
+      VectorSimilarityMeasure similarityMeasure() const { return m_similarity ; }
 
       double clusterThreshold() const { return m_threshold ; }
       size_t desiredClusters() const { return m_desired_clusters ; }
@@ -326,7 +328,7 @@ class ClusteringAlgoBase
       bool        m_ignore_extra { false } ;
       bool        m_allow_singletons { true } ;
       ClusterRep  m_representative { ClusterRep::centroid } ;
-      VectorSimilarityMeasure m_measure { VectorSimilarityMeasure::cosine } ;
+      VectorSimilarityMeasure m_similarity { VectorSimilarityMeasure::cosine } ;
 
    protected: // static data members
       static SignalHandler* s_sigint ;

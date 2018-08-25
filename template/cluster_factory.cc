@@ -75,17 +75,21 @@ ClusteringAlgo<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::instantiate(const char* al
       }
    if (clusterer)
       {
-      // parse options
-      //TODO
+      // configure the clustering algorithm
+      clusterer->parseOptions(options) ;
       if (measure)
 	 {
+	 // override any similarity measure installed by the ctor
 	 delete clusterer->m_measure ;
 	 clusterer->m_measure = measure ;
 	 }
-      // default to cosine similarity if no other similarity measure is given in the options or by the caller
-      if (!clusterer->m_measure)
+      else if (!clusterer->m_measure)
 	 {
-	 clusterer->m_measure = VectorMeasure<IdxT,ValT>::create(VectorSimilarityMeasure::cosine) ;
+	 // if the ctor did not install a similarity measure, install the selected one (or cosine as default)
+	 auto sim = clusterer->similarityMeasure() ;
+	 if (sim == VectorSimilarityMeasure::none)
+	    sim = VectorSimilarityMeasure::cosine ;
+	 clusterer->m_measure = VectorMeasure<IdxT,ValT>::create(sim) ;
 	 }
       }
    return clusterer ;

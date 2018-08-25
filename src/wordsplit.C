@@ -259,7 +259,10 @@ WordSplitter::boundary WordSplitterDelimiter::boundaryType(const char* window_st
    char currchar = currpos[0] ;
    bool is_delim = (currchar == m_delim) ;
    if (currpos == window_start)
-      return is_delim ? word_start_and_end : word_start ;
+      {
+      // if the first char is the delimiter, we had an empty word at the start of the input
+      return is_delim ? word_end : word_start ;
+      }
    if (currpos == window_end)
       return is_delim ? no_boundary : word_end ;
    char prevchar = currpos[-1] ;

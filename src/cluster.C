@@ -243,7 +243,7 @@ bool ClusteringAlgoBase::applyOption(const char* optname, const char* optvalue, 
       }
    else if (strcmp(optname,"measure") == 0)
       {
-      m_measure = parse_vector_measure_name(optvalue) ;
+      m_similarity = parse_vector_measure_name(optvalue) ;
       }
    else if (strcmp(optname,"k") == 0 || strcmp(optname,"numclusters") == 0)
       {

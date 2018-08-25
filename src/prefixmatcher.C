@@ -61,7 +61,13 @@ const char* PrefixMatcher::match(const char* key) const
       m_status = KeyError ;
       return nullptr ;
       }
-   return reinterpret_cast<const char*>(match(key,m_keys)) ;
+   if (!m_keyfunc)
+      {
+      m_status = FuncError ;
+      return nullptr ;
+      }
+   const void* m = match(key,m_keys) ;
+   return m ? m_keyfunc(m) : nullptr ;
 }
 
 //----------------------------------------------------------------------------
