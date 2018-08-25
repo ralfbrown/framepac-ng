@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-18					*/
+/* Version 0.09, last edit 2018-08-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -25,6 +25,7 @@
 #include "framepac/as_string.h"
 #include "framepac/critsect.h"
 #include "framepac/list.h"
+#include "framepac/smartptr.h"
 #include "framepac/symbol.h"
 
 namespace Fr {
@@ -113,7 +114,7 @@ class Vector : public VectorBase
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       Vector(size_t capacity = 0) ;
       Vector(const Vector&) ;
-      ~Vector() { delete[] m_values ; m_size = 0 ; }
+      ~Vector() { m_size = 0 ; }
       Vector& operator= (const Vector&) ;
 
    protected: // implementation functions for virtual methods
@@ -191,7 +192,7 @@ class Vector : public VectorBase
       static Allocator s_allocator ;
    protected:
       static const char s_typename[] ;
-      ValT*    m_values { nullptr } ;
+      NewPtr<ValT> m_values ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -310,7 +311,7 @@ class SparseVector : public Vector<ValT>
       SparseVector(size_t capacity = 0) ;
       SparseVector(const char* rep) ;
       SparseVector(const SparseVector&) ;
-      ~SparseVector() { delete[] m_indices ; }
+      ~SparseVector() = default ;
       SparseVector& operator= (const SparseVector&) ;
 
    protected: // implementation functions for virtual methods
@@ -387,7 +388,7 @@ class SparseVector : public Vector<ValT>
       static Allocator s_allocator ;
       static const char s_typename[] ;
    protected:
-      IdxT*  m_indices ;
+      NewPtr<IdxT> m_indices ;
    } ;
 
 extern template class SparseVector<uint32_t,uint32_t> ;

@@ -793,6 +793,9 @@ framepac/counter.h:	framepac/atomic.h
 framepac/critsect.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+framepac/cstring.h:	framepac/smartptr.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 framepac/file.h:	framepac/config.h framepac/cstring.h
 	$(TOUCH) $@ $(BITBUCKET)
 
@@ -887,7 +890,7 @@ framepac/utility.h:	framepac/list.h
 framepac/vecsim.h:	framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/vector.h:	framepac/as_string.h framepac/critsect.h framepac/list.h framepac/symbol.h
+framepac/vector.h:	framepac/as_string.h framepac/critsect.h framepac/list.h framepac/symbol.h framepac/smartptr.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/words.h:	framepac/bidindex.h framepac/file.h framepac/string.h

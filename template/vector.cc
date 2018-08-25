@@ -43,7 +43,7 @@ template <typename ValT>
 Vector<ValT>::Vector(const Vector& orig)
    : Vector(orig.size())
 {
-   std::copy(orig.m_values,orig.m_values+orig.size(),this->m_values) ;
+   std::copy(*orig.m_values,(*orig.m_values)+orig.size(),*this->m_values) ;
    this->m_size = orig.size() ;
    this->setKey(orig.key()) ;
    this->setLabel(orig.label()) ;
@@ -201,9 +201,8 @@ bool Vector<ValT>::reserve(size_t N)
 {
    if (N < m_capacity) return true ;  // nothing to do
    auto new_values = new ValT[N] ;
-   std::copy(this->m_values,this->m_values+this->size(),new_values) ;
+   std::copy(*this->m_values,(*this->m_values)+this->size(),new_values) ;
    this->startModifying() ;
-   delete[] this->m_values ;
    this->m_values = new_values ;
    this->m_capacity = N ;
    this->doneModifying() ;

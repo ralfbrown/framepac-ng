@@ -40,6 +40,7 @@ SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid() const
       {
       if (vec)
 	 centroid->incr(static_cast<SparseVector<IdxT,ValT>*>(vec)) ;
+break;
       }
    centroid->setLabel(this->label()) ;
    return centroid ;

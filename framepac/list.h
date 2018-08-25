@@ -56,10 +56,6 @@ class ListIter
 
 //----------------------------------------------------------------------------
 
-typedef Ptr<List> ListPtr ;
-
-//----------------------------------------------------------------------------
-
 // singly-linkd list
 class List : public Object
    {
@@ -206,6 +202,13 @@ class List : public Object
       static Allocator s_allocator ;
       static Initializer s_init ;
    } ;
+
+//----------------------------------------------------------------------------
+
+template <>
+inline Ptr<List>::Ptr(List* o) : m_object(o) { if (!o) o = List::emptyList() ; }
+
+typedef Ptr<List> ListPtr ;
 
 /************************************************************************/
 /************************************************************************/

@@ -68,7 +68,7 @@ SparseVector<IdxT,ValT>::SparseVector(const SparseVector& orig)
    : Vector<ValT>(orig)
 {
    this->m_indices = new IdxT[this->capacity()] ;
-   std::copy(orig.m_indices,orig.m_indices+orig.size(),this->m_indices) ;
+   std::copy(*orig.m_indices,(*orig.m_indices)+orig.size(),*this->m_indices) ;
    return ;
 }
 
@@ -432,8 +432,6 @@ bool SparseVector<IdxT,ValT>::reserve(size_t N)
       new_values[i] = this->m_values[i] ;
       }
    this->startModifying() ;
-   delete[] this->m_indices ;
-   delete[] this->m_values ;
    this->m_indices = new_indices ;
    this->m_values = new_values ;
    this->m_capacity = N ;
