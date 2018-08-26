@@ -517,7 +517,8 @@ build/cfile$(OBJ):		src/cfile$(C) framepac/file.h framepac/message.h framepac/st
 build/cluster$(OBJ):		src/cluster$(C) framepac/cluster.h framepac/message.h framepac/progress.h \
 				framepac/signal.h framepac/texttransforms.h framepac/cstring.h framepac/convert.h \
 				framepac/stringbuilder.h framepac/utility.h framepac/words.h
-build/clusterinfo$(OBJ):	src/clusterinfo$(C) framepac/atomic.h framepac/cluster.h framepac/texttransforms.h
+build/clusterinfo$(OBJ):	src/clusterinfo$(C) framepac/atomic.h framepac/cluster.h framepac/symboltable.h \
+				framepac/cstring.h framepac/texttransforms.h
 build/cluster_name$(OBJ):	src/cluster_name$(C) framepac/cluster.h
 build/cluster_u32_dbl$(OBJ):	src/cluster_u32_dbl$(C) template/cluster_factory.cc
 build/cluster_u32_flt$(OBJ):	src/cluster_u32_flt$(C) template/cluster_factory.cc

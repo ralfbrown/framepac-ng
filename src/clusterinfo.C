@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-21					*/
+/* Version 0.09, last edit 2018-08-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -22,6 +22,7 @@
 #include "framepac/atomic.h"
 #include "framepac/cluster.h"
 #include "framepac/cstring.h"
+#include "framepac/symboltable.h"
 #include "framepac/texttransforms.h"
 
 using namespace Fr ;
@@ -424,9 +425,14 @@ bool ClusterInfo::labelSubclusterPaths(bool (*fn)(Object*, const char* label), c
 
 Symbol* ClusterInfo::genLabel()
 {
-   size_t id = ++next_cluster_ID ;
-   CharPtr symname { Fr::aprintf("<CL_%04lu>",id) } ;
-   return Symbol::create(symname) ;
+   SymbolTable* symtab = SymbolTable::current() ;
+   for ( ; ; )
+      {
+      size_t id = ++next_cluster_ID ;
+      CharPtr symname { Fr::aprintf("<CL_%04lu>",id) } ;
+      if (!symtab->find(symname))
+	 return symtab->add(symname) ;
+      }
 }
 
 //----------------------------------------------------------------------------
