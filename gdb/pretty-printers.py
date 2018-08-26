@@ -411,7 +411,8 @@ class FrVectorPrinter(FrPrinter):
     def make_children(self):
         global RECURSIVE_CALL
         RECURSIVE_CALL += 1
-        members = self.val['m_values']
+#        members = self.val['m_values']
+        members = self.safe_dereference(self.val['m_values'])
         count = 0
         while count < self.vecsize:
             if self.indices:
@@ -566,13 +567,13 @@ def build_pretty_printer():
    pp.add_printer('Fr::BitVector', '^Fr::BitVector$', FrBitvectorPrinter)
    pp.add_printer('Fr::CharPtr', '^Fr::NewPtr<char>$', FrCharPtrPrinter)
    pp.add_printer('Fr::Float', '^Fr::Float$', FrFloatPrinter)
-   pp.add_printer('Fr::HashTable', '^Fr::HashTable<', FrHashTablePrinter)
+   pp.add_printer('Fr::HashTable', '^Fr::HashTable<.*>$', FrHashTablePrinter)
    pp.add_printer('Fr::Integer', '^Fr::Integer$', FrIntegerPrinter)
    pp.add_printer('Fr::List', '^Fr::List$', FrListPrinter)
    pp.add_printer('Fr::ListBuilder', '^Fr::ListBuilder$', FrListBuilderPrinter)
 #   pp.add_printer('Fr::ListPtr', '^Fr::Ptr<List>$', FrPtrListPrinter)
    pp.add_printer('Fr::ListPtr', '^Fr::ListPtr$', FrPtrListPrinter)
-   pp.add_printer('Fr::Object', '^Fr::Object *$', FrObjectPrinter)
+   pp.add_printer('Fr::Object', '^Fr::Object \*$', FrObjectPrinter)
    pp.add_printer('Fr::RefArray', '^Fr::RefArray$', FrRefArrayPrinter)
    pp.add_printer('Fr::SparseVector', '^Fr::SparseVector<', FrSparseVectorPrinter)
    pp.add_printer('Fr::String', '^Fr::String$', FrStringPrinter)
