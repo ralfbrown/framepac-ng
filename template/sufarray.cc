@@ -388,7 +388,7 @@ int SuffixArray<IdT,IdxT>::compareAt(IdxT idx1, const IdT* key2, unsigned keylen
 {
    int comp = 0 ;
    unsigned pos = 0 ;
-   while (pos < keylen && (comp = compare(m_ids[idx1],key2[pos]) == 0))
+   while (pos < keylen && (comp = compare(m_ids[idx1],key2[pos])) == 0)
       {
       if (m_ids[idx1] >= m_last_linenum || key2[pos] >= m_last_linenum)
 	 break ;
