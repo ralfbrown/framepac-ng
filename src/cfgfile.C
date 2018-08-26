@@ -43,6 +43,7 @@ bool Configuration::s_instartup = true ;
 /*	Helper functions						*/
 /************************************************************************/
 
+[[gnu::unused]]
 static char* find_delimiter(const char* str, char delimiter = ' ')
 {
    char* delim = (char*)strchr(str,delimiter) ;
@@ -58,6 +59,7 @@ static bool comment_start(char c)
 
 //----------------------------------------------------------------------------
 
+[[gnu::unused]]
 static bool comment_line(const char* s)
 {
    return s ? comment_start(*skip_whitespace(s)) : false ;
