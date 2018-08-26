@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-24					*/
+/* Version 0.09, last edit 2018-08-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -287,6 +287,7 @@ class ClusteringAlgoBase
       void desiredClusters(size_t N) { m_desired_clusters = N ; }
       void maxIterations(size_t N) { m_max_iterations = N ; }
       void verbosity(int v) { m_verbosity = v ; }
+      void fastInitialization(bool fast) { m_fast_init = fast ; }
       void limitClusters(bool limit) { m_hard_limit = limit ; }
       void useSparseVectors(bool use) { m_use_sparse_vectors = use ; }
       void ignoreExtraClusters(bool ignore) { m_ignore_extra = ignore ; }
@@ -302,6 +303,7 @@ class ClusteringAlgoBase
       size_t maxIterations() const { return m_max_iterations ; }
       int verbosity() const { return m_verbosity ; }
       bool usingSparseVectors() const { return m_use_sparse_vectors ; }
+      bool doFastInitialization() const { return m_fast_init ; }
       bool hardLimitOnClusters() const { return m_hard_limit ; }
       bool ignoringExtraClusters() const { return m_ignore_extra ; }
       bool excludingSingletons() const { return !m_allow_singletons ; }
@@ -324,7 +326,8 @@ class ClusteringAlgoBase
       size_t      m_max_iterations { 5 } ;
       int	  m_verbosity { 0 } ;
       bool	  m_use_sparse_vectors { false } ;
-      bool        m_hard_limit { false } ;		// don't allow more than desired # of clusters no matter what
+      bool        m_fast_init { false } ; 	// perform faster but less precise initialization
+      bool        m_hard_limit { false } ;	// don't allow more than desired # of clusters no matter what
       bool        m_ignore_extra { false } ;
       bool        m_allow_singletons { true } ;
       ClusterRep  m_representative { ClusterRep::centroid } ;

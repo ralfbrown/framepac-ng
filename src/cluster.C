@@ -46,6 +46,7 @@ static const char* base_clustering_options[] =
    "b",
    "beta",
    "epsilon",
+   "fastinit",
    "gamma",
    "hardlimit",
    "ignoreextra",
@@ -224,6 +225,10 @@ bool ClusteringAlgoBase::applyOption(const char* optname, const char* optvalue, 
    else if (strcmp(optname,"gamma") == 0)
       {
       return convert_string(optvalue,m_gamma) ;
+      }
+   else if (strcmp(optname,"fastinit") == 0)
+      {
+      set_flag(m_fast_init,optflag) ;
       }
    else if (strcmp(optname,"hardlimit") == 0)
       {

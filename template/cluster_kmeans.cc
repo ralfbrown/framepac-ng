@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-25					*/
+/* Version 0.09, last edit 2018-08-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -46,7 +46,6 @@ class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
 
    protected: // data members
       bool   m_use_medioids { false } ;
-      bool   m_fast_init { false } ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -127,6 +126,7 @@ static size_t find_least_similar(const Array* vectors, const Array* refs, Vector
 {
    size_t selected = (size_t)~0 ;
    double best_sim = 999.99 ;
+   //TODO: parallelize this loop
    for (size_t i = 0 ; i < vectors->size() ; ++i)
       {
       auto vector = static_cast<Vector<ValT>*>(vectors->getNth(i)) ;
