@@ -157,8 +157,16 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	 // don't update more often than every two seconds unless there has been
 	 //   a substantial increase in the proportion completed, to avoid generating
 	 //   a huge amount of output (and thus a huge file when redirecting output)
-	 if (elapsed && elapsed < m_lastupdate + 2 && frac < m_prevfrac + 0.01)
-	    return ;
+	 if (elapsed)
+	    {
+	    if (frac < m_prevfrac + 0.01)
+	       {
+	       if (elapsed < m_lastupdate + 2)
+		  return ;
+	       }
+	    else if (elapsed < m_lastupdate + 0.5)
+	       return;
+	    }
 	 m_lastupdate = elapsed ;
 	 if (m_show_estimated && elapsed >= 1.0 && frac > 0.01)
 	    {
