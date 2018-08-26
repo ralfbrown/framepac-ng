@@ -138,7 +138,7 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	 cout << *m_firstprefix ;
       while (prev_intervals++ < intervals)
 	 {
-	 if (intervals % m_per_line == 0)
+	 if (prev_intervals % m_per_line == 0)
 	    {
 	    cout << endl << *m_restprefix << (char)('0' + ((prev_intervals / m_per_line) % 10)) ;
 	    }

@@ -277,7 +277,7 @@ class ClusteringAlgoBase
       static void freeClusters(ClusterInfo** clusters, size_t num_clusters) ;
       [[gnu::format(gnu_printf,3,4)]]
       void log(int level, const char* fmt, ...) const ;
-      ProgressIndicator* makeProgressIndicator(size_t limit) const ;
+      ProgressIndicator* makeProgressIndicator(size_t limit, const char* prefix = nullptr) const ;
 
       void trapSigInt() const ;
       void untrapSigInt() const ;
