@@ -1753,9 +1753,11 @@ bool HashTable<KeyT,ValT>::doAssistResize(HashTableBase* htb)
       }
    else
       {
+#if 0
       tab = ht->m_oldtables.load() ;
       if (tab && !tab->resizingDone())
 	 tab->resizeCopySegments(~0) ;
+#endif
       }
    return ht->m_oldtables.load() != ht->m_table.load() ;
 }
