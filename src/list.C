@@ -185,10 +185,12 @@ bool List::member(const Object* o) const
 Object* List::member(const Object* o, ObjectCompareFn *fn) const
 {
    const List* l = this ;
-   while (l && l != empty_list)
+   if (l)
       {
-      Object* f = l->front() ;
-      if (fn(f,o)) return f ;
+      for (auto f : *l)
+	 {
+	 if (fn(f,o)) return f ;
+	 }
       }
    return nullptr ;
 }
