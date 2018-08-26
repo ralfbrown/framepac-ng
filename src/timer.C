@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-20					*/
+/* Version 0.09, last edit 2018-08-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <iostream>
 #include "framepac/timer.h"
+#include "framepac/texttransforms.h"
 
 using namespace std ;
 
@@ -51,42 +52,35 @@ bool TimerBase::elapsedTime(double elapsed, unsigned &days, unsigned &hours, uns
 
 //----------------------------------------------------------------------------
 
-char *TimerBase::formattedTime(double elapsed, bool use_colons)
+CharPtr TimerBase::formattedTime(double elapsed, bool use_colons)
 {
    unsigned days, hours, minutes, secs ;
    double frac ;
-   char *formatted = nullptr ;
+   CharPtr formatted ;
    if (elapsedTime(elapsed,days,hours,minutes,secs,frac))
       {
-      bool success = false ;
       // round fraction to milliseconds
       unsigned millisecs = (unsigned)((frac + 0.0005) * 1000) ;
       if (days)
 	 {
-	 success = asprintf(&formatted,
-			    use_colons ? "%u:%02u:%02u:%02u.%03u" : "%ud%02uh%02um%02u.%03us",
-			    days,hours,minutes,secs,millisecs) > 0 ;
+	 formatted = aprintf(use_colons ? "%u:%02u:%02u:%02u.%03u" : "%ud%02uh%02um%02u.%03us",
+			     days,hours,minutes,secs,millisecs) ;
 	 }
       else if (hours)
 	 {
-	 success = asprintf(&formatted,
-			    use_colons ? "%u:%02u:%02u.%03u" : "%uh%02um%02u.%03us",
-			    hours,minutes,secs,millisecs) > 0 ;
+	 formatted = aprintf(use_colons ? "%u:%02u:%02u.%03u" : "%uh%02um%02u.%03us",
+			     hours,minutes,secs,millisecs) ;
 	 }
       else if (minutes)
 	 {
-	 success = asprintf(&formatted,
-			    use_colons ? "%02u:%02u.%03u" : "%um%02u.%03us",
-			    minutes,secs,millisecs) > 0 ;
+	 formatted = aprintf(use_colons ? "%02u:%02u.%03u" : "%um%02u.%03us",
+			     minutes,secs,millisecs) ;
 	 }
       else
 	 {
-	 success = asprintf(&formatted,
-			    use_colons ? "00:%u.%03u" : "%u.%03us",
-			    secs,millisecs) > 0 ;
+	 formatted = aprintf(use_colons ? "00:%u.%03u" : "%u.%03us",
+			     secs,millisecs) ;
 	 }
-      if (!success)
-	 formatted = nullptr ;
       }
    return formatted ;
 }
@@ -95,9 +89,8 @@ char *TimerBase::formattedTime(double elapsed, bool use_colons)
 
 std::ostream& TimerBase::formatTime(std::ostream& out, double elapsed, bool use_colons)
 {
-   char *formatted = formattedTime(elapsed,use_colons) ;
+   CharPtr formatted = formattedTime(elapsed,use_colons) ;
    out << formatted ;
-   free(formatted) ;
    return out ;
 }
 
@@ -133,7 +126,7 @@ bool CpuTimer::elapsedTime(unsigned &days, unsigned &hours, unsigned &minutes, u
 
 //----------------------------------------------------------------------------
 
-char *CpuTimer::formattedTime(bool use_colons) const
+CharPtr CpuTimer::formattedTime(bool use_colons) const
 {
    return formattedTime(seconds(),use_colons) ;
 }
@@ -159,7 +152,7 @@ bool ElapsedTimer::elapsedTime(unsigned &days, unsigned &hours, unsigned &minute
 
 //----------------------------------------------------------------------------
 
-char *ElapsedTimer::formattedTime(bool use_colons) const
+CharPtr ElapsedTimer::formattedTime(bool use_colons) const
 {
    return formattedTime(seconds(),use_colons) ;
 }

@@ -602,7 +602,7 @@ build/termvector$(OBJ):		src/termvector$(C) template/termvector.cc
 build/texttransforms$(OBJ):	src/texttransforms$(C) framepac/texttransforms.h
 build/threadpool$(OBJ):		src/threadpool$(C) framepac/threadpool.h framepac/memory.h framepac/thread.h
 build/threshold$(OBJ):		src/threshold$(C) framepac/threshold.h
-build/timer$(OBJ):		src/timer$(C) framepac/timer.h
+build/timer$(OBJ):		src/timer$(C) framepac/timer.h framepac/texttransforms.h
 build/trie$(OBJ):		src/trie$(C) framepac/trie.h
 build/trie_u32dbl$(OBJ):	src/trie_u32dbl$(C) template/trie.cc
 build/trie_u32lst$(OBJ):	src/trie_u32lst$(C) template/trie.cc framepac/list.h
@@ -880,6 +880,9 @@ framepac/thread.h:	framepac/init.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/threadpool.h:	framepac/atomic.h framepac/critsect.h framepac/semaphore.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/timer.h:	framepac/cstring.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/trie.h:	framepac/config.h

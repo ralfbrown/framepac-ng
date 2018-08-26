@@ -170,12 +170,13 @@ List* List::create(istream&)
 bool List::member(const Object* o) const
 {
    const List* l = this ;
-   while (l && l != empty_list)
+   if (l)
       {
-      Object* f = l->front() ;
-      if (!f && !o) return true ;
-      if (f == empty_list && o == empty_list) return true ;
-      if (f->equal(o)) return true ;
+      for (auto f : *l)
+	 {
+	 if (f == o || (f && f-equal(o)))
+	    return true ;
+	 }
       }
    return false ;
 }

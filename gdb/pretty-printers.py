@@ -46,6 +46,13 @@ class FrPrinter(gdb.printing.PrettyPrinter):
     "A parent class to store utility functions"
 
     @staticmethod
+    def safe_address(val):
+        try:
+            return val.address
+        except:
+            return '(nomem)'
+
+    @staticmethod
     def safe_dereference(val):
         if val and val.address:
             addr = str(val.address).split(' ')
@@ -80,7 +87,7 @@ class FrPrinter(gdb.printing.PrettyPrinter):
             ellipsis = '...'
         try:
             bytes = gdb.selected_inferior().read_memory(addr,len)
-        except gdb.MemoryError:
+        except gdb.MemoryrEror:
             return '(unreadable memory)'
         if quote:
             chars = ['"'] + [self.escape_byte(b) for b in bytes] + [ellipsis, '"']
@@ -103,6 +110,8 @@ class FrPrinter(gdb.printing.PrettyPrinter):
     def get_typename(addr):
         if addr is None:
             return '(unknown)'
+        if type(addr) == 'str':
+            return '(badaddr)'
         # str(addr) is the address of the value
         addr = int(str(addr),16)
         vmt = addr & 0xfffffffff000
@@ -272,7 +281,7 @@ class FrListPrinter(FrPrinter):
     def __init__(self, val):
         self.val = val
         self.voidptr = gdb.lookup_type('void').pointer()
-        self.curraddr =  str(val.address)
+        self.curraddr =  str(self.safe_address(val))
         self.no_children = self.is_empty_list()
         
     def is_empty_list(self):
@@ -318,7 +327,7 @@ class FrListBuilderPrinter(FrPrinter):
         self.val = val
 
     def to_string(self):
-        return 'ListBuilder @ {}'.format(self.val.address)
+        return 'ListBuilder @ {}'.format(self.safe_address(val))
 
     def children(self):
         global RECURSIVE_CALL
@@ -468,7 +477,7 @@ class FrObjectPrinter(FrPrinter):
     def __init__(self, val):
         self.val = val
         self.printer = None
-        self.objtype = self.get_typename(val.address)
+        self.objtype = self.get_typename(self.safe_address(val))
         if self.objtype in self.printers:
             typestr, pr = self.printers[self.objtype]
             datatype = gdb.lookup_type(typestr)
@@ -503,7 +512,7 @@ class FrPtrObjectPrinter(FrPrinter):
 
     def to_string(self):
         ptr = self.val['m_object']
-        return '{} @ {}'.format(self.typestr,ptr.address)
+        return '{} @ {}'.format(self.typestr,self.safe_address(ptr))
 
     def display_hint(self):
         return 'struct'
@@ -571,9 +580,9 @@ def build_pretty_printer():
    pp.add_printer('Fr::Integer', '^Fr::Integer$', FrIntegerPrinter)
    pp.add_printer('Fr::List', '^Fr::List$', FrListPrinter)
    pp.add_printer('Fr::ListBuilder', '^Fr::ListBuilder$', FrListBuilderPrinter)
-#   pp.add_printer('Fr::ListPtr', '^Fr::Ptr<List>$', FrPtrListPrinter)
    pp.add_printer('Fr::ListPtr', '^Fr::ListPtr$', FrPtrListPrinter)
-   pp.add_printer('Fr::Object', '^Fr::Object \*$', FrObjectPrinter)
+   pp.add_printer('Fr::ListPtr2', '^Fr::Ptr<List>$', FrPtrListPrinter)
+   pp.add_printer('Fr::Object', '^Fr::Object$', FrObjectPrinter)
    pp.add_printer('Fr::RefArray', '^Fr::RefArray$', FrRefArrayPrinter)
    pp.add_printer('Fr::SparseVector', '^Fr::SparseVector<', FrSparseVectorPrinter)
    pp.add_printer('Fr::String', '^Fr::String$', FrStringPrinter)

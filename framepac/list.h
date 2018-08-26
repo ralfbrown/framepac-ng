@@ -110,6 +110,7 @@ class List : public Object
 
       // *** utility functions ***
       bool contains(const Object*) const ;
+      bool isLast() const { return m_next == empty_list ; }
       List* last() const ;
       List* reverse() ;
       List* sort(ObjectOrderingFn*) ;

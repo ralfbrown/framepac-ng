@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-20					*/
+/* Version 0.09, last edit 2018-08-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -25,6 +25,7 @@
 #include <chrono>
 #include <ctime>
 #include <ostream>
+#include "framepac/cstring.h"
 
 namespace Fr
 {
@@ -36,7 +37,7 @@ class TimerBase
    public:
       static bool elapsedTime(double elapsed, unsigned &days, unsigned &hours, unsigned &minutes,
 			      unsigned &secs, double &fraction) ;
-      static char *formattedTime(double elapsed, bool use_colons = true) ;
+      static CharPtr formattedTime(double elapsed, bool use_colons = true) ;
       static std::ostream& formatTime(std::ostream&, double elapsed, bool use_colons = true) ;
    } ;
 
@@ -55,7 +56,7 @@ class CpuTimer : public TimerBase
       using TimerBase::elapsedTime ;
       bool elapsedTime(unsigned &days, unsigned &hours, unsigned &minutes, unsigned &secs, double &fraction) const ;
       using TimerBase::formattedTime ;
-      char *formattedTime(bool use_colons = false) const ;
+      CharPtr formattedTime(bool use_colons = false) const ;
    private:
 #ifdef CLOCK_PROCESS_CPUTIME_ID
       struct timespec m_start_time ;
@@ -83,7 +84,7 @@ class ElapsedTimer : public TimerBase
       using TimerBase::elapsedTime ;
       bool elapsedTime(unsigned &days, unsigned &hours, unsigned &minutes, unsigned &secs, double &fraction) const ;
       using TimerBase::formattedTime ;
-      char *formattedTime(bool use_colons = false) const ;
+      CharPtr formattedTime(bool use_colons = false) const ;
       std::chrono::time_point<Clock> currTime() const { return Clock::now() ; }
 
    private:
