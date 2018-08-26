@@ -58,7 +58,6 @@ void HashTableHelper::helperFunction()
       s_semaphore.wait() ;
       // pop the first item off the queue
       HashTableBase* ht = s_queue.pop() ;
-//cerr<<"assist:"<<(size_t)ht<<endl;
       // invoke that hash table's assist function
       bool more = ht->assistResize() ;
       // if it returns true, there's more work to be done, so re-queue the hash table
@@ -66,11 +65,6 @@ void HashTableHelper::helperFunction()
 	 {
 	 s_queue.push(ht) ;
 	 s_semaphore.post() ;
-	 }
-      else
-	 {
-	 ht->finishResize() ;
-//cerr<<"dequeued:"<<(size_t)ht<<endl;
 	 }
       }
 }

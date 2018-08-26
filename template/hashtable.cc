@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-19					*/
+/* Version 0.09, last edit 2018-08-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -628,6 +628,7 @@ void HashTable<KeyT,ValT>::Table::resizeCleanup()
    // make the new table the current one for the containing HashTable
    m_container->updateTable() ;
    debug_msg(" resize done (thr %ld)\n",FramepaC::my_job_id) ;
+   m_container->finishResize() ;
    return  ;
 }
 
@@ -1740,24 +1741,21 @@ void HashTable<KeyT,ValT>::threadCleanup()
 template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::doAssistResize(HashTableBase* htb)
 {
-   HashTable* ht = static_cast<HashTable*>(htb) ;
-   Table *tab = ht->m_oldtables.load() ;
-   while (tab && tab->next())
-      {
-      if (!tab->resizingDone())
-	 {
-	 tab->resizeCopySegments(4) ;
-	 }
-      tab = tab->next() ;
-      }
-   tab = ht->m_oldtables.load() ;
-   if (tab->resizingDone() && !ht->stillLive(tab))
+   auto ht = static_cast<HashTable*>(htb) ;
+   auto tab = ht->m_oldtables.load() ;
+   if (tab && tab->resizingDone() && !ht->stillLive(tab))
       {
       Table* nxt = tab->next() ;
       if (ht->m_oldtables.compare_exchange_strong(tab,nxt))
 	 {
 	 ht->releaseTable(tab) ;
 	 }
+      }
+   else
+      {
+      tab = ht->m_oldtables.load() ;
+      if (tab && !tab->resizingDone())
+	 tab->resizeCopySegments(~0) ;
       }
    return ht->m_oldtables.load() != ht->m_table.load() ;
 }
