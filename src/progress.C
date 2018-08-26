@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.09, last edit 2018-08-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -22,6 +22,7 @@
 #include <cstring>
 #include <iostream>
 #include <iomanip>
+#include <sys/ioctl.h>
 #include "framepac/progress.h"
 #include "framepac/timer.h"
 #include "framepac/texttransforms.h"
@@ -68,7 +69,14 @@ ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit
      m_firstprefix(dup_string(first_prefix)), m_restprefix(dup_string(rest_prefix)),
      m_per_line(per_line), m_linewidth(80), m_lastupdate(0)
 {
-   //TODO: get actual line width rather than always assuming an 80-column display
+   // get actual line width rather than always assuming an 80-column display
+#ifdef TIOCGWINSZ
+   struct winsize ws ;
+   if (ioctl(fileno(stdout), TIOCGWINSZ, &ws) != -1 && ws.ws_col)
+      {
+      m_linewidth = ws.ws_col ;
+      }
+#endif /* TIOCGWINSZ */
    return ;
 }
 
@@ -150,14 +158,13 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       double elapsed { 0.0 } ;
       double estimated { 0.0 } ;
       double frac = (curr_count / (double)m_limit) ;
-      if (frac > 1.0) frac = 1.0 ;
       if (m_show_elapsed || m_show_estimated)
 	 {
 	 elapsed = m_timer ? m_timer->seconds() : 0.0 ;
 	 // don't update more often than every two seconds unless there has been
 	 //   a substantial increase in the proportion completed, to avoid generating
 	 //   a huge amount of output (and thus a huge file when redirecting output)
-	 if (elapsed && frac < 1.0)
+	 if (elapsed && frac <= 1.0)
 	    {
 	    if (frac < m_prevfrac + 0.01)
 	       {
@@ -171,6 +178,17 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	 if (m_show_estimated && elapsed >= 1.0 && frac > 0.01)
 	    {
 	    estimated = (elapsed / frac) - elapsed ;
+	    }
+	 }
+      if (frac > 1.0)
+	 {
+	 // we've gone over 100% completion, so any time estimates become invalid
+	 frac = 1.0 ;
+	 if (m_prevfrac == 1.0)
+	    {
+	    m_show_estimated = false ;
+	    m_show_elapsed = false ;
+	    return ;
 	    }
 	 }
       m_prevfrac = frac ;
