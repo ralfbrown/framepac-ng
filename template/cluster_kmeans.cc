@@ -180,6 +180,8 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       this->log(2,"center: %s",*vec->cString()) ;
       centers->append(sample->getNth(0)) ;
       sample->clearNth(0) ;
+      auto prog = this->makeProgressIndicator(num_clusters) ;
+      ++(*prog) ;
       // until we've accumulated desiredClusters() vectors, search for
       //   the as-yet-unselected vector with the smallest maximal
       //   similarity to any already-selected vector
@@ -190,7 +192,9 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
 	 this->log(2,"center: %s",*v->cString()) ;
 	 centers->append(sample->getNth(selected)) ;
 	 sample->clearNth(selected) ;
+	 ++(*prog) ;
 	 }
+      delete prog ;
       }
    // assign a label to each of the selected centers
    for (auto v : *centers)
