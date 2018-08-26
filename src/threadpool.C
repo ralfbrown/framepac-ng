@@ -178,6 +178,7 @@ struct ParallelJob
    public:
       ThreadPoolMapFunc* fn ;
       size_t	         id ;
+      size_t             last ;
       va_list	         args ;
    } ;
 
@@ -590,7 +591,25 @@ bool ThreadPool::dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, size_t insi
 static void parallelize_worker(const void* input, void* output)
 {
    ParallelJob* job = reinterpret_cast<ParallelJob*>(output) ;
-   if (!job->fn || !job->fn(job->id,job->args))
+   bool failed { false } ;
+   if (!job->fn)
+      failed = true ;
+   else if (job->last <= job->id + 1)
+      {
+      failed = !job->fn(job->id,job->args) ;
+      }
+   else
+      {
+      for (size_t index = job->id ; index < job->last && !failed ; ++index)
+	 {
+	 va_list arg_copy ;
+	 va_copy(arg_copy,job->args) ;
+	 if (!job->fn(index,arg_copy))
+	    failed = true ;
+	 va_end(arg_copy) ;
+	 }	 
+      }
+      if (failed)
       {
       bool* success = const_cast<bool*>(reinterpret_cast<const bool*>(input)) ;
       *success = false ;
@@ -604,7 +623,8 @@ bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, va_list ar
 {
    if (!fn) return false ;
    bool success = true ;
-   if (numThreads() == 0)
+   auto nt = numThreads() ;
+   if (nt == 0)
       {
       // we don't have any worker threads enabled, so directly invoke the mapping function
       for (size_t i = 0 ; success && i < num_items ; ++i)
@@ -616,13 +636,20 @@ bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, va_list ar
 	 }
       return success ;
       }
-   // dispatch a job request for each item in the input
-   LocalAlloc<ParallelJob> jobs(num_items) ;
-   for (size_t i = 0 ; i < num_items ; ++i)
+   // dispatch a job request for each item in the input; to keep down task-switching overhead, we'll
+   //   batch the items if there are a much larger number of them than threads
+   size_t num_jobs = (num_items > 8*nt) ? 8*nt : num_items ;
+   size_t per_job = num_items / num_jobs ;
+   size_t leftover =  num_items - (num_jobs * per_job) ;
+   LocalAlloc<ParallelJob> jobs(num_jobs) ;
+   size_t start = 0 ;
+   for (size_t i = 0 ; i < num_jobs ; ++i)
       {
-      jobs[i].id = i ;
+      jobs[i].id = start ;
+      jobs[i].last = start + per_job + ((i < leftover) ? 1 : 0) ;
       jobs[i].fn = fn ;
       va_copy(jobs[i].args,args) ;
+      start = jobs[i].last ;
       this->dispatch(parallelize_worker,&success,&jobs[i]) ;
       }
    this->waitUntilIdle() ;
