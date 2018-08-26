@@ -185,7 +185,7 @@ bool List::member(const Object* o) const
 Object* List::member(const Object* o, ObjectCompareFn *fn) const
 {
    const List* l = this ;
-   if (l)
+   if (l && o)
       {
       for (auto f : *l)
 	 {
