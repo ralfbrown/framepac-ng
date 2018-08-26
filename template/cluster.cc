@@ -40,7 +40,6 @@ SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid() const
       {
       if (vec)
 	 centroid->incr(static_cast<SparseVector<IdxT,ValT>*>(vec)) ;
-break;
       }
    centroid->setLabel(this->label()) ;
    return centroid ;
@@ -665,7 +664,7 @@ bool assign_vector_to_nearest_center(size_t index, va_list args)
    auto centers = va_arg(args,const Array*) ;
    auto measure = va_arg(args,VM*) ;
    auto threshold = va_arg(args,double) ;
-   auto changes = va_arg(args,size_t*) ;
+   auto changes = va_arg(args,volatile size_t*) ;
    auto prog = va_arg(args,ProgressIndicator*) ;
    if (!vector) return false ;
    auto best_center = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(vector,centers,measure,threshold) ;
@@ -692,7 +691,7 @@ size_t ClusteringAlgo<IdxT,ValT>::assignToNearest(const Array* vectors, const Ar
 {
    ThreadPool *tp = ThreadPool::defaultPool() ;
    if (!tp) return false ;
-   size_t changes { 0 } ;
+   volatile size_t changes { 0 } ;
    if (tp->parallelize(assign_vector_to_nearest_center<IdxT,ValT>,vectors->size(),vectors,
 	 centers,m_measure,threshold,&changes,prog))
       return changes ;
