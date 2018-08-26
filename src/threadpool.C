@@ -587,11 +587,14 @@ bool ThreadPool::dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, size_t insi
 
 //----------------------------------------------------------------------------
 
-static void parallelize_worker(const void*, void* output)
+static void parallelize_worker(const void* input, void* output)
 {
    ParallelJob* job = reinterpret_cast<ParallelJob*>(output) ;
-   if (job->fn)
-      (void)job->fn(job->id,job->args) ;
+   if (!job->fn || !job->fn(job->id,job->args))
+      {
+      bool* success = const_cast<bool*>(reinterpret_cast<const bool*>(input)) ;
+      *success = false ;
+      }
    return ;
 }
 
@@ -600,10 +603,10 @@ static void parallelize_worker(const void*, void* output)
 bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, va_list args)
 {
    if (!fn) return false ;
+   bool success = true ;
    if (numThreads() == 0)
       {
       // we don't have any worker threads enabled, so directly invoke the mapping function
-      bool success = true ;
       for (size_t i = 0 ; success && i < num_items ; ++i)
 	 {
 	 va_list arg_copy ;
@@ -620,10 +623,10 @@ bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, va_list ar
       jobs[i].id = i ;
       jobs[i].fn = fn ;
       va_copy(jobs[i].args,args) ;
-      this->dispatch(parallelize_worker,nullptr,&jobs[i]) ;
+      this->dispatch(parallelize_worker,&success,&jobs[i]) ;
       }
    this->waitUntilIdle() ;
-   return false ;
+   return success ;
 }
 
 //----------------------------------------------------------------------------
