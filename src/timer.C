@@ -181,7 +181,7 @@ std::ostream& Timer::showTimes(std::ostream& out) const
    // round percent utilization to tenths (with a slight upward bias)
    percentage = ((size_t)(1000.0*percentage + 0.75)) / 10.0 ;
    // show the elapsed time, using XXhYYmZZs for longer times
-   if (elapsed_sec < 6000) // 100 minutes
+   if (elapsed_sec < 600) // 10 minutes
       {
       out << elapsed_sec <<"s" ;
       }
