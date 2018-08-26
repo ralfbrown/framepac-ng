@@ -206,7 +206,7 @@ class List : public Object
 //----------------------------------------------------------------------------
 
 template <>
-inline Ptr<List>::Ptr(List* o) : m_object(o) { if (!o) o = List::emptyList() ; }
+inline Ptr<List>::Ptr() : m_object(List::emptyList()) { }
 
 typedef Ptr<List> ListPtr ;
 
