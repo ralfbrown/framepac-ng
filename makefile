@@ -680,7 +680,8 @@ template/cluster_factory.cc: template/cluster.cc template/cluster_agglom.cc temp
 			template/cluster_tight.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/cluster.cc:	framepac/cluster.h framepac/hashtable.h framepac/progress.h framepac/threadpool.h
+template/cluster.cc:	framepac/cluster.h framepac/hashtable.h framepac/progress.h framepac/random.h \
+			framepac/threadpool.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/concbuilder.cc:	framepac/concbuilder.h template/bufbuilder.cc

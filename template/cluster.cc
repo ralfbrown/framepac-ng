@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-16					*/
+/* Version 0.09, last edit 2018-08-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -23,6 +23,7 @@
 #include "framepac/cluster.h"
 #include "framepac/hashtable.h"
 #include "framepac/progress.h"
+#include "framepac/random.h"
 #include "framepac/threadpool.h"
 
 namespace Fr
@@ -752,18 +753,45 @@ template <typename IdxT, typename ValT>
 Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vector, const Array* centers,
    VectorMeasure<IdxT,ValT>* measure, double threshold)
 {
+   ScopedObject<RefArray> best_centers ;
    Vector<ValT>* best_center = nullptr ;
-   double best_sim = -999.99 ;
+   double best_sim = -HUGE_VAL ;
    for (auto cent : *centers)
       {
       if (!cent) continue ;
       auto center = static_cast<Vector<ValT>*>(cent) ;
       double sim = measure->similarity(vector,center) ;
-      if (sim >= threshold && sim > best_sim)
+      if (sim < threshold)
+	 continue ;
+      if (sim == best_sim)
 	 {
-	 best_center = center ;
+	 best_centers->append(center) ;
+	 }
+      else if (sim > best_sim)
+	 {
+	 best_centers = RefArray::create() ;
+	 best_centers->append(center) ;
 	 best_sim = sim ;
 	 }
+      }
+   size_t tied_count = best_centers->size() ;
+   if (tied_count == 1)
+      return static_cast<Vector<ValT>*>(best_centers->front()) ;
+   else if (tied_count == 0)
+      return nullptr ;
+   else
+      {
+#if 1
+      static int warn_count { 0 } ;
+      if (++warn_count < 20)
+	 {
+	 cout << "found " << tied_count << " centers tied for best at " << best_sim<< ".  First two are:" << endl ;
+	 cout << best_centers->getNth(0) << endl ;
+	 cout << best_centers->getNth(1) << endl ;
+	 }
+#endif
+      // we have multiple centers tied for best, so pick one at random
+      return static_cast<Vector<ValT>*>(best_centers->getNth(RandomInteger(tied_count).get())) ;
       }
    return best_center ;
 }
@@ -777,16 +805,21 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInf
 {
    // count the number of unique labels on the vectors, and assign each one an index
    ScopedObject<ObjCountHashTable> label_map ;
+   size_t unlabeled { 0 } ;
    for (auto vec : *vectors)
       {
       if (!vec) continue ;
       auto vector = static_cast<Vector<ValT>*>(vec) ;
       Symbol* label = vector->label() ;
-      if (label && !label_map->contains(label))
+      if (!label)
+	 ++unlabeled ;
+      else if (!label_map->contains(label))
 	 {
 	 label_map->add(label,label_map->currentSize()) ;
 	 }
       }
+   if (unlabeled)
+      this->log(1,"   %lu vectors without cluster labels",unlabeled) ;
    num_clusters = label_map->currentSize() ;
    this->log(2,"   extracting %lu clusters",num_clusters) ;
    clusters = new ClusterInfo*[num_clusters] ;

@@ -122,27 +122,37 @@ static bool update_medioid(size_t id, va_list args)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-static size_t find_least_similar(const Array* vectors, const Array* refs, VectorMeasure<IdxT,ValT>* vm)
+static void find_least_most_similar(const Array* vectors, const Array* refs, VectorMeasure<IdxT,ValT>* vm,
+   size_t& least_similar, size_t& most_similar)
 {
    size_t selected = (size_t)~0 ;
-   double best_sim = 999.99 ;
+   size_t discarded = (size_t)~0 ;
+   double best_sim = -HUGE_VAL ;
+   double worst_sim = HUGE_VAL ;
    //TODO: parallelize this loop
    for (size_t i = 0 ; i < vectors->size() ; ++i)
       {
       auto vector = static_cast<Vector<ValT>*>(vectors->getNth(i)) ;
-      if (!vector) continue ;
+      if (!vector || vector->length() == 0.0) continue ;
       double sim = -999.99 ;
       for (auto ref : *refs)
 	 {
 	 sim = std::max(sim,vm->similarity(vector,static_cast<Vector<ValT>*>(ref))) ;
 	 }
-      if (sim < best_sim)
+      if (sim > best_sim)
 	 {
 	 best_sim = sim ;
 	 selected = i ;
 	 }
+      if (sim < worst_sim)
+	 {
+	 worst_sim = sim ;
+	 discarded = i ;
+	 }
       }
-   return selected ;
+   least_similar = discarded ;
+   most_similar = selected ;
+   return ;
 }
 
 //----------------------------------------------------------------------------
@@ -154,27 +164,44 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       {
       return nullptr ;			// vectors must be all dense or all sparse
       }
-   bool using_sparse_vectors = vectors->getNth(0)->isSparseVector() ;
+   ScopedObject<RefArray> nonempty(vectors->size()) ;
+   for (auto v : *vectors)
+      {
+      auto vec = static_cast<Vector<ValT>*>(v) ;
+      if (vec && vec->length() > 0.0)
+	 nonempty->append(vec) ;
+      }
+   if (nonempty->size() == 0)
+      {
+      return nullptr ;			// nothing to be clustered
+      }
+   bool using_sparse_vectors = nonempty->getNth(0)->isSparseVector() ;
    if (!this->m_measure)
       {
       return nullptr ;			// we need a similarity measure
       }
    // trap signals to allow graceful early termination
    this->trapSigInt() ;
-   Array* centers ;
    size_t num_clusters = this->desiredClusters() ;
+   Array* centers = Array::create(num_clusters) ;
    this->log(0,"Initializing %lu centers",num_clusters) ;
    if (this->m_fast_init)
       {
       // do a quick and dirty init -- just randomly select K vectors
       this->log(1,"Selecting random sample of vectors as centers") ;
-      centers = Array::create(vectors->randomSample(num_clusters)) ;
+      Ptr<RefArray> sample{ nonempty->randomSample(num_clusters) } ;
+      for (auto v : *sample)
+	 {
+	 auto vec = static_cast<Vector<ValT>*>(v) ;
+	 if (vec->length() == 0)
+	    continue ;			// ignore empty vectors
+	 centers->append(v) ;		// make a copy of the vector as the initial center
+	 }
       }
    else
       {
       // select K vectors which are (approximately) maximally separated
-      centers = Array::create(num_clusters) ;
-      Ptr<RefArray> sample { vectors->randomSample(2*num_clusters) } ;
+      Ptr<RefArray> sample { nonempty->randomSample(2*num_clusters+1) } ;
       // start by arbitrarily picking the first vector in the sample
       Vector<ValT>* vec = static_cast<Vector<ValT>*>(sample->getNth(0)) ;
       this->log(2,"center: %s",*vec->cString()) ;
@@ -187,11 +214,14 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       //   similarity to any already-selected vector
       for (size_t i = 1 ; i < num_clusters ; ++i)
 	 {
-	 size_t selected = find_least_similar<IdxT,ValT>(sample, centers,this->m_measure) ;
+	 size_t selected, discarded ;
+	 find_least_most_similar<IdxT,ValT>(sample, centers,this->m_measure,selected,discarded) ;
 	 Vector<ValT>* v = static_cast<Vector<ValT>*>(sample->getNth(selected)) ;
 	 this->log(2,"center: %s",*v->cString()) ;
 	 centers->append(sample->getNth(selected)) ;
 	 sample->clearNth(selected) ;
+	 // also zap the most similar, to speed up the search
+	 sample->clearNth(discarded) ;
 	 ++(*prog) ;
 	 }
       delete prog ;
@@ -199,8 +229,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
    // assign a label to each of the selected centers
    for (auto v : *centers)
       {
-      if (v)
-	 static_cast<Vector<ValT>*>(v)->setLabel(ClusterInfo::genLabel()) ;
+      static_cast<Vector<ValT>*>(v)->setLabel(ClusterInfo::genLabel()) ;
       }
    // until converged or iteration limit:
    //    assign each vector to the nearest center
@@ -214,12 +243,13 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
    for (iteration = 1 ; iteration <= this->maxIterations() && !this->abortRequested() ; iteration++)
       {
       this->log(0,"Iteration %lu",iteration) ;
-      auto prog = this->makeProgressIndicator(vectors->size()) ;
-      size_t changes = this->assignToNearest(vectors, centers, prog) ;
+      this->log(2,"Centers array contains %lu elements",centers->size()) ;
+      auto prog = this->makeProgressIndicator(nonempty->size()) ;
+      size_t changes = this->assignToNearest(nonempty, centers, prog) ;
       delete prog ;
       this->log(0,"  %lu vectors changed cluster",changes) ;
       this->freeClusters(clusters,num_clusters) ;
-      this->extractClusters(vectors,clusters,num_clusters) ;
+      this->extractClusters(nonempty,clusters,num_clusters) ;
       if (!changes)
 	 break ;			// we've converged!
       auto fn = update_centroid<IdxT,ValT> ;

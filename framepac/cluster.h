@@ -369,7 +369,7 @@ class ClusteringAlgo : public ClusteringAlgoBase
       Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array* centers, double threshold = -1.0) const
 	 { return nearestNeighbor(vector,centers,m_measure,threshold) ; }
       size_t assignToNearest(const Array* vectors, const Array* centers, ProgressIndicator *prog = nullptr,
-	 double threshold = -1.0) const ;
+	 double threshold = -HUGE_VAL) const ;
       double findNearestCluster(const Array* clusters, const Vector<ValT>* vector, size_t& best_cluster,
 	 ProgressIndicator* prog = nullptr) const ;
       bool separateSeeds(const Array* vectors, RefArray*& seed, RefArray*& nonseed) const ;
