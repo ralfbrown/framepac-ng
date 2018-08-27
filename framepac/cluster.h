@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-26					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -128,7 +128,7 @@ class ClusterInfo : public Object
       void setRepresentative(VectorMeasure<IdxT,ValT>* vm) ;
 
       bool addGeneratedLabel() ;  // call genLabel() if no label yet
-      [[nodiscard]] static Symbol* genLabel() ;
+      NODISCARD static Symbol* genLabel() ;
       static Symbol* numberLabel() ;
       static bool isGeneratedLabel(const char* name) ;
       static bool isGeneratedLabel(const Symbol *name) { return name ? isGeneratedLabel(name->c_str()) : false ; }
@@ -136,7 +136,7 @@ class ClusterInfo : public Object
       static bool isNumberLabel(const char* name) ;
       static bool isNumberLabel(const Symbol* name) ;
 
-      void setLabel(Symbol* label) { m_label = label ; }
+      void setLabel(Symbol* l) { m_label = l ; }
       Symbol* label() const { return m_label ; }
 
       // *** standard info functions ***

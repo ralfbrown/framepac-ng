@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-06					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -428,12 +428,12 @@ List* List::reverse()
    List* prev = emptyList() ;
    if (l == prev)
       return l ;
-   List* next ;
-   while ((next = l->next()) != emptyList())
+   List* nxt ;
+   while ((nxt = l->next()) != emptyList())
       {
       l->setNext(prev) ;
       prev = l ;
-      l = next ;
+      l = nxt ;
       }
    return l ;
 }

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -613,9 +613,9 @@ bool ArgParser::showHelp(bool longhelp) const
 	    desc = strchr(desc,'\v')+1 ;
 	 cout << "\n\t" << desc ;
 	 cout << "\n\t" ;
-	 auto def_desc { opt->describeDefault() } ;
+	 auto def_desc = opt->describeDefault() ;
 	 if (!def_desc) def_desc = dup_string("(none)") ;
-	 auto range_desc { opt->describeRange() } ;
+	 auto range_desc = opt->describeRange() ;
 	 if (!range_desc) range_desc = dup_string("(no limits)") ;
 	 cout << "Default value: " << def_desc << "\tRange: " << range_desc << endl ;
 	 }

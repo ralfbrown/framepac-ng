@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -53,14 +53,14 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
    auto clusters = Array::create() ;
    for (auto vec : *seed)
       {
-      auto vector { static_cast<Vector<ValT>*>(vec) } ;
-      auto found { false } ;
+      auto vector = static_cast<Vector<ValT>*>(vec) ;
+      bool found = false ;
       for (auto cl : *clusters)
 	 {
-	 auto cluster = static_cast<ClusterInfo*>(cl) ;
-	 if (cluster->label() == vector->label())
+	 auto clster = static_cast<ClusterInfo*>(cl) ;
+	 if (clster->label() == vector->label())
 	    {
-	    cluster->addMember(vector) ;
+	    clster->addMember(vector) ;
 	    found = true ;
 	    break ;
 	    }

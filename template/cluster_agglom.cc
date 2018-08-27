@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -207,7 +207,7 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
    LocalAlloc<double> similarities(num_vectors) ;
    LocalAlloc<size_t> neighbors(num_vectors) ;
    tp->parallelize(agglom_clustering_best_similarity<IdxT,ValT>,num_vectors,clusters->subclusters(),
-      similarities,neighbors,this->m_measure,prog) ;
+      &similarities,&neighbors,this->m_measure,prog) ;
    delete prog ;
    this->log(0,"Merging clusters") ;
    prog = this->makeProgressIndicator(num_vectors - this->desiredClusters()) ;
@@ -239,8 +239,8 @@ ClusterInfo* ClusteringAlgoBrown<IdxT,ValT>::cluster(const Array* vectors) const
 	 break ;
       // update nearest neighbors
       this->log(2,"  updating nearest neighbors") ;
-      tp->parallelize(update_nearest_neighbors<IdxT,ValT>,numclus,clusters->subclusters(),similarities,
-	 neighbors,this->m_measure,best_clus,best_neighbor) ;
+      tp->parallelize(update_nearest_neighbors<IdxT,ValT>,numclus,clusters->subclusters(),&similarities,
+	 &neighbors,this->m_measure,best_clus,best_neighbor) ;
       prog->incr() ;
       }
    delete prog ;

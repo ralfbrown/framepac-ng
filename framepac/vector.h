@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-25					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -45,8 +45,8 @@ class VectorBase : public Object
       float weight() const { return m_weight ; }
       void* userData() const { return m_user ; }
 
-      void setKey(Symbol* key) { m_key = key ; }
-      void setLabel(Symbol* label) { m_label = label ; }
+      void setKey(Symbol* k) { m_key = k ; }
+      void setLabel(Symbol* l) { m_label = l ; }
       void setWeight(size_t wt) { m_weight = (float)wt ; }
       void setWeight(float wt) { m_weight = wt ; }
       void setWeight(double wt) { m_weight = (float)wt ; }
@@ -363,12 +363,12 @@ class SparseVector : public Vector<ValT>
    protected:
       static size_t totalElements(const SparseVector* v1, const Vector<ValT>* v2) ;
       static size_t totalElements(const SparseVector* v1, const SparseVector* v2) ;
-      void setElement(size_t N, IdxT key, ValT value)
+      void setElement(size_t N, IdxT k, ValT value)
 	 {
 	 if (N >= Vector<ValT>::m_capacity && !this->reserve(std::max(N+1,2*Vector<ValT>::capacity())))
 	    return ;
 	 if (N >= this->m_size) this->m_size = N+1 ;
-	 this->m_indices[N] = key ;
+	 this->m_indices[N] = k ;
 	 this->m_values[N] = value ;
 	 }
 
@@ -435,7 +435,7 @@ class DenseVector : public Vector<ValT>
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      DenseVector(size_t capacity = 0) : super(capacity) {}
+      DenseVector(size_t cap = 0) : super(cap) {}
       DenseVector(const char* rep) ;
       DenseVector(const Vector<ValT>&v) : super(v) {}
       ~DenseVector() {}

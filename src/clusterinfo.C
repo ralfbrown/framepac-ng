@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-25					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -374,10 +374,10 @@ bool ClusterInfo::flattenSubclusters()
    for (auto subclus : *m_subclusters)
       {
       auto subcluster = static_cast<ClusterInfo*>(subclus) ;
-      auto members = subcluster->allMembers() ;
+      auto mems = subcluster->allMembers() ;
       if (subcluster->m_members)
 	 subcluster->m_members->free() ;
-      subcluster->m_members = members.move() ;
+      subcluster->m_members = mems.move() ;
       subcluster->m_subclusters = nullptr ;
       }
    return true ;

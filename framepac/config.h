@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -31,7 +31,7 @@ using namespace std ;
 /************************************************************************/
 /************************************************************************/
 
-#define FramepaC_VERSION "0.09"
+#define FramepaC_VERSION "0.10"
 
 // uncomment the following to remove thread-local storage and synchronization
 //   primitives; FramepaC will no longer have any thread safety
@@ -156,9 +156,16 @@ constexpr int SLAB_GROUP_SIZE = 4095 ;
 
 
 #if defined(__GNUC__)
-#define ALWAYS_INLINE [[gnu::always_inline]] inline
+# define ALWAYS_INLINE [[gnu::always_inline]] inline
+# if __GNUC__ > 5
+#   define NODISCARD [[nodiscard]]
+# endif
 #else
-#define ALWAYS_INLINE inline
+# define ALWAYS_INLINE inline
+#endif
+
+#ifndef NODISCARD
+#  define NODISCARD
 #endif
 
 /************************************************************************/

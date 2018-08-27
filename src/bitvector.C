@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-18					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -40,15 +40,15 @@ static constexpr size_t bits_per_sizet = (CHAR_BIT * sizeof(size_t)) ;
 /*	Methods for class BitVector					*/
 /************************************************************************/
 
-BitVector::BitVector(size_t capacity)
+BitVector::BitVector(size_t cap)
 {
-   m_size = capacity ;
-   capacity = (capacity + bits_per_sizet - 1) / bits_per_sizet ;
-   m_bits = new size_t[capacity] ;
+   m_size = cap ;
+   cap = (cap + bits_per_sizet - 1) / bits_per_sizet ;
+   m_bits = new size_t[cap] ;
    if (m_bits)
       {
-      m_capacity = capacity * bits_per_sizet ;
-      std::fill(m_bits,m_bits+capacity,0) ;
+      m_capacity = cap * bits_per_sizet ;
+      std::fill(m_bits,m_bits+cap,0) ;
       }
    else
       {

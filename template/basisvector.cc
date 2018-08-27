@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-04-27					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -35,9 +35,9 @@ BasisVector<IdxT,ValT>::BasisVector(size_t numelts, size_t num_plus, size_t num_
    // enforce that at most half of the dimensions are nonzero
    if (num_plus + num_minus > numelts / 2)
       {
-      double scale = (numelts / 2) / (double)(num_plus + num_minus) ;
-      num_plus = (size_t)(num_plus * scale) ;
-      num_minus = (size_t)(num_minus * scale) ;
+      double scl = (numelts / 2) / (double)(num_plus + num_minus) ;
+      num_plus = (size_t)(num_plus * scl) ;
+      num_minus = (size_t)(num_minus * scl) ;
       }
    RandomInteger rand(numelts) ;
    rand.randomize() ;

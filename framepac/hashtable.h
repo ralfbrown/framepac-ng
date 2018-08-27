@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-19					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -1380,9 +1380,9 @@ typename HashTable<KeyT,ValT>::const_iterator HashTable<KeyT,ValT>::cend() const
 //  circular dependency between the types
 
 template <typename KeyT, typename ValT>
-typename HashTable<KeyT,ValT>::local_iterator HashTable<KeyT,ValT>::begin(int bucket) const
+typename HashTable<KeyT,ValT>::local_iterator HashTable<KeyT,ValT>::begin(int bcket) const
 {
-   return local_iterator(m_table.load(),bucket,0) ;
+   return local_iterator(m_table.load(),bcket,0) ;
 }
 
 template <typename KeyT, typename ValT>

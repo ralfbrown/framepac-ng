@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-26					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -307,8 +307,8 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
       case ClusterRep::average:
          {
 	 auto vectors = allMembers() ;
-	 double avg { 0.0 } ;
-	 auto combinations { vectors->size() } ;
+	 double avg = 0.0 ;
+	 auto combinations = vectors->size() ;
 	 for (auto vec : *vectors)
 	    {
 	    auto vector = static_cast<const Vector<ValT>*>(vec) ;

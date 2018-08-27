@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-19					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -138,9 +138,9 @@ Symbol* SymbolTable::gensym(const char* basename, const char* suffix)
    bool existed ;
    do {
       // get a unique count
-      size_t count = gensym_count++ ;
+      size_t cnt = gensym_count++ ;
       // generate the symbol's name
-      CharPtr name { aprintf("%s%ld%s",basename,count,suffix) } ;
+      CharPtr name { aprintf("%s%ld%s",basename,cnt,suffix) } ;
       sym = addKey(name,&existed) ;
       } while (!sym || existed) ; // loop until the generated name was not already a symbol in the table
    return const_cast<Symbol*>(sym) ;

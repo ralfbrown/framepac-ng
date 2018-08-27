@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -31,9 +31,9 @@ namespace Fr
 /************************************************************************/
 
 template <typename ValT>
-Vector<ValT>::Vector(size_t capacity)
+Vector<ValT>::Vector(size_t cap)
 {
-   this->reserve(capacity) ;
+   this->reserve(cap) ;
    return ;
 }
 

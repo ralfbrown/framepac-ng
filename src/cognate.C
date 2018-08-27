@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -189,7 +189,7 @@ bool CognateData::save(const char* /*filename*/)
 
 //----------------------------------------------------------------------------
 
-bool CognateData::setDoublings(const char* allowable_letters, double score, bool reverse)
+bool CognateData::setDoublings(const char* allowable_letters, double sc, bool reverse)
 {
    if (!allowable_letters)
       return true ;			// trivially successful
@@ -202,10 +202,10 @@ bool CognateData::setDoublings(const char* allowable_letters, double score, bool
       src[0] = trg[0] = trg[1] = *allowable_letters ;
       if (reverse)
 	 {
-	 if (!setCognateScoring(trg,src,score))
+	 if (!setCognateScoring(trg,src,sc))
 	    return false ;
 	 }
-      else if (!setCognateScoring(src,trg,score))
+      else if (!setCognateScoring(src,trg,sc))
 	 return false ;
       }
    return true ;
@@ -213,7 +213,7 @@ bool CognateData::setDoublings(const char* allowable_letters, double score, bool
 
 //----------------------------------------------------------------------------
 
-bool CognateData::setTranspositions(const char* allowable_letters, double score)
+bool CognateData::setTranspositions(const char* allowable_letters, double sc)
 {
    if (!allowable_letters)
       return true ;			// trivially successful
@@ -229,8 +229,8 @@ bool CognateData::setTranspositions(const char* allowable_letters, double score)
 	 {
 	 src[1] = allowable_letters[i] ;
 	 trg[0] = allowable_letters[i] ;
-	 if (!setCognateScoring(src,trg,score)
-	    || !setCognateScoring(trg,src,score))
+	 if (!setCognateScoring(src,trg,sc)
+	    || !setCognateScoring(trg,src,sc))
 	    return false ;
 	 }
       }
@@ -475,10 +475,10 @@ float CognateData::best_match(const char* word1, size_t len1, size_t index1,
 		  // we found a match, so compute its score, scaling for the
 		  //   relative lengths of the match and input strings
 		  float rawscore = (float)targetspec->nth(2)->floatValue() ;
-		  float score = scale_match(i,targetlen,len1,len2) * rawscore ;
-		  if (score > best_score)
+		  float sc = scale_match(i,targetlen,len1,len2) * rawscore ;
+		  if (sc > best_score)
 		     {
-		     best_score = score ;
+		     best_score = sc ;
 		     best_src = i ;
 		     best_trg = targetlen ;
 		     }

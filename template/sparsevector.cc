@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -32,10 +32,10 @@ namespace Fr
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
-SparseVector<IdxT,ValT>::SparseVector(size_t capacity)
+SparseVector<IdxT,ValT>::SparseVector(size_t cap)
    : Vector<ValT>(0), m_indices(nullptr)
 {
-   this->reserve(capacity) ;
+   this->reserve(cap) ;
    return ;
 }
 
@@ -85,8 +85,8 @@ size_t SparseVector<IdxT,ValT>::totalElements(const SparseVector<IdxT,ValT>* v1,
    size_t pos2 { 0 } ;
    while (pos1 < elts1 && pos2 < elts2)
       {
-      auto elt1 { v1->elementIndex(pos1) } ;
-      auto elt2 { v2->elementIndex(pos2) } ;
+      auto elt1 = v1->elementIndex(pos1) ;
+      auto elt2 = v2->elementIndex(pos2) ;
       if (elt1 <= elt2)
 	 {
 	 pos1++ ;
@@ -116,8 +116,8 @@ size_t SparseVector<IdxT,ValT>::totalElements(const SparseVector<IdxT,ValT>* v1,
    size_t pos2 { 0 } ;
    while (pos1 < elts1 && pos2 < elts2)
       {
-      auto elt1 { v1->elementIndex(pos1) } ;
-      auto elt2 { v2->elementIndex(pos2) } ;
+      auto elt1 = v1->elementIndex(pos1) ;
+      auto elt2 = v2->elementIndex(pos2) ;
       if (elt1 <= elt2)
 	 {
 	 pos1++ ;
@@ -184,8 +184,8 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const Vector<ValT>* other)
    size_t pos2 { 0 } ;
    while (pos1 < elts1 && pos2 < elts2)
       {
-      auto elt1 { (IdxT)(this->elementIndex(pos1)) } ;
-      auto elt2 { (IdxT)(other->elementIndex(pos2)) } ;
+      auto elt1 = (IdxT)(this->elementIndex(pos1)) ;
+      auto elt2 = (IdxT)(other->elementIndex(pos2)) ;
       if (elt1 < elt2)
 	 {
 	 result->m_indices[count] = elt1 ;
@@ -220,8 +220,8 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const SparseVector<IdxT,Va
    size_t pos2 { 0 } ;
    while (pos1 < elts1 && pos2 < elts2)
       {
-      auto elt1 { (IdxT)(this->elementIndex(pos1)) } ;
-      auto elt2 { (IdxT)(other->elementIndex(pos2)) } ;
+      auto elt1 = (IdxT)(this->elementIndex(pos1)) ;
+      auto elt2 = (IdxT)(other->elementIndex(pos2)) ;
       if (elt1 < elt2)
 	 {
 	 result->m_indices[count] = elt1 ;
@@ -259,7 +259,7 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const OneHotVector<IdxT,Va
    size_t count = this->numElements() ;
    
    SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create(count) ;
-   auto elt2 { (IdxT)other->elementIndex(0) } ;
+   auto elt2 = (IdxT)other->elementIndex(0) ;
    count = 0 ;
    size_t elts1 { this->numElements() } ;
    size_t pos1 { 0 } ;
@@ -303,8 +303,8 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::incr(const SparseVector<IdxT,V
    size_t count { 0 } ;
    while (pos1 < elts1 && pos2 < elts2)
       {
-      auto elt1 { (IdxT)(this->elementIndex(pos1)) } ;
-      auto elt2 { (IdxT)(other->elementIndex(pos2)) } ;
+      auto elt1 = (IdxT)(this->elementIndex(pos1)) ;
+      auto elt2 = (IdxT)(other->elementIndex(pos2)) ;
       if (elt1 < elt2)
 	 {
 	 new_indices[count] = elt1 ;

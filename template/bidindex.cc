@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.10, last edit 2018-08-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -57,14 +57,14 @@ bool BidirIndex<keyT,idxT>::load(CFile& fp, const char* filename, bool allow_mma
    if (allow_mmap && loadMapped(filename))
       return true ;
 
-   size_t count ;
+   size_t cnt ;
    //FIXME: the following line will currently only instantiate for keyT=CString
-   if (!fp.readStringArray(m_reverse_index,count))
+   if (!fp.readStringArray(m_reverse_index,cnt))
       return false ;
-   m_next_index = count ;
-   m_max_index = count ;
-   m_common_buffer = count ;
-   for (idxT i = 0 ; i < count ; ++i)
+   m_next_index = cnt ;
+   m_max_index = cnt ;
+   m_common_buffer = cnt ;
+   for (idxT i = 0 ; i < cnt ; ++i)
       {
       this->add(m_reverse_index[i],i) ;
       }
