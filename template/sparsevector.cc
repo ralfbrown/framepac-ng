@@ -446,8 +446,12 @@ size_t SparseVector<IdxT,ValT>::cStringLength_(const Object* obj, size_t wrap_at
    size_t indent, size_t wrapped_indent)
 {
    auto v = static_cast<const SparseVector*>(obj) ;
-   // format of printed rep is #<type:i1:v1 i2:v2 .... iN:vN>
-   size_t len = indent + 5 + strlen(v->typeName()) + v->numElements() ;
+   // format of printed rep is #<type:key:label:i1:v1 i2:v2 .... iN:vN>
+   size_t len = indent + 6 + strlen(v->typeName()) + v->numElements() ;
+   if (v->key())
+      {
+      len += v->key()->cStringLength(wrap_at,0,wrapped_indent) ;
+      }
    if (v->label())
       {
       len += v->label()->cStringLength(wrap_at,0,wrapped_indent) ;
@@ -473,6 +477,14 @@ char* SparseVector<IdxT,ValT>::toCstring_(const Object* obj, char* buffer, size_
       return buffer ;
    char* bufend = buffer + buflen ;
    buffer += snprintf(buffer,buflen,"%*s#<%s:",(int)indent,"",v->typeName()) ;
+   if (v->key())
+      {
+      buffer = v->key()->toCstring(buffer,bufend-buffer,wrap_at,0,wrapped_indent) ;
+      }
+   if (buffer < bufend)
+      {
+      *buffer++ = ':' ;
+      }
    if (v->label())
       {
       buffer = v->label()->toCstring(buffer,bufend-buffer,wrap_at,0,wrapped_indent) ;
