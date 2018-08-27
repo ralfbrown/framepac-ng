@@ -845,7 +845,7 @@ class HashTable : public HashTableBase
 #endif /* FrSINGLE_THREADED */
 
    protected:
-      HashTable(size_t initial_size = 257)
+      HashTable(size_t initial_size = 1031)
 	 : HashTableBase(doAssistResize), m_table(nullptr)
 	 {
 	    init(initial_size) ;
@@ -861,7 +861,7 @@ class HashTable : public HashTableBase
       bool save(CFile&) const ;
 
       // *** object factories ***
-      static HashTable* create(size_t initial_size = 257) { return new HashTable(initial_size) ; }
+      static HashTable* create(size_t initial_size = 1031) { return new HashTable(initial_size) ; }
       static HashTable* create(const HashTable& ht) { return new HashTable(ht) ; }
 
       bool resizeTo(size_t newsize) { DELEGATE(resize(newsize)) ; }
