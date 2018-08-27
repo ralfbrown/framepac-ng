@@ -465,7 +465,8 @@ void WordCorpusT<IdT,IdxT>::computeTermFrequencies()
    if (m_freq)
       return;
    size_t num_types = m_wordmap->size() ;
-   m_freq = new IdxT[num_types] { 0 } ;
+   m_freq = new IdxT[num_types] ;
+   std::fill(m_freq,m_freq+num_types,0) ;
    // scan the array of term IDs and accumulate counts
    const IdT* buf = m_wordbuf.currentBuffer() ;
    size_t tokens = m_wordbuf.size() ;
@@ -562,11 +563,12 @@ void WordCorpusT<IdT,IdxT>::setAttributes(IdT word, uint8_t mask) const
    size_t cap = vocabSize() ;
    if (cap > m_attributes_alloc)
       {
-      uint8_t* new_attr = new uint8_t[cap] { 0 } ;
+      uint8_t* new_attr = new uint8_t[cap] ;
       if (new_attr)
 	 {
 	 if (m_attributes_alloc)
 	    memcpy(new_attr,m_attributes,m_attributes_alloc*sizeof(uint8_t)) ;
+	 std::fill(new_attr+m_attributes_alloc,new_attr+cap,0) ;
 	 m_attributes = new_attr ;
 	 m_attributes_alloc = cap ;
 	 }
