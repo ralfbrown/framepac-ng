@@ -174,6 +174,14 @@ WordSplitter::boundary WordSplitterEnglish::boundaryType(const char* window_star
       else
 	 return word_start_and_end ;
       }
+   else if (prevchar == '-')
+      {
+      if (isalnum(currchar) && currpos > window_start + 1 && currpos[-2] == '-')
+	 {
+	 // break between double hyphen and a following letter or digit
+	 return word_start_and_end ;
+	 }
+      }
    if (currchar == '\'')
       {
       if (prevchar == '\'')

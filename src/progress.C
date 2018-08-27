@@ -269,8 +269,13 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	 }
       if (m_show_estimated)
 	 {
-	 cout << (m_show_elapsed ? '+' : ' ') ;
-	 display_time(estimated) ;
+	 if (frac == 1.0)
+	    cout << "      " ;		// wipe out the last estimate
+	 else
+	    {
+	    cout << (m_show_elapsed ? '+' : ' ') ;
+	    display_time(estimated) ;
+	    }
 	 }
       cout << '\r' << flush ;
       }
