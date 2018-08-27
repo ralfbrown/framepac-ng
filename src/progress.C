@@ -79,6 +79,26 @@ ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit
       m_linewidth = ws.ws_col ;
       }
 #endif /* TIOCGWINSZ */
+   // figure out how many columns we have for the progress bar
+   //   we can't use the very last column (may cause autowrap), we use
+   //   two columns for the open/close brackets, and we need six
+   //   columns if displaying elapsed or estimated time
+   size_t overhead = strlen(m_firstprefix) + 3 ;
+   if (m_show_elapsed)
+      overhead += 6 ;
+   if (m_show_estimated)
+      overhead += 6 ;
+   if (overhead > m_linewidth)
+      {
+      m_show_elapsed = false ;
+      overhead -= 6 ;
+      }
+   if (overhead > m_linewidth)
+      {
+      m_show_estimated = false ;
+      overhead -= 6 ;
+      }
+   m_barsize = m_linewidth - overhead ;
    return ;
 }
 
@@ -160,13 +180,15 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       double elapsed { 0.0 } ;
       double estimated { 0.0 } ;
       double frac = (curr_count / (double)m_limit) ;
+      size_t count = (size_t)(m_barsize * frac + 0.8) ;
+      size_t prevcount = (size_t)(m_barsize * m_prevfrac + 0.8) ;
       if (m_show_elapsed || m_show_estimated)
 	 {
 	 elapsed = m_timer ? m_timer->seconds() : 0.0 ;
 	 // don't update more often than every two seconds unless there has been
 	 //   a substantial increase in the proportion completed, to avoid generating
-	 //   a huge amount of output (and thus a huge file when redirecting output)
-	 if (elapsed && frac <= 1.0)
+	 //   a huge amount of output (and thus a huge file when capturing output)
+	 if (elapsed && frac < 1.0)
 	    {
 	    if (frac < m_prevfrac + 0.01)
 	       {
@@ -182,6 +204,8 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	    estimated = (elapsed / frac) - elapsed ;
 	    }
 	 }
+      else if (count == prevcount)
+	 return ;
       if (frac > 1.0)
 	 {
 	 // we've gone over 100% completion, so any time estimates become invalid
@@ -194,33 +218,12 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	    }
 	 }
       m_prevfrac = frac ;
-      // figure out how many columns we have for the progress bar
-      //   we can't use the very last column (may cause autowrap), we use
-      //   two columns for the open/close brackets, and we need six
-      //   columns if displaying elapsed or estimated time
-      size_t overhead = strlen(m_firstprefix) + 3 ;
-      if (m_show_elapsed)
-	 overhead += 6 ;
-      if (m_show_estimated)
-	 overhead += 6 ;
-      if (overhead > m_linewidth)
-	 {
-	 m_show_elapsed = false ;
-	 overhead -= 6 ;
-	 }
-      if (overhead > m_linewidth)
-	 {
-	 m_show_estimated = false ;
-	 overhead -= 6 ;
-	 }
-      size_t width = m_linewidth - overhead ;
       cout << *m_firstprefix << '[' ;
-      size_t count = (size_t)(width * frac + 0.8) ;
       for (size_t i = 0 ; i < count ; ++i)
 	 {
 	 cout << '*' ;
 	 }
-      for (size_t i = count ; i < width ; ++i)
+      for (size_t i = count ; i < m_barsize ; ++i)
 	 {
 	 cout  << ' ' ;
 	 }

@@ -124,6 +124,7 @@ class ConsoleProgressIndicator : public ProgressIndicator
       CharPtr m_restprefix ;
       size_t  m_per_line ;
       size_t  m_linewidth ;
+      size_t  m_barsize ;
       bool    m_istty ;
    } ;
 
