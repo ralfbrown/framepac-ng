@@ -91,8 +91,8 @@ class WordCorpusT
       typedef bool AttrCheckFunc(const char *word) ;
 
    public: // constants
+      static const char signature[] ;
       static constexpr ID ErrorID { ID(~0) } ;
-      static constexpr const char signature[] { "\x7FWordCorp" } ;
       static constexpr int file_format { 2 } ;
       static constexpr int min_file_format { 2 } ;
 
@@ -226,6 +226,9 @@ class WordCorpusT
       bool		 m_readonly { false } ;
       bool		 m_keep_linenumbers { false } ;
    } ;
+
+template <typename IdT, typename IdxT>
+const char WordCorpusT<IdT,IdxT>::signature[] = "\x7FWordCorp" ;
 
 //----------------------------------------------------------------------------
 
