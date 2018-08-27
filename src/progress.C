@@ -19,10 +19,12 @@
 /*									*/
 /************************************************************************/
 
+#include <cmath>
 #include <cstring>
 #include <iostream>
 #include <iomanip>
 #include <sys/ioctl.h>
+#include <unistd.h>
 #include "framepac/progress.h"
 #include "framepac/timer.h"
 #include "framepac/texttransforms.h"
@@ -65,14 +67,14 @@ void ProgressIndicator::incr(size_t increment)
 
 ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit, size_t per_line,
 						   const char* first_prefix, const char* rest_prefix)
-   : ProgressIndicator(interval,limit), m_prevfrac(0),
+   : ProgressIndicator(interval,limit), m_prevfrac(0.0), m_lastupdate(0.0),
      m_firstprefix(dup_string(first_prefix)), m_restprefix(dup_string(rest_prefix)),
-     m_per_line(per_line), m_linewidth(80), m_lastupdate(0)
+     m_per_line(per_line), m_linewidth(80), m_istty(isatty(fileno(stdout)))
 {
    // get actual line width rather than always assuming an 80-column display
 #ifdef TIOCGWINSZ
    struct winsize ws ;
-   if (ioctl(fileno(stdout), TIOCGWINSZ, &ws) != -1 && ws.ws_col)
+   if (tty() && ioctl(fileno(stdout), TIOCGWINSZ, &ws) != -1 && ws.ws_col)
       {
       m_linewidth = ws.ws_col ;
       }
@@ -153,7 +155,7 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	 cout << '.' << flush ;
 	 }
       }
-   else
+   else if (tty())
       {
       double elapsed { 0.0 } ;
       double estimated { 0.0 } ;
@@ -234,6 +236,22 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	 display_time(estimated) ;
 	 }
       cout << '\r' << flush ;
+      }
+   else
+      {
+      // standard output is not a tty (i.e. it's been redirected), so just print up a line of 50
+      //   asterisks as the progress bar
+      double frac = (curr_count / (double)m_limit) ;
+      size_t stars = round(50 * frac) ;
+      size_t prevstars = round(50 * m_prevfrac) ;
+      m_prevfrac = frac ;
+      if (prevstars == 0)
+	 cout << *m_firstprefix << '[' ;
+      while (prevstars++ < stars)
+	 cout << '*' ;
+      if (frac >= 1.0)
+	 cout << ']' ;
+      cout << flush ;
       }
    return  ;
 }

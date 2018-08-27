@@ -111,17 +111,20 @@ class ConsoleProgressIndicator : public ProgressIndicator
       ConsoleProgressIndicator& operator+= (size_t add) { incr(add) ; return *this ; }
       ConsoleProgressIndicator& operator++ () { incr() ; return *this ; }
 
+      bool tty() const { return m_istty ; }
+
    protected:
       virtual void updateDisplay(size_t curr) ;
       virtual void finalize() ;
 
    protected:
       double  m_prevfrac ;
+      double  m_lastupdate ;
       CharPtr m_firstprefix ;
       CharPtr m_restprefix ;
       size_t  m_per_line ;
       size_t  m_linewidth ;
-      size_t  m_lastupdate ;
+      bool    m_istty ;
    } ;
 
 //----------------------------------------------------------------------------
