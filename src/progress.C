@@ -61,6 +61,24 @@ void ProgressIndicator::incr(size_t increment)
    return ;
 }
 
+//----------------------------------------------------------------------------
+
+void ProgressIndicator::showElapsedTime(bool show)
+{
+   m_show_elapsed = show ;
+   updateSettings() ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void ProgressIndicator::showRemainingTime(bool show)
+{
+   m_show_estimated = show ;
+   updateSettings() ;
+   return ;
+}
+
 /************************************************************************/
 /*	Methods for class ConsoleProgressIndicator			*/
 /************************************************************************/
@@ -79,10 +97,26 @@ ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit
       m_linewidth = ws.ws_col ;
       }
 #endif /* TIOCGWINSZ */
+   computeBarSize() ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+ConsoleProgressIndicator::~ConsoleProgressIndicator()
+{
+   cout << endl ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void ConsoleProgressIndicator::computeBarSize()
+{
    // figure out how many columns we have for the progress bar
    //   we can't use the very last column (may cause autowrap), we use
    //   two columns for the open/close brackets, and we need six
-   //   columns if displaying elapsed or estimated time
+   //   columns each if displaying elapsed or estimated time
    size_t overhead = strlen(m_firstprefix) + 3 ;
    if (m_show_elapsed)
       overhead += 6 ;
@@ -104,9 +138,9 @@ ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit
 
 //----------------------------------------------------------------------------
 
-ConsoleProgressIndicator::~ConsoleProgressIndicator()
+void ConsoleProgressIndicator::updateSettings()
 {
-   cout << endl ;
+   computeBarSize() ;
    return ;
 }
 

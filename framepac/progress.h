@@ -47,14 +47,15 @@ class ProgressIndicator
       virtual void finalize() { return ; }
 
       // configuration
-      void showElapsedTime(bool show) { m_show_elapsed = show ; }
-      void showRemainingTime(bool show) { m_show_estimated = show ; }
+      void showElapsedTime(bool show) ;
+      void showRemainingTime(bool show) ;
 
       void incr(size_t add = 1) ;
       ProgressIndicator& operator+= (size_t add) { incr(add) ; return *this ; }
       ProgressIndicator& operator++ () { incr() ; return *this ; }
 
    protected:
+      virtual void updateSettings() { return ; }
       virtual void updateDisplay(size_t curr) = 0 ;
 
    protected:
@@ -114,6 +115,8 @@ class ConsoleProgressIndicator : public ProgressIndicator
       bool tty() const { return m_istty ; }
 
    protected:
+      void computeBarSize() ;
+      virtual void updateSettings() ;
       virtual void updateDisplay(size_t curr) ;
       virtual void finalize() ;
 
