@@ -781,13 +781,14 @@ Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vec
       return nullptr ;
    else
       {
-#if 1
+#if 0
       static int warn_count { 0 } ;
       if (++warn_count < 20)
 	 {
 	 cout << "found " << tied_count << " centers tied for best at " << best_sim<< ".  First two are:" << endl ;
 	 cout << best_centers->getNth(0) << endl ;
 	 cout << best_centers->getNth(1) << endl ;
+	 cout << "the vector was " << vector << endl ;
 	 }
 #endif
       // we have multiple centers tied for best, so pick one at random
@@ -819,9 +820,9 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInf
 	 }
       }
    if (unlabeled)
-      this->log(1,"   %lu vectors without cluster labels",unlabeled) ;
+      this->log(1,"  %lu vectors without cluster labels",unlabeled) ;
    num_clusters = label_map->currentSize() ;
-   this->log(2,"   extracting %lu clusters",num_clusters) ;
+   this->log(2,"  extracting %lu clusters",num_clusters) ;
    clusters = new ClusterInfo*[num_clusters] ;
    for (size_t i = 0 ; i < num_clusters ; ++i)
       {

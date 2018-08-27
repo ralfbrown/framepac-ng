@@ -114,7 +114,6 @@ static bool update_medioid(size_t id, va_list args)
    // find nearest original vector in cluster
    auto medioid = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(centroid,inf->members(),measure) ;
    // make the medioid the new center for the cluster
-   centers->clearNth(id) ;
    centers->setNthNoCopy(id,medioid) ;
    return true ;			// no errors, safe to continue processing
 }
@@ -183,7 +182,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
    // trap signals to allow graceful early termination
    this->trapSigInt() ;
    size_t num_clusters = this->desiredClusters() ;
-   Array* centers = Array::create(num_clusters) ;
+   ScopedObject<Array> centers(num_clusters) ;
    this->log(0,"Initializing %lu centers",num_clusters) ;
    if (this->m_fast_init)
       {
@@ -243,7 +242,6 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
    for (iteration = 1 ; iteration <= this->maxIterations() && !this->abortRequested() ; iteration++)
       {
       this->log(0,"Iteration %lu",iteration) ;
-      this->log(2,"Centers array contains %lu elements",centers->size()) ;
       auto prog = this->makeProgressIndicator(nonempty->size()) ;
       size_t changes = this->assignToNearest(nonempty, centers, prog) ;
       delete prog ;
@@ -256,7 +254,8 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       if (usingMedioids())
 	 fn = update_medioid<IdxT,ValT> ;
       this->log(1,"  updating centers") ;
-      tp->parallelize(fn,num_clusters,clusters,centers,using_sparse_vectors,this->m_measure) ;
+      centers = Array::create(num_clusters) ;
+      tp->parallelize(fn,num_clusters,clusters,(Array*)centers,using_sparse_vectors,this->m_measure) ;
       }
    // build the final cluster result from the extracted clusters
    ClusterInfo* result_clusters = ClusterInfo::create(clusters,num_clusters) ;
@@ -270,7 +269,6 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       for (size_t i = 0 ; i < centers->size() ; ++i)
 	 centers->clearNth(i) ;
       }
-   centers->free() ;
    // cleanup: untrap signals
    this->untrapSigInt() ;
    return result_clusters ;
