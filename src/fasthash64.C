@@ -28,7 +28,7 @@ using namespace FramepaC ;
 
 #if __cplusplus__ >= 201700
 #define FALLTHROUGH [[fallthrough]]
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && __GNUC__ > 5
 #define FALLTHROUGH [[gnu::fallthrough]]
 #else
 #define FALLTHROUGH

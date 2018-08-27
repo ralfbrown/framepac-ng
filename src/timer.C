@@ -102,14 +102,14 @@ double CpuTimer::seconds() const
 {
 #ifdef CLOCK_PROCESS_CPUTIME_ID
    struct timespec now = currTime() ;
-   time_t seconds = now.tv_sec - m_start_time.tv_sec ;
+   time_t secs = now.tv_sec - m_start_time.tv_sec ;
    long nanos = now.tv_nsec - m_start_time.tv_nsec ;
    if (nanos < 0)
       {
-      seconds-- ;
+      secs-- ;
       nanos += 1000000000L ;
       }
-   return seconds + (nanos / 1E9) ;
+   return secs + (nanos / 1E9) ;
 #else
    std::clock_t now = currTime() ;
    return (now - m_start_time) / (double)(CLOCKS_PER_SEC) ;
