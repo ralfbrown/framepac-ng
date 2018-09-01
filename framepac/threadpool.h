@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-20					*/
+/* Version 0.10, last edit 2018-08-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -57,6 +57,7 @@ class ThreadPool
 
       // accessors
       unsigned numThreads() const { return m_numthreads ; }
+      unsigned activeThreads() const { return m_activethreads ; }
       unsigned idleThreads() const ;  //TODO
 
       static ThreadPool* defaultPool() ;
@@ -91,6 +92,9 @@ class ThreadPool
       static void defaultPool(ThreadPool*) ;
       static void defaultPool(size_t numthreads) { defaultPool(new ThreadPool(numthreads)) ; }
 
+      void limitThreads(size_t N) { if (N <= m_numthreads) m_activethreads = N ; }
+      void unlimitThreads() { limitThreads(m_numthreads) ; }
+
       // status
       bool idle() const ;  //TODO
 
@@ -113,6 +117,7 @@ class ThreadPool
    private:
       static ThreadPool* s_defaultpool ;
       unsigned   m_numthreads ;		// total number of worker threads
+      unsigned   m_activethreads ;	// number of worker threads to be given jobs
       unsigned   m_numCPUs { 0 } ;	// hardware threads, used to limit work-stealing scan
       unsigned	 m_prev_thread { 0 } ;	// next thread to which to try to assign a request
       WorkQueue* m_queues { nullptr } ;	// work queues, one per worker thread

@@ -344,6 +344,7 @@ ThreadPool::ThreadPool(unsigned num_threads)
 #ifdef FrSINGLE_THREADED
    m_numthreads = 0 ;
 #else
+   m_activethreads = m_numthreads ;
    m_numCPUs = std::thread::hardware_concurrency() ;
    m_queues = new WorkQueue[num_threads] ;
    if (num_threads == 0)
@@ -360,6 +361,7 @@ ThreadPool::ThreadPool(unsigned num_threads)
       delete m_pool ;
       m_pool = nullptr ;
       m_numthreads = 0 ;
+      m_activethreads = 0 ;
       return ;
       }
    allocateWorkOrders() ;
@@ -398,6 +400,7 @@ ThreadPool::~ThreadPool()
    discardRecycledOrders() ;
 #endif /* !FrSINGLE_THREADED */
    m_numthreads = 0 ;
+   m_activethreads = 0 ;
    return ;
 }
 
@@ -515,7 +518,7 @@ unsigned ThreadPool::idleThreads() const
 bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* output)
 {
    if (fn == nullptr) return false ;
-   if (numThreads() == 0)
+   if (activeThreads() == 0)
       {
       // we don't have any worker threads enabled, so directly invoke the worker function
       fn(input,output) ;
@@ -530,7 +533,7 @@ bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* outpu
       unsigned threadnum = start_thread ;
       do {
          // advance to next thread in pool
-         threadnum = (threadnum+1) % numThreads() ;
+         threadnum = (threadnum+1) % activeThreads() ;
          // atomically attempt to insert the request in the queue; this can fail if there
          //   was only one free entry and another thread beat us to the punch, in addition
          //   to failing if the queue is already full
@@ -551,7 +554,7 @@ bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* outpu
 bool ThreadPool::dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, size_t insize, const void* input,
 			       size_t outsize, void* output)
 {
-   if (numThreads() == 0)
+   if (activeThreads() == 0)
       {
       // we don't have any worker threads enabled, so directly invoke the worker function on each
       //   pair of input and output
@@ -569,9 +572,9 @@ bool ThreadPool::dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, size_t insi
       {
       size_t batchsize = 1 ;
       size_t remaining = count - curr_item ;
-      if (remaining > numThreads())
-	 batchsize = remaining / numThreads() ;
-      for (size_t t = 0 ; t < numThreads() && curr_item < count ; ++t)
+      if (remaining > activeThreads())
+	 batchsize = remaining / activeThreads() ;
+      for (size_t t = 0 ; t < activeThreads() && curr_item < count ; ++t)
 	 {
 	 curr_item += m_queues[t].pushMultiple(this,fn,batchsize,insize,((char*)input)+curr_item*insize,
 					       outsize,((char*)output)+curr_item*outsize) ;
@@ -623,7 +626,7 @@ bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, va_list ar
 {
    if (!fn) return false ;
    bool success = true ;
-   auto nt = numThreads() ;
+   auto nt = activeThreads() ;
    if (nt == 0)
       {
       // we don't have any worker threads enabled, so directly invoke the mapping function
@@ -660,7 +663,7 @@ bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, va_list ar
 
 void ThreadPool::waitUntilIdle()
 {
-   if (numThreads() == 0)
+   if (activeThreads() == 0)
       return ;				// all jobs were handled immediately
    // tell all the workers to post when they've finished everything currently in
    //   their queue
@@ -690,11 +693,11 @@ WorkOrder* ThreadPool::nextOrder(unsigned index)
    WorkOrder* wo = q.fastPop() ;
    if (wo)
       return wo ;
-   if ((wo = q.pop()) == nullptr)
+   unsigned nt = activeThreads() ;
+   if ((wo = q.pop()) == nullptr && index < nt)
       {
-      // try to steal something from another queue
+      // if we're one of the active threads, try to steal something from another queue
       // TODO: be more sophisticated than a simple round-robin scan
-      unsigned nt = numThreads() ;
       // if only makes sense to try to steal if our hardware threads are not massively over-subscribed
       if (m_numCPUs == 0 || nt < 4 * m_numCPUs)
 	 {
