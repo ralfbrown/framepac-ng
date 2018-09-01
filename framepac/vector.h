@@ -311,7 +311,8 @@ class SparseVector : public Vector<ValT>
       SparseVector(size_t capacity = 0) ;
       SparseVector(const char* rep) ;
       SparseVector(const SparseVector&) ;
-      ~SparseVector() = default ;
+      // G++ 4.8 breaks linkage if we explicitly default the dtor....
+      // ~SparseVector() = default ;
       SparseVector& operator= (const SparseVector&) ;
 
    protected: // implementation functions for virtual methods
