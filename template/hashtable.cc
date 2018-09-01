@@ -187,9 +187,10 @@ inline void HashTable<KeyT,ValT>::Table::init(size_t size)
 template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::Table::clear()
 {
-   delete[] m_entries ;
+   // we have a potential race here in cleaning up old Tables, so atomically swap the pointer with NULL
+   auto entries = Atomic<Entry*>::ref(m_entries).exchange(nullptr) ;
+   delete[] entries ;
    ifnot_INTERLEAVED(delete[] m_ptrs) ;
-   m_entries = nullptr ;
    ifnot_INTERLEAVED(m_ptrs = nullptr) ;
    m_next_table.store(nullptr) ;
    m_next_free.store(nullptr) ;

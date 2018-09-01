@@ -118,7 +118,7 @@ bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mma
    else
       {
       // get the header values
-
+      m_last_linenum = header.m_last_linenum ;
       }
    bool success = true ;
    if (!allow_mmap || !loadMapped(filename,base_offset))
@@ -201,6 +201,9 @@ bool WordCorpusT<IdT,IdxT>::loadFromMmap(const char* mmap_base, size_t mmap_len)
    // ensure that the writer used the same data sizes
    if (header->m_idsize != sizeof(IdT) || header->m_idxsize != sizeof(IdxT))
       return false ;
+   m_last_linenum = header->m_last_linenum ;
+   m_rare = header->m_rare_ID ;
+   m_rare_thresh = header->m_rare_threshold ;
    if (header->m_wordmap)
       {
       m_wordmap->loadFromMmap(mmap_base+header->m_wordmap,mmap_len-header->m_wordmap) ;
