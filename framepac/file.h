@@ -47,6 +47,7 @@ class LineBatch
 
       size_t capacity() const { return m_capacity ; }
       size_t size() const { return m_count ; }
+      size_t inputBytes() const { return m_inputbytes ; }
 
       // iterator support
       char** begin() const { return m_lines ; }
@@ -58,6 +59,8 @@ class LineBatch
       bool append(char* ln) ;
       bool append(CharPtr&& ln) ;
       LineBatch& operator+= (char* ln) { (void)append(ln) ; return *this ; }
+      void inputBytes(size_t b) { m_inputbytes = b ; }
+      void addInput(size_t b) { m_inputbytes += b ; }
 
       const char* line(size_t N) const { return (N < size()) ?  m_lines[N] : nullptr ; }
       const char* operator[] (size_t N) const { return m_lines[N] ; }
@@ -78,6 +81,7 @@ class LineBatch
    protected:
       size_t m_capacity ;
       size_t m_count ;
+      size_t m_inputbytes ;
       char** m_lines ;
    } ;
 

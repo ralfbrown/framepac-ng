@@ -30,6 +30,7 @@ namespace Fr
 /************************************************************************/
 
 LineBatch::LineBatch(size_t init_capacity)
+   : m_inputbytes(0)
 {
    if (init_capacity == 0) init_capacity = 1000 ;
    m_lines = New<char*>(init_capacity) ;
@@ -56,6 +57,7 @@ LineBatch::~LineBatch()
    m_count = 0 ;
    Free(m_lines) ;
    m_capacity = 0 ;
+   m_inputbytes = 0 ;
    m_lines = nullptr ;
    return ;
 }
