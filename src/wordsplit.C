@@ -104,7 +104,8 @@ void WordSplitter::shiftBuffer()
 	 {
 	 // optimization for when the buffer is the same size as the machine word: treat it as a word and shift
 # ifdef FrLITTLE_ENDIAN
-	 *((size_t*)&m_buffer) >>= 8 ;
+	 size_t* bufptr = (size_t*)&m_buffer ;
+	 *bufptr >>= 8 ;
 # else
 	 *((size_t*)&m_buffer) <<= 8 ;
 # endif /* FrLITTLE_ENDIAN */
