@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-26					*/
+/* Version 0.10, last edit 2018-08-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -343,6 +343,7 @@ ProgressIndicator* ClusteringAlgoBase::makeProgressIndicator(size_t limit, const
 {
    if (this->verbosity() >= 0)
       {
+      if (!prefix) prefix = m_logprefix ;
       if (!prefix) prefix = "" ;
       ProgressIndicator* prog = new ConsoleProgressIndicator(1,limit,50,prefix,prefix) ;
       prog->showElapsedTime(true) ;

@@ -71,7 +71,8 @@ static bool update_centroid(size_t id, va_list args)
    auto o = va_arg(args,const ClusterInfo**) ;
    auto inf = o[id] ;
    auto centers = va_arg(args,Array*) ;
-   int sparse = va_arg(args,int) ;
+   auto sparse = va_arg(args,int) ;
+   auto prog = va_arg(args,ProgressIndicator*) ;
    if (sparse)
       {
       // create a centroid of the members of the current cluster
@@ -86,6 +87,8 @@ static bool update_centroid(size_t id, va_list args)
       // make the centroid the new center for the cluster
       centers->setNthNoCopy(id,centroid) ;
       }
+   if (prog)
+      ++(*prog) ;
    return true ;			// no errors, safe to continue processing
 }
 
@@ -98,8 +101,9 @@ static bool update_medioid(size_t id, va_list args)
    auto o = va_arg(args,const ClusterInfo**) ;
    auto inf = o[id] ;
    auto centers = va_arg(args,Array*) ;
-   int sparse = va_arg(args,int) ;
+   auto sparse = va_arg(args,int) ;
    auto measure = va_arg(args,VM*) ;
+   auto prog = va_arg(args,ProgressIndicator*) ;
    Ptr<Vector<ValT>> centroid ;
    if (sparse)
       {
@@ -115,6 +119,8 @@ static bool update_medioid(size_t id, va_list args)
    auto medioid = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(centroid,inf->members(),measure) ;
    // make the medioid the new center for the cluster
    centers->setNthNoCopy(id,medioid) ;
+   if (prog)
+      ++(*prog) ;
    return true ;			// no errors, safe to continue processing
 }
 
@@ -255,7 +261,9 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
 	 fn = update_medioid<IdxT,ValT> ;
       this->log(1,"  updating centers") ;
       centers = Array::create(num_clusters) ;
-      tp->parallelize(fn,num_clusters,clusters,(Array*)centers,using_sparse_vectors,this->m_measure) ;
+      prog = (nonempty->size() > 1000) ? this->makeProgressIndicator(num_clusters) : nullptr ;
+      tp->parallelize(fn,num_clusters,clusters,(Array*)centers,using_sparse_vectors,this->m_measure,prog) ;
+      delete prog ;
       }
    // build the final cluster result from the extracted clusters
    ClusterInfo* result_clusters = ClusterInfo::create(clusters,num_clusters) ;

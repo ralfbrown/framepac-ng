@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-08-27					*/
+/* Version 0.10, last edit 2018-08-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -298,6 +298,7 @@ class ClusteringAlgoBase
       ClusterRep clusteringRep() const { return  m_representative ; }
       VectorSimilarityMeasure similarityMeasure() const { return m_similarity ; }
 
+      const char* loggingPrefix() const { return m_logprefix ; }
       double clusterThreshold() const { return m_threshold ; }
       size_t desiredClusters() const { return m_desired_clusters ; }
       size_t maxIterations() const { return m_max_iterations ; }
