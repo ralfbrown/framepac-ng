@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-26					*/
+/* Version 0.10, last edit 2018-09-01					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -287,12 +287,20 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       size_t stars = round(50 * frac) ;
       size_t prevstars = round(50 * m_prevfrac) ;
       m_prevfrac = frac ;
-      if (prevstars == 0)
+      if (prevstars == 0 && stars)
 	 cout << *m_firstprefix << '[' ;
       while (prevstars++ < stars)
 	 cout << '*' ;
       if (frac >= 1.0)
+	 {
 	 cout << ']' ;
+	 if (m_show_elapsed)
+	    {
+	    double elapsed = m_timer ? m_timer->seconds() : 0.0 ;
+	    cout << ' ' ;
+	    display_time(elapsed) ;
+	    }
+	 }
       cout << flush ;
       }
    return  ;
