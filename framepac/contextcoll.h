@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-24					*/
+/* Version 0.10, last edit 2018-09-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -75,13 +75,20 @@ class ContextVectorCollection
    } ;
 
 // the typical application for this class uses either Symbol or
-//  uint32_t as the term type and SparseVector<uint32_t,float> as the
-//  context vectors, so predefine those instantiations
+//  uint32_t as the term type and either SparseVector<uint32_t,float>
+//  or DenseVector<float> as the context vectors, so predefine those
+//  instantiations
 extern template class ContextVectorCollection<Symbol*,uint32_t,float,true> ;
 typedef ContextVectorCollection<Symbol*,uint32_t,float> ContextVectorCollSym ;
 
+extern template class ContextVectorCollection<Symbol*,uint32_t,float,false> ;
+typedef ContextVectorCollection<Symbol*,uint32_t,float> ContextVectorCollSymDense ;
+
 extern template class ContextVectorCollection<uint32_t,uint32_t,float,true> ;
 typedef ContextVectorCollection<uint32_t,uint32_t,float> ContextVectorCollU32 ;
+
+extern template class ContextVectorCollection<uint32_t,uint32_t,float,false> ;
+typedef ContextVectorCollection<uint32_t,uint32_t,float> ContextVectorCollU32Dense ;
 
 } // end of namespace Fr
 

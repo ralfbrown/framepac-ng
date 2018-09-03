@@ -303,7 +303,7 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	       display_time(elapsed) ;
 	       }
 	    }
-	    cout << flush ;
+	 cout << flush ;
 	 }
       }
    return  ;

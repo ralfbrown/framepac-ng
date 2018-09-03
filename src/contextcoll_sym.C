@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.04, last edit 2018-04-04					*/
+/* Version 0.10, last edit 2018-09-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -24,8 +24,9 @@
 namespace Fr
 {
 
-// request explicit instantiation of the template
-template class ContextVectorCollection<Symbol*, uint32_t, float> ;
+// request explicit instantiations of the template
+template class ContextVectorCollection<Symbol*, uint32_t, float, false> ;
+template class ContextVectorCollection<Symbol*, uint32_t, float, true> ;
 
 } // end namespace Fr
 
