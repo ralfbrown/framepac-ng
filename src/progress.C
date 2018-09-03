@@ -287,21 +287,24 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       size_t stars = round(50 * frac) ;
       size_t prevstars = round(50 * m_prevfrac) ;
       m_prevfrac = frac ;
-      if (prevstars == 0 && stars)
-	 cout << *m_firstprefix << '[' ;
-      while (prevstars++ < stars)
-	 cout << '*' ;
-      if (frac >= 1.0)
+      if (stars > prevstars)
 	 {
-	 cout << ']' ;
-	 if (m_show_elapsed)
+	 if (prevstars == 0)
+	    cout << *m_firstprefix << '[' ;
+	 while (prevstars++ < stars)
+	    cout << '*' ;
+	 if (frac >= 1.0 && prevstars <= 50)
 	    {
-	    double elapsed = m_timer ? m_timer->seconds() : 0.0 ;
-	    cout << ' ' ;
-	    display_time(elapsed) ;
+	    cout << ']' ;
+	    if (m_show_elapsed)
+	       {
+	       double elapsed = m_timer ? m_timer->seconds() : 0.0 ;
+	       cout << ' ' ;
+	       display_time(elapsed) ;
+	       }
 	    }
+	    cout << flush ;
 	 }
-      cout << flush ;
       }
    return  ;
 }
