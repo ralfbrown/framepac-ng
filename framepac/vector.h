@@ -84,7 +84,7 @@ class Vector : public VectorBase
       typedef ValT value_type ;
 
    public:
-      static Vector* create(size_t numelts) ;
+      static Vector* create(size_t numelts) { return new Vector(numelts) ; }
 
       void setElement(size_t N, ValT value)
 	 {
@@ -216,9 +216,9 @@ class OneHotVector : public Vector<ValT>
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       OneHotVector(IdxT index, ValT value = (ValT)1) : m_index(index), m_value(value) {}
-      OneHotVector(const OneHotVector&) ;
+      OneHotVector(const OneHotVector&) = default ;
       ~OneHotVector() { m_value = (ValT)0 ; }
-      OneHotVector& operator= (const OneHotVector&) ;
+      OneHotVector& operator= (const OneHotVector&) = default ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<OneHotVector> ;
@@ -226,13 +226,24 @@ class OneHotVector : public Vector<ValT>
       // type determination predicates
       static bool isSparseVector_(const Object *) { return true ; }
       static bool isOneHotVector_(const Object *) { return true ; }
-      static const char* typeName_(const Object*) { return "OneHotVector" ; }
 
       // *** copying ***
-      static ObjectPtr clone_(const Object *) ;
+      static ObjectPtr clone_(const Object *obj)
+	 {
+	    auto orig = static_cast<const OneHotVector*>(obj) ;
+	    return new OneHotVector(orig->m_index,orig->m_value) ;
+	 }
       static Object *shallowCopy_(const Object *obj) { return clone_(obj) ; }
-      static ObjectPtr subseq_int(const Object *,size_t start, size_t stop) ;
-      static ObjectPtr subseq_iter(const Object *,ObjectIter start, ObjectIter stop) ;
+      static ObjectPtr subseq_int(const Object *,size_t /*start*/, size_t /*stop*/)
+	 {
+	    //TODO
+	    return nullptr ;
+	 }
+      static ObjectPtr subseq_iter(const Object *,ObjectIter /*start*/, ObjectIter /*stop*/)
+	 {
+	    //TODO
+	    return nullptr ;
+	 }
 
       // *** destroying ***
       static void free_(Object *obj) { delete static_cast<OneHotVector*>(obj) ; }
@@ -248,16 +259,34 @@ class OneHotVector : public Vector<ValT>
       static const Object *front_const(const Object *obj) { return obj ; }
       static const char *stringValue_(const Object *) { return nullptr ; }
       static long nthInt_(const Object* obj, size_t N)
-	 { auto v = static_cast<const Vector<ValT>*>(obj) ;
+	 { auto v = static_cast<const OneHotVector<IdxT,ValT>*>(obj) ;
            return N == (size_t)v->m_index ? (long)v->m_value : 0 ; }
       static double nthFloat_(const Object* obj, size_t N)
-	 { auto v = static_cast<const Vector<ValT>*>(obj) ;
+	 { auto v = static_cast<const OneHotVector<IdxT,ValT>*>(obj) ;
            return N == (size_t)v->m_index ? (double)v->m_value : 0 ; }
 
       // *** comparison functions ***
-      static bool equal_(const Object *obj, const Object *other) ;
-      static int compare_(const Object *obj, const Object *other) ;
-      static int lessThan_(const Object *obj, const Object *other) ;
+      static bool equal_(const Object *obj, const Object *other)
+	 {
+	    if (other && other->isOneHotVector())
+	       {
+	       auto v1 = static_cast<const OneHotVector*>(obj) ;
+	       auto v2 = static_cast<const OneHotVector*>(other) ;
+	       return v1->m_index == v2->m_index && v1->m_value == v2->m_value ;
+	       }
+	    else
+	       return obj == other ;
+	 }
+      static int compare_(const Object *obj, const Object *other)
+	 {
+	    //TODO
+	    return obj == other ;
+	 }
+      static int lessThan_(const Object */*obj*/, const Object */*other*/)
+	 {
+	    //TODO
+	    return 0 ;
+	 }
 
       // *** iterator support ***
       static Object* next_(const Object *) { return nullptr ; }
@@ -270,6 +299,13 @@ class OneHotVector : public Vector<ValT>
       IdxT m_index ;
       ValT m_value ;
    } ;
+
+template <typename IdxT, typename ValT>
+const char OneHotVector<IdxT,ValT>::s_typename[] = "OneHotVector" ;
+
+template <typename IdxT, typename ValT>
+Allocator OneHotVector<IdxT,ValT>::s_allocator(FramepaC::Object_VMT<OneHotVector<IdxT,ValT>>::instance(),
+   sizeof(OneHotVector<IdxT,ValT>)) ;
 
 //----------------------------------------------------------------------------
 

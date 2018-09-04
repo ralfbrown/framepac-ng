@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 27aug2018
+# Last change: 03sep2018
 
 #########################################################################
 # define the locations of all the files
@@ -298,6 +298,7 @@ OBJS = \
 	build/hashtable_symobj$(OBJ) \
 	build/hashtable_symsz$(OBJ) \
 	build/hashtable_u32u32$(OBJ) \
+	build/hashtable_u32obj$(OBJ) \
 	build/hazardptr$(OBJ) \
 	build/init$(OBJ) \
 	build/integer$(OBJ) \
@@ -551,6 +552,7 @@ build/hashtable_symnul$(OBJ):	src/hashtable_symnul$(C) template/hashtable.cc
 build/hashtable_symobj$(OBJ):	src/hashtable_symobj$(C) template/hashtable.cc
 build/hashtable_symsz$(OBJ):	src/hashtable_symsz$(C) template/hashtable.cc
 build/hashtable_u32u32$(OBJ):	src/hashtable_u32u32$(C) template/hashtable.cc template/hashtable_file.cc
+build/hashtable_u32obj$(OBJ):	src/hashtable_u32obj$(C) template/hashtable.cc template/hashtable_file.cc
 build/hazardptr$(OBJ):		src/hazardptr$(C) framepac/atomic.h
 build/init$(OBJ):		src/init$(C) framepac/init.h framepac/symboltable.h
 build/integer$(OBJ):		src/integer$(C) framepac/number.h framepac/fasthash64.h
@@ -635,7 +637,7 @@ globaldata$(C):
 template/argopt.cc:	framepac/argparser.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/basisvector.cc: framepac/random.h framepac/vector.h
+template/basisvector.cc: framepac/random.h framepac/basisvector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/bidindex.cc:	framepac/bidindex.h framepac/file.h framepac/message.h framepac/mmapfile.h
@@ -754,6 +756,9 @@ framepac/as_string.h:	framepac/cstring.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/atomic.h:	framepac/config.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/basisvector.h:	framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/bidindex.h:	framepac/cstring.h framepac/hashtable.h

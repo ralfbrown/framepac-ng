@@ -1418,6 +1418,9 @@ typedef HashTable<Object*,size_t> ObjCountHashTable ;
 extern template class HashTable<uint32_t,uint32_t> ;
 typedef HashTable<uint32_t,uint32_t> HashTable_U32_U32 ;
 
+extern template class HashTable<uint32_t,Object*> ;
+typedef HashTable<uint32_t,Object*> IntObjHashTable ;
+
 FrMAKE_SYMBOL_HASHTABLE_CLASS(SymHashTable,Object*) ;
 FrMAKE_SYMBOL_HASHTABLE_CLASS(SymCountHashTable,size_t) ;
 

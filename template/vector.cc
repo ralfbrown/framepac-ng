@@ -99,6 +99,56 @@ Vector<ValT>* Vector<ValT>::add(const Vector* other) const
 //----------------------------------------------------------------------------
 
 template <typename ValT>
+Vector<ValT>* Vector<ValT>::incr(const Vector* other)
+{
+   if (!other) return this ;
+   if (this->isSparseVector())
+      {
+      //TODO: 
+      }
+   else if (other->isSparseVector())
+      {
+      //TODO:
+      }
+   else if (this->m_size == other->m_size)
+      {
+      // both vectors are dense and have the same dimensions, so we can just do an element-by-element addition
+      for (size_t i = 0 ; i < this->m_size ; ++i)
+	 {
+	 m_values[i] += other->m_values[i] ;
+	 }
+      }
+   return this ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
+Vector<ValT>* Vector<ValT>::incr(const Vector* other, ValT weight)
+{
+   if (!other) return this ;
+   if (this->isSparseVector())
+      {
+      //TODO: 
+      }
+   else if (other->isSparseVector())
+      {
+      //TODO:
+      }
+   else if (this->m_size == other->m_size)
+      {
+      // both vectors are dense and have the same dimensions, so we can just do an element-by-element addition
+      for (size_t i = 0 ; i < this->m_size ; ++i)
+	 {
+	 m_values[i] += (weight * other->m_values[i]) ;
+	 }
+      }
+   return this ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
 void Vector<ValT>::scale(double factor)
 {
    for (size_t i = 0 ; i < this->numElements() ; ++i)

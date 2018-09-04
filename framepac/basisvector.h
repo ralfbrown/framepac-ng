@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-18					*/
+/* Version 0.10, last edit 2018-09-03					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -35,7 +35,8 @@ class BasisVector : public SparseVector<IdxT,ValT>
    public:
       typedef SparseVector<IdxT,ValT> super ;
    public:
-      static BasisVector* create(size_t numelts, size_t num_plus, size_t num_minus = (size_t)~0) ;
+      static BasisVector* create(size_t numelts, size_t num_plus, size_t num_minus = (size_t)~0)
+	 { return new BasisVector(numelts,num_plus,num_minus) ; }
 
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
