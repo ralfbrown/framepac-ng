@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.10, last edit 2018-09-04					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -59,8 +59,9 @@ class ArgOptBase
       const char* shortName() const { return m_shortname && *m_shortname ? m_shortname : nullptr ; }
       const char* fullName() const { return m_fullname && *m_fullname ? m_fullname : nullptr ; }
       const char* description() const { return m_description ; }
-      CharPtr describeDefault() const ;
-      CharPtr describeRange() const ;
+      virtual CharPtr describeDefault() const { return nullptr ; }
+      virtual CharPtr describeCurrent() const { return nullptr ; }
+      virtual CharPtr describeRange() const { return nullptr ; }
 
       void setParser(ArgParser* p) { m_parser = p ; }
       ArgParser* getParser() const { return m_parser ; }
@@ -70,8 +71,6 @@ class ArgOptBase
       virtual bool setDefaultValue() ;
       virtual bool validateValue() = 0 ;
       virtual bool optional() const { return false ; } ;
-      virtual void describeDefault(std::ostream&) const { return ; }
-      virtual void describeRange(std::ostream&) const { return ; }
    protected:
       ArgParser*  m_parser { nullptr } ;
       ArgOptBase* m_next { nullptr } ;
@@ -164,6 +163,10 @@ class ArgOpt : public ArgOptBase
 	    m_have_defvalue = m_have_minmax = false ;
 	 }
 
+      virtual CharPtr describeDefault() const ;
+      virtual CharPtr describeCurrent() const ;
+      virtual CharPtr describeRange() const ;
+
    protected:
       virtual bool convert(const char* arg, const char* /*delim*/)
 	 {
@@ -175,8 +178,6 @@ class ArgOpt : public ArgOptBase
       virtual bool setDefaultValue() ;
       virtual bool validateValue() ;
       virtual bool optional() const { return m_have_defvalue ; }
-      virtual void describeDefault(std::ostream& s) const ;
-      virtual void describeRange(std::ostream& s) const ;
    protected:
       T&         m_value ;
       T          m_defvalue { } ;

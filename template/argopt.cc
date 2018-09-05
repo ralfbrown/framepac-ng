@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-03					*/
+/* Version 0.10, last edit 2018-09-04					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -20,6 +20,8 @@
 /************************************************************************/
 
 #include "framepac/argparser.h"
+#include "framepac/as_string.h"
+#include "framepac/texttransforms.h"
 
 namespace Fr
 {
@@ -71,19 +73,25 @@ bool ArgOpt<T>::validateValue()
 //----------------------------------------------------------------------------
 
 template <typename T>
-void ArgOpt<T>::describeDefault(std::ostream& s) const
+CharPtr ArgOpt<T>::describeDefault() const
 {
-   s << m_defvalue ;
-   return ;
+   return haveDefault() ? as_string(m_defvalue) : CharPtr(nullptr) ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename T>
-void ArgOpt<T>::describeRange(std::ostream& s) const
+CharPtr ArgOpt<T>::describeCurrent() const
 {
-   s << m_minvalue << " to " << m_maxvalue ;
-   return ;
+   return as_string(m_value) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T>
+CharPtr ArgOpt<T>::describeRange() const
+{
+   return haveRange() ? aprintf("%s to %s",*as_string(m_minvalue),*as_string(m_maxvalue)) : CharPtr(nullptr) ;
 }
 
 //----------------------------------------------------------------------------

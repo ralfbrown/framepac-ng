@@ -634,7 +634,7 @@ build/wordsplit_eng$(OBJ):	src/wordsplit_eng$(C) framepac/words.h
 globaldata$(C):
 	@mkdir -p build
 
-template/argopt.cc:	framepac/argparser.h
+template/argopt.cc:	framepac/argparser.h framepac/as_string.h framepac/texttransforms.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/basisvector.cc: framepac/random.h framepac/basisvector.h

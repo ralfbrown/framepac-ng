@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-08-27					*/
+/* Version 0.10, last edit 2018-09-04					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -176,26 +176,6 @@ void ArgOptBase::invalidValue(const char* opt) const
       cerr << "valid range is " << *range << endl ;
       }
    return ;
-}
-
-//----------------------------------------------------------------------------
-
-CharPtr ArgOptBase::describeDefault() const
-{
-   if (!haveDefault()) return nullptr ;
-   std::ostringstream s ;
-   describeDefault(s) ;
-   return dup_string(s.str().c_str()) ;
-}
-
-//----------------------------------------------------------------------------
-
-CharPtr ArgOptBase::describeRange() const
-{
-   if (!haveRange()) return nullptr ;
-   std::ostringstream s ;
-   describeRange(s) ;
-   return dup_string(s.str().c_str()) ;
 }
 
 /************************************************************************/
@@ -614,10 +594,21 @@ bool ArgParser::showHelp(bool longhelp) const
 	 cout << "\n\t" << desc ;
 	 cout << "\n\t" ;
 	 auto def_desc = opt->describeDefault() ;
-	 if (!def_desc) def_desc = dup_string("(none)") ;
+	 auto cur_desc = opt->describeCurrent() ;
 	 auto range_desc = opt->describeRange() ;
-	 if (!range_desc) range_desc = dup_string("(no limits)") ;
-	 cout << "Default value: " << def_desc << "\tRange: " << range_desc << endl ;
+	 if (def_desc)
+	    cout << "Default: " << def_desc ;
+	 if (cur_desc)
+	    {
+	    if (def_desc) cout << '\t' ;
+	    cout << "Current: " << cur_desc ;
+	    }
+	 if (range_desc)
+	    {
+	    if (def_desc || cur_desc)
+	       cout << '\t' ;
+	    cout << "Range: " << range_desc << endl ;
+	    }
 	 }
       else if (opt->shortName() && opt->fullName())
 	 {
