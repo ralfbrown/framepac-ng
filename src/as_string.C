@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.10, last edit 2018-09-04					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -32,6 +32,48 @@ using namespace std ;
 
 namespace Fr
 {
+
+//----------------------------------------------------------------------------
+
+unsigned len_as_string(bool value)
+{
+   return value ? 4 : 5 ;   // "true" or "false"
+}
+
+//----------------------------------------------------------------------------
+
+CharPtr as_string(bool value)
+{
+   return value ? dup_string("true") : dup_string("false") ;
+}
+
+//----------------------------------------------------------------------------
+
+char* as_string(bool value, char* buf, size_t buflen)
+{
+   return buf + snprintf(buf,buflen,"%s",value ? "true" : "false") ;
+}
+   
+//----------------------------------------------------------------------------
+
+unsigned len_as_string(int value)
+{
+   return snprintf(nullptr,0,"%d",value) ;
+}
+
+//----------------------------------------------------------------------------
+
+CharPtr as_string(int value)
+{
+   return Fr::aprintf("%d",value) ;
+}
+
+//----------------------------------------------------------------------------
+
+char* as_string(int value, char* buf, size_t buflen)
+{
+   return buf + snprintf(buf,buflen,"%d",value) ;
+}
 
 //----------------------------------------------------------------------------
 
