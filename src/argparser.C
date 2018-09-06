@@ -591,24 +591,24 @@ bool ArgParser::showHelp(bool longhelp) const
 	 show_arg_name(opt->fullName(),true,have_def,desc,0) ;
 	 if (strchr(desc,'\v'))
 	    desc = strchr(desc,'\v')+1 ;
-	 cout << "\n\t" << desc ;
-	 cout << "\n\t" ;
+	 cout << "\n\t" << desc << '\n' ;
 	 auto def_desc = opt->describeDefault() ;
 	 auto cur_desc = opt->describeCurrent() ;
 	 auto range_desc = opt->describeRange() ;
 	 if (def_desc)
-	    cout << "Default: " << def_desc ;
+	    {
+	    cout << "\tDefault: " << def_desc ;
+	    }
 	 if (cur_desc)
 	    {
-	    if (def_desc) cout << '\t' ;
-	    cout << "Current: " << cur_desc ;
+	    cout << "\tCurrent: " << cur_desc ;
 	    }
 	 if (range_desc)
 	    {
-	    if (def_desc || cur_desc)
-	       cout << '\t' ;
-	    cout << "Range: " << range_desc << endl ;
+	    cout << "\tRange: " << range_desc << endl ;
 	    }
+	 else if (def_desc || cur_desc)
+	    cout << endl ;
 	 }
       else if (opt->shortName() && opt->fullName())
 	 {
