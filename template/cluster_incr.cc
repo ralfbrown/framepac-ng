@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-08-27					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017 Carnegie Mellon University			*/
@@ -53,7 +53,7 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
    auto clusters = Array::create() ;
    for (auto vec : *seed)
       {
-      auto vector = static_cast<Vector<ValT>*>(vec) ;
+      auto vector = static_cast<Vector<IdxT,ValT>*>(vec) ;
       bool found = false ;
       for (auto cl : *clusters)
 	 {
@@ -79,7 +79,7 @@ ClusterInfo* ClusteringAlgoIncr<IdxT,ValT>::cluster(const Array* vectors) const
    for (auto vec : *nonseed)
       {
       size_t best_clus ;
-      auto vector = static_cast<Vector<ValT>*>(vec) ;
+      auto vector = static_cast<Vector<IdxT,ValT>*>(vec) ;
       auto best_sim = this->findNearestCluster(clusters,vector,best_clus,nullptr) ;
       if (best_sim < this->clusterThreshold() && clusters->size() < this->desiredClusters())
 	 {

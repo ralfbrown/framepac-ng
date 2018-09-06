@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-28					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -37,13 +37,13 @@ template <typename IdxT, typename ValT>
 class SimilarityMeasureCT : public VectorMeasure<IdxT, ValT>
    {
    public:
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
 	    this->contingencyTable(v1,v2,both,v1_only,v2_only) ;
 	    return this->scoreContingencyTable(both,v1_only,v2_only) ;
 	 }
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    return 1.0 - similarity(v1,v2) ;
 	 }
@@ -61,13 +61,13 @@ template <typename IdxT, typename ValT>
 class SimilarityMeasureBCT : public VectorMeasure<IdxT, ValT>
    {
    public:
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, v1_only, v2_only, neither ;
 	    this->contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    return this->scoreContingencyTable(both,v1_only,v2_only,neither) ;
 	 }
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    return 1.0 - similarity(v1,v2) ;
 	 }
@@ -85,13 +85,13 @@ template <typename IdxT, typename ValT>
 class SimilarityMeasureBA : public VectorMeasure<IdxT, ValT>
    {
    public:
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, disagree, neither ;
 	    this->binaryAgreement(v1,v2,both,disagree,neither) ;
 	    return this->scoreBinaryAgreement(both,disagree,neither) ;
 	 }
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    return 1.0 - similarity(v1,v2) ;
 	 }
@@ -109,13 +109,13 @@ template <typename IdxT, typename ValT>
 class DistanceMeasureCT : public VectorMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    ValT both, v1_only, v2_only ;
 	    this->contingencyTable(v1,v2,both,v1_only,v2_only) ;
 	    return this->scoreContingencyTable(both,v1_only,v2_only) ;
 	 }
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    return 1.0 - similarity(v1,v2) ;
 	 }
@@ -133,13 +133,13 @@ template <typename IdxT, typename ValT>
 class DistanceMeasureBCT : public VectorMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, v1_only, v2_only, neither ;
 	    this->contingencyTable(v1,v2,both,v1_only,v2_only,neither) ;
 	    return this->scoreContingencyTable(both,v1_only,v2_only,neither) ;
 	 }
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    return 1.0 - similarity(v1,v2) ;
 	 }
@@ -157,13 +157,13 @@ template <typename IdxT, typename ValT>
 class DistanceMeasureBA : public VectorMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t both, disagree, neither ;
 	    this->binaryAgreement(v1,v2,both,disagree,neither) ;
 	    return this->scoreBinaryAgreement(both,disagree,neither) ;
 	 }
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    return 1.0 - similarity(v1,v2) ;
 	 }
@@ -500,7 +500,7 @@ class VectorMeasureBinaryGamma : public SimilarityMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Binary Gamma" ; }
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t elts1(v1->numElements()) ;
 	    size_t elts2(v2->numElements()) ;
@@ -675,7 +675,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureKulczynski1 : public SimilarityMeasureCT<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    return 1.0 / (1.0 + this->similarity(v1,v2)) ;
 	 }
@@ -695,7 +695,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureBinaryKulczynski1 : public SimilarityMeasureBA<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    return 1.0 / (1.0 + this->similarity(v1,v2)) ;
 	 }

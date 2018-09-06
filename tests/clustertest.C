@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-16					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -60,7 +60,7 @@ static void show_clusters(const ClusterInfo* clusters, size_t level)
       size_t indent = 2*(level+2) ;
       for (auto v : *clusters->members())
 	 {
-	 auto vector = static_cast<Vector<float>*>(v) ;
+	 auto vector = static_cast<Vector<uint32_t,float>*>(v) ;
 	 CharPtr printed { vector->cString(0,indent,indent+1) } ;
 	 cout << *printed << endl ;
 	 }
@@ -124,14 +124,14 @@ int main(int argc, char** argv)
 	    if (!line)
 	       break  ;
 	    if (!**line) continue ;
-	    Ptr<Vector<float>> v;
+	    Ptr<Vector<uint32_t,float>> v;
 	    if (use_sparse_vectors)
 	       {
 	       v = SparseVector<uint32_t,float>::create(line) ;
 	       }
 	    else
 	       {
-	       v = DenseVector<float>::create(line) ;
+	       v = DenseVector<uint32_t,float>::create(line) ;
 	       }
 	    if (v)
 	       {

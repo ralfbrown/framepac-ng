@@ -63,10 +63,10 @@ SparseVector<IdxT,ValT>* ClusterInfo::createSparseCentroid(const Array* vectors)
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
+template <typename IdxT, typename ValT>
+DenseVector<IdxT,ValT>* ClusterInfo::createDenseCentroid() const
 {
-   typedef DenseVector<ValT> DV ;
+   typedef DenseVector<IdxT,ValT> DV ;
    auto mem = members() ;
    auto sz = mem ? mem->size() : 0 ;
    if (sz == 0)
@@ -84,10 +84,10 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid() const
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-DenseVector<ValT>* ClusterInfo::createDenseCentroid(const Array* vectors) const
+template <typename IdxT, typename ValT>
+DenseVector<IdxT,ValT>* ClusterInfo::createDenseCentroid(const Array* vectors) const
 {
-   typedef DenseVector<ValT> DV ;
+   typedef DenseVector<IdxT,ValT> DV ;
    auto sz = vectors->size() ;
    if (sz == 0)
       return DV::create() ;
@@ -105,7 +105,7 @@ DenseVector<ValT>* ClusterInfo::createDenseCentroid(const Array* vectors) const
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-void ClusterInfo::updateRepresentative(Vector<ValT>* vector, VectorMeasure<IdxT,ValT>* vm)
+void ClusterInfo::updateRepresentative(Vector<IdxT,ValT>* vector, VectorMeasure<IdxT,ValT>* vm)
 {
    if (!vector)
       return ;
@@ -114,7 +114,7 @@ void ClusterInfo::updateRepresentative(Vector<ValT>* vector, VectorMeasure<IdxT,
       if (representative())
 	 {
 	 // add the new vector to the existing centroid
-	 m_rep = static_cast<Vector<ValT>*>(m_rep)->incr(vector) ;
+	 m_rep = static_cast<Vector<IdxT,ValT>*>(m_rep)->incr(vector) ;
 	 }
       else // the new vector *is* the centroid
 	 this->m_rep = vector->clone().move() ;
@@ -150,7 +150,7 @@ void ClusterInfo::setRepresentative(VectorMeasure<IdxT,ValT>* vm)
 	 if (vectors->getNth(0)->isSparseVector())
 	    this->m_rep = this->createSparseCentroid<IdxT,ValT>(vectors) ;
 	 else
-	    this->m_rep = this->createDenseCentroid<ValT>(vectors) ;
+	    this->m_rep = this->createDenseCentroid<IdxT,ValT>(vectors) ;
 	 }
          break ;
       case ClusterRep::prototype:
@@ -184,17 +184,17 @@ void ClusterInfo::setRepresentative(VectorMeasure<IdxT,ValT>* vm)
          {
 	 // compute the centroid of the cluster's members
 	 auto vectors = this->allMembers() ;
-	 Vector<ValT>* centroid ;
+	 Vector<IdxT,ValT>* centroid ;
 	 if (vectors->getNth(0)->isSparseVector())
 	    centroid = this->createSparseCentroid<IdxT,ValT>(vectors) ;
 	 else
-	    centroid = this->createDenseCentroid<ValT>(vectors) ;
+	    centroid = this->createDenseCentroid<IdxT,ValT>(vectors) ;
 	 // find the member vector closest to the centroid
 	 double best_sim = -HUGE_VAL ;
-	 Vector<ValT>* medioid = nullptr ;
+	 Vector<IdxT,ValT>* medioid = nullptr ;
 	 for (auto vec : *vectors)
 	    {
-	    Vector<ValT>* vector = static_cast<Vector<ValT>*>(vec) ;
+	    Vector<IdxT,ValT>* vector = static_cast<Vector<IdxT,ValT>*>(vec) ;
 	    double sim = vm->similarity(vector,centroid) ;
 	    if (sim > best_sim)
 	       {
@@ -229,8 +229,8 @@ double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
       case ClusterRep::newest:
 	 this->setRepresentative(vm) ;
 	 other->setRepresentative(vm) ;
-	 return vm->similarity(static_cast<const Vector<ValT>*>(this->representative()),
-	    static_cast<const Vector<ValT>*>(other->representative())) ;
+	 return vm->similarity(static_cast<const Vector<IdxT,ValT>*>(this->representative()),
+	    static_cast<const Vector<IdxT,ValT>*>(other->representative())) ;
       case ClusterRep::average:
          {
 	 auto vectors1 = allMembers() ;
@@ -238,10 +238,10 @@ double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	 double sum { 0.0 } ;
 	 for (auto vec1 : *vectors1)
 	    {
-	    auto vector1 = static_cast<const Vector<ValT>*>(vec1) ;
+	    auto vector1 = static_cast<const Vector<IdxT,ValT>*>(vec1) ;
 	    for (auto vec2 : *vectors2)
 	       {
-	       auto vector2 = static_cast<const Vector<ValT>*>(vec2) ;
+	       auto vector2 = static_cast<const Vector<IdxT,ValT>*>(vec2) ;
 	       sum += vm->similarity(vector1,vector2) ;
 	       }
 	    }
@@ -255,10 +255,10 @@ double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	 double furthest { HUGE_VAL } ;
 	 for (auto vec1 : *vectors1)
 	    {
-	    auto vector1 = static_cast<const Vector<ValT>*>(vec1) ;
+	    auto vector1 = static_cast<const Vector<IdxT,ValT>*>(vec1) ;
 	    for (auto vec2 : *vectors2)
 	       {
-	       auto vector2 = static_cast<const Vector<ValT>*>(vec2) ;
+	       auto vector2 = static_cast<const Vector<IdxT,ValT>*>(vec2) ;
 	       furthest = std::min(furthest,vm->similarity(vector1,vector2)) ;
 	       }
 	    }
@@ -271,10 +271,10 @@ double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	 double nearest { HUGE_VAL } ;
 	 for (auto vec1 : *vectors1)
 	    {
-	    auto vector1 = static_cast<const Vector<ValT>*>(vec1) ;
+	    auto vector1 = static_cast<const Vector<IdxT,ValT>*>(vec1) ;
 	    for (auto vec2 : *vectors2)
 	       {
-	       auto vector2 = static_cast<const Vector<ValT>*>(vec2) ;
+	       auto vector2 = static_cast<const Vector<IdxT,ValT>*>(vec2) ;
 	       nearest = std::max(nearest,vm->similarity(vector1,vector2)) ;
 	       }
 	    }
@@ -291,7 +291,7 @@ double ClusterInfo::similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm)
+double ClusterInfo::similarity(const Vector<IdxT,ValT>* other, VectorMeasure<IdxT,ValT>* vm)
 {
    if (!other || !vm) return -999.99 ;
    switch (this->repType())
@@ -303,7 +303,7 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
       case ClusterRep::prototype:
       case ClusterRep::newest:
 	 this->setRepresentative(vm) ;
-	 return vm->similarity(static_cast<const Vector<ValT>*>(this->representative()),other) ;
+	 return vm->similarity(static_cast<const Vector<IdxT,ValT>*>(this->representative()),other) ;
       case ClusterRep::average:
          {
 	 auto vectors = allMembers() ;
@@ -311,7 +311,7 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
 	 auto combinations = vectors->size() ;
 	 for (auto vec : *vectors)
 	    {
-	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    auto vector = static_cast<const Vector<IdxT,ValT>*>(vec) ;
 	    avg += (vm->similarity(vector,other) / combinations) ;
 	    }
 	 return avg ;
@@ -322,7 +322,7 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
 	 double furthest { HUGE_VAL } ;
 	 for (auto vec : *vectors)
 	    {
-	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    auto vector = static_cast<const Vector<IdxT,ValT>*>(vec) ;
 	    furthest = std::min(furthest,vm->similarity(vector,other)) ;
 	    }
 	 return furthest ;
@@ -333,7 +333,7 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
 	 double nearest { -HUGE_VAL } ;
 	 for (auto vec : *vectors)
 	    {
-	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    auto vector = static_cast<const Vector<IdxT,ValT>*>(vec) ;
 	    nearest = std::max(nearest,vm->similarity(vector,other)) ;
 	    }
 	 return nearest ;
@@ -349,7 +349,7 @@ double ClusterInfo::similarity(const Vector<ValT>* other, VectorMeasure<IdxT,Val
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-double ClusterInfo::reverseSimilarity(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm)
+double ClusterInfo::reverseSimilarity(const Vector<IdxT,ValT>* other, VectorMeasure<IdxT,ValT>* vm)
 {
    if (!other || !vm) return -999.99 ;
    switch (this->repType())
@@ -361,7 +361,7 @@ double ClusterInfo::reverseSimilarity(const Vector<ValT>* other, VectorMeasure<I
       case ClusterRep::prototype:
       case ClusterRep::newest:
 	 this->setRepresentative(vm) ;
-	 return vm->similarity(other,static_cast<Vector<ValT>*>(this->representative())) ;
+	 return vm->similarity(other,static_cast<Vector<IdxT,ValT>*>(this->representative())) ;
       case ClusterRep::average:
          {
 	 auto vectors = allMembers() ;
@@ -369,7 +369,7 @@ double ClusterInfo::reverseSimilarity(const Vector<ValT>* other, VectorMeasure<I
 	 double combinations { vectors->size() } ;
 	 for (auto vec : *vectors)
 	    {
-	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    auto vector = static_cast<const Vector<IdxT,ValT>*>(vec) ;
 	    avg += (vm->similarity(other,vector) / combinations) ;
 	    }
 	 return avg ;
@@ -380,7 +380,7 @@ double ClusterInfo::reverseSimilarity(const Vector<ValT>* other, VectorMeasure<I
 	 double furthest { HUGE_VAL } ;
 	 for (auto vec : *vectors)
 	    {
-	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    auto vector = static_cast<const Vector<IdxT,ValT>*>(vec) ;
 	    furthest = std::min(furthest,vm->similarity(other,vector)) ;
 	    }
 	 return furthest ;
@@ -391,7 +391,7 @@ double ClusterInfo::reverseSimilarity(const Vector<ValT>* other, VectorMeasure<I
 	 double nearest { -HUGE_VAL } ;
 	 for (auto vec : *vectors)
 	    {
-	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    auto vector = static_cast<const Vector<IdxT,ValT>*>(vec) ;
 	    nearest = std::max(nearest,vm->similarity(other,vector)) ;
 	    }
 	 return nearest ;
@@ -420,8 +420,8 @@ double ClusterInfo::distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
       case ClusterRep::newest:
 	 this->setRepresentative(vm) ;
 	 other->setRepresentative(vm) ;
-	 return vm->distance(static_cast<Vector<ValT>*>(this->representative()),
-	    static_cast<Vector<ValT>*>(other->representative())) ;
+	 return vm->distance(static_cast<Vector<IdxT,ValT>*>(this->representative()),
+	    static_cast<Vector<IdxT,ValT>*>(other->representative())) ;
       case ClusterRep::average:
          {
 	 auto vectors1 = allMembers() ;
@@ -430,10 +430,10 @@ double ClusterInfo::distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	 double combinations { vectors1->size() * vectors2->size() } ;
 	 for (auto vec1 : *vectors1)
 	    {
-	    auto vector1 = static_cast<const Vector<ValT>*>(vec1) ;
+	    auto vector1 = static_cast<const Vector<IdxT,ValT>*>(vec1) ;
 	    for (auto vec2 : *vectors2)
 	       {
-	       auto vector2 = static_cast<const Vector<ValT>*>(vec2) ;
+	       auto vector2 = static_cast<const Vector<IdxT,ValT>*>(vec2) ;
 	       avg += (vm->distance(vector1,vector2) / combinations) ;
 	       }
 	    }
@@ -446,10 +446,10 @@ double ClusterInfo::distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	 double furthest { -HUGE_VAL } ;
 	 for (auto vec1 : *vectors1)
 	    {
-	    auto vector1 = static_cast<const Vector<ValT>*>(vec1) ;
+	    auto vector1 = static_cast<const Vector<IdxT,ValT>*>(vec1) ;
 	    for (auto vec2 : *vectors2)
 	       {
-	       auto vector2 = static_cast<const Vector<ValT>*>(vec2) ;
+	       auto vector2 = static_cast<const Vector<IdxT,ValT>*>(vec2) ;
 	       furthest = std::max(furthest,vm->distance(vector1,vector2)) ;
 	       }
 	    }
@@ -462,10 +462,10 @@ double ClusterInfo::distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 	 double nearest { HUGE_VAL } ;
 	 for (auto vec1 : *vectors1)
 	    {
-	    auto vector1 = static_cast<const Vector<ValT>*>(vec1) ;
+	    auto vector1 = static_cast<const Vector<IdxT,ValT>*>(vec1) ;
 	    for (auto vec2 : *vectors2)
 	       {
-	       auto vector2 = static_cast<const Vector<ValT>*>(vec2) ;
+	       auto vector2 = static_cast<const Vector<IdxT,ValT>*>(vec2) ;
 	       nearest = std::min(nearest,vm->distance(vector1,vector2)) ;
 	       }
 	    }
@@ -482,7 +482,7 @@ double ClusterInfo::distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-double ClusterInfo::distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm)
+double ClusterInfo::distance(const Vector<IdxT,ValT>* other, VectorMeasure<IdxT,ValT>* vm)
 {
    if (!other || !vm) return -999.99 ;
    switch (this->repType())
@@ -494,7 +494,7 @@ double ClusterInfo::distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>
       case ClusterRep::prototype:
       case ClusterRep::newest:
 	 this->setRepresentative(vm) ;
-	 return vm->distance(static_cast<Vector<ValT>*>(this->representative()),other) ;
+	 return vm->distance(static_cast<Vector<IdxT,ValT>*>(this->representative()),other) ;
       case ClusterRep::average:
          {
 	 auto vectors = allMembers() ;
@@ -502,7 +502,7 @@ double ClusterInfo::distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>
 	 double combinations { vectors->size() } ;
 	 for (auto vec : *vectors)
 	    {
-	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    auto vector = static_cast<const Vector<IdxT,ValT>*>(vec) ;
 	    avg += (vm->distance(vector,other) / combinations) ;
 	    }
 	 return avg ;
@@ -513,7 +513,7 @@ double ClusterInfo::distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>
 	 double furthest { -HUGE_VAL } ;
 	 for (auto vec : *vectors)
 	    {
-	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    auto vector = static_cast<const Vector<IdxT,ValT>*>(vec) ;
 	    furthest = std::max(furthest,vm->distance(vector,other)) ;
 	    }
 	 return furthest ;
@@ -524,7 +524,7 @@ double ClusterInfo::distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>
 	 double nearest { HUGE_VAL } ;
 	 for (auto vec : *vectors)
 	    {
-	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    auto vector = static_cast<const Vector<IdxT,ValT>*>(vec) ;
 	    nearest = std::min(nearest,vm->distance(vector,other)) ;
 	    }
 	 return nearest ;
@@ -540,7 +540,7 @@ double ClusterInfo::distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-double ClusterInfo::reverseDistance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm)
+double ClusterInfo::reverseDistance(const Vector<IdxT,ValT>* other, VectorMeasure<IdxT,ValT>* vm)
 {
    if (!other || !vm) return -999.99 ;
    switch (this->repType())
@@ -552,7 +552,7 @@ double ClusterInfo::reverseDistance(const Vector<ValT>* other, VectorMeasure<Idx
       case ClusterRep::prototype:
       case ClusterRep::newest:
 	 this->setRepresentative(vm) ;
-	 return vm->distance(other,static_cast<Vector<ValT>*>(this->representative())) ;
+	 return vm->distance(other,static_cast<Vector<IdxT,ValT>*>(this->representative())) ;
       case ClusterRep::average:
          {
 	 auto vectors = allMembers() ;
@@ -560,7 +560,7 @@ double ClusterInfo::reverseDistance(const Vector<ValT>* other, VectorMeasure<Idx
 	 double combinations { vectors->size() } ;
 	 for (auto vec : *vectors)
 	    {
-	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    auto vector = static_cast<const Vector<IdxT,ValT>*>(vec) ;
 	    avg += (vm->distance(other,vector) / combinations) ;
 	    }
 	 return avg ;
@@ -571,7 +571,7 @@ double ClusterInfo::reverseDistance(const Vector<ValT>* other, VectorMeasure<Idx
 	 double furthest { -HUGE_VAL } ;
 	 for (auto vec : *vectors)
 	    {
-	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    auto vector = static_cast<const Vector<IdxT,ValT>*>(vec) ;
 	    furthest = std::max(furthest,vm->distance(other,vector)) ;
 	    }
 	 return furthest ;
@@ -582,7 +582,7 @@ double ClusterInfo::reverseDistance(const Vector<ValT>* other, VectorMeasure<Idx
 	 double nearest { HUGE_VAL } ;
 	 for (auto vec : *vectors)
 	    {
-	    auto vector = static_cast<const Vector<ValT>*>(vec) ;
+	    auto vector = static_cast<const Vector<IdxT,ValT>*>(vec) ;
 	    nearest = std::min(nearest,vm->distance(other,vector)) ;
 	    }
 	 return nearest ;
@@ -643,7 +643,7 @@ bool ClusteringAlgo<IdxT,ValT>::separateSeeds(const Array* vectors, RefArray*& s
       {
       if (!obj || !obj->isVector())
 	 continue ;
-      Vector<ValT>* vec = static_cast<Vector<ValT>*>(obj) ;
+      Vector<IdxT,ValT>* vec = static_cast<Vector<IdxT,ValT>*>(obj) ;
       if (vec->label())
 	 seed->append(vec) ;
       else
@@ -661,7 +661,7 @@ bool assign_vector_to_nearest_center(size_t index, va_list args)
    typedef VectorMeasure<IdxT,ValT> VM ;
    auto vectors = va_arg(args,const void*) ;
    auto vecarray = reinterpret_cast<const Array*>(vectors) ;
-   auto vector = reinterpret_cast<Vector<ValT>*>(vecarray->getNth(index)) ;
+   auto vector = reinterpret_cast<Vector<IdxT,ValT>*>(vecarray->getNth(index)) ;
    auto centers = va_arg(args,const Array*) ;
    auto measure = va_arg(args,VM*) ;
    auto threshold = va_arg(args,double) ;
@@ -705,9 +705,10 @@ size_t ClusteringAlgo<IdxT,ValT>::assignToNearest(const Array* vectors, const Ar
 template <typename IdxT, typename ValT>
 bool compute_similarity(size_t index, va_list args)
 {
+   typedef Vector<IdxT,ValT> vectype ;
    typedef VectorMeasure<IdxT,ValT> VM ;
    auto clusters = va_arg(args,const Array*) ;
-   auto vector = va_arg(args,const Vector<ValT>*) ;
+   auto vector = va_arg(args,const vectype*) ;
    auto scores = va_arg(args,double*) ;
    auto measure = va_arg(args,VM*) ;
    auto prog = va_arg(args,ProgressIndicator*) ;
@@ -720,7 +721,7 @@ bool compute_similarity(size_t index, va_list args)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-double ClusteringAlgo<IdxT,ValT>::findNearestCluster(const Array* clusters, const Vector<ValT>* vector,
+double ClusteringAlgo<IdxT,ValT>::findNearestCluster(const Array* clusters, const Vector<IdxT,ValT>* vector,
    size_t& best_cluster, ProgressIndicator* prog) const
 {
    best_cluster = ~0 ;
@@ -750,16 +751,16 @@ double ClusteringAlgo<IdxT,ValT>::findNearestCluster(const Array* clusters, cons
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vector, const Array* centers,
+Vector<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<IdxT,ValT>* vector, const Array* centers,
    VectorMeasure<IdxT,ValT>* measure, double threshold)
 {
    ScopedObject<RefArray> best_centers ;
-   Vector<ValT>* best_center = nullptr ;
+   Vector<IdxT,ValT>* best_center = nullptr ;
    double best_sim = -HUGE_VAL ;
    for (auto cent : *centers)
       {
       if (!cent) continue ;
-      auto center = static_cast<Vector<ValT>*>(cent) ;
+      auto center = static_cast<Vector<IdxT,ValT>*>(cent) ;
       double sim = measure->similarity(vector,center) ;
       if (sim < threshold)
 	 continue ;
@@ -776,7 +777,7 @@ Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vec
       }
    size_t tied_count = best_centers->size() ;
    if (tied_count == 1)
-      return static_cast<Vector<ValT>*>(best_centers->front()) ;
+      return static_cast<Vector<IdxT,ValT>*>(best_centers->front()) ;
    else if (tied_count == 0)
       return nullptr ;
    else
@@ -792,7 +793,7 @@ Vector<ValT>* ClusteringAlgo<IdxT,ValT>::nearestNeighbor(const Vector<ValT>* vec
 	 }
 #endif
       // we have multiple centers tied for best, so pick one at random
-      return static_cast<Vector<ValT>*>(best_centers->getNth(RandomInteger(tied_count).get())) ;
+      return static_cast<Vector<IdxT,ValT>*>(best_centers->getNth(RandomInteger(tied_count).get())) ;
       }
    return best_center ;
 }
@@ -810,7 +811,7 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInf
    for (auto vec : *vectors)
       {
       if (!vec) continue ;
-      auto vector = static_cast<Vector<ValT>*>(vec) ;
+      auto vector = static_cast<Vector<IdxT,ValT>*>(vec) ;
       Symbol* label = vector->label() ;
       if (!label)
 	 ++unlabeled ;
@@ -832,7 +833,7 @@ bool ClusteringAlgo<IdxT,ValT>::extractClusters(const Array* vectors, ClusterInf
    for (auto vec : *vectors)
       {
       if (!vec) continue ;
-      auto vector = static_cast<Vector<ValT>*>(vec) ;
+      auto vector = static_cast<Vector<IdxT,ValT>*>(vec) ;
       Symbol* label = vector->label() ;
       if (!label && unassigned)
 	 {

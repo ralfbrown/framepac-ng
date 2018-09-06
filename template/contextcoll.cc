@@ -67,7 +67,7 @@ bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::setOneHotVector(const KeyT 
       }
    else
       {
-      vector = DenseVector<ValT>::create(m_dimensions) ;
+      vector = DenseVector<IdxT,ValT>::create(m_dimensions) ;
       vector->setElement(index,value) ;
       }
    vector->setWeight(weight) ;

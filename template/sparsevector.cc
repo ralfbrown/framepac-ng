@@ -33,8 +33,9 @@ namespace Fr
 
 template <typename IdxT, typename ValT>
 SparseVector<IdxT,ValT>::SparseVector(size_t cap)
-   : Vector<ValT>(0), m_indices(nullptr)
+   : Vector<IdxT,ValT>(0)
 {
+   this->m_indices.full = nullptr ;
    this->reserve(cap) ;
    return ;
 }
@@ -56,8 +57,8 @@ SparseVector<IdxT,ValT>::SparseVector(const char* rep)
       }
    this->m_size = values.size() ;
    this->m_capacity = values.capacity() ;
-   this->m_values = values.move() ;
-   this->m_indices = indices.move() ;
+   this->m_values.full = values.move() ;
+   this->m_indices.full = indices.move() ;
    return ;
 }
 
@@ -65,10 +66,10 @@ SparseVector<IdxT,ValT>::SparseVector(const char* rep)
 
 template <typename IdxT, typename ValT>
 SparseVector<IdxT,ValT>::SparseVector(const SparseVector& orig)
-   : Vector<ValT>(orig)
+   : Vector<IdxT,ValT>(orig)
 {
-   this->m_indices = new IdxT[this->capacity()] ;
-   std::copy(*orig.m_indices,(*orig.m_indices)+orig.size(),*this->m_indices) ;
+   this->m_indices.full = new IdxT[this->capacity()] ;
+   std::copy(*orig.m_indices.full,(*orig.m_indices.full)+orig.size(),*this->m_indices.full) ;
    return ;
 }
 
@@ -105,7 +106,7 @@ size_t SparseVector<IdxT,ValT>::totalElements(const SparseVector<IdxT,ValT>* v1,
 
 template <typename IdxT, typename ValT>
 size_t SparseVector<IdxT,ValT>::totalElements(const SparseVector<IdxT,ValT>* v1,
-   const Vector<ValT>* v2)
+   const Vector<IdxT,ValT>* v2)
 {
    if (v2->isSparseVector())
       return totalElements(v1,static_cast<const SparseVector<IdxT,ValT>*>(v2)) ;
@@ -160,11 +161,11 @@ bool SparseVector<IdxT,ValT>::newElement(IdxT index, ValT value)
       }
    for (size_t i = this->size() ; i > lo ; --i)
       {
-      this->m_indices[i] = this->m_indices[i-1] ;
-      this->m_values[i] = this->m_values[i-1] ;
+      this->m_indices.full[i] = this->m_indices.full[i-1] ;
+      this->m_values.full[i] = this->m_values.full[i-1] ;
       }
-   this->m_indices[lo] = index ;
-   this->m_values[lo] = value ;
+   this->m_indices.full[lo] = index ;
+   this->m_values.full[lo] = value ;
    this->m_size++ ;
    return true ;			// we successfully added the element
 }
@@ -172,7 +173,7 @@ bool SparseVector<IdxT,ValT>::newElement(IdxT index, ValT value)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const Vector<ValT>* other) const
+SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const Vector<IdxT,ValT>* other) const
 {
    if (!other)
       return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone().move()) ;
@@ -188,18 +189,18 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const Vector<ValT>* other)
       auto elt2 = (IdxT)(other->elementIndex(pos2)) ;
       if (elt1 < elt2)
 	 {
-	 result->m_indices[count] = elt1 ;
-	 result->m_values[count++] = this->elementValue(pos1++) ;
+	 result->m_indices.full[count] = elt1 ;
+	 result->m_values.full[count++] = this->elementValue(pos1++) ;
 	 }
       else if (elt1 > elt2)
 	 {
-	 result->m_indices[count] = elt2 ;
-	 result->m_values[count++] = other->elementValue(pos2++) ;
+	 result->m_indices.full[count] = elt2 ;
+	 result->m_values.full[count++] = other->elementValue(pos2++) ;
 	 }
       else // elt1 == elt2
 	 {
-	 result->m_indices[count] = elt1 ;
-	 result->m_values[count++] = this->elementValue(pos1++) + other->elementValue(pos2++) ;
+	 result->m_indices.full[count] = elt1 ;
+	 result->m_values.full[count++] = this->elementValue(pos1++) + other->elementValue(pos2++) ;
 	 }
       }
    return result ;
@@ -224,29 +225,29 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const SparseVector<IdxT,Va
       auto elt2 = (IdxT)(other->elementIndex(pos2)) ;
       if (elt1 < elt2)
 	 {
-	 result->m_indices[count] = elt1 ;
-	 result->m_values[count++] = this->elementValue(pos1++) ;
+	 result->m_indices.full[count] = elt1 ;
+	 result->m_values.full[count++] = this->elementValue(pos1++) ;
 	 }
       else if (elt1 > elt2)
 	 {
-	 result->m_indices[count] = elt2 ;
-	 result->m_values[count++] = other->elementValue(pos2++) ;
+	 result->m_indices.full[count] = elt2 ;
+	 result->m_values.full[count++] = other->elementValue(pos2++) ;
 	 }
       else // elt1 == elt2
 	 {
-	 result->m_indices[count] = elt1 ;
-	 result->m_values[count++] = this->elementValue(pos1++) + other->elementValue(pos2++) ;
+	 result->m_indices.full[count] = elt1 ;
+	 result->m_values.full[count++] = this->elementValue(pos1++) + other->elementValue(pos2++) ;
 	 }
       }
    while (pos1 < elts1)
       {
-      result->m_indices[count] = (IdxT)(this->elementIndex(pos1)) ;
-      result->m_values[count++] = this->elementValue(pos1++) ;
+      result->m_indices.full[count] = (IdxT)(this->elementIndex(pos1)) ;
+      result->m_values.full[count++] = this->elementValue(pos1++) ;
       }
    while (pos2 < elts2)
       {
-      result->m_indices[count] = (IdxT)(other->elementIndex(pos2)) ;
-      result->m_values[count++] = other->elementValue(pos2++) ;
+      result->m_indices.full[count] = (IdxT)(other->elementIndex(pos2)) ;
+      result->m_values.full[count++] = other->elementValue(pos2++) ;
       }
    return result ;
 }
@@ -265,23 +266,23 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const OneHotVector<IdxT,Va
    size_t pos1 { 0 } ;
    while ((IdxT)this->elementIndex(pos1) < elt2)
       {
-      result->m_indices[count] = (IdxT)(this->elementIndex(pos1)) ;
-      result->m_values[count++] = this->elementValue(pos1++) ;
+      result->m_indices.full[count] = (IdxT)(this->elementIndex(pos1)) ;
+      result->m_values.full[count++] = this->elementValue(pos1++) ;
       }
    if ((IdxT)this->elementIndex(pos1) == elt2)
       {
-      result->m_indices[count] = (IdxT)(this->elementIndex(pos1)) ;
-      result->m_values[count++] = this->elementValue(pos1++) + other->elementValue(0) ;
+      result->m_indices.full[count] = (IdxT)(this->elementIndex(pos1)) ;
+      result->m_values.full[count++] = this->elementValue(pos1++) + other->elementValue(0) ;
       }
    else
       {
-      result->m_indices[count] = (IdxT)(other->elementIndex(0)) ;
-      result->m_values[count++] = other->elementValue(0) ;
+      result->m_indices.full[count] = (IdxT)(other->elementIndex(0)) ;
+      result->m_values.full[count++] = other->elementValue(0) ;
       }
    while (pos1 < elts1)
       {
-      result->m_indices[count] = (IdxT)(this->elementIndex(pos1)) ;
-      result->m_values[count++] = this->elementValue(pos1++) ;
+      result->m_indices.full[count] = (IdxT)(this->elementIndex(pos1)) ;
+      result->m_values.full[count++] = this->elementValue(pos1++) ;
       }
    return result ;
 }
@@ -334,8 +335,8 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::incr(const SparseVector<IdxT,V
    this->startModifying() ;
    this->m_size = new_size ;
    this->m_capacity = new_size ;
-   this->m_indices = new_indices ;
-   this->m_values = new_values ;
+   this->m_indices.full = new_indices ;
+   this->m_values.full = new_values ;
    this->doneModifying() ;
    return this ;
 }
@@ -428,12 +429,12 @@ bool SparseVector<IdxT,ValT>::reserve(size_t N)
    auto new_values = new ValT[N] ;
    for (size_t i = 0 ; i < this->size() ; ++i)
       {
-      new_indices[i] = this->m_indices[i] ;
-      new_values[i] = this->m_values[i] ;
+      new_indices[i] = this->m_indices.full[i] ;
+      new_values[i] = this->m_values.full[i] ;
       }
    this->startModifying() ;
-   this->m_indices = new_indices ;
-   this->m_values = new_values ;
+   this->m_indices.full = new_indices ;
+   this->m_values.full = new_values ;
    this->m_capacity = N ;
    this->doneModifying() ;
    return true ;

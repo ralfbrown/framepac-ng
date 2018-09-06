@@ -44,18 +44,18 @@ BasisVector<IdxT,ValT>::BasisVector(size_t numelts, size_t num_plus, size_t num_
    // randomly pick dimensions to have value +1
    for (size_t i = 0 ; i < num_plus ; ++i)
       {
-      size_t idx ;
+      size_t indx ;
       do {
-         idx = rand() ;
-	 } while (!this->newElement(idx,1)) ;
+         indx = rand() ;
+	 } while (!this->newElement(indx,1)) ;
       }
    // randomly pick as-yet unused dimensions to have value -1
    for (size_t i = 0 ; i < num_minus ; ++i)
       {
-      size_t idx ;
+      size_t indx ;
       do {
-         idx = rand() ;
-	 } while (!this->newElement(idx,-1)) ;
+         indx = rand() ;
+	 } while (!this->newElement(indx,-1)) ;
       }
    return ;
 }

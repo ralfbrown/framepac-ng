@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-08-27					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -30,8 +30,8 @@ namespace Fr
 /*	Methods for class Vector					*/
 /************************************************************************/
 
-template <typename ValT>
-Vector<ValT>::Vector(size_t cap)
+template <typename IdxT, typename ValT>
+Vector<IdxT,ValT>::Vector(size_t cap)
 {
    this->reserve(cap) ;
    return ;
@@ -39,11 +39,11 @@ Vector<ValT>::Vector(size_t cap)
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-Vector<ValT>::Vector(const Vector& orig)
+template <typename IdxT, typename ValT>
+Vector<IdxT,ValT>::Vector(const Vector& orig)
    : Vector(orig.size())
 {
-   std::copy(*orig.m_values,(*orig.m_values)+orig.size(),*this->m_values) ;
+   std::copy(*orig.m_values.full,(*orig.m_values.full)+orig.size(),*this->m_values.full) ;
    this->m_size = orig.size() ;
    this->setKey(orig.key()) ;
    this->setLabel(orig.label()) ;
@@ -52,8 +52,8 @@ Vector<ValT>::Vector(const Vector& orig)
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-double Vector<ValT>::vectorLength() const
+template <typename IdxT, typename ValT>
+double Vector<IdxT,ValT>::vectorLength() const
 {
    this->m_critsect.lock() ;
    double len { 0.0 } ;
@@ -70,36 +70,35 @@ double Vector<ValT>::vectorLength() const
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-template <typename IdxT>
-Vector<ValT>* Vector<ValT>::add(const Vector* other) const
+template <typename IdxT, typename ValT>
+Vector<IdxT,ValT>* Vector<IdxT,ValT>::add(const Vector* other) const
 {
-   if (!other) return this->clone().move() ;
+   if (!other) return static_cast<Vector*>(this->clone().move()) ;
    if (this->isSparseVector())
       {
       if (other->isSparseVector())
 	 {
-	 return static_cast<const SparseVector<IdxT,ValT>*>(this)->add(static_cast<SparseVector<IdxT,ValT>*>(other)) ;
+	 return static_cast<const sparse_type*>(this)->add(static_cast<const sparse_type*>(other)) ;
 	 }
       else
 	 {
-	 return static_cast<const SparseVector<IdxT,ValT>*>(this)->add(static_cast<DenseVector<ValT>*>(other)) ;
+	 return static_cast<const sparse_type*>(this)->add(static_cast<const dense_type*>(other)) ;
 	 }
       }
    else if (other->isSparseVector())
       {
-      return static_cast<const SparseVector<IdxT,ValT>*>(other)->add(static_cast<DenseVector<ValT>*>(this)) ;
+      return static_cast<const sparse_type*>(other)->add(static_cast<const dense_type*>(this)) ;
       }
    else
       {
-      return static_cast<const DenseVector<ValT>*>(other)->add(static_cast<DenseVector<ValT>*>(this)) ;
+      return static_cast<const dense_type*>(other)->add(static_cast<const dense_type*>(this)) ;
       }
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-Vector<ValT>* Vector<ValT>::incr(const Vector* other)
+template <typename IdxT, typename ValT>
+Vector<IdxT,ValT>* Vector<IdxT,ValT>::incr(const Vector* other)
 {
    if (!other) return this ;
    if (this->isSparseVector())
@@ -110,10 +109,10 @@ Vector<ValT>* Vector<ValT>::incr(const Vector* other)
       {
       for (size_t i = 0 ; i < other->numElements() ; ++i)
 	 {
-	 auto idx = other->elementIndex(i) ;
-	 if (idx < this->m_size)
+	 auto indx = other->elementIndex(i) ;
+	 if (indx < this->m_size)
 	    {
-	    m_values[idx] += other->elementValue(i) ;
+	    this->m_values.full[indx] += other->elementValue(i) ;
 	    }
 	 }
       }
@@ -122,7 +121,7 @@ Vector<ValT>* Vector<ValT>::incr(const Vector* other)
       // both vectors are dense and have the same dimensions, so we can just do an element-by-element addition
       for (size_t i = 0 ; i < this->m_size ; ++i)
 	 {
-	 m_values[i] += other->m_values[i] ;
+	 this->m_values.full[i] += other->m_values.full[i] ;
 	 }
       }
    return this ;
@@ -130,8 +129,8 @@ Vector<ValT>* Vector<ValT>::incr(const Vector* other)
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-Vector<ValT>* Vector<ValT>::incr(const Vector* other, ValT weight)
+template <typename IdxT, typename ValT>
+Vector<IdxT,ValT>* Vector<IdxT,ValT>::incr(const Vector* other, ValT weight)
 {
    if (!other) return this ;
    if (this->isSparseVector())
@@ -142,10 +141,10 @@ Vector<ValT>* Vector<ValT>::incr(const Vector* other, ValT weight)
       {
       for (size_t i = 0 ; i < other->numElements() ; ++i)
 	 {
-	 auto idx = other->elementIndex(i) ;
-	 if (idx < this->m_size)
+	 auto indx = other->elementIndex(i) ;
+	 if (indx < this->m_size)
 	    {
-	    m_values[idx] += (weight * other->elementValue(i)) ;
+	    this->m_values.full[indx] += (weight * other->elementValue(i)) ;
 	    }
 	 }
       }
@@ -154,7 +153,7 @@ Vector<ValT>* Vector<ValT>::incr(const Vector* other, ValT weight)
       // both vectors are dense and have the same dimensions, so we can just do an element-by-element addition
       for (size_t i = 0 ; i < this->m_size ; ++i)
 	 {
-	 m_values[i] += (weight * other->m_values[i]) ;
+	 this->m_values.full[i] += (weight * other->m_values.full[i]) ;
 	 }
       }
    return this ;
@@ -162,42 +161,42 @@ Vector<ValT>* Vector<ValT>::incr(const Vector* other, ValT weight)
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-void Vector<ValT>::scale(double factor)
+template <typename IdxT, typename ValT>
+void Vector<IdxT,ValT>::scale(double factor)
 {
    for (size_t i = 0 ; i < this->numElements() ; ++i)
       {
-      m_values[i] *= factor ;
+      this->m_values.full[i] *= factor ;
       }
    return  ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-void Vector<ValT>::normalize()
+template <typename IdxT, typename ValT>
+void Vector<IdxT,ValT>::normalize()
 {
    double factor = this->vectorLength() ;
    if (factor <= 0.0) return ;
    for (size_t i = 0 ; i < this->numElements() ; ++i)
       {
-      m_values[i] /= factor ;
+      this->m_values.full[i] /= factor ;
       }
    return  ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-ObjectPtr Vector<ValT>::clone_(const Object* obj)
+template <typename IdxT, typename ValT>
+ObjectPtr Vector<IdxT,ValT>::clone_(const Object* obj)
 {
-   return obj ? new Vector<ValT>(*static_cast<const Vector*>(obj)) : nullptr ;
+   return obj ? new Vector<IdxT,ValT>(*static_cast<const Vector*>(obj)) : nullptr ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-ObjectPtr Vector<ValT>::subseq_int(const Object* obj, size_t start, size_t stop)
+template <typename IdxT, typename ValT>
+ObjectPtr Vector<IdxT,ValT>::subseq_int(const Object* obj, size_t start, size_t stop)
 {
    if (!obj || start > stop)
       return nullptr ;
@@ -207,18 +206,18 @@ ObjectPtr Vector<ValT>::subseq_int(const Object* obj, size_t start, size_t stop)
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-ObjectPtr Vector<ValT>::subseq_iter(const Object*, ObjectIter start, ObjectIter stop)
+template <typename IdxT, typename ValT>
+ObjectPtr Vector<IdxT,ValT>::subseq_iter(const Object*, ObjectIter start, ObjectIter stop)
 {
    return subseq_int(start.baseObject(),start.currentIndex(),stop.currentIndex()) ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-size_t Vector<ValT>::hashValue_(const Object* obj)
+template <typename IdxT, typename ValT>
+size_t Vector<IdxT,ValT>::hashValue_(const Object* obj)
 {
-   auto tv = static_cast<const Vector<ValT>*>(obj) ;
+   auto tv = static_cast<const Vector<IdxT,ValT>*>(obj) ;
    size_t numelts = tv->numElements() ;
    FastHash64 hash(numelts) ;
    for (size_t i = 0 ; i < numelts ; ++i)
@@ -230,8 +229,8 @@ size_t Vector<ValT>::hashValue_(const Object* obj)
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-bool Vector<ValT>::equal_(const Object* obj1, const Object* obj2)
+template <typename IdxT, typename ValT>
+bool Vector<IdxT,ValT>::equal_(const Object* obj1, const Object* obj2)
 {
    if (obj1 == obj2)
       return true ;			// identity implies equal values
@@ -241,8 +240,8 @@ bool Vector<ValT>::equal_(const Object* obj1, const Object* obj2)
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-int Vector<ValT>::compare_(const Object* obj1, const Object* obj2)
+template <typename IdxT, typename ValT>
+int Vector<IdxT,ValT>::compare_(const Object* obj1, const Object* obj2)
 {
    if (obj1 == obj2)
       return 0 ;			// identity implies equal values
@@ -252,22 +251,22 @@ int Vector<ValT>::compare_(const Object* obj1, const Object* obj2)
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-int Vector<ValT>::lessThan_(const Object* obj1, const Object* obj2)
+template <typename IdxT, typename ValT>
+int Vector<IdxT,ValT>::lessThan_(const Object* obj1, const Object* obj2)
 {
    return compare_(obj1,obj2) <  0 ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-bool Vector<ValT>::reserve(size_t N)
+template <typename IdxT, typename ValT>
+bool Vector<IdxT,ValT>::reserve(size_t N)
 {
    if (N < m_capacity) return true ;  // nothing to do
    auto new_values = new ValT[N] ;
-   std::copy(*this->m_values,(*this->m_values)+this->size(),new_values) ;
+   std::copy(*this->m_values.full,(*this->m_values.full)+this->size(),new_values) ;
    this->startModifying() ;
-   this->m_values = new_values ;
+   this->m_values.full = new_values ;
    this->m_capacity = N ;
    this->doneModifying() ;
    return true ;
@@ -275,8 +274,8 @@ bool Vector<ValT>::reserve(size_t N)
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-size_t Vector<ValT>::cStringLength_(const Object* obj, size_t wrap_at,
+template <typename IdxT, typename ValT>
+size_t Vector<IdxT,ValT>::cStringLength_(const Object* obj, size_t wrap_at,
    size_t indent, size_t wrapped_indent)
 {
    auto v = static_cast<const Vector*>(obj) ;
@@ -294,8 +293,8 @@ size_t Vector<ValT>::cStringLength_(const Object* obj, size_t wrap_at,
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-char* Vector<ValT>::toCstring_(const Object* obj, char* buffer, size_t buflen,
+template <typename IdxT, typename ValT>
+char* Vector<IdxT,ValT>::toCstring_(const Object* obj, char* buffer, size_t buflen,
    size_t wrap_at, size_t indent, size_t wrapped_indent)
 {
    auto v = static_cast<const Vector*>(obj) ;
@@ -325,8 +324,8 @@ char* Vector<ValT>::toCstring_(const Object* obj, char* buffer, size_t buflen,
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-size_t Vector<ValT>::jsonStringLength_(const Object* obj, bool /*wrap*/, size_t indent)
+template <typename IdxT, typename ValT>
+size_t Vector<IdxT,ValT>::jsonStringLength_(const Object* obj, bool /*wrap*/, size_t indent)
 {
    // for now, represent the vector as a JSON string whose value is the C string representation of the vector
    return 2 + cStringLength_(obj,~0,indent,indent) ;
@@ -334,8 +333,8 @@ size_t Vector<ValT>::jsonStringLength_(const Object* obj, bool /*wrap*/, size_t 
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-bool Vector<ValT>::toJSONString_(const Object* obj, char* buffer, size_t buflen,
+template <typename IdxT, typename ValT>
+bool Vector<IdxT,ValT>::toJSONString_(const Object* obj, char* buffer, size_t buflen,
 			 bool /*wrap*/, size_t indent)
 {
    if (!buffer || buflen == 0)

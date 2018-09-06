@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-08-31					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -113,17 +113,17 @@ class ClusterInfo : public Object
       template <typename IdxT, typename ValT>
       double similarity(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm) ;
       template <typename IdxT, typename ValT>
-      double similarity(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm) ;
+      double similarity(const Vector<IdxT,ValT>* other, VectorMeasure<IdxT,ValT>* vm) ;
       template <typename IdxT, typename ValT>
-      double reverseSimilarity(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm) ;
+      double reverseSimilarity(const Vector<IdxT,ValT>* other, VectorMeasure<IdxT,ValT>* vm) ;
       template <typename IdxT, typename ValT>
       double distance(ClusterInfo* other, VectorMeasure<IdxT,ValT>* vm) ;
       template <typename IdxT, typename ValT>
-      double distance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm) ;
+      double distance(const Vector<IdxT,ValT>* other, VectorMeasure<IdxT,ValT>* vm) ;
       template <typename IdxT, typename ValT>
-      double reverseDistance(const Vector<ValT>* other, VectorMeasure<IdxT,ValT>* vm) ;
+      double reverseDistance(const Vector<IdxT,ValT>* other, VectorMeasure<IdxT,ValT>* vm) ;
       template <typename IdxT, typename ValT>
-      void updateRepresentative(Vector<ValT>*, VectorMeasure<IdxT,ValT>* vm) ;
+      void updateRepresentative(Vector<IdxT,ValT>*, VectorMeasure<IdxT,ValT>* vm) ;
       template <typename IdxT, typename ValT>
       void setRepresentative(VectorMeasure<IdxT,ValT>* vm) ;
 
@@ -176,10 +176,10 @@ class ClusterInfo : public Object
       template <typename IdxT, typename ValT>
       SparseVector<IdxT,ValT>* createSparseCentroid(const Array* vectors) const ;
 
-      template <typename ValT>
-      DenseVector<ValT>* createDenseCentroid() const ;
-      template <typename ValT>
-      DenseVector<ValT>* createDenseCentroid(const Array* vectors) const ;
+      template <typename IdxT, typename ValT>
+      DenseVector<IdxT,ValT>* createDenseCentroid() const ;
+      template <typename IdxT, typename ValT>
+      DenseVector<IdxT,ValT>* createDenseCentroid(const Array* vectors) const ;
 
       void sortMembers(ObjectOrderingFn*) ;
       void sortSubclusters(ObjectOrderingFn*) ;
@@ -362,16 +362,17 @@ class ClusteringAlgo : public ClusteringAlgoBase
       ClusterInfo* cluster(ArrayIter first, ArrayIter past_end) const ;
       virtual ClusterInfo* cluster(const Array* vectors) const = 0 ;
 
-      static Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array* centers,
+      static Vector<IdxT,ValT>* nearestNeighbor(const Vector<IdxT,ValT>* vector, const Array* centers,
 	 VectorMeasure<IdxT,ValT>* measure, double threshold = -1.0) ;
    protected: //methods
       ClusteringAlgo() {}
 
-      Vector<ValT>* nearestNeighbor(const Vector<ValT>* vector, const Array* centers, double threshold = -1.0) const
+      Vector<IdxT,ValT>* nearestNeighbor(const Vector<IdxT,ValT>* vector, const Array* centers,
+	 double threshold = -1.0) const
 	 { return nearestNeighbor(vector,centers,m_measure,threshold) ; }
       size_t assignToNearest(const Array* vectors, const Array* centers, ProgressIndicator *prog = nullptr,
 	 double threshold = -HUGE_VAL) const ;
-      double findNearestCluster(const Array* clusters, const Vector<ValT>* vector, size_t& best_cluster,
+      double findNearestCluster(const Array* clusters, const Vector<IdxT,ValT>* vector, size_t& best_cluster,
 	 ProgressIndicator* prog = nullptr) const ;
       bool separateSeeds(const Array* vectors, RefArray*& seed, RefArray*& nonseed) const ;
       bool extractClusters(const Array* vectors, ClusterInfo**& clusters, size_t& num_clusters,

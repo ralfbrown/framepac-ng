@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-26					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -86,7 +86,7 @@ static bool update_centroid(size_t id, va_list args)
    else
       {
       // create a centroid of the members of the current cluster
-      auto centroid = inf->createDenseCentroid<ValT>() ;
+      auto centroid = inf->createDenseCentroid<IdxT,ValT>() ;
       // make the centroid the new center for the cluster
       centers->setNthNoCopy(id,centroid) ;
       }
@@ -107,7 +107,7 @@ static bool update_medioid(size_t id, va_list args)
    auto sparse = va_arg(args,int) ;
    auto measure = va_arg(args,VM*) ;
    auto prog = va_arg(args,ProgressIndicator*) ;
-   Ptr<Vector<ValT>> centroid ;
+   Ptr<Vector<IdxT,ValT>> centroid ;
    if (sparse)
       {
       // create a centroid of the members of the current cluster
@@ -116,7 +116,7 @@ static bool update_medioid(size_t id, va_list args)
    else
       {
       // create a centroid of the members of the current cluster
-      centroid = inf->createDenseCentroid<ValT>() ;
+      centroid = inf->createDenseCentroid<IdxT,ValT>() ;
       }
    // find nearest original vector in cluster
    auto medioid = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(centroid,inf->members(),measure) ;
@@ -140,12 +140,12 @@ static void find_least_most_similar(const Array* vectors, const Array* refs, Vec
    //TODO: parallelize this loop
    for (size_t i = 0 ; i < vectors->size() ; ++i)
       {
-      auto vector = static_cast<Vector<ValT>*>(vectors->getNth(i)) ;
+      auto vector = static_cast<Vector<IdxT,ValT>*>(vectors->getNth(i)) ;
       if (!vector || vector->length() == 0.0) continue ;
       double sim = -999.99 ;
       for (auto ref : *refs)
 	 {
-	 sim = std::max(sim,vm->similarity(vector,static_cast<Vector<ValT>*>(ref))) ;
+	 sim = std::max(sim,vm->similarity(vector,static_cast<Vector<IdxT,ValT>*>(ref))) ;
 	 }
       if (sim > best_sim)
 	 {
@@ -190,7 +190,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
    ScopedObject<RefArray> nonempty(vectors->size()) ;
    for (auto v : *vectors)
       {
-      auto vec = static_cast<Vector<ValT>*>(v) ;
+      auto vec = static_cast<Vector<IdxT,ValT>*>(v) ;
       if (vec && vec->length() > 0.0)
 	 nonempty->append(vec) ;
       }
@@ -215,7 +215,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       Ptr<RefArray> sample{ nonempty->randomSample(num_clusters) } ;
       for (auto v : *sample)
 	 {
-	 auto vec = static_cast<Vector<ValT>*>(v) ;
+	 auto vec = static_cast<Vector<IdxT,ValT>*>(v) ;
 	 if (vec->length() == 0)
 	    continue ;			// ignore empty vectors
 	 centers->append(v) ;		// make a copy of the vector as the initial center
@@ -226,7 +226,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       // select K vectors which are (approximately) maximally separated
       Ptr<RefArray> sample { nonempty->randomSample(2*num_clusters+1) } ;
       // start by arbitrarily picking the first vector in the sample
-      Vector<ValT>* vec = static_cast<Vector<ValT>*>(sample->getNth(0)) ;
+      Vector<IdxT,ValT>* vec = static_cast<Vector<IdxT,ValT>*>(sample->getNth(0)) ;
       this->log(2,"center: %s",*vec->cString()) ;
       centers->append(sample->getNth(0)) ;
       sample->clearNth(0) ;
@@ -239,7 +239,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
 	 {
 	 size_t selected, discarded ;
 	 find_least_most_similar<IdxT,ValT>(sample, centers,this->m_measure,selected,discarded) ;
-	 Vector<ValT>* v = static_cast<Vector<ValT>*>(sample->getNth(selected)) ;
+	 Vector<IdxT,ValT>* v = static_cast<Vector<IdxT,ValT>*>(sample->getNth(selected)) ;
 	 this->log(2,"center: %s",*v->cString()) ;
 	 centers->append(sample->getNth(selected)) ;
 	 sample->clearNth(selected) ;
@@ -252,7 +252,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
    // assign a label to each of the selected centers
    for (auto v : *centers)
       {
-      static_cast<Vector<ValT>*>(v)->setLabel(ClusterInfo::genLabel()) ;
+      static_cast<Vector<IdxT,ValT>*>(v)->setLabel(ClusterInfo::genLabel()) ;
       }
    // until converged or iteration limit:
    //    assign each vector to the nearest center

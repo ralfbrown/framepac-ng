@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.05, last edit 2018-04-24					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -42,8 +42,8 @@ double safe_div(double num, double denom)
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-ValT sum_of_weights(const Vector<ValT>* v)
+template <typename IdxT, typename ValT>
+ValT sum_of_weights(const Vector<IdxT,ValT>* v)
 {
    ValT sum(0) ;
    for (size_t i = 0 ; i < v->numElements() ; ++i)
@@ -57,8 +57,8 @@ ValT sum_of_weights(const Vector<ValT>* v)
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-ValT max_weight(const Vector<ValT>* v)
+template <typename IdxT, typename ValT>
+ValT max_weight(const Vector<IdxT,ValT>* v)
 {
    ValT max(0) ;
    for (size_t i = 0 ; i < v->numElements() ; ++i)
@@ -76,8 +76,8 @@ ValT max_weight(const Vector<ValT>* v)
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-void normalization_weights(const Vector<ValT>* v1, const Vector<ValT>* v2, int normalization,
+template <typename IdxT, typename ValT>
+void normalization_weights(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2, int normalization,
 			   ValT &wt1, ValT &wt2)
 {
    wt1 = wt2 = 1.0 ;
@@ -111,7 +111,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureCosine : public SimilarityMeasure<IdxT, ValT>
    {
    public:
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    double prod_lengths((v1->length() * v2->length())) ;
 	    if (!prod_lengths)
@@ -170,7 +170,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureCanberra : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    ValT absdiff(0) ;
 	    ValT sumabs(0) ;
@@ -180,8 +180,8 @@ class VectorMeasureCanberra : public DistanceMeasure<IdxT, ValT>
 	    size_t pos2(0) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -248,7 +248,7 @@ class VectorMeasureSoergel : public DistanceMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Soergel" ; }
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -260,8 +260,8 @@ class VectorMeasureSoergel : public DistanceMeasure<IdxT, ValT>
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -325,7 +325,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureLorentzian : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -336,8 +336,8 @@ class VectorMeasureLorentzian : public DistanceMeasure<IdxT, ValT>
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -395,7 +395,7 @@ class VectorMeasureFidelity : public SimilarityMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Fidelity" ; }
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -406,8 +406,8 @@ class VectorMeasureFidelity : public SimilarityMeasure<IdxT, ValT>
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -452,7 +452,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureBhattacharyya : public VectorMeasureFidelity<IdxT,ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    double fidelity = VectorMeasureFidelity<IdxT,ValT>::distance(v1,v2) ;
 	    return fidelity > 0 ? -std::log(fidelity) : HUGE_VAL ;
@@ -470,7 +470,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureHellinger : public VectorMeasureFidelity<IdxT,ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    double fidelity = VectorMeasureFidelity<IdxT,ValT>::distance(v1,v2) ;
 	    return 2 * std::sqrt(1 - fidelity) ;
@@ -488,7 +488,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureMatusita : public VectorMeasureFidelity<IdxT,ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    double fidelity = VectorMeasureFidelity<IdxT,ValT>::distance(v1,v2) ;
 	    return std::sqrt(2 - 2 * fidelity) ;
@@ -510,7 +510,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureSquaredChord : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -521,8 +521,8 @@ class VectorMeasureSquaredChord : public DistanceMeasure<IdxT, ValT>
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -582,7 +582,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureClark : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -593,8 +593,8 @@ class VectorMeasureClark : public DistanceMeasure<IdxT, ValT>
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -650,7 +650,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureWaveHedges : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -661,8 +661,8 @@ class VectorMeasureWaveHedges : public DistanceMeasure<IdxT, ValT>
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -735,7 +735,7 @@ class VectorMeasureSangvi : public DistanceMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Sangvi" ; }
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -746,8 +746,8 @@ class VectorMeasureSangvi : public DistanceMeasure<IdxT, ValT>
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -805,7 +805,7 @@ class VectorMeasureTaneja : public DistanceMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Taneja" ; }
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -816,8 +816,8 @@ class VectorMeasureTaneja : public DistanceMeasure<IdxT, ValT>
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -887,7 +887,7 @@ class VectorMeasureKumarJohnson : public DistanceMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Kumar-Johnson" ; }
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -898,8 +898,8 @@ class VectorMeasureKumarJohnson : public DistanceMeasure<IdxT, ValT>
 	    normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -964,7 +964,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureCircleProduct : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -973,8 +973,8 @@ class VectorMeasureCircleProduct : public DistanceMeasure<IdxT, ValT>
 	    double sum(0) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       ValT wt1, wt2 ;
 	       normalization_weights(v1,v2,this->m_opt.normalize,wt1,wt2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
@@ -1033,7 +1033,7 @@ class VectorMeasureJaro : public SimilarityMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Jaro" ; }
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    // string similarity measure between strings s1 and s2
 	    // for m=#matching_chars
@@ -1053,7 +1053,7 @@ class VectorMeasureJaroWinkler : public SimilarityMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Jaro-Winkler" ; }
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    // for strings s1 and s2:
 	    // d = jaro_distance(s1,s2) + (prefixlen*scale_factor*(1 - jaro_distance(s1,s2))) ;
@@ -1072,7 +1072,7 @@ class VectorMeasureJensen : public DistanceMeasure<IdxT, ValT>
    {
    protected:
       virtual const char* myCanonicalName() const { return "Jensen" ; }
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    ValT totalwt1, totalwt2 ;
 	    normalization_weights(v1,v2,1,totalwt1,totalwt2) ;
@@ -1083,8 +1083,8 @@ class VectorMeasureJensen : public DistanceMeasure<IdxT, ValT>
 	    double sum(0.0) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -1171,7 +1171,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureJensenShannon : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    ValT totalwt1, totalwt2 ;
 	    normalization_weights(v1,v2,1,totalwt1,totalwt2) ;
@@ -1182,8 +1182,8 @@ class VectorMeasureJensenShannon : public DistanceMeasure<IdxT, ValT>
 	    double sum(0.0) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -1243,7 +1243,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureKullbackLeibler : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -1254,8 +1254,8 @@ class VectorMeasureKullbackLeibler : public DistanceMeasure<IdxT, ValT>
 	    double sum(0) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -1318,7 +1318,7 @@ class VectorMeasureL0Norm : public DistanceMeasure<IdxT, ValT>
       VectorMeasureL0Norm() : DistanceMeasure<IdxT,ValT>() {}
       VectorMeasureL0Norm(const VectorSimilarityOptions &opt) : Fr::DistanceMeasure<IdxT,ValT>(opt) {}
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    // count the non-zero elements of the difference between the two vectors
 	    size_t differences(0) ;
@@ -1328,8 +1328,8 @@ class VectorMeasureL0Norm : public DistanceMeasure<IdxT, ValT>
 	    size_t elts2(v2->numElements()) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -1387,7 +1387,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureLinfNorm : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -1396,8 +1396,8 @@ class VectorMeasureLinfNorm : public DistanceMeasure<IdxT, ValT>
 	    ValT maxdiff(0) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -1454,7 +1454,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureMahalanobis : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -1462,8 +1462,8 @@ class VectorMeasureMahalanobis : public DistanceMeasure<IdxT, ValT>
 	    size_t elts2(v2->numElements()) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -1518,7 +1518,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureManhattan : public DistanceMeasureReciprocal<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 //TODO: refactor, normalization check first, then sparse/dense
 //!!!
@@ -1529,8 +1529,8 @@ class VectorMeasureManhattan : public DistanceMeasureReciprocal<IdxT, ValT>
 	    ValT sum(0) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       if (this->m_opt.normalize)
 		  {
 		  ValT wt1, wt2 ;
@@ -1636,7 +1636,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureRobinson : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    double sum(0) ;
 	    ValT totalwt1, totalwt2 ;
@@ -1647,8 +1647,8 @@ class VectorMeasureRobinson : public DistanceMeasure<IdxT, ValT>
 	    size_t elts2(v2->numElements()) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -1707,7 +1707,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureSimilarityRatio : public SimilarityMeasure<IdxT, ValT>
    {
    public:
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    double sumsq(0) ;
 	    double prod(0) ;
@@ -1715,8 +1715,8 @@ class VectorMeasureSimilarityRatio : public SimilarityMeasure<IdxT, ValT>
 	    size_t elts2(v2->numElements()) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       size_t pos1(0) ;
 	       size_t pos2(0) ;
 	       ValT wt1, wt2 ;
@@ -1814,7 +1814,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureSquaredEuclidean : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    size_t pos1(0) ;
 	    size_t pos2(0) ;
@@ -1823,8 +1823,8 @@ class VectorMeasureSquaredEuclidean : public DistanceMeasure<IdxT, ValT>
 	    double sum(0) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -1881,7 +1881,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureEuclidean : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    VectorMeasureSquaredEuclidean<IdxT,ValT> vm ;
 	    return std::sqrt(vm.distance(v1,v2)) ;
@@ -1901,7 +1901,7 @@ template <typename IdxT, typename ValT>
 class VectorMeasureLNorm : public DistanceMeasure<IdxT, ValT>
    {
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2) const
 	 {
 	    double power(this->m_opt.power) ;
 	    if (power <= 0.0)
@@ -1927,8 +1927,8 @@ class VectorMeasureLNorm : public DistanceMeasure<IdxT, ValT>
 	    size_t elts2(v2->numElements()) ;
 	    if (v1->isSparseVector()) // assume both vectors are sparse or both are dense
 	       {
-	       const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-	       const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+	       auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+	       auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
 	       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 		  {
 		  auto elt1(sv1->elementIndex(pos1)) ;
@@ -1986,7 +1986,7 @@ class VectorMeasureLNorm : public DistanceMeasure<IdxT, ValT>
 /************************************************************************/
 
 template <typename IdxT, typename ValT>
-void VectorMeasure<IdxT,ValT>::contingencyTable(const Vector<ValT>* v1, const Vector<ValT>* v2,
+void VectorMeasure<IdxT,ValT>::contingencyTable(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2,
    ValT& a, ValT& b, ValT& c) const
 {
    a = b = c = 0 ;
@@ -2002,8 +2002,8 @@ void VectorMeasure<IdxT,ValT>::contingencyTable(const Vector<ValT>* v1, const Ve
    size_t elts2(v2->numElements()) ;
    if (v1->isSparseVector()) // assume both vectors are sparse or both dense
       {
-      const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-      const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+      auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+      auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 	 {
 	 auto elt1 = sv1->elementIndex(pos1) ;
@@ -2063,7 +2063,7 @@ void VectorMeasure<IdxT,ValT>::contingencyTable(const Vector<ValT>* v1, const Ve
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-void VectorMeasure<IdxT,ValT>::contingencyTable(const Vector<ValT>* v1, const Vector<ValT>* v2,
+void VectorMeasure<IdxT,ValT>::contingencyTable(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2,
    size_t& both, size_t& v1_only, size_t& v2_only, size_t& neither) const
 {
    both = v1_only = v2_only = neither = 0 ;
@@ -2077,8 +2077,8 @@ void VectorMeasure<IdxT,ValT>::contingencyTable(const Vector<ValT>* v1, const Ve
    size_t elts2(v2->numElements()) ;
    if (v1->isSparseVector()) // assume vectors are both sparse or both dense
       {
-      const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-      const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+      auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+      auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 	 {
 	 auto elt1 = sv1->elementIndex(pos1) ;
@@ -2153,7 +2153,7 @@ void VectorMeasure<IdxT,ValT>::contingencyTable(const Vector<ValT>* v1, const Ve
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-void VectorMeasure<IdxT,ValT>::binaryAgreement(const Vector<ValT>* v1, const Vector<ValT>* v2,
+void VectorMeasure<IdxT,ValT>::binaryAgreement(const Vector<IdxT,ValT>* v1, const Vector<IdxT,ValT>* v2,
    size_t& both, size_t& disagree, size_t& neither) const
 {
    if (!v1 || !v2)
@@ -2168,8 +2168,8 @@ void VectorMeasure<IdxT,ValT>::binaryAgreement(const Vector<ValT>* v1, const Vec
    size_t stats[3] { 0, 0, 0 } ;
    if (v1->isSparseVector()) // assume vectors are both sparse or both dense
       {
-      const SparseVector<IdxT,ValT>* sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
-      const SparseVector<IdxT,ValT>* sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
+      auto sv1 = static_cast<const SparseVector<IdxT,ValT>*>(v1) ;
+      auto sv2 = static_cast<const SparseVector<IdxT,ValT>*>(v2) ;
       for ( ; pos1 < elts1 && pos2 < elts2 ; )
 	 {
 	 auto elt1 = sv1->elementIndex(pos1) ;

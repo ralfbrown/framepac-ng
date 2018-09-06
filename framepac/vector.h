@@ -74,11 +74,17 @@ class VectorBase : public Object
 /************************************************************************/
 /************************************************************************/
 
-template <typename ValT>
+template <typename IdxT, typename ValT>  class DenseVector ;
+template <typename IdxT, typename ValT>  class SparseVector ;
+
+template <typename IdxT, typename ValT>
 class Vector : public VectorBase
    {
    public: // types
       typedef Object super ;
+      typedef DenseVector<IdxT,ValT> dense_type ;
+      typedef SparseVector<IdxT,ValT> sparse_type ;
+      
       // export the template type parameter for use in other templates that may not have
       //   an explicit parameter giving this type because they inferred the vector type
       typedef ValT value_type ;
@@ -88,21 +94,20 @@ class Vector : public VectorBase
 
       void setElement(size_t N, ValT value)
 	 {
-	 if (N >= Vector<ValT>::m_capacity && !this->reserve(std::max(N+1,2*Vector<ValT>::capacity())))
+	 if (N >= this->m_capacity && !this->reserve(std::max(N+1,2*this->capacity())))
 	    return ;
 	 if (N >= this->m_size) this->m_size = N+1 ;
-	 this->m_values[N] = value ;
+	 this->m_values.full[N] = value ;
 	 }
       
       double length() const { return m_length >= 0.0 ? m_length : vectorLength() ; }
 
       // support for iterating through elements for e.g. vector similarity functions
       size_t numElements() const { return m_size ; }
-      ValT elementValue(size_t N) const { return m_values[N] ; }
+      ValT elementValue(size_t N) const { return m_values.full[N] ; }
       size_t elementIndex(size_t N) const { return N ; }
       
       // arithmetic operations
-      template <typename IdxT>
       Vector* add(const Vector* other) const ;		// ret = (*this) + (*other)
       Vector* incr(const Vector* other) ;		// (*this) += (*other)
       Vector* incr(const Vector* other, ValT wt) ;	// (*this) += wt*(*other)
@@ -160,9 +165,9 @@ class Vector : public VectorBase
 	 { return (long)(floatValue_(obj) + 0.5) ; }
 
       static long nthInt_(const Object* obj, size_t N)
-	 { return (long)static_cast<const Vector<ValT>*>(obj)->m_values[N] ; }
+	 { return (long)static_cast<const Vector*>(obj)->m_values.full[N] ; }
       static double nthFloat_(const Object* obj, size_t N)
-	 { return (double)static_cast<const Vector<ValT>*>(obj)->m_values[N] ; }
+	 { return (double)static_cast<const Vector*>(obj)->m_values.full[N] ; }
 
       // *** comparison functions ***
       static size_t hashValue_(const Object*) ;
@@ -192,13 +197,31 @@ class Vector : public VectorBase
       static Allocator s_allocator ;
    protected:
       static const char s_typename[] ;
-      NewPtr<ValT> m_values ;
+      // unfortunately, Vector needs to know some of the details of SparseVector and OneHotVector...
+      union val_by_type
+	 {
+	 public:
+	    NewPtr<ValT> full ;
+	    ValT         onehot ;
+         public:
+	    val_by_type() { full = nullptr ; }
+	    ~val_by_type() {}
+	 } m_values ;
+      union idx_by_type
+	 {
+         public:
+	    NewPtr<IdxT> full ;
+	    IdxT         onehot ;
+         public:
+	    idx_by_type() { full = nullptr ; }
+	    ~idx_by_type() {}
+	 } m_indices ;
    } ;
 
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-class OneHotVector : public Vector<ValT>
+class OneHotVector : public Vector<IdxT,ValT>
    {
    public: // types
       // export the template type parameter for use in other templates that may not have
@@ -209,15 +232,15 @@ class OneHotVector : public Vector<ValT>
       static OneHotVector* create(IdxT index, ValT value) { return new OneHotVector(index,value) ; }
 
       // support for iterating through elements for e.g. vector similarity functions
-      size_t elementIndex(size_t /*N*/) const { return (size_t)m_index ; }
-      ValT elementValue(size_t N) const { return N == (size_t)m_index ? m_value : (ValT)0 ; }
+      size_t elementIndex(size_t /*N*/) const { return (size_t)this->m_indices.onehot ; }
+      ValT elementValue(size_t N) const { return N == (size_t)this->m_indices.onehot ? this->m_values.onehot : ValT(0) ; }
 
    protected:
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      OneHotVector(IdxT index, ValT value = (ValT)1) : m_index(index), m_value(value) {}
+      OneHotVector(IdxT index, ValT value = (ValT)1) { this->m_indices.onehot = index ; this->m_values.onehot = value ; }
       OneHotVector(const OneHotVector&) = default ;
-      ~OneHotVector() { m_value = (ValT)0 ; }
+      ~OneHotVector() { this->m_values.onehot = (ValT)0 ; }
       OneHotVector& operator= (const OneHotVector&) = default ;
 
    protected: // implementation functions for virtual methods
@@ -231,7 +254,7 @@ class OneHotVector : public Vector<ValT>
       static ObjectPtr clone_(const Object *obj)
 	 {
 	    auto orig = static_cast<const OneHotVector*>(obj) ;
-	    return new OneHotVector(orig->m_index,orig->m_value) ;
+	    return new OneHotVector(orig->m_indices.onehot,orig->m_values.onehot) ;
 	 }
       static Object *shallowCopy_(const Object *obj) { return clone_(obj) ; }
       static ObjectPtr subseq_int(const Object *,size_t /*start*/, size_t /*stop*/)
@@ -260,10 +283,10 @@ class OneHotVector : public Vector<ValT>
       static const char *stringValue_(const Object *) { return nullptr ; }
       static long nthInt_(const Object* obj, size_t N)
 	 { auto v = static_cast<const OneHotVector<IdxT,ValT>*>(obj) ;
-           return N == (size_t)v->m_index ? (long)v->m_value : 0 ; }
+           return N == (size_t)v->m_indices.onehot ? (long)v->m_values.onehot : 0 ; }
       static double nthFloat_(const Object* obj, size_t N)
 	 { auto v = static_cast<const OneHotVector<IdxT,ValT>*>(obj) ;
-           return N == (size_t)v->m_index ? (double)v->m_value : 0 ; }
+           return N == (size_t)v->m_indices.onehot ? (double)v->m_values.onehot : 0 ; }
 
       // *** comparison functions ***
       static bool equal_(const Object *obj, const Object *other)
@@ -272,7 +295,7 @@ class OneHotVector : public Vector<ValT>
 	       {
 	       auto v1 = static_cast<const OneHotVector*>(obj) ;
 	       auto v2 = static_cast<const OneHotVector*>(other) ;
-	       return v1->m_index == v2->m_index && v1->m_value == v2->m_value ;
+	       return v1->m_indices.onehot == v2->m_indices.onehot && v1->m_values.onehot == v2->m_values.onehot ;
 	       }
 	    else
 	       return obj == other ;
@@ -295,9 +318,6 @@ class OneHotVector : public Vector<ValT>
    private:
       static Allocator s_allocator ;
       static const char s_typename[] ;
-   protected:
-      IdxT m_index ;
-      ValT m_value ;
    } ;
 
 template <typename IdxT, typename ValT>
@@ -310,9 +330,10 @@ Allocator OneHotVector<IdxT,ValT>::s_allocator(FramepaC::Object_VMT<OneHotVector
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-class SparseVector : public Vector<ValT>
+class SparseVector : public Vector<IdxT,ValT>
    {
    public: // types
+      typedef Vector<IdxT,ValT> super ;
       // export the template type parameter for use in other templates that may not have
       //   an explicit parameter giving this type because they inferred the vector type
       typedef IdxT index_type ;
@@ -324,17 +345,17 @@ class SparseVector : public Vector<ValT>
       bool newElement(IdxT index, ValT value) ;
 
       // retrieve elements of the vector
-      IdxT keyAt(size_t N) const { return  m_indices[N] ; }
-      using Vector<ValT>::elementValue ;
+      IdxT keyAt(size_t N) const { return this->m_indices.full[N] ; }
+      using super::elementValue ;
       
       // support for iterating through elements for e.g. vector similarity functions
-      size_t elementIndex(size_t N) const { return (size_t)m_indices[N] ; }
+      size_t elementIndex(size_t N) const { return (size_t)this->m_indices.full[N] ; }
 
       // arithmetic operations
-      SparseVector* add(const Vector<ValT>* other) const ;
+      SparseVector* add(const super* other) const ;
       SparseVector* add(const SparseVector* other) const ;
       SparseVector* add(const OneHotVector<IdxT,ValT>* other) const ;
-      SparseVector* incr(const Vector<ValT>* other, ValT wt = 1.0) ;
+      SparseVector* incr(const super* other, ValT wt = 1.0) ;
       SparseVector* incr(const SparseVector* other, ValT wt = 1.0) ;
       SparseVector* incr(const OneHotVector<IdxT,ValT>* other, ValT wt = 1.0) ;
 
@@ -398,15 +419,15 @@ class SparseVector : public Vector<ValT>
       static ObjectIter& next_iter(const Object *, ObjectIter& it) { it.incrIndex() ; return it ; }
 
    protected:
-      static size_t totalElements(const SparseVector* v1, const Vector<ValT>* v2) ;
+      static size_t totalElements(const SparseVector* v1, const super* v2) ;
       static size_t totalElements(const SparseVector* v1, const SparseVector* v2) ;
       void setElement(size_t N, IdxT k, ValT value)
 	 {
-	 if (N >= Vector<ValT>::m_capacity && !this->reserve(std::max(N+1,2*Vector<ValT>::capacity())))
+	 if (N >= this->m_capacity && !this->reserve(std::max(N+1,2*this->capacity())))
 	    return ;
 	 if (N >= this->m_size) this->m_size = N+1 ;
-	 this->m_indices[N] = k ;
-	 this->m_values[N] = value ;
+	 this->m_indices.full[N] = k ;
+	 this->m_values.full[N] = value ;
 	 }
 
    protected:
@@ -425,7 +446,6 @@ class SparseVector : public Vector<ValT>
       static Allocator s_allocator ;
       static const char s_typename[] ;
    protected:
-      NewPtr<IdxT> m_indices ;
    } ;
 
 extern template class SparseVector<uint32_t,uint32_t> ;
@@ -444,11 +464,12 @@ extern template class SparseVector<Object*,double> ;
 //   SparseVector derive, and make that base class a dense vector in
 //   all but name.
 
-template <typename ValT>
-class DenseVector : public Vector<ValT>
+template <typename IdxT, typename ValT>
+class DenseVector : public Vector<IdxT,ValT>
    {
    public: // types
-      typedef Vector<ValT> super ;
+      typedef Vector<IdxT,ValT> super ;
+      typedef SparseVector<IdxT,ValT> sparse_type ;
    public:
       static DenseVector* create(size_t capacity = 0) { return new DenseVector(capacity) ; }
       static DenseVector* create(const char* rep) { return new DenseVector(rep) ; }
@@ -456,17 +477,12 @@ class DenseVector : public Vector<ValT>
 
       // arithmetic operations
       DenseVector* add(const DenseVector* other) const ;
-      template <typename IdxT>
-      SparseVector<IdxT,ValT>* add(const SparseVector<IdxT,ValT>* other) const ;
-      template <typename IdxT>
-      DenseVector<ValT>* add(const OneHotVector<IdxT,ValT>* other) const ;
+      sparse_type* add(const sparse_type* other) const ;
+      DenseVector* add(const OneHotVector<IdxT,ValT>* other) const ;
 
       DenseVector* incr(const DenseVector* other, double wt = 1.0) ;
-      template <typename IdxT>
-      DenseVector* incr(const SparseVector<IdxT,ValT>* other) ;
-      template <typename IdxT>
-      DenseVector* incr(const SparseVector<IdxT,ValT>* other, ValT wt = 1.0) ;
-      template <typename IdxT>
+      DenseVector* incr(const sparse_type* other) ;
+      DenseVector* incr(const sparse_type* other, ValT wt = 1.0) ;
       DenseVector* incr(const OneHotVector<IdxT,ValT>* other, ValT wt = 1.0) ;
 
    protected: // creation/destruction
@@ -474,15 +490,12 @@ class DenseVector : public Vector<ValT>
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       DenseVector(size_t cap = 0) ;
       DenseVector(const char* rep) ;
-      DenseVector(const Vector<ValT>&v) : super(v) {} ;
+      DenseVector(const super&vec) : super(vec) {} ;
       ~DenseVector() {}
       DenseVector& operator= (const DenseVector&) ;
 
    protected: // implementation functions for virtual methods
       friend class FramepaC::Object_VMT<DenseVector> ;
-
-      // type determination predicates
-      static const char* typeName_(const Object*) { return s_typename ; }
 
       // *** copying ***
       static ObjectPtr clone_(const Object *) ;
@@ -490,16 +503,14 @@ class DenseVector : public Vector<ValT>
       static ObjectPtr subseq_int(const Object *,size_t start, size_t stop) ;
       static ObjectPtr subseq_iter(const Object *,ObjectIter start, ObjectIter stop) ;
 
-   protected:
-      static const char s_typename[] ;
-
    private:
       static Allocator s_allocator ;
+      static const char s_typename[] ;
    } ;
 
-extern template class DenseVector<uint32_t> ;
-extern template class DenseVector<float> ;
-extern template class DenseVector<double> ;
+extern template class DenseVector<uint32_t,uint32_t> ;
+extern template class DenseVector<uint32_t,float> ;
+extern template class DenseVector<uint32_t,double> ;
 
 //----------------------------------------------------------------------------
 

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-08-27					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -80,14 +80,14 @@ bool agglom_clustering_best_similarity(size_t index, va_list args)
       return false ;
    double best_sim = -999.99 ;
    size_t best_neighbor = ~0 ;
-   auto vec1 = static_cast<Vector<ValT>*>(cluster->front()) ;
+   auto vec1 = static_cast<Vector<IdxT,ValT>*>(cluster->front()) ;
    for (size_t i = 0 ; i < clusters->size() ; ++i)
       {
       if (i == index) continue ;
       auto other_clus = static_cast<ClusterInfo*>(clusters->getNth(i))->members() ;
       if (!other_clus || other_clus->size() != 1)
 	 continue ;
-      auto vec2 = static_cast<Vector<ValT>*>(other_clus->front()) ;
+      auto vec2 = static_cast<Vector<IdxT,ValT>*>(other_clus->front()) ;
       double sim = measure->similarity(vec1,vec2) ;
       if (sim > best_sim)
 	 {
@@ -174,7 +174,7 @@ template <typename IdxT, typename ValT>
 bool set_brown_label(Object* vec, const char* label)
 {
    if (!vec->isVector()) return false ;
-   auto vector = static_cast<Vector<ValT>*>(vec) ;
+   auto vector = static_cast<Vector<IdxT,ValT>*>(vec) ;
    auto sym = SymbolTable::current()->add(label) ;
    vector->setLabel(sym) ;
    return true ;

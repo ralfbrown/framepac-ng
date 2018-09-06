@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-18					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -27,21 +27,22 @@ namespace Fr
 {
 
 // request explicit instantiations
-template class Vector<float> ;
-template class DenseVector<float> ;
+template class Vector<uint32_t,float> ;
+template class DenseVector<uint32_t,float> ;
 template class SparseVector<uint32_t,float> ;
 
 // static data for the instantiated templates
 template <>
-Allocator Vector<float>::s_allocator(FramepaC::Object_VMT<Vector<float>>::instance(), sizeof(Vector<float>)) ;
+Allocator Vector<uint32_t,float>::s_allocator(FramepaC::Object_VMT<Vector<uint32_t,float>>::instance(),
+   sizeof(Vector<uint32_t,float>)) ;
 template <>
-const char Vector<float>::s_typename[] = "Vector_flt" ;
+const char Vector<uint32_t,float>::s_typename[] = "Vector_flt" ;
 
 template <>
-Allocator DenseVector<float>::s_allocator(FramepaC::Object_VMT<DenseVector<float>>::instance(),
-   sizeof(DenseVector<float>)) ;
+Allocator DenseVector<uint32_t,float>::s_allocator(FramepaC::Object_VMT<DenseVector<uint32_t,float>>::instance(),
+   sizeof(DenseVector<uint32_t,float>)) ;
 template <>
-const char DenseVector<float>::s_typename[] = "DenseVector_flt" ;
+const char DenseVector<uint32_t,float>::s_typename[] = "DenseVector_flt" ;
 
 template <>
 Allocator SparseVector<uint32_t,float>::s_allocator(FramepaC::Object_VMT<SparseVector<uint32_t,float>>::instance(),

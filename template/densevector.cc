@@ -30,8 +30,8 @@ namespace Fr
 /*	Methods for class DenseVector					*/
 /************************************************************************/
 
-template <typename ValT>
-DenseVector<ValT>::DenseVector(const char* rep)
+template <typename IdxT, typename ValT>
+DenseVector<IdxT,ValT>::DenseVector(const char* rep)
 {
    BufferBuilder<ValT,16> values ;
    while (values.read(rep))
@@ -40,81 +40,80 @@ DenseVector<ValT>::DenseVector(const char* rep)
       }
    this->m_size = values.size() ;
    this->m_capacity = values.capacity() ;
-   this->m_values = values.move() ;
+   this->m_values.full = values.move() ;
    return ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-DenseVector<ValT>::DenseVector(size_t cap) : super(cap)
+template <typename IdxT, typename ValT>
+DenseVector<IdxT,ValT>::DenseVector(size_t cap) : super(cap)
 {
    this->reserve(cap) ;
    this->m_size = cap ;
-   ValT* values = *this->m_values ;
+   ValT* values = *this->m_values.full ;
    std::fill(values,values+cap,ValT(0)) ;
    return ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-ObjectPtr DenseVector<ValT>::clone_(const Object* obj)
+template <typename IdxT, typename ValT>
+ObjectPtr DenseVector<IdxT,ValT>::clone_(const Object* obj)
 {
-   return obj ? new DenseVector<ValT>(*static_cast<const DenseVector*>(obj)) : nullptr ;
+   return obj ? new DenseVector<IdxT,ValT>(*static_cast<const DenseVector*>(obj)) : nullptr ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-ObjectPtr DenseVector<ValT>::subseq_int(const Object* obj, size_t start, size_t stop)
+template <typename IdxT, typename ValT>
+ObjectPtr DenseVector<IdxT,ValT>::subseq_int(const Object* obj, size_t start, size_t stop)
 {
    if (start > stop || !obj)
       return nullptr ;
-   auto orig = static_cast<const DenseVector<ValT>*>(obj) ;
-   auto copy = DenseVector<ValT>::create(stop-start) ;
-   std::copy((*orig->m_values)+start,*orig->m_values+stop,*copy->m_values) ;
+   auto orig = static_cast<const DenseVector<IdxT,ValT>*>(obj) ;
+   auto copy = DenseVector<IdxT,ValT>::create(stop-start) ;
+   std::copy((*orig->m_values.full)+start,*orig->m_values.full+stop,*copy->m_values.full) ;
    return copy ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-ObjectPtr DenseVector<ValT>::subseq_iter(const Object*, ObjectIter start, ObjectIter stop)
+template <typename IdxT, typename ValT>
+ObjectPtr DenseVector<IdxT,ValT>::subseq_iter(const Object*, ObjectIter start, ObjectIter stop)
 {
    return subseq_int(start.baseObject(),start.currentIndex(),stop.currentIndex()) ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-DenseVector<ValT>* DenseVector<ValT>::add(const DenseVector<ValT>* other) const
+template <typename IdxT, typename ValT>
+DenseVector<IdxT,ValT>* DenseVector<IdxT,ValT>::add(const DenseVector<IdxT,ValT>* other) const
 {
    if (!other)
-      return static_cast<DenseVector<ValT>*>(&*this->clone().move()) ;
+      return static_cast<DenseVector<IdxT,ValT>*>(&*this->clone().move()) ;
    size_t len = std::max(this->numElements(),other->numElements()) ;
    size_t minlen = std::min(this->numElements(),other->numElements()) ;
-   DenseVector<ValT>* result = DenseVector<ValT>::create(len) ;
+   DenseVector<IdxT,ValT>* result = DenseVector<IdxT,ValT>::create(len) ;
    for (size_t i = 0 ; i < minlen ; ++i)
       {
-      result->m_values[i] = this->m_values[i] + other->m_values[i] ;
+      result->m_values.full[i] = this->m_values.full[i] + other->m_values.full[i] ;
       }
    for (size_t i = this->numElements() ; i < len ; ++i)
       {
-      result->m_values[i] = other->m_values[i] ;
+      result->m_values.full[i] = other->m_values.full[i] ;
       }
    for (size_t i = other->numElements() ; i < len ; ++i)
       {
-      result->m_values[i] = this->m_values[i] ;
+      result->m_values.full[i] = this->m_values.full[i] ;
       }
    return result ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-template <typename IdxT>
-SparseVector<IdxT,ValT>* DenseVector<ValT>::add(const SparseVector<IdxT,ValT>* other) const
+template <typename IdxT, typename ValT>
+SparseVector<IdxT,ValT>* DenseVector<IdxT,ValT>::add(const SparseVector<IdxT,ValT>* other) const
 {
    if (other) return other->add(this) ;
    SparseVector<IdxT,ValT>* result = SparseVector<IdxT,ValT>::create() ;
@@ -124,23 +123,22 @@ SparseVector<IdxT,ValT>* DenseVector<ValT>::add(const SparseVector<IdxT,ValT>* o
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-DenseVector<ValT>* DenseVector<ValT>::incr(const DenseVector<ValT>* other, double wt)
+template <typename IdxT, typename ValT>
+DenseVector<IdxT,ValT>* DenseVector<IdxT,ValT>::incr(const DenseVector<IdxT,ValT>* other, double wt)
 {
-   for (size_t idx = 0 ; idx < this->numElements() && idx < other->numElements() ; ++idx)
+   for (size_t indx = 0 ; indx < this->numElements() && indx < other->numElements() ; ++indx)
       {
-      this->m_values[idx] += (wt*other->m_values[idx]) ;
+      this->m_values.full[indx] += (wt*other->m_values.full[indx]) ;
       }
    return this ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-template <typename IdxT>
-DenseVector<ValT>* DenseVector<ValT>::incr(const SparseVector<IdxT,ValT>* other)
+template <typename IdxT, typename ValT>
+DenseVector<IdxT,ValT>* DenseVector<IdxT,ValT>::incr(const SparseVector<IdxT,ValT>* other)
 {
-   if (other) return other->add(this) ;
+   if (other) return (DenseVector<IdxT,ValT>*)other->add(this) ;
    size_t pos(0) ;
    while (pos < other->numElements())
       {
@@ -148,18 +146,17 @@ DenseVector<ValT>* DenseVector<ValT>::incr(const SparseVector<IdxT,ValT>* other)
       if (index >= this->numElements())
 	 break ;
       ValT value = other->elementValue(pos++) ;
-      this->m_values[index] += value ;
+      this->m_values.full[index] += value ;
       }
    return this ;
 }
 
 //----------------------------------------------------------------------------
 
-template <typename ValT>
-template <typename IdxT>
-DenseVector<ValT>* DenseVector<ValT>::incr(const SparseVector<IdxT,ValT>* other, ValT wt)
+template <typename IdxT, typename ValT>
+DenseVector<IdxT,ValT>* DenseVector<IdxT,ValT>::incr(const SparseVector<IdxT,ValT>* other, ValT wt)
 {
-   if (other) return other->add(this) ;
+   if (other) return (DenseVector<IdxT,ValT>*)other->add(this) ;
    size_t pos(0) ;
    while (pos < other->numElements())
       {
@@ -167,7 +164,7 @@ DenseVector<ValT>* DenseVector<ValT>::incr(const SparseVector<IdxT,ValT>* other,
       if (index >= this->numElements())
 	 break ;
       ValT value = other->elementValue(pos++) ;
-      this->m_values[index] += wt*value ;
+      this->m_values.full[index] += wt*value ;
       }
    return this ;
 }

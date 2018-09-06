@@ -213,7 +213,8 @@ template <typename IdxT, typename ValT>
 class VectorMeasure
    {
    public:
-      typedef double SimFunc(const Vector<ValT>*, const Vector<ValT>*) ;
+      typedef Vector<IdxT,ValT> vec_type ;
+      typedef double SimFunc(const vec_type*, const vec_type*) ;
 
    public:
       static VectorMeasure<IdxT,ValT>* create(const char* simtype, const char* options = nullptr) ;
@@ -223,12 +224,12 @@ class VectorMeasure
       const char* canonicalName() const { return myCanonicalName() ; }
       
       // base version is just an identity comparison
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const vec_type* v1, const vec_type* v2) const
 	 {
 	    if (!v1 || !v2) return -1 ;
 	    return v1 == v2 ? 1 : 0 ;
 	 }
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const vec_type* v1, const vec_type* v2) const
 	 {
 	    if (!v1 || !v2) return -1 ;
 	    return v1 != v2 ? 1 : 0 ; 
@@ -241,11 +242,11 @@ class VectorMeasure
       virtual const char* myCanonicalName() const { return "Identity" ; }
 
       // binary contingency table
-      void contingencyTable(const Vector<ValT>* v1, const Vector<ValT>* v2, size_t& both, size_t& v1_only,
+      void contingencyTable(const vec_type* v1, const vec_type* v2, size_t& both, size_t& v1_only,
 		   	    size_t& v2_only, size_t& neither) const ;
       // real-valued contingency table
-      void contingencyTable(const Vector<ValT>* v1, const Vector<ValT>* v2, ValT& a, ValT& b, ValT& c) const ;
-      void binaryAgreement(const Vector<ValT>* v1, const Vector<ValT>* v2, size_t& both, size_t& disagree,
+      void contingencyTable(const vec_type* v1, const vec_type* v2, ValT& a, ValT& b, ValT& c) const ;
+      void binaryAgreement(const vec_type* v1, const vec_type* v2, size_t& both, size_t& disagree,
 		   	   size_t& neither) const ;
       
       // support for subclass hierarchy of measures based on scoring a 2x2 contingency table
@@ -275,8 +276,9 @@ class SimilarityMeasure : public VectorMeasure<IdxT, ValT>
    {
    public: // types
       typedef VectorMeasure<IdxT,ValT> super ;
+      typedef Vector<IdxT,ValT> vec_type ;
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const vec_type* v1, const vec_type* v2) const
 	 {
 	    return 1.0 - this->similarity(v1,v2) ;
 	 }
@@ -294,8 +296,9 @@ class SimilarityMeasureReciprocal : public VectorMeasure<IdxT, ValT>
    {
    public: // types
       typedef VectorMeasure<IdxT,ValT> super ;
+      typedef Vector<IdxT,ValT> vec_type ;
    public:
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double distance(const vec_type* v1, const vec_type* v2) const
 	 {
 	    double sim = similarity(v1,v2) ;
 	    return sim ? 1.0 / sim : HUGE_VAL ;
@@ -314,8 +317,9 @@ class DistanceMeasure : public VectorMeasure<IdxT, ValT>
    {
    public: // types
       typedef VectorMeasure<IdxT,ValT> super ;
+      typedef Vector<IdxT,ValT> vec_type ;
    public:
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const vec_type* v1, const vec_type* v2) const
 	 {
 	    return 1.0 - similarity(v1,v2) ;
 	 }
@@ -333,8 +337,9 @@ class DistanceMeasureReciprocal : public VectorMeasure<IdxT, ValT>
    {
    public: // types
       typedef VectorMeasure<IdxT,ValT> super ;
+      typedef Vector<IdxT,ValT> vec_type ;
    public:
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      virtual double similarity(const vec_type* v1, const vec_type* v2) const
 	 {
 	    double dist = distance(v1,v2) ;
 	    return dist ? 1.0 / dist : HUGE_VAL ;
@@ -367,6 +372,7 @@ class WrappedVectorMeasure : public VectorMeasure<IdxT,ValT>
    {
    public:
       typedef VectorMeasure<IdxT,ValT> super ;
+      typedef Vector<IdxT,ValT> vec_type ;
    public:
       static WrappedVectorMeasure* create(const char* base_simtype, const char* options = nullptr)
 	 { return new WrappedVectorMeasure(base_simtype,options) ; }
@@ -377,14 +383,14 @@ class WrappedVectorMeasure : public VectorMeasure<IdxT,ValT>
       virtual ~WrappedVectorMeasure() { delete m_basemeasure ; m_basemeasure = nullptr ; }
 
       // give access to the base measure's similarity() and distance() functions
-      double baseSimilarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      double baseSimilarity(const vec_type* v1, const vec_type* v2) const
 	 { return m_basemeasure->similarity(v1,v2) ; }
-      double baseDistance(const Vector<ValT>* v1, const Vector<ValT>* v2) const
+      double baseDistance(const vec_type* v1, const vec_type* v2) const
 	 { return  m_basemeasure->distance(v1,v2) ; }
 
       // must derive a subclass that implements similarity() and distance()
-      virtual double similarity(const Vector<ValT>* v1, const Vector<ValT>* v2) const = 0 ;
-      virtual double distance(const Vector<ValT>* v1, const Vector<ValT>* v2) const = 0 ;
+      virtual double similarity(const vec_type* v1, const vec_type* v2) const = 0 ;
+      virtual double distance(const vec_type* v1, const vec_type* v2) const = 0 ;
 
    protected:
       WrappedVectorMeasure(const char* base_simtype, const char* options = nullptr)
