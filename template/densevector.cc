@@ -47,6 +47,18 @@ DenseVector<ValT>::DenseVector(const char* rep)
 //----------------------------------------------------------------------------
 
 template <typename ValT>
+DenseVector<ValT>::DenseVector(size_t cap) : super(cap)
+{
+   this->reserve(cap) ;
+   this->m_size = cap ;
+   ValT* values = *this->m_values ;
+   std::fill(values,values+cap,ValT(0)) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename ValT>
 ObjectPtr DenseVector<ValT>::clone_(const Object* obj)
 {
    return obj ? new DenseVector<ValT>(*static_cast<const DenseVector*>(obj)) : nullptr ;

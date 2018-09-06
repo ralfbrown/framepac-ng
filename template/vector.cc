@@ -108,7 +108,14 @@ Vector<ValT>* Vector<ValT>::incr(const Vector* other)
       }
    else if (other->isSparseVector())
       {
-      //TODO:
+      for (size_t i = 0 ; i < other->numElements() ; ++i)
+	 {
+	 auto idx = other->elementIndex(i) ;
+	 if (idx < this->m_size)
+	    {
+	    m_values[idx] += other->elementValue(i) ;
+	    }
+	 }
       }
    else if (this->m_size == other->m_size)
       {
@@ -133,7 +140,14 @@ Vector<ValT>* Vector<ValT>::incr(const Vector* other, ValT weight)
       }
    else if (other->isSparseVector())
       {
-      //TODO:
+      for (size_t i = 0 ; i < other->numElements() ; ++i)
+	 {
+	 auto idx = other->elementIndex(i) ;
+	 if (idx < this->m_size)
+	    {
+	    m_values[idx] += (weight * other->elementValue(i)) ;
+	    }
+	 }
       }
    else if (this->m_size == other->m_size)
       {

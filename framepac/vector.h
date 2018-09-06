@@ -472,9 +472,9 @@ class DenseVector : public Vector<ValT>
    protected: // creation/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
-      DenseVector(size_t cap = 0) : super(cap) {}
+      DenseVector(size_t cap = 0) ;
       DenseVector(const char* rep) ;
-      DenseVector(const Vector<ValT>&v) : super(v) {}
+      DenseVector(const Vector<ValT>&v) : super(v) {} ;
       ~DenseVector() {}
       DenseVector& operator= (const DenseVector&) ;
 

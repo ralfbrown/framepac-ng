@@ -51,7 +51,7 @@ ContextVectorCollection<KeyT,IdxT,ValT,sparse>::~ContextVectorCollection()
 template <typename KeyT, typename IdxT, typename ValT, bool sparse>
 bool ContextVectorCollection<KeyT,IdxT,ValT,sparse>::setTermVector(const KeyT term, typename ContextVectorCollection<KeyT,IdxT,ValT,sparse>::context_type* vector)
 {
-   return m_term_map->add(term,vector) ;
+   return !m_term_map->add(term,vector) ;  // add() returns true if item already exists
 }
 
 //----------------------------------------------------------------------------
