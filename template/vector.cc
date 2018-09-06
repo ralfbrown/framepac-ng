@@ -103,16 +103,18 @@ Vector<IdxT,ValT>* Vector<IdxT,ValT>::incr(const Vector* other)
    if (!other) return this ;
    if (this->isSparseVector())
       {
-      //TODO: 
+      auto sv1 = static_cast<SparseVector<IdxT,ValT>*>(this) ;
+      return sv1->incr(other) ;
       }
    else if (other->isSparseVector())
       {
       for (size_t i = 0 ; i < other->numElements() ; ++i)
 	 {
-	 auto indx = other->elementIndex(i) ;
+	 auto sv = static_cast<const SparseVector<IdxT,ValT>*>(other) ;
+	 auto indx = sv->elementIndex(i) ;
 	 if (indx < this->m_size)
 	    {
-	    this->m_values.full[indx] += other->elementValue(i) ;
+	    this->m_values.full[indx] += sv->elementValue(i) ;
 	    }
 	 }
       }
@@ -135,16 +137,18 @@ Vector<IdxT,ValT>* Vector<IdxT,ValT>::incr(const Vector* other, ValT weight)
    if (!other) return this ;
    if (this->isSparseVector())
       {
-      //TODO: 
+      auto sv1 = static_cast<SparseVector<IdxT,ValT>*>(this) ;
+      return sv1->incr(other,weight) ;
       }
    else if (other->isSparseVector())
       {
       for (size_t i = 0 ; i < other->numElements() ; ++i)
 	 {
-	 auto indx = other->elementIndex(i) ;
+	 auto sv = static_cast<const SparseVector<IdxT,ValT>*>(other) ;
+	 auto indx = sv->elementIndex(i) ;
 	 if (indx < this->m_size)
 	    {
-	    this->m_values.full[indx] += (weight * other->elementValue(i)) ;
+	    this->m_values.full[indx] += (weight * sv->elementValue(i)) ;
 	    }
 	 }
       }

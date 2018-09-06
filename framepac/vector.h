@@ -355,9 +355,7 @@ class SparseVector : public Vector<IdxT,ValT>
       SparseVector* add(const super* other) const ;
       SparseVector* add(const SparseVector* other) const ;
       SparseVector* add(const OneHotVector<IdxT,ValT>* other) const ;
-      SparseVector* incr(const super* other, ValT wt = 1.0) ;
-      SparseVector* incr(const SparseVector* other, ValT wt = 1.0) ;
-      SparseVector* incr(const OneHotVector<IdxT,ValT>* other, ValT wt = 1.0) ;
+      SparseVector* incr(const Vector<IdxT,ValT>* other, ValT wt = 1.0) ;
 
       // STL compatibility
       bool reserve(size_t n) ;

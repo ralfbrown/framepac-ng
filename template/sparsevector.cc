@@ -290,7 +290,7 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::add(const OneHotVector<IdxT,Va
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::incr(const SparseVector<IdxT,ValT>* other, ValT wt)
+SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::incr(const Vector<IdxT,ValT>* other, ValT wt)
 {
    if (!other)
       return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone().move()) ;
