@@ -640,8 +640,9 @@ bool ThreadPool::parallelize(ThreadPoolMapFunc* fn, size_t num_items, va_list ar
       return success ;
       }
    // dispatch a job request for each item in the input; to keep down task-switching overhead, we'll
-   //   batch the items if there are a much larger number of them than threads
-   size_t num_jobs = (num_items > 8*nt) ? 8*nt : num_items ;
+   //   batch the items if there are a much larger number of them than threads.  If we have just a
+   //   single worker thread, batch all items into one job.
+   size_t num_jobs = (nt == 1) ? 1 : (num_items > 16*nt) ? 16*nt : num_items ;
    size_t per_job = num_items / num_jobs ;
    size_t leftover =  num_items - (num_jobs * per_job) ;
    LocalAlloc<ParallelJob> jobs(num_jobs) ;
