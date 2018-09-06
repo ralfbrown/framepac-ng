@@ -44,6 +44,9 @@ class ClusteringAlgoKMeans : public ClusteringAlgo<IdxT,ValT>
       // accessors
       bool usingMedioids() const { return m_use_medioids ; }
 
+   protected:
+      void clearCenters(Array&) const ;
+
    protected: // data members
       bool   m_use_medioids { false } ;
    } ;
@@ -118,7 +121,7 @@ static bool update_medioid(size_t id, va_list args)
    // find nearest original vector in cluster
    auto medioid = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(centroid,inf->members(),measure) ;
    // make the medioid the new center for the cluster
-   centers->setNth(id,medioid) ;
+   centers->setNthNoCopy(id,medioid) ;
    if (prog)
       ++(*prog) ;
    return true ;			// no errors, safe to continue processing
@@ -157,6 +160,21 @@ static void find_least_most_similar(const Array* vectors, const Array* refs, Vec
       }
    least_similar = discarded ;
    most_similar = selected ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
+void ClusteringAlgoKMeans<IdxT,ValT>::clearCenters(Array& centers) const
+{
+   if (usingMedioids())
+      {
+      // clear the pointers in the 'centers' array so that they don't get freed when the array is freed,
+      //   since they are just references to vectors which are still in use
+      for (size_t i = 0 ; i < centers.size() ; ++i)
+	 centers.clearNth(i) ;
+      }
    return ;
 }
 
@@ -260,6 +278,7 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       if (usingMedioids())
 	 fn = update_medioid<IdxT,ValT> ;
       this->log(1,"  updating centers") ;
+      clearCenters(*centers) ;
       centers = Array::create(num_clusters) ;
       prog = (nonempty->size() > 1000) ? this->makeProgressIndicator(num_clusters) : nullptr ;
       tp->parallelize(fn,num_clusters,clusters,(Array*)centers,using_sparse_vectors,this->m_measure,prog) ;
@@ -267,16 +286,10 @@ ClusterInfo* ClusteringAlgoKMeans<IdxT,ValT>::cluster(const Array* vectors) cons
       }
    // build the final cluster result from the extracted clusters
    ClusterInfo* result_clusters = ClusterInfo::create(clusters,num_clusters) ;
+   clearCenters(*centers) ;
    this->freeClusters(clusters,num_clusters) ;
    // the subclusters are the actual result
    result_clusters->setFlag(ClusterInfo::Flags::group) ;
-   if (usingMedioids())
-      {
-      // clear the pointers in the 'centers' array so that they don't get freed when the array is freed,
-      //   since they are just references to vectors which are still in use
-      for (size_t i = 0 ; i < centers->size() ; ++i)
-	 centers->clearNth(i) ;
-      }
    // cleanup: untrap signals
    this->untrapSigInt() ;
    return result_clusters ;
