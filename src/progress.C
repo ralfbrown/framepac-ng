@@ -233,7 +233,7 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	       return;
 	    }
 	 m_lastupdate = elapsed ;
-	 if (m_show_estimated && elapsed >= 1.0 && frac > 0.01)
+	 if (m_show_estimated && elapsed * frac >= 0.02)
 	    {
 	    estimated = (elapsed / frac) - elapsed ;
 	    }
