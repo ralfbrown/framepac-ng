@@ -118,7 +118,7 @@ static bool update_medioid(size_t id, va_list args)
    // find nearest original vector in cluster
    auto medioid = ClusteringAlgo<IdxT,ValT>::nearestNeighbor(centroid,inf->members(),measure) ;
    // make the medioid the new center for the cluster
-   centers->setNthNoCopy(id,medioid) ;
+   centers->setNth(id,medioid) ;
    if (prog)
       ++(*prog) ;
    return true ;			// no errors, safe to continue processing
