@@ -407,7 +407,7 @@ class FrVectorPrinter(FrPrinter):
         global RECURSIVE_CALL
         keystr = self.safe_dereference(self.val['m_key'])
         lblstr = self.safe_dereference(self.val['m_label'])
-        if RECURSIVE_CALL > 0:
+        if RECURSIVE_CALL > 1:
             return '{}Vector({}/{} key={} label={}) @ {}'.format(self.vectype,self.vecsize,int(self.val['m_capacity']),
                                                             keystr,lblstr,self.val.address)
         else:
@@ -433,10 +433,25 @@ class FrVectorPrinter(FrPrinter):
     
     def children(self):
         global RECURSIVE_CALL
-        if RECURSIVE_CALL > 0:
+        if RECURSIVE_CALL > 1:
             return []
         return self.make_children()
 
+##########################################################################
+
+class FrDenseVectorPrinter(FrVectorPrinter):
+    "Print a Fr::DenseVector<> object"
+    enabled = True
+
+    def __init__(self, val):
+        self.val = val
+        self.vectype = 'Dense'
+        self.vecsize = int(self.val['m_size'])
+        self.indices = None
+
+    def display_hint(self):
+        return 'array'
+    
 ##########################################################################
 
 class FrSparseVectorPrinter(FrVectorPrinter):
@@ -447,7 +462,7 @@ class FrSparseVectorPrinter(FrVectorPrinter):
         self.val = val
         self.vectype = 'Sparse'
         self.vecsize = int(self.val['m_size'])
-        self.indices = self.val['m_indices']
+        self.indices = self.safe_dereference(self.val['m_indices'])
 
     def display_hint(self):
         return 'map'
@@ -471,7 +486,9 @@ class FrObjectPrinter(FrPrinter):
                  'SymCountHashTable' : ('Fr::HashTable<Fr::Symbol*, unsigned long>', FrHashTablePrinter),
                  'HashTable_u32u32' : ('Fr::HashTable<unsigned int, unsigned int>', FrHashTablePrinter),
                  'SparseVector_u32flt': ('Fr::SparseVector<unsigned int, float>', FrSparseVectorPrinter),
+                 'DenseVector_u32flt': ('Fr::DenseVector<unsigned int, float>', FrDenseVectorPrinter),
                  'WcTermVectorSparse' : ('Fr::SparseVector<unsigned int, float>', FrSparseVectorPrinter)
+                 'WcTermVectorDense' : ('Fr::DenseVector<unsigned int, float>', FrDenseVectorPrinter)
                  }
 
     def __init__(self, val):
@@ -575,6 +592,7 @@ def build_pretty_printer():
    pp.add_printer('Fr::ArrayPtr', '^Fr::Ptr<Array>$', FrPtrArrayPrinter)
    pp.add_printer('Fr::BitVector', '^Fr::BitVector$', FrBitvectorPrinter)
    pp.add_printer('Fr::CharPtr', '^Fr::NewPtr<char>$', FrCharPtrPrinter)
+   pp.add_printer('Fr::DenseVector', '^Fr::DenseVector<', FrDenseVectorPrinter)
    pp.add_printer('Fr::Float', '^Fr::Float$', FrFloatPrinter)
    pp.add_printer('Fr::HashTable', '^Fr::HashTable<.*>$', FrHashTablePrinter)
    pp.add_printer('Fr::Integer', '^Fr::Integer$', FrIntegerPrinter)
@@ -588,10 +606,11 @@ def build_pretty_printer():
    pp.add_printer('Fr::String', '^Fr::String$', FrStringPrinter)
    pp.add_printer('Fr::StringPtr', '^Fr::Ptr<String>$', FrPtrStringPrinter)
    pp.add_printer('Fr::Symbol', '^Fr::Symbol$', FrSymbolPrinter)
-   pp.add_printer('Fr::Vector', '^Fr::Vector<', FrVectorPrinter)
+   pp.add_printer('Fr::Vector', '^Fr::Vector<', FrObjectPrinter)
    pp.add_printer('Fr::ObjectPtr', '^Fr::Ptr<Object>$', FrPtrObjectPrinter)
    pp.add_printer('Fr::ScopedObject', '^Fr::ScopedObject<', FrScopedObjectPrinter)
    pp.add_printer('TermVectorSparse', 'TermVectorSparse', FrSparseVectorPrinter)
+   pp.add_printer('TermVectorDense', 'TermVectorDense', FrDenseVectorPrinter)
    return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(),build_pretty_printer())
