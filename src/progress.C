@@ -211,14 +211,15 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       }
    else if (tty())
       {
-      double elapsed { 0.0 } ;
-      double estimated { 0.0 } ;
       double frac = (curr_count / (double)m_limit) ;
+      double elapsed = m_timer ? m_timer->seconds() : 0.0 ;
+      if (elapsed && elapsed - m_lastupdate < 0.2)
+	 return ;			// prevent some race conditions by not updating extremely often
+      double estimated { 0.0 } ;
       size_t count = (size_t)(m_barsize * frac + 0.8) ;
       size_t prevcount = (size_t)(m_barsize * m_prevfrac + 0.8) ;
       if (m_show_elapsed || m_show_estimated)
 	 {
-	 elapsed = m_timer ? m_timer->seconds() : 0.0 ;
 	 // don't update more often than every two seconds unless there has been
 	 //   a substantial increase in the proportion completed, to avoid generating
 	 //   a huge amount of output (and thus a huge file when capturing output)
@@ -289,6 +290,10 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       m_prevfrac = frac ;
       if (stars > prevstars)
 	 {
+	 double elapsed = m_timer ? m_timer->seconds() : 0.0 ;
+	 if (elapsed && elapsed - m_lastupdate < 0.2)
+	    return ;			// prevent multiple concurrent outputs
+	 m_lastupdate = elapsed ;
 	 if (prevstars == 0)
 	    cout << *m_firstprefix << '[' ;
 	 while (prevstars++ < stars)
@@ -298,7 +303,6 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	    cout << ']' ;
 	    if (m_show_elapsed)
 	       {
-	       double elapsed = m_timer ? m_timer->seconds() : 0.0 ;
 	       cout << ' ' ;
 	       display_time(elapsed) ;
 	       }
