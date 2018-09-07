@@ -487,7 +487,7 @@ class FrObjectPrinter(FrPrinter):
                  'HashTable_u32u32' : ('Fr::HashTable<unsigned int, unsigned int>', FrHashTablePrinter),
                  'SparseVector_u32flt': ('Fr::SparseVector<unsigned int, float>', FrSparseVectorPrinter),
                  'DenseVector_u32flt': ('Fr::DenseVector<unsigned int, float>', FrDenseVectorPrinter),
-                 'WcTermVectorSparse' : ('Fr::SparseVector<unsigned int, float>', FrSparseVectorPrinter)
+                 'WcTermVectorSparse' : ('Fr::SparseVector<unsigned int, float>', FrSparseVectorPrinter),
                  'WcTermVectorDense' : ('Fr::DenseVector<unsigned int, float>', FrDenseVectorPrinter)
                  }
 
