@@ -132,13 +132,13 @@ Vector<IdxT,ValT>* Vector<IdxT,ValT>::incr(const Vector* other)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
-Vector<IdxT,ValT>* Vector<IdxT,ValT>::incr(const Vector* other, ValT weight)
+Vector<IdxT,ValT>* Vector<IdxT,ValT>::incr(const Vector* other, ValT wt)
 {
    if (!other) return this ;
    if (this->isSparseVector())
       {
       auto sv1 = static_cast<SparseVector<IdxT,ValT>*>(this) ;
-      return sv1->incr(other,weight) ;
+      return sv1->incr(other,wt) ;
       }
    else if (other->isSparseVector())
       {
@@ -148,7 +148,7 @@ Vector<IdxT,ValT>* Vector<IdxT,ValT>::incr(const Vector* other, ValT weight)
 	 auto indx = sv->elementIndex(i) ;
 	 if (indx < this->m_size)
 	    {
-	    this->m_values.full[indx] += (weight * sv->elementValue(i)) ;
+	    this->m_values.full[indx] += (wt * sv->elementValue(i)) ;
 	    }
 	 }
       }
@@ -157,7 +157,7 @@ Vector<IdxT,ValT>* Vector<IdxT,ValT>::incr(const Vector* other, ValT weight)
       // both vectors are dense and have the same dimensions, so we can just do an element-by-element addition
       for (size_t i = 0 ; i < this->m_size ; ++i)
 	 {
-	 this->m_values.full[i] += (weight * other->m_values.full[i]) ;
+	 this->m_values.full[i] += (wt * other->m_values.full[i]) ;
 	 }
       }
    return this ;
