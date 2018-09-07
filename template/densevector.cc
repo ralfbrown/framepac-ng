@@ -51,7 +51,7 @@ DenseVector<IdxT,ValT>::DenseVector(size_t cap) : super(cap)
 {
    this->reserve(cap) ;
    this->m_size = cap ;
-   ValT* values = *this->m_values.full ;
+   ValT* values = this->m_values.full ;
    std::fill(values,values+cap,ValT(0)) ;
    return ;
 }
@@ -73,7 +73,7 @@ ObjectPtr DenseVector<IdxT,ValT>::subseq_int(const Object* obj, size_t start, si
       return nullptr ;
    auto orig = static_cast<const DenseVector<IdxT,ValT>*>(obj) ;
    auto copy = DenseVector<IdxT,ValT>::create(stop-start) ;
-   std::copy((*orig->m_values.full)+start,*orig->m_values.full+stop,*copy->m_values.full) ;
+   std::copy(orig->m_values.full+start,orig->m_values.full+stop,copy->m_values.full) ;
    return copy ;
 }
 

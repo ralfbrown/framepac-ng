@@ -201,19 +201,19 @@ class Vector : public VectorBase
       union val_by_type
 	 {
 	 public:
-	    NewPtr<ValT> full ;
-	    ValT         onehot ;
+	    ValT* full ;
+	    ValT  onehot ;
          public:
-	    val_by_type() { full = nullptr ; }
+	    val_by_type() : full(nullptr) { }
 	    ~val_by_type() {}
 	 } m_values ;
       union idx_by_type
 	 {
          public:
-	    NewPtr<IdxT> full ;
-	    IdxT         onehot ;
+	    IdxT* full ;
+	    IdxT  onehot ;
          public:
-	    idx_by_type() { full = nullptr ; }
+	    idx_by_type() : full(nullptr) { }
 	    ~idx_by_type() {}
 	 } m_indices ;
    } ;
@@ -240,7 +240,7 @@ class OneHotVector : public Vector<IdxT,ValT>
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
       OneHotVector(IdxT index, ValT value = (ValT)1) { this->m_indices.onehot = index ; this->m_values.onehot = value ; }
       OneHotVector(const OneHotVector&) = default ;
-      ~OneHotVector() { this->m_values.onehot = (ValT)0 ; }
+      ~OneHotVector() {}
       OneHotVector& operator= (const OneHotVector&) = default ;
 
    protected: // implementation functions for virtual methods
@@ -366,8 +366,11 @@ class SparseVector : public Vector<IdxT,ValT>
       SparseVector(size_t capacity = 0) ;
       SparseVector(const char* rep) ;
       SparseVector(const SparseVector&) ;
-      // G++ 4.8 breaks linkage if we explicitly default the dtor....
-      // ~SparseVector() = default ;
+      ~SparseVector()
+	 {
+	 delete[] this->m_values.full ; this->m_values.full = nullptr ;
+	 delete[] this->m_indices.full ; this->m_indices.full = nullptr ;
+	 }
       SparseVector& operator= (const SparseVector&) ;
 
    protected: // implementation functions for virtual methods
@@ -427,6 +430,8 @@ class SparseVector : public Vector<IdxT,ValT>
 	 this->m_indices.full[N] = k ;
 	 this->m_values.full[N] = value ;
 	 }
+
+      void updateContents(IdxT* indices, ValT* values) ;
 
    protected:
       // helper functions, needed to properly output various index and value types
@@ -489,7 +494,7 @@ class DenseVector : public Vector<IdxT,ValT>
       DenseVector(size_t cap = 0) ;
       DenseVector(const char* rep) ;
       DenseVector(const super&vec) : super(vec) {} ;
-      ~DenseVector() {}
+      ~DenseVector() { delete[] this->m_values.full ; this->m_values.full = nullptr ; }
       DenseVector& operator= (const DenseVector&) ;
 
    protected: // implementation functions for virtual methods

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-08-27					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -69,7 +69,7 @@ SparseVector<IdxT,ValT>::SparseVector(const SparseVector& orig)
    : Vector<IdxT,ValT>(orig)
 {
    this->m_indices.full = new IdxT[this->capacity()] ;
-   std::copy(*orig.m_indices.full,(*orig.m_indices.full)+orig.size(),*this->m_indices.full) ;
+   std::copy(orig.m_indices.full,orig.m_indices.full+orig.size(),this->m_indices.full) ;
    return ;
 }
 
@@ -335,8 +335,7 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::incr(const Vector<IdxT,ValT>* 
    this->startModifying() ;
    this->m_size = new_size ;
    this->m_capacity = new_size ;
-   this->m_indices.full = new_indices ;
-   this->m_values.full = new_values ;
+   this->updateContents(new_indices,new_values) ;
    this->doneModifying() ;
    return this ;
 }
@@ -422,6 +421,18 @@ int SparseVector<IdxT,ValT>::compare_(const Object* obj1, const Object* obj2)
 //----------------------------------------------------------------------------
 
 template <typename IdxT, typename ValT>
+void SparseVector<IdxT,ValT>::updateContents(IdxT* indices, ValT* values)
+{
+   delete[] this->m_indices.full ;
+   this->m_indices.full = indices ;
+   delete[] this->m_values.full ;
+   this->m_values.full = values ;
+   return  ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdxT, typename ValT>
 bool SparseVector<IdxT,ValT>::reserve(size_t N)
 {
    if (N < this->m_capacity) return true ;  // nothing to do
@@ -433,8 +444,7 @@ bool SparseVector<IdxT,ValT>::reserve(size_t N)
       new_values[i] = this->m_values.full[i] ;
       }
    this->startModifying() ;
-   this->m_indices.full = new_indices ;
-   this->m_values.full = new_values ;
+   this->updateContents(new_indices,new_values) ;
    this->m_capacity = N ;
    this->doneModifying() ;
    return true ;
