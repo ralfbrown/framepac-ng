@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -160,7 +160,7 @@ void RandomFloat::randomize()
 /*	Random sampling							*/
 /************************************************************************/
 
-bool* RandomSample(size_t total, size_t sample)
+NewPtr<bool> RandomSample(size_t total, size_t sample)
 {
    if (sample > total)
       return nullptr ;

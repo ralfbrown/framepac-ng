@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-02					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -23,6 +23,8 @@
 #define __FrRANDOM_H_INCLUDED
 
 #include <random>
+#include "framepac/smartptr.h"
+
 using namespace std ;
 
 namespace Fr {
@@ -79,7 +81,7 @@ class RandomFloat
 void Randomize() ;
 void Randomize(size_t seed) ;
 
-bool* RandomSample(size_t total, size_t sample) ;
+NewPtr<bool> RandomSample(size_t total, size_t sample) ;
 
 //----------------------------------------------------------------------------
 

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-21					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -499,7 +499,7 @@ RefArray* Array::randomSample(double sz) const
       sz = (size_t)(sz * this->size() + 0.9) ;
    size_t to_sample = (size_t)sz ;
    RefArray* sample = RefArray::create(to_sample) ;
-   bool* selected = RandomSample(this->size(),to_sample) ;
+   NewPtr<bool> selected = RandomSample(this->size(),to_sample) ;
    size_t index = 0 ;
    for (size_t i = 0 ; i < size() ; ++i)
       {

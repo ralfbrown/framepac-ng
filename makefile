@@ -846,6 +846,9 @@ framepac/perthread.h:	framepac/config.h
 framepac/progress.h:	framepac/atomic.h framepac/cstring.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+framepac/random.h:	framepac/smartptr.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 framepac/rational.h:	framepac/number.h
 	$(TOUCH) $@ $(BITBUCKET)
 
