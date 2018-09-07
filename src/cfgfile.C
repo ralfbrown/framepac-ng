@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.11, last edit 2018-09-06					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -421,15 +421,7 @@ CharPtr Configuration::currentValue(const char* param_name, const char* bit_name
       if (strcasecmp(bit_name,bits->m_name) == 0)
 	 {
 	 unsigned long flags = *reinterpret_cast<unsigned long*>(config_loc(this,tbl)) ;
-	 size_t len = strlen(bits->m_name) ;
-	 char* value = new char[len+2] ;
-	 if (value)
-	    {
-	    value[0] = (bits->m_bitmask & flags) != 0 ? '+' : '-' ;
-	    memcpy(value+1,bits->m_name,len+1) ;
-	    return value ;
-	    }
-	 break ;
+	 return aprintf("%c%s",((bits->m_bitmask & flags) != 0 ? '+' : '-'),bits->m_name) ;
 	 }
       }
    return nullptr ;
