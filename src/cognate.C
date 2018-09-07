@@ -334,30 +334,6 @@ size_t CognateData::cognateLetters(const char* str1, const char* str2, size_t& l
 
 //----------------------------------------------------------------------------
 
-static CogScoreInfo** alloc_score_buffer(size_t rows, size_t columns)
-{
-   auto buffer = new CogScoreInfo*[rows] ;
-   if (!buffer)
-      return buffer ;
-   for (size_t i = 0 ; i < rows ; ++i)
-      buffer[i] = new CogScoreInfo[columns] ;
-   return buffer ;
-}
-
-//----------------------------------------------------------------------------
-
-static void free_score_buffer(CogScoreInfo** buffer, size_t rows)
-{
-   if (!buffer)
-      return;
-   for (size_t i = 0 ; i < rows ; ++i)
-      delete[] buffer[i] ;
-   delete buffer ;
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
 static float score_exact_matches(const char* word1, size_t len1, const char* word2, size_t len2,
    CogScoreInfo** score_buf, size_t rows)
 {
@@ -587,10 +563,15 @@ double CognateData::score(const char* word1, const char* word2, bool exact_lette
    if (!word1 || !word2 || (!*word1 && !*word2))
       return 0.0 ;
    size_t rows = align ? strlen(word1) + 1 : longestSource() + 1 ;
-   auto score_buf = alloc_score_buffer(rows,strlen(word2)+1) ;
+   size_t len2 = strlen(word2) ;
+   size_t columns = len2+1 ;
+   LocalAlloc<CogScoreInfo*,512> score_buf(rows) ;
+   LocalAlloc<CogScoreInfo,4096> score_inf(rows*columns) ;
+   score_buf[0] = score_inf ;
+   for (size_t i = 1 ; i < rows ; ++i)
+      score_buf[i] = score_buf[i-1] + columns ;
    float cogscore ;
    size_t len1 = strlen(word1) ;
-   size_t len2 = strlen(word2) ;
    if (exact_letter_match_only)
       {
       cogscore = score_exact_matches(word1,len1,word2,len2,score_buf,rows) ;
@@ -608,7 +589,6 @@ double CognateData::score(const char* word1, const char* word2, bool exact_lette
       // accumulate alignment info from the source/target lengths recorded in score_buf
       *align = extract_alignment(score_buf,len1,len2) ;
       }
-   free_score_buffer(score_buf,rows) ;
    return scaledScore(cogscore,word1,word2) ;
 }
 
