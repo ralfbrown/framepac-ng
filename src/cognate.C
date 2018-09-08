@@ -485,21 +485,32 @@ float CognateData::score_general(const char* word1, size_t len1, const char* wor
       score_buf[row%rows][0].init(score_buf[(row-1)%rows][0] + m_deletion[(unsigned char)word1[row-1]],1,0) ;
       for (size_t col = 1 ; col < len2 ; ++col)
 	 {
-	 float ins = score_buf[row%rows][col-1] + m_insertion[(unsigned char)word2[col-1]] ;
-	 float del = score_buf[(row-1)%rows][col] + m_deletion[(unsigned char)word1[row-1]] ;
 	 float subst = score_buf[(row-1)%rows][col-1]
 	    + m_one2one[(unsigned char)word1[row]][(unsigned char)word2[col]] ;
+	 size_t slen = 1 ;
+	 size_t tlen = 1 ;
+	 float ins = score_buf[row%rows][col-1] + m_insertion[(unsigned char)word2[col-1]] ;
+	 float del = score_buf[(row-1)%rows][col] + m_deletion[(unsigned char)word1[row-1]] ;
+	 if (ins > del)
+	    {
+	    if (ins > subst)
+	       {
+	       slen = 0 ;
+	       subst = ins ;
+	       }
+	    }
+	 else if (del > subst)
+	    {
+	    tlen = 0 ;
+	    subst = del ;
+	    }
 	 size_t srclen ;
 	 size_t trglen ;
 	 float subst2 = best_match(word1,len1,row,word2,len2,col,srclen,trglen) ;
-	 if (ins > del && ins > subst && ins > subst2)
-	    score_buf[row%rows][col].init(ins,0,1) ;
-	 else if (del > ins && del > subst && del > subst2)
-	    score_buf[row%rows][col].init(del,1,0) ;
-	 else if (subst >= ins && subst >= del && subst >= subst2)
-	    score_buf[row%rows][col].init(subst,1,1) ;
-	 else
+	 if (subst2 > subst)
 	    score_buf[row%rows][col].init(subst2,srclen,trglen) ;
+	 else
+	    score_buf[row%rows][col].init(subst,slen,tlen) ;
 	 }
       }
    return score_buf[(len1-1)%rows][len2-1].score ;

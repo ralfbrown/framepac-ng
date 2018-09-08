@@ -188,6 +188,50 @@ char* trim_whitespace(char* s, std::locale& locale)
    return s ;
 }
 
+//----------------------------------------------------------------------
+
+unsigned count_words(const char *s)
+{
+   if (!s || !*s)
+      return 0 ;
+   unsigned count = 1 ;
+   for ( ; *s ; s++)
+      {
+      if (*s == ' ')
+	 count++ ;
+      }
+   return count ;
+}
+
+//----------------------------------------------------------------------
+
+char *remove_quoting(char *text)
+{
+   text = trim_whitespace(text) ;
+   size_t len = strlen(text) ;
+   if (len > 1)
+      {
+      --len ;
+      if (text[0] == '|' && text[len] == '|')
+	 {
+	 text[len] = '\0' ;
+	 return text+1 ;
+	 }
+      if (text[0] == '"' && text[len] == '"')
+	 {
+	 size_t dest = 0 ;
+	 for (size_t i = 1 ; i < len ; ++i)
+	    {
+	    if (text[i] == '\\')
+	       ++i ;
+	    text[dest++] = text[i] ;
+	    }
+	 text[dest] = '\0' ;
+	 }
+      }
+   return text ;
+}
+
 //----------------------------------------------------------------------------
 
 void lowercase_string(char* s)

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-14					*/
+/* Version 0.11, last edit 2018-09-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -21,6 +21,8 @@
 
 #include "framepac/mmapfile.h"
 #include "framepac/wordcorpus.h"
+#include "framepac/words.h"
+#include "framepac/texttransforms.h"
 
 namespace Fr
 {
@@ -237,9 +239,39 @@ bool WordCorpusT<IdT,IdxT>::loadFromMmap(const char* mmap_base, size_t mmap_len)
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::loadContextEquivs(const char* filename, bool force_lowercase)
 {
-   (void)filename; (void)force_lowercase;
-//TODO
-   return false ; 
+   discardContextEquivs() ;
+   CInputFile fp(filename) ;
+   if (!fp)
+      return false ;
+   while (auto line = fp.getTrimmedLine())
+      {
+      char* lineptr = (char*)line ;
+      char *tab = strchr(lineptr,'\t') ;
+      if (tab)
+	 {
+	 *tab++ = '\0' ;
+	 if (force_lowercase)
+	    {
+	    lowercase_string(lineptr) ;
+	    }
+	 lineptr = remove_quoting(lineptr) ;
+	 WordSplitterEnglish splitter(lineptr) ;
+	 StringPtr keystr = splitter.delimitedWords() ;
+	 const char *key = keystr->stringValue() ;
+	 size_t keylen = count_words(key) ;
+	 if (keylen > m_max_context)
+	    m_max_context = keylen ;
+	 tab = remove_quoting(tab) ;
+	 ID ctxt = m_wordmap->addKey(key) ;
+	 ID id = m_wordmap->addKey(tab) ;
+	 this->m_contextmap->add(m_wordmap->getKey(ctxt),id) ;
+	 }
+      else
+	 {
+	 cerr << "Skipping line without tab separating text and classname: " << lineptr << endl ;
+	 }
+      }
+   return true ; 
 }
 
 //----------------------------------------------------------------------------
@@ -247,11 +279,23 @@ bool WordCorpusT<IdT,IdxT>::loadContextEquivs(const char* filename, bool force_l
 template <typename IdT, typename IdxT>
 size_t WordCorpusT<IdT,IdxT>::loadAttribute(const char* filename, unsigned attr_bit, bool add_words)
 {
-   if (!filename || !*filename)
+   CInputFile fp(filename) ;
+   if (!fp)
       return 0 ;
-   (void)attr_bit; (void)add_words;
-//TODO
-   return 0 ;
+   size_t count = 0 ;
+   while (auto line = fp.getTrimmedLine())
+      {
+      if (line[0] && line[0] != ';' && line[0] != '#')
+	 {
+	 ID word = add_words ? m_wordmap->addKey(*line) : m_wordmap->getIndex(*line) ;
+	 if (word != ErrorID)
+	    {
+	    setAttribute(word,attr_bit) ;
+	    ++count ;
+	    }
+	 }
+      }
+   return count ;
 }
 
 //----------------------------------------------------------------------------

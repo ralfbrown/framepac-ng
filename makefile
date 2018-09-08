@@ -743,7 +743,7 @@ template/vector.cc:	framepac/fasthash64.h framepac/vector.h
 template/vector_arith.cc:	template/vector.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/wordcorpus.cc:	framepac/wordcorpus.h
+template/wordcorpus.cc:	framepac/wordcorpus.h framepac/mmapfile.h framepac/texttransforms.h framepac/words.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/argparser.h:	framepac/as_string.h

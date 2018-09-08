@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-26					*/
+/* Version 0.11, last edit 2018-09-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -42,6 +42,9 @@ char* skip_to_whitespace(char*, std::locale&) ;
 
 char* trim_whitespace(char*) ;
 char* trim_whitespace(char*, std::locale&) ;
+
+unsigned count_words(const char*) ;
+char* remove_quoting(char*) ;
 
 void lowercase_string(char*) ;
 void lowercase_string(CharPtr&) ;
