@@ -30,7 +30,7 @@ namespace Fr
 
 ListBuilder::ListBuilder(List*& init_list)
 {
-   m_list = init_list ;
+   m_list = init_list ? init_list : List::emptyList() ;
    List* tail = m_list->last() ;
    m_list_end = tail->nextPtr() ;
    init_list = List::emptyList() ;
@@ -41,10 +41,10 @@ ListBuilder::ListBuilder(List*& init_list)
 
 ListBuilder::ListBuilder(const List* init_list, bool)
 {
+   if (init_list == nullptr) init_list = List::emptyList() ;
    m_list = static_cast<List*>(init_list->clone().move()) ;
    List* tail = m_list->last() ;
    m_list_end = tail->nextPtr() ;
-   init_list = List::emptyList() ;
    return ;
 }
 
