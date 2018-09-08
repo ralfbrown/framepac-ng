@@ -147,9 +147,9 @@ bool SparseVector<IdxT,ValT>::newElement(IdxT index, ValT value)
       IdxT mid_idx = (IdxT)this->elementIndex(mid) ;
       if (mid_idx == index)
 	 return false ;			// failed, the element is already present
-      else if (mid_idx > index)
+      else if (mid_idx < index)
 	 lo = mid+1 ;
-      else // if (mid_idx < index)
+      else // if (mid_idx > index)
 	 hi = mid ;
       }
    // if we didn't find the element, shift the following elements to
