@@ -291,7 +291,7 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       if (stars > prevstars)
 	 {
 	 double elapsed = m_timer ? m_timer->seconds() : 0.0 ;
-	 if (elapsed && elapsed - m_lastupdate < 0.2)
+	 if (elapsed && elapsed - m_lastupdate < 0.2 && stars < 50)
 	    return ;			// prevent multiple concurrent outputs
 	 m_lastupdate = elapsed ;
 	 if (prevstars == 0)
