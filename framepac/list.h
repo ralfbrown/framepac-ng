@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-25					*/
+/* Version 0.11, last edit 2018-09-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -22,13 +22,13 @@
 #ifndef _Fr_LIST_H_INCLUDED
 #define _Fr_LIST_H_INCLUDED
 
-#include <forward_list>
 #include "framepac/object.h"
 
 namespace Fr {
 
 // forward declarations
 class List ;
+class DblList ;
 class ListBuilder ;
 
 //----------------------------------------------------------------------------
@@ -48,8 +48,9 @@ class ListIter
       ~ListIter() = default ;
 
       inline Object* operator* () const ;
-//!!!      List* operator-> () const { return  m_list ; }
+      List* operator-> () const { return  m_list ; }
       inline ListIter& operator++ () ;
+      inline ListIter operator++ (int) ;
       bool operator== (const ListIter& other) const { return m_list == other.m_list ; }
       bool operator!= (const ListIter& other) const { return m_list != other.m_list ; }
    } ;
@@ -211,8 +212,45 @@ inline Ptr<List>::Ptr() : m_object(List::emptyList()) { }
 
 typedef Ptr<List> ListPtr ;
 
+//----------------------------------------------------------------------------
+// deferred definitions of functions subject to circular dependencies
+
+inline Object* ListIter::operator* () const { return m_list->front() ; }
+inline ListIter& ListIter::operator++ () { if (m_list != List::empty_list) m_list = m_list->next() ; return *this ; }
+inline ListIter ListIter::operator++ (int)
+   { ListIter copy(*this) ; if (m_list != List::empty_list) m_list = m_list->next() ; return copy ; }
+
 /************************************************************************/
 /************************************************************************/
+
+//----------------------------------------------------------------------------
+// due to the circular dependencies, we can't actually define many of the functions
+//   inline in the iterator class definition; they will be defined after the underlying
+//   class has been declared
+
+class DblListIter
+   {
+   public:
+      DblListIter(DblList *l) : m_list(l) {}
+      DblListIter(const DblList *l) : m_list(const_cast<DblList*>(l)) {}
+      DblListIter(const DblListIter &o) : m_list(o.m_list) {}
+      DblListIter(ObjectIter &o) : m_list((DblList*)o.baseObject()) {}
+      ~DblListIter() = default ;
+
+      inline Object* operator* () const ;
+      DblList* operator-> () const { return  m_list ; }
+      inline DblListIter& operator++ () ;
+      inline DblListIter operator++ (int) ;
+      inline DblListIter& operator-- () ;
+      inline DblListIter operator-- (int) ;
+      bool operator== (const DblListIter& other) const { return m_list == other.m_list ; }
+      bool operator!= (const DblListIter& other) const { return m_list != other.m_list ; }
+
+   private:
+      DblList	*m_list ;
+   } ;
+
+//----------------------------------------------------------------------------
 
 // doubly-linked list
 class DblList : public List
@@ -228,6 +266,9 @@ class DblList : public List
       static DblList* create(Object*, Object*, Object*, Object*) ;
       static DblList* create(Object*, Object*, Object*, Object*, Object*) ;
 
+      DblList* next() const { return static_cast<DblList*>(m_next) ; }
+      DblList* prev() const { return m_prev ; }
+      static DblList* emptyList() { return static_cast<DblList*>(empty_list) ; }
       //TODO
 
    protected: // construction/destruction
@@ -253,6 +294,26 @@ class DblList : public List
       static Initializer s_init ;
       
    } ;
+
+//----------------------------------------------------------------------------
+
+template <>
+inline Ptr<DblList>::Ptr() : m_object(static_cast<DblList*>(List::emptyList())) { }
+
+typedef Ptr<DblList> DblListPtr ;
+
+//----------------------------------------------------------------------------
+// deferred definitions of functions subject to circular dependencies
+
+inline Object* DblListIter::operator* () const { return m_list->front() ; }
+inline DblListIter& DblListIter::operator++ ()
+   { if (m_list != DblList::emptyList()) m_list = m_list->next() ; return *this ; }
+inline DblListIter DblListIter::operator++ (int)
+   { DblListIter copy(*this) ; if (m_list != DblList::emptyList()) m_list = m_list->next() ; return copy ; }
+inline DblListIter& DblListIter::operator-- ()
+   { if (m_list != DblList::emptyList()) m_list = m_list->prev() ; return *this ; }
+inline DblListIter DblListIter::operator-- (int)
+   { DblListIter copy(*this) ; if (m_list != DblList::emptyList()) m_list = m_list->prev() ; return copy ; }
 
 /************************************************************************/
 /************************************************************************/
@@ -298,12 +359,6 @@ class ListBuilder
       ListBuilder& operator += (Object* o) { append(o) ; return *this ; }
       ListBuilder& operator += (const char* s) { append(s) ; return *this ; }
    } ;
-
-//----------------------------------------------------------------------------
-// deferred definitions of functions subject to circular dependencies
-
-inline Object* ListIter::operator* () const { return m_list->front() ; }
-inline ListIter& ListIter::operator++ () { if (m_list != List::empty_list) m_list = m_list->next() ; return *this ; }
 
 /************************************************************************/
 /************************************************************************/
