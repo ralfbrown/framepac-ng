@@ -265,22 +265,19 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       double elapsed = m_timer.seconds() ;
       // prevent some race conditions by not updating more than 3 times / second
       //   (plus it would just be too frenetic for the user)
-      if (elapsed && elapsed - m_lastupdate < 0.34)
+      if (elapsed - m_lastupdate < 0.34)
+	 return ;
+      // don't update more often than every two seconds unless there has been
+      //   a substantial increase in the proportion completed, to avoid generating
+      //   a huge amount of output (and thus a huge file when capturing output)
+      if (frac < 1.0 && stars <= prevstars && elapsed < m_lastupdate + 2)
 	 return ;
       double estimated { 0.0 } ;
-      if (m_show_elapsed || m_show_estimated)
+      if (m_show_estimated && elapsed * frac > 0.01)
 	 {
-	 // don't update more often than every two seconds unless there has been
-	 //   a substantial increase in the proportion completed, to avoid generating
-	 //   a huge amount of output (and thus a huge file when capturing output)
-	 if (elapsed && frac < 1.0 && stars <= prevstars && elapsed < m_lastupdate + 2)
-	    return ;
-	 if (m_show_estimated && elapsed * frac > 0.01)
-	    {
-	    estimated = (elapsed / frac) - elapsed ;
-	    }
+	 estimated = (elapsed / frac) - elapsed ;
 	 }
-      else if (stars == prevstars && frac < 1.0)
+      else if (!m_show_elapsed && stars == prevstars && frac < 1.0)
 	 return ;
       m_lastupdate = elapsed ;
       m_prevfrac = frac ;
@@ -293,7 +290,7 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       if (stars > prevstars || frac == 1.0)
 	 {
 	 double elapsed = m_timer.seconds() ;
-	 if (elapsed && elapsed - m_lastupdate < 0.5 && stars < m_barsize)
+	 if (elapsed - m_lastupdate < 0.5 && stars < m_barsize)
 	    return ;			// prevent multiple concurrent outputs
 	 m_prevfrac = frac ;
 	 m_lastupdate = elapsed ;
