@@ -560,10 +560,10 @@ bool SuffixArray<IdT,IdxT>::enumerateParallel(unsigned minlen, unsigned maxlen, 
    EnumFunc* fn, void* user_arg) const
 {
    // split the suffix array into segments on first-word boundaries;
-   //   we use 4 times the number of threads to keep overhead low
+   //   we use 16 times the number of threads to keep overhead low
    //   while avoiding having one or two stragglers at the end
    ThreadPool *tpool = ThreadPool::defaultPool() ;
-   size_t num_segments(tpool->numThreads() * 4) ;
+   size_t num_segments(tpool->numThreads() * 16) ;
    if (num_segments == 0)
       return enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,minfreq,fn,user_arg) ;
    size_t segment_size((m_numids - getFreq(m_sentinel) + num_segments-1) / num_segments) ;
