@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-08-27					*/
+/* Version 0.11, last edit 2018-09-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -319,7 +319,7 @@ class HashTableHelper
    } ;
 
 inline HashTableBase::~HashTableBase()
-{ while (m_active_resizes.load()) std::this_thread::yield() ; }
+{ while (m_active_resizes.load()) std::this_thread::sleep_for(std::chrono::milliseconds(1)) ; }
 
 /************************************************************************/
 /*	Declarations for template class HashTable			*/

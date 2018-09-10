@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.05, last edit 2018-04-18					*/
+/*  Version 0.11, last edit 2018-09-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File synchevent.C		synchronization events			*/
@@ -166,9 +166,13 @@ void SynchEventCounted::wait()
 void SynchEventCounted::waitForWaiters()
 {
    set() ;
+   size_t count = 0 ;
    while ((m_futex_val.load() & ~m_mask_set) > 0)
       {
-      std::this_thread::yield() ;
+      if (++count < 100)
+	 std::this_thread::yield() ;
+      else
+	 std::this_thread::sleep_for(std::chrono::milliseconds(1)) ;
       }
    return  ;
 }

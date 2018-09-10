@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-25					*/
+/* Version 0.11, last edit 2018-09-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -526,7 +526,7 @@ bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* outpu
       }
    WorkOrder* order = makeWorkOrder(fn,input,output) ;
    if (!order) return false ;
-   for ( ; ; )
+   for (size_t loop_count = 0 ; ; ++loop_count)
       {
       // do a round-robin scan of the worker threads for one with space in its request queue
       unsigned start_thread = m_prev_thread ;
@@ -544,7 +544,10 @@ bool ThreadPool::dispatch(ThreadPoolWorkFunc* fn, const void* input, void* outpu
 	    }
          } while (threadnum != start_thread) ;
       // if all of the queues are full, go to sleep to allow time for a request to complete
-      this_thread::yield() ;
+      if (loop_count < 10)
+	 this_thread::yield() ;
+      else
+	 this_thread::sleep_for(std::chrono::milliseconds(1)) ;
       }
    return true ;
 }
@@ -582,7 +585,7 @@ bool ThreadPool::dispatchBatch(ThreadPoolWorkFunc* fn, size_t count, size_t insi
       if (curr_item == prev_item)
 	 {
 	 // all queues were full, so wait a bit to allow the workers to free up space
-	 this_thread::yield() ;
+	 this_thread::sleep_for(std::chrono::milliseconds(1)) ;
 	 }
       prev_item = curr_item ;
       }

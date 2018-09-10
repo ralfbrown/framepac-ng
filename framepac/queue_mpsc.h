@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-08					*/
+/* Version 0.11, last edit 2018-09-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -79,9 +79,13 @@ class MPSC_Queue
          {
 	 Node* n = m_tail  ;
 	 Node* next ;
+	 size_t loop_count = 0 ;
 	 while ((next = Atomic<Node*>::ref(n->m_next).load()) == nullptr)
 	    {
-	    std::this_thread::yield() ;
+	    if (++loop_count < 10)
+	       std::this_thread::yield() ;
+	    else
+	       std::this_thread::sleep_for(std::chrono::microseconds(500)) ;
 	    }
 	 m_tail = next ;
 	 delete n ;
