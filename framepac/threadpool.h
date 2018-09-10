@@ -27,6 +27,7 @@
 #include "framepac/atomic.h"
 #include "framepac/critsect.h"
 #include "framepac/semaphore.h"
+#include "framepac/synchevent.h"
 
 namespace Fr {
 
@@ -124,7 +125,7 @@ class ThreadPool
       WorkBatch* m_batches { nullptr } ;
       WorkOrder* m_freeorders { nullptr } ;
       CriticalSection m_flguard ;	// critical section for guarding the work-order freelist
-      Semaphore  m_ack { 0 } ;
+      SynchEventCountdown m_ack ;
 #ifndef FrSINGLE_THREADED
       thread**   m_pool { nullptr } ;	// the actual thread objects
 #endif /* !FrSINGLE_THREADED */

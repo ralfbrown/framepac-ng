@@ -668,20 +668,18 @@ void ThreadPool::waitUntilIdle()
       return ;				// all jobs were handled immediately
    // tell all the workers to post when they've finished everything currently in
    //   their queue
-   for (size_t i = 0 ; i < numThreads() ; ++i)
+   m_ack.init(activeThreads()) ;
+   for (size_t i = 0 ; i < activeThreads() ; ++i)
       {
       WorkOrder* wo = makeWorkOrder(nullptr,&request_ack,nullptr) ;
       while (!m_queues[i].push(wo))
 	 {
 	 // queue was full, so retry in a little bit
-	 this_thread::yield() ;
+	 this_thread::sleep_for(std::chrono::milliseconds(3)) ;
 	 }
       }
    // wait until all of the workers have responded
-   for (size_t i = 0 ; i < numThreads() ; ++i)
-      {
-      m_ack.wait() ;
-      }
+   m_ack.wait() ;
    return ;
 }
 
@@ -737,7 +735,7 @@ WorkOrder* ThreadPool::nextOrder(unsigned index)
 
 void ThreadPool::ack(unsigned /*index*/)
 {
-   m_ack.post() ;
+   m_ack.consume() ;
    return  ;
 }
 
