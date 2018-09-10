@@ -266,7 +266,7 @@ bool WordCorpusT<IdT,IdxT>::loadContextEquivs(const char* filename, bool force_l
 	 ID id = m_wordmap->addKey(tab) ;
 	 this->m_contextmap->add(m_wordmap->getKey(ctxt),id) ;
 	 }
-      else
+      else if (*lineptr)
 	 {
 	 cerr << "Skipping line without tab separating text and classname: " << lineptr << endl ;
 	 }
