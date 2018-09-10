@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-06					*/
+/* Version 0.11, last edit 2018-09-08					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018 Carnegie Mellon University			*/
@@ -28,7 +28,8 @@ namespace Fr
 Allocator DblList::s_allocator(FramepaC::Object_VMT<DblList>::instance(),sizeof(DblList)) ;
 DblList::Initializer DblList::s_init ;
 
-
+/************************************************************************/
+/************************************************************************/
 
 } // end namespace Fr
 

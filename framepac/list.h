@@ -320,10 +320,6 @@ inline DblListIter DblListIter::operator-- (int)
 
 class ListBuilder
    {
-   private:
-      List  *m_list ;
-      List **m_list_end ;
-
    public:
       ListBuilder() : m_list(List::emptyList()), m_list_end(&m_list) {}
       ListBuilder(const ListBuilder&) = delete ;
@@ -358,6 +354,10 @@ class ListBuilder
 
       ListBuilder& operator += (Object* o) { append(o) ; return *this ; }
       ListBuilder& operator += (const char* s) { append(s) ; return *this ; }
+
+   private:
+      List  *m_list ;
+      List **m_list_end ;
    } ;
 
 /************************************************************************/
