@@ -185,7 +185,7 @@ inline void HashTable<KeyT,ValT>::Table::init(size_t size)
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-void HashTable<KeyT,ValT>::Table::clear()
+void HashTable<KeyT,ValT>::Table::cleanup()
 {
    // we have a potential race here in cleaning up old Tables, so atomically swap the pointer with NULL
    auto entries = Atomic<Entry*>::ref(m_entries).exchange(nullptr) ;
@@ -194,6 +194,24 @@ void HashTable<KeyT,ValT>::Table::clear()
    ifnot_INTERLEAVED(m_ptrs = nullptr) ;
    m_next_table.store(nullptr) ;
    m_next_free.store(nullptr) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
+void HashTable<KeyT,ValT>::Table::clear()
+{
+   for (size_t pos = 0 ; pos < m_fullsize ; ++pos)
+      {
+      auto key_at_pos = getKey(pos) ;
+      ValT value = getValue(pos) ;
+      if (remove_fn && value)
+	 {
+	 remove_fn(key_at_pos,value) ;
+	 }
+      m_entries[pos].init() ;
+      }
    return ;
 }
 
@@ -1534,7 +1552,7 @@ HashTable<KeyT,ValT>::~HashTable()
       Fr::atomic_thread_fence(std::memory_order_seq_cst) ; 
       debug_msg("HashTable dtor\n") ;
       }
-   table->clear() ;
+   table->cleanup() ;
    remove_fn = nullptr ;
    freeTables() ;
    return ;
@@ -1622,7 +1640,7 @@ typename HashTable<KeyT,ValT>::Table* HashTable<KeyT,ValT>::allocTable()
 template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::releaseTable(Table* t)
 {
-   t->clear() ;
+   t->cleanup() ;
    Table* freetab ;
    do
       {

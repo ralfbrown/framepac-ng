@@ -475,9 +475,9 @@ class HashTable : public HashTableBase
 	       init(size) ;
 	       return ;
 	    } ;
-	 ~Table() { clear() ; }
+	 ~Table() { cleanup() ; }
 	 void init(size_t size) ;
-	 void clear() ;
+	 void cleanup() ;
 	 bool good() const { return m_entries != nullptr ifnot_INTERLEAVED(&& m_ptrs != nullptr) && m_size > 0 ; }
 	 bool superseded() const { return m_next_table.load() != nullptr ; }
 	 bool resizingDone() const { return m_resizedone.load() ; }
@@ -603,7 +603,7 @@ class HashTable : public HashTableBase
 	 void replaceValue(size_t pos, ValT new_value) ;
 
 	 // ========== STL compatibility ==========
-	 // clear()
+	 void clear() ;
 	 // insert()
 	 // insert_or_assign()
 	 // emplace()
