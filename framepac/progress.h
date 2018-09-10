@@ -24,6 +24,7 @@
 
 #include "framepac/atomic.h"
 #include "framepac/cstring.h"
+#include "framepac/timer.h"
 
 namespace Fr
 {
@@ -61,7 +62,7 @@ class ProgressIndicator
       virtual void updateDisplay(size_t curr) = 0 ;
 
    protected:
-      ElapsedTimer*   m_timer ;
+      ElapsedTimer    m_timer ;
       size_t          m_limit ;
       size_t          m_interval ;
       Atomic<size_t>  m_count ;

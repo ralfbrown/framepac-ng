@@ -27,7 +27,6 @@
 #include <unistd.h>
 #include "framepac/progress.h"
 #include "framepac/stringbuilder.h"
-#include "framepac/timer.h"
 #include "framepac/texttransforms.h"
 
 namespace Fr
@@ -44,7 +43,7 @@ namespace Fr
 /************************************************************************/
 
 ProgressIndicator::ProgressIndicator(size_t interval, size_t limit)
-   : m_timer(new ElapsedTimer), m_limit(limit), m_interval(interval), m_count((size_t)0), m_prev_update((size_t)0),
+   : m_limit(limit), m_interval(interval), m_count((size_t)0), m_prev_update((size_t)0),
      m_show_elapsed(false), m_show_estimated(true)
 {
    return ;
@@ -55,7 +54,6 @@ ProgressIndicator::ProgressIndicator(size_t interval, size_t limit)
 ProgressIndicator::~ProgressIndicator()
 {
    finalize() ;
-   delete m_timer ;
    return ;
 }
 
@@ -160,6 +158,8 @@ void ConsoleProgressIndicator::computeBarSize()
    //   two columns for the open/close brackets, and we need six
    //   columns each if displaying elapsed or estimated time
    size_t overhead = strlen(m_firstprefix) + 3 ;
+   if (!tty())
+      m_show_estimated = false ;
    if (m_show_elapsed)
       overhead += 6 ;
    if (m_show_estimated)
@@ -174,7 +174,7 @@ void ConsoleProgressIndicator::computeBarSize()
       m_show_estimated = false ;
       overhead -= 6 ;
       }
-   m_barsize = m_linewidth - overhead ;
+   m_barsize = tty() ? (m_linewidth - overhead) : MAX_STARS ;
    return ;
 }
 
@@ -236,64 +236,64 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       //   by adding a period, wrapping after every 'per_line' 
       if (prev_intervals == 0)
 	 cout << *m_firstprefix ;
-      while (prev_intervals++ < intervals)
+      while (prev_intervals < intervals)
 	 {
-	 if (prev_intervals % m_per_line == 0)
+	 if (prev_intervals && prev_intervals % m_per_line == 0)
 	    {
 	    cout << endl << *m_restprefix << (char)('0' + ((prev_intervals / m_per_line) % 10)) ;
 	    }
 	 cout << '.' << flush ;
+	 ++prev_intervals ;
+	 }
+      return ;
+      }
+   double frac = (curr_count / (double)m_limit) ;
+   if (frac > 1.0)
+      {
+      // we've gone over 100% completion, so any time estimates become invalid
+      frac = 1.0 ;
+      if (m_prevfrac == 1.0)
+	 {
+	 m_show_estimated = false ;
+	 return ;
 	 }
       }
-   else if (tty())
+   double stars = round(m_barsize * frac) ;
+   double prevstars = round(m_barsize * m_prevfrac) ;
+   if (tty())
       {
-      double frac = (curr_count / (double)m_limit) ;
-      double elapsed = m_timer ? m_timer->seconds() : 0.0 ;
+      double elapsed = m_timer.seconds() ;
+      // prevent some race conditions by not updating more than 3 times / second
+      //   (plus it would just be too frenetic for the user)
       if (elapsed && elapsed - m_lastupdate < 0.34)
-	 return ;			// prevent some race conditions by not updating more than 3 times / second
+	 return ;
       double estimated { 0.0 } ;
-      size_t count = (size_t)(m_barsize * frac + 0.8) ;
-      size_t prevcount = (size_t)(m_barsize * m_prevfrac + 0.8) ;
       if (m_show_elapsed || m_show_estimated)
 	 {
 	 // don't update more often than every two seconds unless there has been
 	 //   a substantial increase in the proportion completed, to avoid generating
 	 //   a huge amount of output (and thus a huge file when capturing output)
-	 if (elapsed && frac < 1.0 && count <= prevcount && elapsed < m_lastupdate + 2)
+	 if (elapsed && frac < 1.0 && stars <= prevstars && elapsed < m_lastupdate + 2)
 	    return ;
-	 if (m_show_estimated && elapsed * frac >= 0.02)
+	 if (m_show_estimated && elapsed * frac > 0.01)
 	    {
 	    estimated = (elapsed / frac) - elapsed ;
 	    }
-	 m_lastupdate = elapsed ;
 	 }
-      else if (count == prevcount && frac < 1.0)
+      else if (stars == prevstars && frac < 1.0)
 	 return ;
-      if (frac > 1.0)
-	 {
-	 // we've gone over 100% completion, so any time estimates become invalid
-	 frac = 1.0 ;
-	 if (m_prevfrac == 1.0)
-	    {
-	    m_show_estimated = false ;
-	    m_show_elapsed = false ;
-	    return ;
-	    }
-	 }
+      m_lastupdate = elapsed ;
       m_prevfrac = frac ;
-      displayProgressBar(count,elapsed,estimated) ;
+      displayProgressBar(stars,elapsed,estimated) ;
       }
    else
       {
       // standard output is not a tty (i.e. it's been redirected), so just print up a line of MAX_STARS
       //   asterisks as the progress bar
-      double frac = (curr_count / (double)m_limit) ;
-      size_t stars = round(MAX_STARS * frac) ;
-      size_t prevstars = round(MAX_STARS * m_prevfrac) ;
-      if (stars > prevstars)
+      if (stars > prevstars || frac == 1.0)
 	 {
-	 double elapsed = m_timer ? m_timer->seconds() : 0.0 ;
-	 if (elapsed && elapsed - m_lastupdate < 0.5 && stars < MAX_STARS)
+	 double elapsed = m_timer.seconds() ;
+	 if (elapsed && elapsed - m_lastupdate < 0.5 && stars < m_barsize)
 	    return ;			// prevent multiple concurrent outputs
 	 m_prevfrac = frac ;
 	 m_lastupdate = elapsed ;
@@ -301,12 +301,13 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	    cout << *m_firstprefix << '[' ;
 	 while (prevstars++ < stars)
 	    cout << '*' ;
-	 if (frac >= 1.0 && prevstars <= MAX_STARS)
+	 if (frac >= 1.0 && (prevstars <= m_barsize || m_show_elapsed))
 	    {
 	    cout << ']' ;
 	    if (m_show_elapsed)
 	       {
-	       cout << ' ' <<  timeString(elapsed) ;
+	       cout << ' ' << timeString(elapsed) ;
+	       m_show_elapsed = false ;
 	       }
 	    }
 	 cout << flush ;
