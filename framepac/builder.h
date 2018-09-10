@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-14					*/
+/* Version 0.11, last edit 2018-09-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -52,6 +52,7 @@ class BufferBuilder
       bool read(char*& input) { return read(const_cast<char*&>(input)) ; }
       void append(T value) ;
       void append(const BufferBuilder& value) ;
+      void append(T value, size_t count) ;
       void remove() { if (m_currsize > 0) --m_currsize ; } // remove last-added item
       void reverse() ;
 

@@ -133,6 +133,27 @@ void BufferBuilder<T,minsize>::append(T value)
 //----------------------------------------------------------------------------
 
 template <typename T, size_t minsize>
+void BufferBuilder<T,minsize>::append(T value, size_t count)
+{
+   if (!count)
+      return ;
+   if (m_currsize + count  >= m_alloc)
+      {
+      size_t newalloc = m_currsize > 200000000 ? 5*m_currsize/4 : (m_currsize > 1000000 ? 3*m_currsize/2 : 2*m_currsize) ;
+      if (newalloc < m_currsize + count)
+	 newalloc = 5*(m_currsize + count)/4 ;
+      preallocate(newalloc) ;
+      }
+   for (size_t i = 0 ; i < count ; ++i)
+      {
+      m_buffer[m_currsize++] = value ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, size_t minsize>
 void BufferBuilder<T,minsize>::append(const BufferBuilder<T,minsize>& addbuf)
 {
    size_t grow = addbuf.size() ;
