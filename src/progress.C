@@ -87,7 +87,6 @@ void ProgressIndicator::showRemainingTime(bool show)
 ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit, size_t per_line,
 						   const char* first_prefix, const char* rest_prefix)
    : ProgressIndicator(interval,limit), m_prevfrac(0.0), m_lastupdate(0.0),
-     m_lastsample(0.0), m_lastfrac(0.0),
      m_firstprefix(dup_string(first_prefix)), m_restprefix(dup_string(rest_prefix)),
      m_per_line(per_line), m_linewidth(80), m_istty(isatty(fileno(stdout)))
 {
