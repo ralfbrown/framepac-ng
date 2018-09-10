@@ -46,6 +46,8 @@ class ProgressIndicator
 
       virtual void finalize() { return ; }
 
+      static CharPtr timeString(double time) ;
+
       // configuration
       void showElapsedTime(bool show) ;
       void showRemainingTime(bool show) ;

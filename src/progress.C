@@ -34,6 +34,12 @@ namespace Fr
 {
 
 /************************************************************************/
+/*	Manifest Constants						*/
+/************************************************************************/
+
+#define MAX_STARS 50
+
+/************************************************************************/
 /*	Methods for class ProgressIndicator				*/
 /************************************************************************/
 
@@ -78,6 +84,41 @@ void ProgressIndicator::showRemainingTime(bool show)
    m_show_estimated = show ;
    updateSettings() ;
    return ;
+}
+
+//----------------------------------------------------------------------------
+
+CharPtr ProgressIndicator::timeString(double time)
+{
+   if (time <= 0)
+      {
+      return dup_string(" --- ") ;
+      }
+   if (time <= 99)
+      {
+      return aprintf("%4us",(unsigned)(time + 0.5)) ;
+      }
+   if (time <= (99 * 60) + 59)
+      {
+      unsigned minutes = (unsigned)(time / 60) ;
+      unsigned seconds = (unsigned)(time - 60 * minutes + 0.5) ;
+      return aprintf("%2u:%02u",minutes,seconds) ;
+      }
+   time = (time + 30) / 60 ;
+   if (time <= (99 * 60) + 59)
+      {
+      unsigned hours = (unsigned)(time / 60) ;
+      unsigned minutes = (unsigned)(time - 60 * hours + 0.5) ;
+      return aprintf("%2u:%02u",hours,minutes) ;
+      }
+   time = (time + 30) / 60 ;
+   if (time <= (99 * 24) + 23)
+      {
+      unsigned days = (unsigned)(time / 24) ;
+      unsigned hours = (unsigned)(time - 24 * days + 0.5) ;
+      return aprintf("%2ud%02u",days,hours) ;
+      }
+   return dup_string(" >>> ") ;
 }
 
 /************************************************************************/
@@ -147,82 +188,6 @@ void ConsoleProgressIndicator::updateSettings()
 
 //----------------------------------------------------------------------------
 
-static void display_time(double time)
-{
-   if (time <= 0)
-      {
-      cout << " --- " ;
-      return ;
-      }
-   if (time <= 99)
-      {
-      cout << setw(4) << (unsigned)(time + 0.5) << 's' ;
-      return  ;
-      }
-   if (time <= (99 * 60) + 59)
-      {
-      size_t minutes = (size_t)(time / 60) ;
-      size_t seconds = (size_t)(time - 60 * minutes + 0.5) ;
-      cout << setw(2) << minutes << ':' << (char)('0' + (seconds/10)) << (char)('0' + (seconds%10)) ;
-      return ;
-      }
-   time = (time + 30) / 60 ;
-   if (time <= (99 * 60) + 59)
-      {
-      size_t hours = (size_t)(time / 60) ;
-      size_t minutes = (size_t)(time - 60 * hours + 0.5) ;
-      cout << setw(2) << hours << 'h' << (char)('0' + (minutes/10)) << (char)('0' + (minutes%10)) ;
-      return ;
-      }
-   time = (time + 30) / 60 ;
-   if (time <= (99 * 24) + 23)
-      {
-      size_t days = (size_t)(time / 24) ;
-      size_t hours = (size_t)(time - 24 * days + 0.5) ;
-      cout << setw(2) << days << 'd' << (char)('0' + (hours/10)) << (char)('0' + (hours%10)) ;
-      return ;
-      }
-   cout << " >>> " ;
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
-static CharPtr time_string(double time)
-{
-   if (time <= 0)
-      {
-      return dup_string(" --- ") ;
-      }
-   if (time <= 99)
-      {
-      return aprintf("%4us",(unsigned)(time + 0.5)) ;
-      }
-   if (time <= (99 * 60) + 59)
-      {
-      unsigned minutes = (unsigned)(time / 60) ;
-      unsigned seconds = (unsigned)(time - 60 * minutes + 0.5) ;
-      return aprintf("%2u:%02u",minutes,seconds) ;
-      }
-   time = (time + 30) / 60 ;
-   if (time <= (99 * 60) + 59)
-      {
-      unsigned hours = (unsigned)(time / 60) ;
-      unsigned minutes = (unsigned)(time - 60 * hours + 0.5) ;
-      return aprintf("%2u:%02u",hours,minutes) ;
-      }
-   time = (time + 30) / 60 ;
-   if (time <= (99 * 24) + 23)
-      {
-      unsigned days = (unsigned)(time / 24) ;
-      unsigned hours = (unsigned)(time - 24 * days + 0.5) ;
-      return aprintf("%2ud%02u",days,hours) ;
-      }
-   return dup_string(" >>> ") ;
-}
-
-//----------------------------------------------------------------------------
-
 void ConsoleProgressIndicator::displayProgressBar(size_t stars, double elapsed, double estimated) const
 {
    if (stars > m_barsize)
@@ -238,7 +203,7 @@ void ConsoleProgressIndicator::displayProgressBar(size_t stars, double elapsed, 
    if (m_show_elapsed)
       {
       sb += ' ' ;
-      sb += time_string(elapsed) ;
+      sb += timeString(elapsed) ;
       }
    if (m_show_estimated)
       {
@@ -247,7 +212,7 @@ void ConsoleProgressIndicator::displayProgressBar(size_t stars, double elapsed, 
       else
 	 {
 	 sb +=  (m_show_elapsed ? '+' : ' ') ;
-	 sb += time_string(estimated) ;
+	 sb += timeString(estimated) ;
 	 }
       }
    sb += '\r' ;
@@ -320,15 +285,15 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       }
    else
       {
-      // standard output is not a tty (i.e. it's been redirected), so just print up a line of 50
+      // standard output is not a tty (i.e. it's been redirected), so just print up a line of MAX_STARS
       //   asterisks as the progress bar
       double frac = (curr_count / (double)m_limit) ;
-      size_t stars = round(50 * frac) ;
-      size_t prevstars = round(50 * m_prevfrac) ;
+      size_t stars = round(MAX_STARS * frac) ;
+      size_t prevstars = round(MAX_STARS * m_prevfrac) ;
       if (stars > prevstars)
 	 {
 	 double elapsed = m_timer ? m_timer->seconds() : 0.0 ;
-	 if (elapsed && elapsed - m_lastupdate < 0.5 && stars < 50)
+	 if (elapsed && elapsed - m_lastupdate < 0.5 && stars < MAX_STARS)
 	    return ;			// prevent multiple concurrent outputs
 	 m_prevfrac = frac ;
 	 m_lastupdate = elapsed ;
@@ -336,13 +301,12 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	    cout << *m_firstprefix << '[' ;
 	 while (prevstars++ < stars)
 	    cout << '*' ;
-	 if (frac >= 1.0 && prevstars <= 50)
+	 if (frac >= 1.0 && prevstars <= MAX_STARS)
 	    {
 	    cout << ']' ;
 	    if (m_show_elapsed)
 	       {
-	       cout << ' ' ;
-	       display_time(elapsed) ;
+	       cout << ' ' <<  timeString(elapsed) ;
 	       }
 	    }
 	 cout << flush ;
