@@ -116,19 +116,21 @@ class ConsoleProgressIndicator : public ProgressIndicator
 
    protected:
       void computeBarSize() ;
+      void displayProgressBar(size_t stars, double elapsed, double estimated) const ;
       virtual void updateSettings() ;
       virtual void updateDisplay(size_t curr) ;
       virtual void finalize() ;
 
    protected:
-      double  m_prevfrac ;
-      double  m_lastupdate ;
-      CharPtr m_firstprefix ;
-      CharPtr m_restprefix ;
-      size_t  m_per_line ;
-      size_t  m_linewidth ;
-      size_t  m_barsize ;
-      bool    m_istty ;
+      double  m_prevfrac ;		// completion fraction at last incr() call
+      double  m_lastupdate ;		// time of last display update
+      double  m_lastfrac ;		// completion fraction at last display update
+      CharPtr m_firstprefix ;		// prefix to show on one-line display or first line of multiline display
+      CharPtr m_restprefix ;		// prefix to show on subsequent lines of multi-line display
+      size_t  m_per_line ;		// dots per line for multi-line display
+      size_t  m_linewidth ;		// console width
+      size_t  m_barsize ;		// number of stars in progress bar
+      bool    m_istty ;			// is output a console?
    } ;
 
 //----------------------------------------------------------------------------

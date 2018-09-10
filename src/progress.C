@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-09-01					*/
+/* Version 0.11, last edit 2018-09-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -26,6 +26,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include "framepac/progress.h"
+#include "framepac/stringbuilder.h"
 #include "framepac/timer.h"
 #include "framepac/texttransforms.h"
 
@@ -86,6 +87,7 @@ void ProgressIndicator::showRemainingTime(bool show)
 ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit, size_t per_line,
 						   const char* first_prefix, const char* rest_prefix)
    : ProgressIndicator(interval,limit), m_prevfrac(0.0), m_lastupdate(0.0),
+     m_lastsample(0.0), m_lastfrac(0.0),
      m_firstprefix(dup_string(first_prefix)), m_restprefix(dup_string(rest_prefix)),
      m_per_line(per_line), m_linewidth(80), m_istty(isatty(fileno(stdout)))
 {
@@ -187,6 +189,76 @@ static void display_time(double time)
 
 //----------------------------------------------------------------------------
 
+static CharPtr time_string(double time)
+{
+   if (time <= 0)
+      {
+      return dup_string(" --- ") ;
+      }
+   if (time <= 99)
+      {
+      return aprintf("%4us",(unsigned)(time + 0.5)) ;
+      }
+   if (time <= (99 * 60) + 59)
+      {
+      unsigned minutes = (unsigned)(time / 60) ;
+      unsigned seconds = (unsigned)(time - 60 * minutes + 0.5) ;
+      return aprintf("%2u:%02u",minutes,seconds) ;
+      }
+   time = (time + 30) / 60 ;
+   if (time <= (99 * 60) + 59)
+      {
+      unsigned hours = (unsigned)(time / 60) ;
+      unsigned minutes = (unsigned)(time - 60 * hours + 0.5) ;
+      return aprintf("%2u:%02u",hours,minutes) ;
+      }
+   time = (time + 30) / 60 ;
+   if (time <= (99 * 24) + 23)
+      {
+      unsigned days = (unsigned)(time / 24) ;
+      unsigned hours = (unsigned)(time - 24 * days + 0.5) ;
+      return aprintf("%2ud%02u",days,hours) ;
+      }
+   return dup_string(" >>> ") ;
+}
+
+//----------------------------------------------------------------------------
+
+void ConsoleProgressIndicator::displayProgressBar(size_t stars, double elapsed, double estimated) const
+{
+   if (stars > m_barsize)
+      stars = m_barsize ;
+   // build up the progress bar so that we can output it all in one call, reducing the chance of
+   //  multithread conflicts
+   StringBuilder sb ;
+   sb += *m_firstprefix ;
+   sb += '[' ;
+   sb.append('*',stars) ;
+   sb.append(' ',m_barsize - stars) ;
+   sb += ']' ;
+   if (m_show_elapsed)
+      {
+      sb += ' ' ;
+      sb += time_string(elapsed) ;
+      }
+   if (m_show_estimated)
+      {
+      if (m_prevfrac == 1.0)
+	 sb += "      " ;		// wipe out the last estimate
+      else
+	 {
+	 sb +=  (m_show_elapsed ? '+' : ' ') ;
+	 sb += time_string(estimated) ;
+	 }
+      }
+   sb += '\r' ;
+   sb += '\0' ;
+   cout << sb.currentBuffer() << flush ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 {
    size_t intervals = (curr_count / m_interval) ;
@@ -213,8 +285,8 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       {
       double frac = (curr_count / (double)m_limit) ;
       double elapsed = m_timer ? m_timer->seconds() : 0.0 ;
-      if (elapsed && elapsed - m_lastupdate < 0.2)
-	 return ;			// prevent some race conditions by not updating extremely often
+      if (elapsed && elapsed - m_lastupdate < 0.34)
+	 return ;			// prevent some race conditions by not updating more than 3 times / second
       double estimated { 0.0 } ;
       size_t count = (size_t)(m_barsize * frac + 0.8) ;
       size_t prevcount = (size_t)(m_barsize * m_prevfrac + 0.8) ;
@@ -223,23 +295,15 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	 // don't update more often than every two seconds unless there has been
 	 //   a substantial increase in the proportion completed, to avoid generating
 	 //   a huge amount of output (and thus a huge file when capturing output)
-	 if (elapsed && frac < 1.0)
-	    {
-	    if (frac < m_prevfrac + 0.01)
-	       {
-	       if (elapsed < m_lastupdate + 2)
-		  return ;
-	       }
-	    else if (elapsed < m_lastupdate + 0.5)
-	       return;
-	    }
-	 m_lastupdate = elapsed ;
+	 if (elapsed && frac < 1.0 && count <= prevcount && elapsed < m_lastupdate + 2)
+	    return ;
 	 if (m_show_estimated && elapsed * frac >= 0.02)
 	    {
 	    estimated = (elapsed / frac) - elapsed ;
 	    }
+	 m_lastupdate = elapsed ;
 	 }
-      else if (count == prevcount)
+      else if (count == prevcount && frac < 1.0)
 	 return ;
       if (frac > 1.0)
 	 {
@@ -253,32 +317,7 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	    }
 	 }
       m_prevfrac = frac ;
-      cout << *m_firstprefix << '[' ;
-      for (size_t i = 0 ; i < count ; ++i)
-	 {
-	 cout << '*' ;
-	 }
-      for (size_t i = count ; i < m_barsize ; ++i)
-	 {
-	 cout  << ' ' ;
-	 }
-      cout << ']' ;
-      if (m_show_elapsed)
-	 {
-	 cout << ' ' ;
-	 display_time(elapsed) ;
-	 }
-      if (m_show_estimated)
-	 {
-	 if (frac == 1.0)
-	    cout << "      " ;		// wipe out the last estimate
-	 else
-	    {
-	    cout << (m_show_elapsed ? '+' : ' ') ;
-	    display_time(estimated) ;
-	    }
-	 }
-      cout << '\r' << flush ;
+      displayProgressBar(count,elapsed,estimated) ;
       }
    else
       {
@@ -287,12 +326,12 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       double frac = (curr_count / (double)m_limit) ;
       size_t stars = round(50 * frac) ;
       size_t prevstars = round(50 * m_prevfrac) ;
-      m_prevfrac = frac ;
       if (stars > prevstars)
 	 {
 	 double elapsed = m_timer ? m_timer->seconds() : 0.0 ;
-	 if (elapsed && elapsed - m_lastupdate < 0.2 && stars < 50)
+	 if (elapsed && elapsed - m_lastupdate < 0.5 && stars < 50)
 	    return ;			// prevent multiple concurrent outputs
+	 m_prevfrac = frac ;
 	 m_lastupdate = elapsed ;
 	 if (prevstars == 0)
 	    cout << *m_firstprefix << '[' ;
