@@ -104,6 +104,11 @@ inline std::ostream& operator<< (std::ostream& out, Fr::CString& s)
    return out ;
 }
 
+//----------------------------------------------------------------------------
+
+bool is_number(const char*) ;
+bool is_punct(const char*) ;
+
 // end of namespace Fr
 } ;
 

@@ -302,6 +302,7 @@ OBJS = \
 	build/hazardptr$(OBJ) \
 	build/init$(OBJ) \
 	build/integer$(OBJ) \
+	build/is_number$(OBJ) \
 	build/jsonreader$(OBJ) \
 	build/jsonwriter$(OBJ) \
 	build/linebatch$(OBJ) \
@@ -556,6 +557,7 @@ build/hashtable_u32obj$(OBJ):	src/hashtable_u32obj$(C) template/hashtable.cc tem
 build/hazardptr$(OBJ):		src/hazardptr$(C) framepac/atomic.h
 build/init$(OBJ):		src/init$(C) framepac/init.h framepac/symboltable.h
 build/integer$(OBJ):		src/integer$(C) framepac/number.h framepac/fasthash64.h
+build/is_number$(OBJ):		src/is_number$(C) framepac/cstring.h
 build/jsonreader$(OBJ):		src/jsonreader$(C) framepac/objreader.h framepac/stringbuilder.h framepac/list.h \
 				framepac/map.h framepac/number.h framepac/cstring.h
 build/jsonwriter$(OBJ):		src/jsonwriter$(C) framepac/file.h framepac/list.h
