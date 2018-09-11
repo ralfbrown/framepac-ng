@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-08-27					*/
+/* Version 0.11, last edit 2018-09-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -109,6 +109,7 @@ class WordCorpusT
       bool load(const char* filename, bool allow_mmap = true) ;
       bool load(CFile&, const char* filename, bool allow_mmap = true) ;
       bool loadContextEquivs(const char* filename, bool force_lowercase = true) ;
+      bool consolidateContextEquivs() ;
       size_t loadAttribute(const char* filename, unsigned attr_bit, bool add_words = false) ;
       bool save(const char* filename) const ;
       bool save(CFile&) const ;
@@ -122,9 +123,11 @@ class WordCorpusT
       IdT findID(const char* word) const ;
       IdT findOrAddID(const char* word) ;
       IdT addWord(const char* word) ;
+      IdT numberToken() const { return m_number ; }
       bool addWord(IdT word) ;
       bool addNewline() ;
 
+      IdT setNumberToken(const char* token = nullptr) ;
       bool rareWordThreshold(IdxT thresh, const char* token) ;
 
       bool setAttributeIf(unsigned attr_bit, AttrCheckFunc* fn) ;
@@ -151,6 +154,7 @@ class WordCorpusT
       size_t numContextEquivs() const { return m_contextmap->size() ; }
 
       IdT getID(IdxT N) const ;
+      IdT getContextEquivID(IdxT N) const ;
       IdT getContextID(IdxT N) const ;
       IdT getContextID(const char* word) const ;
       IdT newlineID() const { return m_newline ; }
@@ -212,9 +216,11 @@ class WordCorpusT
       SufArr   		 m_revindex ;
       IdxT*		 m_freq { nullptr } ;
       mutable uint8_t*   m_attributes { nullptr } ;
-      IdT		 m_rare ;
-      IdT		 m_newline ;
+      NewPtr<IdT>        m_contextequivs ; // map from ID stored in m_wordmap to ID used for context
       IdT		 m_sentinel ;
+      IdT		 m_newline ;
+      IdT		 m_rare { (IdT)~0 } ;
+      IdT		 m_number { (IdT)~0 } ;
       IdxT		 m_rare_thresh { 0 } ;
       IdxT		 m_last_linenum { (IdxT)~0 } ;
       mutable IdxT	 m_attributes_alloc { 0 } ;

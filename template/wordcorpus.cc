@@ -277,6 +277,60 @@ bool WordCorpusT<IdT,IdxT>::loadContextEquivs(const char* filename, bool force_l
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
+bool WordCorpusT<IdT,IdxT>::consolidateContextEquivs()
+{
+   if (!this->m_contextmap)
+      return false ;
+   auto vs = this->vocabSize() ;
+   this->m_contextequivs = new IdT[vs] ;
+   if (!this->m_contextequivs)
+      return false ;
+   std::fill(*this->m_contextequivs,*this->m_contextequivs+vs,IdT(~0)) ;
+   for (auto eq : *this->m_contextmap)
+      {
+      IdT id ;
+      if (m_wordmap->findKey(eq.first,&id) && id < vs)
+	 {
+	 this->m_contextequivs[id] = eq.second ;
+	 }
+      }
+   // replace numbers which haven't yet been mapped by <number>
+   if (m_number != (IdT)~0)
+      {
+      for (size_t i = 0 ; i < vs ; ++i)
+	 {
+	 auto id = this->m_contextequivs[i] ;
+	 if (id == IdT(~0))
+	    {
+	    auto key = this->getWord(i) ;
+	    if (is_number(key))
+	       {
+	       this->m_contextequivs[i] = m_number ;
+	       }
+	    }
+	 }
+      }
+   // replace rare words which haven't yet been mapped by <rare>
+   if (rareWordThreshold() > 0 && rareID() && this->m_freq)
+      {
+      for (size_t i = 0 ; i < vs ; ++i)
+	 {
+	 if (this->m_contextequivs[i] == (IdT)~0 && this->m_freq[i] < this->m_rare_thresh)
+	    this->m_contextequivs[i] = rareID() ;
+	 }
+      }
+   // replace any words which haven't yet been mapped by themselves
+   for (size_t i = 0 ; i < vs ; ++i)
+      {
+      if (this->m_contextequivs[i] == (IdT)~0)
+	 this->m_contextequivs[i] = i ;
+      }
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
 size_t WordCorpusT<IdT,IdxT>::loadAttribute(const char* filename, unsigned attr_bit, bool add_words)
 {
    CInputFile fp(filename) ;
@@ -461,6 +515,16 @@ bool WordCorpusT<IdT,IdxT>::addNewline()
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
+IdT WordCorpusT<IdT,IdxT>::setNumberToken(const char* token)
+{
+   if (!token) token = "<NUMBER>" ;
+   m_number = findOrAddID(token) ;
+   return m_number ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::rareWordThreshold(IdxT thresh,  const char* token)
 {
    m_rare_thresh = thresh ;
@@ -477,6 +541,22 @@ template <typename IdT, typename IdxT>
 IdT WordCorpusT<IdT,IdxT>::getID(IdxT N) const
 {
    return (N < corpusSize()) ? m_wordbuf[N] : ErrorID ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+IdT WordCorpusT<IdT,IdxT>::getContextEquivID(IdxT N) const
+{
+   IdT id = getID(N) ;
+   if (id != ErrorID)
+      {
+      if (id >= m_last_linenum)
+	 return m_newline ;
+      else if (m_contextequivs)
+	 return m_contextequivs[id] ;
+      }
+   return id ;
 }
 
 //----------------------------------------------------------------------------
