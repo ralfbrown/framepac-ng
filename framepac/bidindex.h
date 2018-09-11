@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-18					*/
+/* Version 0.11, last edit 2018-09-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -69,6 +69,8 @@ class BidirIndex : public HashTable<keyT,idxT>
 
       idxT getIndex(keyT key) const { idxT index ; return lookup(key,&index) ? index : m_errorID ; }
       keyT getKey(idxT index) const { return index < m_max_index ? m_reverse_index[index] : keyT(0) ; }
+
+      idxT errorID() const { return m_errorID ; }
 
    protected: // construction/destruction
       void *operator new(size_t) { return s_allocator.allocate() ; }
