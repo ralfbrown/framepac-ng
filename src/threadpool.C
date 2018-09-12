@@ -457,16 +457,16 @@ void ThreadPool::allocateWorkOrders()
 
 WorkOrder* ThreadPool::makeWorkOrder(ThreadPoolWorkFunc* fn, const void* in, void* out)
 {
+   m_flguard.lock() ;
    if (!m_freeorders)
       {
+      m_flguard.unlock() ;
       // allocate a batch of WorkOrder
-      m_flguard.lock() ;
       WorkBatch* batch = new WorkBatch(m_batches) ;
       m_batches = batch ;
+      m_flguard.lock() ;
       batch->addToFreeList(m_freeorders) ;
-      m_flguard.unlock() ;
       }
-   m_flguard.lock() ;
    WorkOrder* order = (WorkOrder*)m_freeorders ;
    m_freeorders = m_freeorders->next() ;
    m_flguard.unlock() ;
