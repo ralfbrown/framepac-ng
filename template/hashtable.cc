@@ -30,9 +30,9 @@
 #include "framepac/hashtable.h"
 #include "framepac/message.h"
 
-#if DYNAMIC_ANNOTATIONS_ENABLED != 0
-#  include "dynamic_annotations.h"
-#endif /* DYNAMIC_ANNOTATIONS_ENABLED */
+//#if DYNAMIC_ANNOTATIONS_ENABLED != 0
+//#  include "dynamic_annotations.h"
+//#endif /* DYNAMIC_ANNOTATIONS_ENABLED */
 
 /************************************************************************/
 /*	Manifest Constants						*/
