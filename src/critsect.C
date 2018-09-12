@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.03, last edit 2018-03-12					*/
+/*  Version 0.12, last edit 2018-09-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File critsect.C		short-duration critical section mutex	*/
@@ -37,13 +37,20 @@ Atomic<size_t> CriticalSection::s_collisions ;
 #ifndef FrSINGLE_THREADED
 void CriticalSection::backoff_lock()
 {
-//   size_t loops = 0 ;
+   size_t loops = 0 ;
    while (true)
       {
       incrCollisions() ;
       if (try_lock())
 	 return ;
-      std::this_thread::yield() ;
+      if (++loops > 5)
+	 {
+	 // if there are still cores unused, yield() immediately reschedules us, so a somewhat lengthy
+	 //   lock by another thread would cause us to burn up lots of CPU time unnecessarily
+	 std::this_thread::sleep_for(std::chrono::microseconds(250)) ;
+	 }
+      else
+	 std::this_thread::yield() ;
       }
    return ;
 }

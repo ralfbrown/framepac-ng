@@ -1346,8 +1346,8 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
       out << "   overhead = " << 1000.0*overhead << "ms" << endl ;
    hash_test(&tpool,out,"Filling hash table",writethreads,1,&ht,maxsize,keys,Op_ADD,terse,overhead) ;
    if_SHOW_CHAINS(chains[0] = ht->chainLengths(max_chain[0]));
-   if (show_neighbors)
-      neighborhoods[0] = ht->neighborhoodDensities(max_neighbors[0]) ;
+   neighborhoods[0] = show_neighbors ? ht->neighborhoodDensities(max_neighbors[0]) : nullptr ;
+   neighborhoods[1] = nullptr ;  // keep compiler happy
    hash_test(&tpool,out,"Lookups (100% present)",threads,cycles,&ht,maxsize,keys,Op_CHECK,terse,overhead) ;
    size_t half_cycles = (cycles + 1) / 2 ;
    swap_segments(keys,2*maxsize,threads) ;
@@ -1392,15 +1392,13 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
       hash_test(&tpool,out,"Random ops (del=3)",writethreads,cycles,&ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
 	 randnums + maxsize - 1) ;
       if_SHOW_CHAINS(chains[3] = ht->chainLengths(max_chain[3])) ;
-      if (show_neighbors)
-	 neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1]) ;
+      neighborhoods[1] = show_neighbors ? ht->neighborhoodDensities(max_neighbors[1]) : nullptr ;
       hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
       ht = HashT::create(startsize) ;
       hash_test(&tpool,out,"Random ops (del=7)",writethreads,cycles,&ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
 	 randnums + maxsize - 1) ;
       if_SHOW_CHAINS(chains[4] = ht->chainLengths(max_chain[4])) ;
-      if (show_neighbors)
-	 neighborhoods[1] = ht->neighborhoodDensities(max_neighbors[1]) ;
+      neighborhoods[1] = show_neighbors ? ht->neighborhoodDensities(max_neighbors[1]) : nullptr ;
       hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
       if_SHOW_CHAINS(chains[5] = ht->chainLengths(max_chain[5])) ;
       }

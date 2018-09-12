@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.11, last edit 2018-09-09					*/
+/* Version 0.12, last edit 2018-09-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -260,6 +260,7 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       m_star = '+' ;
       }
    double stars = round(m_barsize * frac) ;
+   double lastupdate = m_lastupdate.load() ;
    double prevstars = round(m_barsize * m_prevfrac) ;
    if (tty())
       {
@@ -273,7 +274,7 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	 // don't update more often than every two seconds unless there has been
 	 //   a substantial increase in the proportion completed, to avoid generating
 	 //   a huge amount of output (and thus a huge file when capturing output)
-	 if (stars <= prevstars && elapsed < m_lastupdate + 2)
+	 if (stars <= prevstars && elapsed < lastupdate + 2)
 	    return ;
 	 }
       double estimated { 0.0 } ;
@@ -283,9 +284,11 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	 }
       else if (!m_show_elapsed && stars == prevstars && frac < 1.0)
 	 return ;
-      m_lastupdate = elapsed ;
-      m_prevfrac = frac ;
-      displayProgressBar(stars,elapsed,estimated) ;
+      if (m_lastupdate.compare_exchange_strong(lastupdate,elapsed))
+	 {
+	 m_prevfrac = frac ;
+	 displayProgressBar(stars,elapsed,estimated) ;
+	 }
       }
    else
       {
@@ -294,10 +297,10 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       if (stars > prevstars || frac == 1.0)
 	 {
 	 double elapsed = m_timer.seconds() ;
-	 if (elapsed - m_lastupdate < 0.5 && stars < m_barsize)
+	 if (elapsed - lastupdate < 0.5 && stars < m_barsize)
 	    return ;			// prevent multiple concurrent outputs
 	 m_prevfrac = frac ;
-	 m_lastupdate = elapsed ;
+	 m_lastupdate.store(elapsed) ;
 	 if (prevstars == 0)
 	    cout << *m_firstprefix << '[' ;
 	 while (prevstars++ < stars)

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.12, last edit 2018-09-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -63,7 +63,7 @@ class ProgressIndicator
 
    protected:
       ElapsedTimer    m_timer ;
-      double          m_lastupdate { 0.0 } ;	// time of last display update
+      Atomic<double>  m_lastupdate { 0.0 } ;	// time of last display update
       size_t          m_limit ;
       size_t          m_interval ;
       Atomic<size_t>  m_count ;

@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 06sep2018
+# Last change: 12sep2018
 
 #########################################################################
 # define the locations of all the files
@@ -56,9 +56,8 @@ ifndef GDB
 endif
 
 ifeq ($(SANE),1)
-#SANITIZE=-fsanitize=thread -fPIE -DHELGRIND
-SANITIZE=-fsanitize=thread -fPIC -DPURIFY -DDYNAMIC_ANNOTATIONS_ENABLED=1
-LINKSAN=-pie
+SANITIZE=-fsanitize=thread -fPIC
+LINKSAN=-fPIC -pie
 EXTRAOBJS=dynamic_annotations.o
 else ifeq ($(SANE),2)
 SANITIZE=-fsanitize=address -fno-omit-frame-pointer -DPURIFY
@@ -250,7 +249,7 @@ $(BINDIR)/%$(EXE) : tests/%$(OBJ)
 # define the package info and files to be used
 
 PACKAGE=framepacng
-RELEASE=0.11
+RELEASE=0.12
 
 # the object modules to be included in the library file
 OBJS = \
@@ -562,13 +561,13 @@ build/prefixmatcher$(OBJ):	src/prefixmatcher$(C) framepac/utility.h
 build/printf$(OBJ):		src/printf$(C) framepac/texttransforms.h
 build/progress$(OBJ):		src/progress$(C) framepac/progress.h framepac/stringbuilder.h framepac/texttransforms.h
 build/ptrie_u32$(OBJ):		src/ptrie_u32$(C) template/ptrie.cc
-build/random$(OBJ):		src/random$(C) framepac/message.h framepac/random.h
+build/random$(OBJ):		src/random$(C) framepac/message.h framepac/random.h framepac/critsect.h
 build/rational$(OBJ):		src/rational$(C) framepac/rational.h
 build/refarray$(OBJ):		src/refarray$(C) framepac/array.h framepac/fasthash64.h framepac/random.h
 build/set$(OBJ):		src/set$(C) framepac/set.h
 build/signal$(OBJ):		src/signal$(C) framepac/signal.h framepac/message.h
 build/slab$(OBJ):		src/slab$(C) framepac/memory.h
-build/slabgroup$(OBJ):		src/slabgroup$(C) framepac/memory.h
+build/slabgroup$(OBJ):		src/slabgroup$(C) framepac/memory.h framepac/semaphore.h framepac/critsect.h
 build/smallalloc$(OBJ):		src/smallalloc$(C) framepac/memory.h
 build/sparsematrix$(OBJ):	src/sparsematrix$(C) framepac/matrix.h
 build/spelling$(OBJ):		src/spelling$(C) framepac/spelling.h

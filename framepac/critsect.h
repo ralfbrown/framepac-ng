@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.11, last edit 2018-09-11					*/
+/*  Version 0.12, last edit 2018-09-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File critsect.h		short-duration critical section mutex	*/
@@ -25,13 +25,12 @@
 #ifndef __Fr_CRITSECT_H_INCLUDED
 #define __Fr_CRITSECT_H_INCLUDED
 
+#include <stdlib.h>
 #include "framepac/atomic.h"
 
 #if __cplusplus < 201103L
 # error This code requires C++11
 #endif
-
-#include <stdlib.h>
 
 using namespace std ;
 
@@ -39,6 +38,10 @@ using namespace std ;
 /************************************************************************/
 
 namespace Fr {
+
+// my GCC 8.2 installation has a different header file than is in /usr/include/sanitizer, and it
+//  doesn't declare this symbol....
+#define __tsan_mutex_not_static 0
 
 /************************************************************************/
 /************************************************************************/
@@ -66,11 +69,24 @@ class CriticalSection
       Atomic<bool> m_mutex ;
    protected:
       bool try_lock()
-	 { return !m_mutex.exchange(true,std::memory_order_acquire) ; }
+	 {
+	    TSAN(__tsan_mutex_pre_lock(this,__tsan_mutex_try_lock)) ;
+	    bool status = !m_mutex.exchange(true,std::memory_order_acquire) ;
+	    TSAN(__tsan_mutex_post_lock(this,status?__tsan_mutex_try_lock:__tsan_mutex_try_lock_failed,1)) ;
+	    return status ;
+	 }
       void backoff_lock() ;
    public:
-      CriticalSection() { m_mutex.store(false) ; }
-      [[gnu::always_inline]] ~CriticalSection() {}
+      CriticalSection()
+	 {
+	    TSAN(__tsan_mutex_create(this,__tsan_mutex_not_static)) ;
+	    m_mutex.store(false) ;
+	 }
+      [[gnu::always_inline]]
+      ~CriticalSection()
+	 {
+	    TSAN(__tsan_mutex_destroy(this,__tsan_mutex_not_static)) ;
+	 }
       void lock()
 	 {
 	    if (!try_lock())
@@ -78,9 +94,18 @@ class CriticalSection
 	 }
       void unlock()
 	 {
+	    TSAN(__tsan_mutex_pre_unlock(this,0)) ;
 	    m_mutex.store(false,std::memory_order_release) ;
+	    TSAN(__tsan_mutex_post_unlock(this,0)) ;
 	 }
-      [[gnu::always_inline]] bool locked() const { return m_mutex.load() ; }
+      [[gnu::always_inline]]
+      bool locked() const
+	 {
+	    TSAN(__tsan_mutex_pre_lock((void*)this,__tsan_mutex_read_lock)) ;
+	    bool status = m_mutex.load() ;
+	    TSAN(__tsan_mutex_post_lock((void*)this,__tsan_mutex_read_lock,0)) ;
+	    return status ;
+	 }
       [[gnu::always_inline]] void incrCollisions() { ++s_collisions ; }
    } ;
 #endif /* FrSINGLE_THREADED */

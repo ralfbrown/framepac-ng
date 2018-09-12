@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.06, last edit 2018-05-14					*/
+/*  Version 0.11, last edit 2018-09-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File atomic.h		atomic operations on simple variables	*/
@@ -27,6 +27,14 @@
 #include <atomic>
 #include <type_traits>
 #include "framepac/config.h"
+
+#ifdef __SANITIZE_THREAD__
+#  include "sanitizer/tsan_interface_atomic.h"
+#  include "sanitizer/tsan_interface.h"
+#  define TSAN(x) x
+#else
+#  define TSAN(x)
+#endif /* __SANITIZE_THREAD__ */
 
 /************************************************************************/
 /************************************************************************/

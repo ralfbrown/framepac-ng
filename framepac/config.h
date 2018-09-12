@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-08-27					*/
+/* Version 0.12, last edit 2018-09-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -31,7 +31,7 @@ using namespace std ;
 /************************************************************************/
 /************************************************************************/
 
-#define FramepaC_VERSION "0.10"
+#define FramepaC_VERSION "0.12"
 
 // uncomment the following to remove thread-local storage and synchronization
 //   primitives; FramepaC will no longer have any thread safety
@@ -146,6 +146,17 @@ constexpr int SLAB_GROUP_SIZE = 4095 ;
 # define mpz_zero() 0
 # define mpq_zero() 0.0
 #endif /* FRAMEPAC_GPL */
+
+/************************************************************************/
+/************************************************************************/
+
+// Support for optional AddressSanitizer annotations
+#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+#  include "sanitizer/asan_interface.h"
+#  define ASAN(x) x
+#else
+#  define ASAN(x)
+#endif /* __SANITIZE_ADDRESS__ */
 
 /************************************************************************/
 /************************************************************************/
