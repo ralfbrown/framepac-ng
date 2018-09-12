@@ -80,7 +80,7 @@ ClusteringAlgo<IdxT,ValT>* ClusteringAlgo<IdxT,ValT>::instantiate(const char* al
       if (measure)
 	 {
 	 // override any similarity measure installed by the ctor
-	 delete clusterer->m_measure ;
+	 if (clusterer->m_measure) clusterer->m_measure->free() ;
 	 clusterer->m_measure = measure ;
 	 }
       else if (!clusterer->m_measure)

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.11, last edit 2018-09-06					*/
+/* Version 0.11, last edit 2018-09-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -354,7 +354,7 @@ class ClusteringAlgo : public ClusteringAlgoBase
 
       void setMeasure(VectorMeasure<IdxT,ValT>* meas)
 	 {
-	 delete m_measure ;
+	 if (m_measure) m_measure->free() ;
 	 m_measure = meas ;
 	 }
 
