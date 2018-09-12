@@ -40,7 +40,7 @@ BasisVector<IdxT,ValT>::BasisVector(size_t numelts, size_t num_plus, size_t num_
       num_minus = (size_t)(num_minus * scl) ;
       }
    RandomInteger rand(numelts) ;
-   rand.randomize() ;
+//   rand.randomize() ;
    // randomly pick dimensions to have value +1
    for (size_t i = 0 ; i < num_plus ; ++i)
       {
