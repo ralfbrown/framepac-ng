@@ -37,7 +37,7 @@ class ArgOptBase
    public:
       ArgOptBase(const char* shortname, const char* fullname, const char* desc) ;
       ArgOptBase(ArgParser&, const char* shortname, const char* fullname, const char* desc) ;
-      ~ArgOptBase() ;
+      virtual ~ArgOptBase() ;
 
       bool parse(int& argc, char**& argv) ;
 
@@ -106,7 +106,7 @@ class ArgOptFunc : public ArgOptBase
 	 m_func = &fn ; 
 	 this->m_have_defvalue = optional_arg ;
 	 }
-      ~ArgOptFunc() {}
+      virtual ~ArgOptFunc() {}
 
       virtual bool optional() const { return this->m_have_defvalue ; } ;
 
@@ -158,7 +158,7 @@ class ArgOpt : public ArgOptBase
 	 : ArgOptBase(parser,shortname,fullname,desc), m_value(var), m_defvalue(def_value), m_minvalue(min_value),
 	   m_maxvalue(max_value)
 	 { m_have_defvalue = m_have_minmax = true ; }
-      ~ArgOpt()
+      virtual ~ArgOpt()
 	 {
 	    m_have_defvalue = m_have_minmax = false ;
 	 }
@@ -213,7 +213,7 @@ class ArgHelp : public ArgOptBase
       ArgHelp(ArgParser&, const char* shortname, const char* fullname, const char* desc, bool longhelp = false) ;
       ArgHelp(bool& flag, const char* shortname, const char* fullname, const char* desc, bool longhelp = false) ;
       ArgHelp(ArgParser&, bool& flag, const char* shortname, const char* fullname, const char* desc, bool longhelp = false) ;
-      ~ArgHelp() ;
+      virtual ~ArgHelp() ;
 
       bool isLongHelp() const { return m_long ; }
       bool showHelp() ;

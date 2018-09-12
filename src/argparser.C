@@ -279,8 +279,9 @@ ArgParser::~ArgParser()
 {
    while (m_options)
       {
-//TODO      
+      auto tmp = m_options ;
       m_options = m_options->next() ;
+      delete tmp ;
       }
    return ;
 }
