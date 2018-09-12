@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.11, last edit 2018-09-08					*/
+/* Version 0.11, last edit 2018-09-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -157,6 +157,7 @@ bool WordCorpusT<IdT,IdxT>::load(CFile &fp, const char* filename, bool allow_mma
 	 fp.seek(header.m_attributes + base_offset) ;
 	 m_attributes = new uint8_t[header.m_numwords] ;
 	 m_attributes_alloc = header.m_numwords ;
+	 m_attributes_mapped = false ;
 	 success &= fp.readValues(&m_attributes,m_attributes_alloc) ;
 	 }
       }
@@ -229,6 +230,7 @@ bool WordCorpusT<IdT,IdxT>::loadFromMmap(const char* mmap_base, size_t mmap_len)
    if (header->m_attributes)
       {
       m_attributes = (uint8_t*)((char*)mmap_base + header->m_attributes) ;
+      m_attributes_mapped = true ;
       }
    m_mapped = true ;
    return true  ;
@@ -439,13 +441,15 @@ bool WordCorpusT<IdT,IdxT>::discardText()
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::discardAttributes()
+bool WordCorpusT<IdT,IdxT>::discardAttributes() const
 {
-   if (!m_mapped)
+   if (!m_attributes_mapped)
       {
       delete[] m_attributes ;
       }
    m_attributes = nullptr ;
+   m_attributes_alloc = 0 ;
+   m_attributes_mapped = false ;
    return true ;
 }
 
@@ -696,6 +700,7 @@ void WordCorpusT<IdT,IdxT>::setAttributes(IdT word, uint8_t mask) const
 	 if (m_attributes_alloc)
 	    memcpy(new_attr,m_attributes,m_attributes_alloc*sizeof(uint8_t)) ;
 	 std::fill(new_attr+m_attributes_alloc,new_attr+cap,0) ;
+	 discardAttributes() ;
 	 m_attributes = new_attr ;
 	 m_attributes_alloc = cap ;
 	 }

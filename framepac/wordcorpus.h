@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.11, last edit 2018-09-10					*/
+/* Version 0.11, last edit 2018-09-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -114,7 +114,7 @@ class WordCorpusT
       bool save(const char* filename) const ;
       bool save(CFile&) const ;
       bool discardText() ;
-      bool discardAttributes() ;
+      bool discardAttributes() const ;
       bool discardContextEquivs() ;
 
       IdxT corpusSize() const { return m_wordbuf.size() ; }
@@ -228,7 +228,8 @@ class WordCorpusT
       unsigned		 m_left_context { 0 } ;
       unsigned		 m_right_context { 0 } ;
       unsigned		 m_total_context { 1 } ;
-      bool		 m_mapped { false } ;     // data is memory-mapped; don't free memory!
+      bool		 m_mapped { false } ;         	// data is memory-mapped; don't free memory!
+      mutable bool	 m_attributes_mapped { false } ; // m_attributes are mem-mapped; don't free!
       bool		 m_readonly { false } ;
       bool		 m_keep_linenumbers { false } ;
    } ;
