@@ -219,10 +219,10 @@ class VectorMeasure
    public:
       static VectorMeasure<IdxT,ValT>* create(const char* simtype, const char* options = nullptr) ;
       static VectorMeasure<IdxT,ValT>* create(VectorSimilarityMeasure simtype, const char* options = nullptr) ;
-      virtual ~VectorMeasure() {}
 
       const char* canonicalName() const { return myCanonicalName() ; }
-      
+      void free() { delete this ; }
+
       // base version is just an identity comparison
       virtual double similarity(const vec_type* v1, const vec_type* v2) const
 	 {
@@ -238,6 +238,7 @@ class VectorMeasure
    protected:
       VectorMeasure() : m_opt() {}
       VectorMeasure(const VectorSimilarityOptions& opt) : m_opt(opt) {}
+      virtual ~VectorMeasure() {}
 
       virtual const char* myCanonicalName() const { return "Identity" ; }
 
@@ -286,6 +287,7 @@ class SimilarityMeasure : public VectorMeasure<IdxT, ValT>
    protected:
       SimilarityMeasure() : super() {}
       SimilarityMeasure(const VectorSimilarityOptions& opt) : super(opt) {}
+      virtual ~SimilarityMeasure() {}
    } ;
 
 //----------------------------------------------------------------------------
@@ -307,6 +309,7 @@ class SimilarityMeasureReciprocal : public VectorMeasure<IdxT, ValT>
    protected:
       SimilarityMeasureReciprocal() : super() {}
       SimilarityMeasureReciprocal(const VectorSimilarityOptions& opt) : super(opt) {}
+      virtual ~SimilarityMeasureReciprocal() {}
    } ;
 
 //----------------------------------------------------------------------------
@@ -327,6 +330,7 @@ class DistanceMeasure : public VectorMeasure<IdxT, ValT>
    protected:
       DistanceMeasure() : super() {}
       DistanceMeasure(const VectorSimilarityOptions& opt) : super(opt) {}
+      virtual ~DistanceMeasure() {}
    } ;
 
 //----------------------------------------------------------------------------
@@ -348,6 +352,7 @@ class DistanceMeasureReciprocal : public VectorMeasure<IdxT, ValT>
    protected:
       DistanceMeasureReciprocal() : super() {}
       DistanceMeasureReciprocal(const VectorSimilarityOptions& opt) : super(opt) {}
+      virtual ~DistanceMeasureReciprocal() {}
    } ;
 
 /*
@@ -380,7 +385,6 @@ class WrappedVectorMeasure : public VectorMeasure<IdxT,ValT>
 	 { return new WrappedVectorMeasure(base_simtype,options) ; }
       static WrappedVectorMeasure* create(VectorMeasure<IdxT,ValT>* base)
 	 { return new WrappedVectorMeasure(base) ; }
-      virtual ~WrappedVectorMeasure() { delete m_basemeasure ; m_basemeasure = nullptr ; }
 
       // give access to the base measure's similarity() and distance() functions
       double baseSimilarity(const vec_type* v1, const vec_type* v2) const
@@ -398,6 +402,7 @@ class WrappedVectorMeasure : public VectorMeasure<IdxT,ValT>
       WrappedVectorMeasure(VectorSimilarityMeasure base_simtype, const char* options = nullptr)
 	 { m_basemeasure = super::create(base_simtype,options) ; }
       WrappedVectorMeasure(VectorMeasure<IdxT,ValT>* base) { m_basemeasure = base ; }
+      virtual ~WrappedVectorMeasure() { if (m_basemeasure) { m_basemeasure->free() ; m_basemeasure = nullptr ; } }
 
    protected:
       super* m_basemeasure ;
