@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.11, last edit 2018-09-06					*/
+/* Version 0.11, last edit 2018-09-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include "framepac/critsect.h"
 #include "framepac/message.h"
 #include "framepac/random.h"
 
@@ -31,6 +32,7 @@ namespace Fr {
 
 static random_device global_randomizer ;
 static mt19937_64 global_random_engine ;
+static CriticalSection rand_critsect ;
 
 /************************************************************************/
 /*	Seeding the random number engine				*/
@@ -72,6 +74,7 @@ RandomInteger::RandomInteger(size_t min, size_t max)
 
 size_t RandomInteger::get()
 {
+   ScopeCriticalSection guard(rand_critsect) ;
    return m_dist(global_random_engine) ;
 }
 
@@ -129,6 +132,7 @@ RandomFloat::RandomFloat(double min, double max)
 
 double RandomFloat::get()
 {
+   ScopeCriticalSection guard(rand_critsect) ;
    return m_dist(global_random_engine) ;
 }
 
