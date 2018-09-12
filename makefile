@@ -57,17 +57,18 @@ endif
 
 ifeq ($(SANE),1)
 #SANITIZE=-fsanitize=thread -fPIE -DHELGRIND
-SANITIZE=-fsanitize=thread -fPIE -DPURIFY -DDYNAMIC_ANNOTATIONS_ENABLED=1
+SANITIZE=-fsanitize=thread -fPIC -DPURIFY -DDYNAMIC_ANNOTATIONS_ENABLED=1
 LINKSAN=-pie
 EXTRAOBJS=dynamic_annotations.o
 else ifeq ($(SANE),2)
-SANITIZE=-fsanitize=address -fno-omit-framepointer -DPURIFY
+SANITIZE=-fsanitize=address -fno-omit-frame-pointer -DPURIFY
 else ifeq ($(SANE),3)
 SANITIZE=-fsanitize=leak -DPURIFY
 else ifeq ($(SANE),4)
-SANITIZE=-fsanitize=memory -fno-omit-framepointer
+SANITIZE=-fsanitize=memory -fno-omit-frame-pointer
 else ifeq ($(SANE),5)
-SANITIZE=-fsanitize=undefined
+# fasthash64, BiDirIndex, and SuffixArray make deliberate misaligned accesses
+SANITIZE=-fsanitize=undefined -fno-sanitize=alignment
 endif
 
 ifndef CPU
@@ -169,7 +170,7 @@ CFLAGS +=$(SANITIZE)
 CFLAGS +=$(INCLUDEDIRS)
 CFLAGS +=$(SHAREDLIB)
 CFLAGS +=$(COMPILE_OPTS)
-CFLAGEXE = -L$(LIBINSTDIR) $(PROFILE) -o $@
+CFLAGEXE = -L$(LIBINSTDIR) $(PROFILE)
 LINKFLAGS =$(LINKBITS)
 LINKFLAGS +=$(LINKTYPE)
 LINKFLAGS +=$(PTHREAD)
@@ -230,7 +231,12 @@ endif
 $(C)$(OBJ): ; $(CXX) $(CFLAGS) -c -o $@ $<
 
 build/%$(OBJ) : src/%$(C)
+	@mkdir -p build
 	$(CXX) $(CFLAGS) -c -o $@ $<
+
+$(BINDIR)/%$(EXE) : tests/%$(OBJ)
+	@mkdir -p $(BINDIR)
+	$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) -o $@ $< $(LIBRARY) $(USELIBS)
 
 .cpp.C: ; ln -s $< $@
 
@@ -461,40 +467,14 @@ $(LIBINSTDIR)/$(LIBRARY): $(LIBRARY)
 ## the dependencies for each module of the full package
 
 $(BINDIR)/argparser$(EXE):	tests/argparser$(OBJ) $(LIBRARY)
-		@ mkdir -p $(BINDIR)
-		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
-
 $(BINDIR)/clustertest$(EXE):	tests/clustertest$(OBJ) $(LIBRARY)
-		@ mkdir -p $(BINDIR)
-		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
-
 $(BINDIR)/cogscore$(EXE):	tests/cogscore$(OBJ) $(LIBRARY)
-		@ mkdir -p $(BINDIR)
-		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
-
 $(BINDIR)/membench$(EXE):	tests/membench$(OBJ) $(LIBRARY)
-		@ mkdir -p $(BINDIR)
-		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
-
 $(BINDIR)/objtest$(EXE):	tests/objtest$(OBJ) $(LIBRARY)
-		@ mkdir -p $(BINDIR)
-		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
-
 $(BINDIR)/parhash$(EXE):	tests/parhash$(OBJ) $(LIBRARY)
-		@ mkdir -p $(BINDIR)
-		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
-
 $(BINDIR)/splitwords$(EXE):	tests/splitwords$(OBJ) $(LIBRARY)
-		@ mkdir -p $(BINDIR)
-		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
-
 $(BINDIR)/stringtest$(EXE):	tests/stringtest$(OBJ) $(LIBRARY)
-		@ mkdir -p $(BINDIR)
-		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
-
 $(BINDIR)/tpool$(EXE):		tests/tpool$(OBJ) $(LIBRARY)
-		@ mkdir -p $(BINDIR)
-		$(CCLINK) $(LINKFLAGS) $(CFLAGEXE) $< $(LIBRARY) $(USELIBS)
 
 build/allocator$(OBJ):		src/allocator$(C) framepac/atomic.h framepac/memory.h
 build/argopt$(OBJ):		src/argopt$(C) template/argopt.cc
