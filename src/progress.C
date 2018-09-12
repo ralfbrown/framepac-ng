@@ -125,7 +125,7 @@ CharPtr ProgressIndicator::timeString(double time)
 
 ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit, size_t per_line,
 						   const char* first_prefix, const char* rest_prefix)
-   : ProgressIndicator(interval,limit), m_prevfrac(0.0), m_lastupdate(0.0),
+   : ProgressIndicator(interval,limit), m_prevfrac(0.0),
      m_firstprefix(dup_string(first_prefix)), m_restprefix(dup_string(rest_prefix)),
      m_per_line(per_line), m_linewidth(80), m_istty(isatty(fileno(stdout)))
 {
@@ -138,6 +138,7 @@ ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit
       }
 #endif /* TIOCGWINSZ */
    computeBarSize() ;
+   m_showed_estimated = m_show_estimated ;
    return ;
 }
 
@@ -145,6 +146,10 @@ ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit
 
 ConsoleProgressIndicator::~ConsoleProgressIndicator()
 {
+   m_lastupdate = -1 ;
+   m_count = m_limit ;
+   m_show_estimated = false ;
+   updateDisplay(m_count) ;
    cout << endl ;
    return ;
 }
@@ -191,13 +196,13 @@ void ConsoleProgressIndicator::updateSettings()
 void ConsoleProgressIndicator::displayProgressBar(size_t stars, double elapsed, double estimated) const
 {
    if (stars > m_barsize)
-      stars = m_barsize ;
+      stars %= m_barsize ;
    // build up the progress bar so that we can output it all in one call, reducing the chance of
    //  multithread conflicts
    StringBuilder sb ;
    sb += *m_firstprefix ;
    sb += '[' ;
-   sb.append('*',stars) ;
+   sb.append(m_star,stars) ;
    sb.append(' ',m_barsize - stars) ;
    sb += ']' ;
    if (m_show_elapsed)
@@ -207,13 +212,13 @@ void ConsoleProgressIndicator::displayProgressBar(size_t stars, double elapsed, 
       }
    if (m_show_estimated)
       {
-      if (m_prevfrac == 1.0)
-	 sb += "      " ;		// wipe out the last estimate
-      else
-	 {
-	 sb +=  (m_show_elapsed ? '+' : ' ') ;
-	 sb += timeString(estimated) ;
-	 }
+      sb +=  (m_show_elapsed ? '+' : ' ') ;
+      sb += timeString(estimated) ;
+      }
+   else if (m_showed_estimated)
+      {
+      sb += "      " ;		// wipe out the last estimate
+      m_showed_estimated = false ;
       }
    sb += '\r' ;
    sb += '\0' ;
@@ -225,13 +230,13 @@ void ConsoleProgressIndicator::displayProgressBar(size_t stars, double elapsed, 
 
 void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 {
-   size_t intervals = (curr_count / m_interval) ;
-   size_t prev_intervals = m_prev_update.exchange(intervals) ;
-   if (intervals == prev_intervals)
-      return ;
-   
    if (m_limit == 0)
       {
+      size_t intervals = (curr_count / m_interval) ;
+      size_t prev_intervals = m_prev_update.exchange(intervals) ;
+      // if no new dots to print, we can return immediately
+      if (intervals == prev_intervals)
+	 return ;
       // we don't know what fraction has been completed, so just update progress
       //   by adding a period, wrapping after every 'per_line' 
       if (prev_intervals == 0)
@@ -251,24 +256,20 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
    if (frac > 1.0)
       {
       // we've gone over 100% completion, so any time estimates become invalid
-      frac = 1.0 ;
-      if (m_prevfrac == 1.0)
-	 {
-	 m_show_estimated = false ;
-	 return ;
-	 }
+      m_show_estimated = false ;
+      m_star = '+' ;
       }
    double stars = round(m_barsize * frac) ;
    double prevstars = round(m_barsize * m_prevfrac) ;
    if (tty())
       {
       double elapsed = m_timer.seconds() ;
+      // prevent some race conditions by not updating more than 3 times / second
+      //   (plus it would just be too frenetic for the user)
+      if (elapsed - m_lastupdate < 0.34)
+	 return ;
       if (frac < 1.0)			// apply rate limiting except at the 100% mark
 	 {
-	 // prevent some race conditions by not updating more than 3 times / second
-	 //   (plus it would just be too frenetic for the user)
-	 if (elapsed - m_lastupdate < 0.34)
-	    return ;
 	 // don't update more often than every two seconds unless there has been
 	 //   a substantial increase in the proportion completed, to avoid generating
 	 //   a huge amount of output (and thus a huge file when capturing output)
@@ -300,7 +301,7 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	 if (prevstars == 0)
 	    cout << *m_firstprefix << '[' ;
 	 while (prevstars++ < stars)
-	    cout << '*' ;
+	    cout << m_star ;
 	 if (frac >= 1.0 && (prevstars <= m_barsize || m_show_elapsed))
 	    {
 	    cout << ']' ;
