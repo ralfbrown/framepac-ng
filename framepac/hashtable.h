@@ -1238,10 +1238,11 @@ class HashTableIterBase
 
       HashTableIterBase& operator++ ()
 	 {
-	 while (m_index < m_table->capacity())
+	 size_t cap = m_table->capacity() ;
+	 while (m_index < cap)
 	    {
 	    ++m_index ;
-	    if (m_table->activeEntry(m_index))
+	    if (m_index == cap || m_table->activeEntry(m_index))
 	       break ;
 	    }
 	 return *this ;
