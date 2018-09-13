@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-14					*/
+/* Version 0.12, last edit 2018-09-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -47,6 +47,8 @@ void BufferBuilder<T,minsize>::freeBuffer()
 {
    if (m_buffer != m_localbuf && !m_external_buffer)
       {
+      ASAN(__sanitizer_annotate_contiguous_container(m_buffer,m_buffer+capacity(),m_buffer+size(), \
+	    m_buffer+capacity())) ;
       delete[] m_buffer ;
       }
    return ;
@@ -63,6 +65,7 @@ bool BufferBuilder<T,minsize>::preallocate(size_t newsize)
       std::copy(m_buffer,m_buffer+m_currsize,newbuf) ;
       freeBuffer() ;
       m_buffer = newbuf ;
+      ASAN(__sanitizer_annotate_contiguous_container(m_buffer,m_buffer+newsize,m_buffer+size(),m_buffer+size())) ;
       m_alloc = newsize ;
       m_external_buffer = false ;
       return true ;
@@ -126,6 +129,7 @@ void BufferBuilder<T,minsize>::append(T value)
       size_t newalloc = m_currsize > 200000000 ? 5*m_currsize/4 : (m_currsize > 1000000 ? 3*m_currsize/2 : 2*m_currsize) ;
       preallocate(newalloc) ;
       }
+   ASAN(__sanitizer_annotate_contiguous_container(m_buffer,m_buffer+capacity(),m_buffer+size(),m_buffer+size()+1)) ;
    m_buffer[m_currsize++] = value ;
    return ;
 }
@@ -144,6 +148,7 @@ void BufferBuilder<T,minsize>::append(T value, size_t count)
 	 newalloc = 5*(m_currsize + count)/4 ;
       preallocate(newalloc) ;
       }
+   ASAN(__sanitizer_annotate_contiguous_container(m_buffer,m_buffer+capacity(),m_buffer+size(),m_buffer+size()+count));
    for (size_t i = 0 ; i < count ; ++i)
       {
       m_buffer[m_currsize++] = value ;
@@ -163,6 +168,7 @@ void BufferBuilder<T,minsize>::append(const BufferBuilder<T,minsize>& addbuf)
       newalloc = newalloc > 200000000 ? 5*newalloc/4 : ((newalloc > 1000000) ? 3*newalloc/2 : 2*newalloc) ;
       preallocate(newalloc) ;
       }
+   ASAN(__sanitizer_annotate_contiguous_container(m_buffer,m_buffer+capacity(),m_buffer+size(),m_buffer+size()+grow)) ;
    std::copy(addbuf.m_buffer,addbuf.m_buffer+grow,m_buffer+m_currsize) ;
    m_currsize += grow ;
    return ;
@@ -208,6 +214,7 @@ size_t ParallelBufferBuilder<T,minsize>::reserveElements(size_t count)
       this->preallocate(newalloc) ;
       }
    this->m_currsize += count ;
+   ASAN(__sanitizer_annotate_contiguous_container(m_buffer,m_buffer+capacity(),m_buffer+currsize,m_buffer+size())) ;
    return currsize ;			// index of first reserved element
 }
 
