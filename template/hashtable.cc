@@ -124,47 +124,15 @@ namespace Fr
 
 
 template <typename KeyT, typename ValT>
-inline void HashTable<KeyT,ValT>::Table::init(size_t size)
+inline void HashTable<KeyT,ValT>::Table::init()
 {
-   if (size < searchrange/2)
-      {
-      m_size = size ;
-      m_fullsize = size + size/2 ;
-      }
-   else if (size < 2*searchrange)
-      {
-      m_size = size - searchrange/4 ;
-      m_fullsize = size + searchrange/4 ;
-      }
-   else if (size < 8*searchrange)
-      {
-      m_size = size - searchrange/2 ;
-      m_fullsize = size + searchrange/4 ;
-      }
-   else
-      {
-      m_size = size - searchrange ;
-      m_fullsize = size ;
-      }
-   m_next_table.store(nullptr) ;
+//   this->HashBase::HashBase() ;
    m_next_free.store(nullptr) ;
    m_entries = nullptr ;
-   ifnot_INTERLEAVED(m_ptrs = nullptr ;)
-   m_resizelock.store(false) ;
-   m_resizedone.store(false) ;
-   m_resizestarted.clear() ;
-   m_resizepending.clear() ;
-   size_t num_segs = (capacity() + FrHASHTABLE_SEGMENT_SIZE - 1) / FrHASHTABLE_SEGMENT_SIZE ;
-   m_resizepending.init(num_segs) ;
-   m_segments_assigned.store((size_t)0) ;
-   m_segments_total.store(num_segs) ;
-   m_first_incomplete.store(size) ;
-   m_last_incomplete.store(0) ;
    remove_fn = nullptr ;
    if (capacity() > 0)
       {
       m_entries = new Entry[capacity()] ;
-      ifnot_INTERLEAVED(m_ptrs = new HashPtr[capacity()]) ;
       if (!m_entries
 	  ifnot_INTERLEAVED(|| !m_ptrs)
 	 )
@@ -190,7 +158,7 @@ void HashTable<KeyT,ValT>::Table::cleanup()
    delete[] entries ;
    ifnot_INTERLEAVED(delete[] m_ptrs) ;
    ifnot_INTERLEAVED(m_ptrs = nullptr) ;
-   m_next_table.store(nullptr) ;
+   m_next.store(nullptr) ;
    m_next_free.store(nullptr) ;
    return ;
 }
@@ -679,7 +647,7 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize)
    newsize = normalizeSize(newsize) ;
    debug_msg("resize to %ld from %ld (thr %ld)\n",newsize,m_size,FramepaC::my_job_id) ;
    Table* newtable = m_container->allocTable() ;
-   newtable->init(newsize) ;
+   new (newtable) Table(newsize) ;
    newtable->m_container = m_container ;
    if (unlikely(!newtable->good()))
       {
@@ -691,7 +659,7 @@ bool HashTable<KeyT,ValT>::Table::resize(size_t newsize)
    // link in the new table; this also makes
    //   operations on the current table start to
    //   forward to the new one
-   m_next_table.store(newtable) ;
+   m_next.store(newtable) ;
    m_resizestarted.set() ;
    // enqueue ourself on the HashTableHelper thread
    m_container->startResize() ;
@@ -1636,7 +1604,7 @@ typename HashTable<KeyT,ValT>::Table* HashTable<KeyT,ValT>::allocTable()
       tab = m_freetables.load() ;
       }
    // no table records on the freelist, so create a new one
-   return new Table ;
+   return ::new Table ;
 }
 
 //----------------------------------------------------------------------------

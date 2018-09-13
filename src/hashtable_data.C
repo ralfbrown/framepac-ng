@@ -37,13 +37,62 @@ size_t num_small_primes = (sizeof(small_primes)/sizeof(small_primes[0])) ;
 
 thread_local size_t my_job_id ;
 
-} // end namespace FramepaC //
-
 /************************************************************************/
+/*	Methods for class HashBase					*/
 /************************************************************************/
 
-namespace FramepaC
+HashBase::HashBase(size_t size)
 {
+   m_next.store(nullptr) ;
+   ifnot_INTERLEAVED(m_ptrs = nullptr ;)
+   m_resizelock.store(false) ;
+   m_resizedone.store(false) ;
+   m_resizestarted.clear() ;
+   m_resizepending.clear() ;
+   size_t searchrange = FrHASHTABLE_SEARCHRANGE ;
+   if (size < searchrange/2)
+      {
+      m_size = size ;
+      m_fullsize = size + size/2 ;
+      }
+   else if (size < 2*searchrange)
+      {
+      m_size = size - searchrange/4 ;
+      m_fullsize = size + searchrange/4 ;
+      }
+   else if (size < 8*searchrange)
+      {
+      m_size = size - searchrange/2 ;
+      m_fullsize = size + searchrange/4 ;
+      }
+   else
+      {
+      m_size = size - searchrange ;
+      m_fullsize = size ;
+      }
+   size_t num_segs = (capacity() + FrHASHTABLE_SEGMENT_SIZE - 1) / FrHASHTABLE_SEGMENT_SIZE ;
+   m_resizepending.init(num_segs) ;
+   m_segments_assigned.store((size_t)0) ;
+   m_segments_total.store(num_segs) ;
+   m_first_incomplete.store(size) ;
+   m_last_incomplete.store(0) ;
+   if (capacity() > 0)
+      {
+      ifnot_INTERLEAVED(m_ptrs = new HashPtr[capacity()]) ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+HashBase::~HashBase()
+{
+   return ;
+}
+
+/************************************************************************/
+/*	Methods for class HashTable_Stats				*/
+/************************************************************************/
 
 void HashTable_Stats::clear()
 {

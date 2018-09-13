@@ -245,8 +245,38 @@ class HashPtr
    } ;
 
 /************************************************************************/
+/*	Base class for the actual hash array template class		*/
 /************************************************************************/
 
+class HashBase
+   {
+   public:
+      HashBase(size_t cap) ;
+      ~HashBase() ;
+
+      HashBase *next() const { return m_next.load() ; }
+      size_t capacity() const { return  m_fullsize ; }
+      bool superseded() const { return m_next.load() != nullptr ; }
+      bool resizingDone() const { return m_resizedone.load() ; }
+
+      // ========== STL compatibility ==========
+      size_t bucket_count() const { return m_size ; }
+      size_t max_bucket_count() const { return m_fullsize ; }
+
+   protected:
+      Fr::Atomic<HashBase*> m_next ;		// the table which supersedes us
+      ifnot_INTERLEAVED(HashPtr *m_ptrs ;)	// links chaining elements of a hash bucket [unchanging]
+      size_t	           m_size ;		// capacity of hash array [constant for life of table]
+      size_t	           m_fullsize ;		// capacity including padding [constant for life of table]
+      Fr::Atomic<size_t>   m_first_incomplete { ~0U } ;
+      Fr::Atomic<size_t>   m_last_incomplete { 0 } ;
+      Fr::Atomic<uint32_t> m_segments_total { 0 } ;
+      Fr::Atomic<uint32_t> m_segments_assigned { 0 } ;
+      Fr::SynchEvent       m_resizestarted ;
+      Fr::SynchEventCountdown m_resizepending ;
+      Fr::Atomic<bool>     m_resizelock { false } ; // ensures that only one thread can initiate a resize
+      Fr::Atomic<bool>     m_resizedone { false } ;
+   } ;
 
 //----------------------------------------------------------------------------
 
@@ -463,26 +493,24 @@ class HashTable : public HashTableBase
       } ;
       //------------------------
       // encapsulate all of the fields which must be atomically swapped at the end of a resize()
-      class Table
+      class Table : public FramepaC::HashBase
       {
 	 typedef class Fr::HashTable<KeyT,ValT> HT ;
       public:
-	 Table(size_t size = 0)
+	 void* operator new(size_t, Table* ptr) { return ptr ; }
+	 Table(size_t size = 0) : HashBase(size)
 	    {
-	       init(size) ;
+	       init() ;
 	       return ;
 	    } ;
 	 ~Table() { cleanup() ; }
-	 void init(size_t size) ;
+	 void init() ;
 	 void cleanup() ;
 	 bool good() const { return m_entries != nullptr ifnot_INTERLEAVED(&& m_ptrs != nullptr) && m_size > 0 ; }
-	 bool superseded() const { return m_next_table.load() != nullptr ; }
-	 bool resizingDone() const { return m_resizedone.load() ; }
+	 Table* next() const { return static_cast<Table*>(this->HashBase::next()) ; }
 	 // maintaining the count of elements in the table is too much of a bottleneck under high load,
 	 //   so we'll punt and simply scan the hash array if someone needs that count
 	 size_t currentSize() const { return countItems() ; }
-	 size_t capacity() const { return  m_fullsize ; }
-	 Table *next() const { return m_next_table.load() ; }
 	 Table *nextFree() const { return m_next_free.load() ; }
 	 KeyT getKey(size_t N) const { return m_entries[N].getKey() ; }
 	 void setKey(size_t N, KeyT newkey) { m_entries[N].setKey(newkey) ; }
@@ -607,11 +635,8 @@ class HashTable : public HashTableBase
 	 // find()
 	 // equal_range()
 
-	 size_t bucket_count() const { return m_size ; }
-	 size_t max_bucket_count() const { return m_fullsize ; }
 	 [[gnu::cold]] size_t bucket_size(size_t bucketnum) const ;
 	 size_t bucket(KeyT key) const { return m_container->hashVal(key) % m_size ; }
-
 	 float load_factor() const { return countItems() / m_size ; }
 
 	 // rehash()
@@ -675,25 +700,11 @@ class HashTable : public HashTableBase
 
       public:
 	 Entry*            m_entries ;			// hash array [unchanging]
-	 ifnot_INTERLEAVED(HashPtr *m_ptrs ;)		// links chaining elements of a hash bucket [unchanging]
 	 HT*               m_container ;		// hash table for which this is the content [unchanging]
-	 Fr::Atomic<Table*> m_next_table { nullptr } ;	// the table which supersedes us
 	 Fr::Atomic<Table*> m_next_free { nullptr } ;
 	 HashKVFunc*       remove_fn { nullptr } ; 	// invoke on removal of entry/value
 	 static constexpr Link searchrange = FrHASHTABLE_SEARCHRANGE ; // full search window, starting at bucket head
 	 static constexpr size_t NULLPOS = ~0UL ;
-	 size_t	           m_size ;		// capacity of hash array [constant for life of table]
-	 size_t	           m_fullsize ;		// capacity including padding [constant for life of table]
-      protected:
-	 Fr::Atomic<size_t> m_first_incomplete { ~0U } ;
-	 Fr::Atomic<size_t> m_last_incomplete { 0 } ;
-	 Fr::Atomic<uint32_t> m_segments_total { 0 } ;
-	 Fr::Atomic<uint32_t> m_segments_assigned { 0 } ;
-	 Fr::SynchEvent     m_resizestarted ;
-	 Fr::SynchEventCountdown m_resizepending ;
-	 Fr::Atomic<bool>   m_resizelock { false } ; // ensures that only one thread can initiate a resize
-	 Fr::Atomic<bool>   m_resizedone { false } ;
-
          } ;
       //------------------------
       class TablePtr
@@ -775,7 +786,7 @@ class HashTable : public HashTableBase
    protected:
       static bool stillLive(const Table *version) ;
 
-      size_t maxSize() const { return m_table.load()->m_size ; }
+      size_t maxSize() const { return m_table.load()->bucket_count() ; }
       template <typename RetT = size_t>
       inline typename std::enable_if<!std::is_integral<KeyT>::value,RetT>::type hashVal(KeyT key) const
 	 {
@@ -1005,7 +1016,7 @@ class HashTable : public HashTableBase
 
       // access to internal state
       size_t currentSize() const { DELEGATE(countItems()) }
-      size_t maxCapacity() const { DELEGATE(m_fullsize) }
+      size_t maxCapacity() const { DELEGATE(capacity()) }
       bool isPacked() const { return false ; }  // backwards compatibility
       HashTableCleanupFunc *cleanupFunc() const { return cleanup_fn ; }
       HashKVFunc *onRemoveFunc() const { return remove_fn ; }
