@@ -214,7 +214,8 @@ size_t ParallelBufferBuilder<T,minsize>::reserveElements(size_t count)
       this->preallocate(newalloc) ;
       }
    this->m_currsize += count ;
-   ASAN(__sanitizer_annotate_contiguous_container(m_buffer,m_buffer+capacity(),m_buffer+currsize,m_buffer+size())) ;
+   ASAN(__sanitizer_annotate_contiguous_container(this->m_buffer,this->m_buffer+this->capacity(), \
+	 this->m_buffer+currsize, this->m_buffer+this->size())) ;
    return currsize ;			// index of first reserved element
 }
 
