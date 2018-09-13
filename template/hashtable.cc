@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-25					*/
+/* Version 0.12, last edit 2018-09-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -126,8 +126,6 @@ namespace Fr
 template <typename KeyT, typename ValT>
 inline void HashTable<KeyT,ValT>::Table::init()
 {
-//   this->HashBase::HashBase() ;
-   m_next_free.store(nullptr) ;
    m_entries = nullptr ;
    remove_fn = nullptr ;
    if (capacity() > 0)
@@ -159,7 +157,6 @@ void HashTable<KeyT,ValT>::Table::cleanup()
    ifnot_INTERLEAVED(delete[] m_ptrs) ;
    ifnot_INTERLEAVED(m_ptrs = nullptr) ;
    m_next.store(nullptr) ;
-   m_next_free.store(nullptr) ;
    return ;
 }
 
@@ -1519,9 +1516,8 @@ HashTable<KeyT,ValT>::~HashTable()
       Fr::atomic_thread_fence(std::memory_order_seq_cst) ; 
       debug_msg("HashTable dtor\n") ;
       }
-   table->cleanup() ;
    remove_fn = nullptr ;
-   freeTables() ;
+   releaseTable(table) ;
    return ;
 }
 
@@ -1620,6 +1616,19 @@ void HashTable<KeyT,ValT>::releaseTable(Table* t)
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
+void HashTable<KeyT,ValT>::preallocateTables(size_t N)
+{
+   while (N > 0)
+      {
+      --N ;
+      releaseTable(::new Table) ;
+      }
+   return  ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::freeTables()
 {
    FramepaC::HashBase* tab ;
@@ -1673,7 +1682,7 @@ void HashTable<KeyT,ValT>::threadInit()
       //   for use by the resizer
       auto head = Atomic<TablePtr*>::ref(s_thread_entries).load() ;
       do {
-         s_thread_record->init(&s_table,head) ;
+         s_thread_record->init((FramepaC::HashBase**)&s_table,head) ;
          } while (!Atomic<TablePtr*>::ref(s_thread_entries).compare_exchange_weak(head,s_thread_record)) ;
       }
 #endif /* FrSINGLE_THREADED */
@@ -1693,7 +1702,7 @@ void HashTable<KeyT,ValT>::threadCleanup()
       // unlink from the list of all thread-local table pointers
       TablePtr* prev = nullptr ;
       TablePtr* curr = s_thread_entries ;
-      while (curr && curr->m_table != &Atomic<Table*>::ref(s_table))
+      while (curr && (void**)curr->m_table != (void**)&s_table)
 	 {
 	 prev = curr ;
 	 curr = curr->m_next ;
@@ -1715,6 +1724,24 @@ void HashTable<KeyT,ValT>::threadCleanup()
    delete s_stats ;
    s_stats = nullptr ;
 #endif /* FrHASHTABLE_STATS */
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
+void HashTable<KeyT,ValT>::StaticInitialization()
+{
+   preallocateTables(16) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename KeyT, typename ValT>
+void HashTable<KeyT,ValT>::StaticCleanup()
+{
+   freeTables() ;
    return ;
 }
 

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.11, last edit 2018-09-10					*/
+/* Version 0.12, last edit 2018-09-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -50,20 +50,7 @@
 
 #define FrHASHTABLE_MIN_INCREMENT 256
 
-#define FrHASHTABLE_MIN_SIZE      128	// minimum user-specifiable size (number of hash buckets)
-
-#ifdef FrSINGLE_THREADED
-#  define FrHT_NUM_TABLES	    2	// need separate for before/after resize
-#else
-// number of distinct indirection records to maintain in the
-//   HashTable proper (if we need more, we'll allocate them, but we
-//   mostly want to be able to satisfy needs without that).  We want
-//   not just before/after resize, but also a couple extra so that we
-//   can allow additional writes even before all old readers complete;
-//   if we were to wait for all readers, performance wouldn't scale as
-//   well with processor over-subscription.
-#  define FrHT_NUM_TABLES	    4
-#endif
+#define FrHASHTABLE_MIN_SIZE      1031	// minimum user-specifiable size (number of hash buckets)
 
 // starting up the copying of a segment of the current hash array into
 //   a new hash table is fairly expensive, so enforce a minimum size
@@ -251,6 +238,7 @@ class HashPtr
 class HashBase
    {
    public:
+      HashBase() ;
       HashBase(size_t cap) ;
       ~HashBase() ;
 
@@ -278,6 +266,29 @@ class HashBase
       Fr::SynchEventCountdown m_resizepending ;
       Fr::Atomic<bool>     m_resizelock { false } ; // ensures that only one thread can initiate a resize
       Fr::Atomic<bool>     m_resizedone { false } ;
+   } ;
+
+//----------------------------------------------------------------------------
+
+class TablePtr
+   {
+   public:
+      TablePtr*	             m_next  { nullptr } ;
+      Fr::Atomic<HashBase*>* m_table { nullptr } ;
+      size_t   	             m_id    { 0 } ;	   // thread ID, for help in debugging
+   public:
+      TablePtr() : m_next(nullptr), m_table(nullptr), m_id(0) {}
+      bool initialized() const { return m_table != nullptr ; }
+      void clear()
+	 { m_table = nullptr ; m_next = nullptr ; }
+      void init(HashBase** tab, TablePtr* next)
+	 {
+	    m_table = reinterpret_cast<Fr::Atomic<HashBase*>*>(tab) ;
+	    m_next = next ; m_id = FramepaC::my_job_id ;
+	 }
+      void init(Fr::Atomic<HashBase*>* tab, TablePtr* next)
+	 { m_table = tab ; m_next = next ; m_id = FramepaC::my_job_id ; }
+      const HashBase* table() const { return m_table->load() ; }
    } ;
 
 //----------------------------------------------------------------------------
@@ -385,6 +396,7 @@ class HashTable : public HashTableBase
       // incorporate the auxiliary classes
       typedef FramepaC::Link Link ;
       typedef FramepaC::HashPtr HashPtr ;
+      typedef FramepaC::TablePtr TablePtr ;
       typedef FramepaC::HashTable_Stats HashTable_Stats ;
 
       // the types of the various callback functions
@@ -500,7 +512,11 @@ class HashTable : public HashTableBase
 	 typedef class Fr::HashTable<KeyT,ValT> HT ;
       public:
 	 void* operator new(size_t, Table* ptr) { return ptr ; }
-	 Table(size_t size = 0) : HashBase(size)
+	 Table() : HashBase()
+	    {
+	       return;
+	    }
+	 Table(size_t size) : HashBase(size)
 	    {
 	       init() ;
 	       return ;
@@ -513,7 +529,6 @@ class HashTable : public HashTableBase
 	 // maintaining the count of elements in the table is too much of a bottleneck under high load,
 	 //   so we'll punt and simply scan the hash array if someone needs that count
 	 size_t currentSize() const { return countItems() ; }
-	 Table *nextFree() const { return m_next_free.load() ; }
 	 KeyT getKey(size_t N) const { return m_entries[N].getKey() ; }
 	 void setKey(size_t N, KeyT newkey) { m_entries[N].setKey(newkey) ; }
 	 ValT getValue(size_t N) const { return m_entries[N].getValue() ; }
@@ -703,29 +718,9 @@ class HashTable : public HashTableBase
       public:
 	 Entry*            m_entries ;			// hash array [unchanging]
 	 HT*               m_container ;		// hash table for which this is the content [unchanging]
-	 Fr::Atomic<Table*> m_next_free { nullptr } ;
 	 HashKVFunc*       remove_fn { nullptr } ; 	// invoke on removal of entry/value
 	 static constexpr Link searchrange = FrHASHTABLE_SEARCHRANGE ; // full search window, starting at bucket head
 	 static constexpr size_t NULLPOS = ~0UL ;
-         } ;
-      //------------------------
-      class TablePtr
-         {
-	 public:
-	    TablePtr 	   *m_next { nullptr } ;
-	    Atomic<Table*> *m_table { nullptr } ;
-	    size_t   	    m_id { 0 } ;	   // thread ID, for help in debugging
-	 public:
-	    TablePtr() : m_next(nullptr), m_table(nullptr), m_id(0) {}
-	    bool initialized() const { return m_table != nullptr ; }
-	    void clear()
-	       { m_table = nullptr ; m_next = nullptr ; }
-	    void init(Table** tab, TablePtr* next)
-	       { m_table = reinterpret_cast<Atomic<Table*>*>(tab) ;
-		 m_next = next ; m_id = FramepaC::my_job_id ; }
-	    void init(Atomic<Table*>* tab, TablePtr* next)
-	       { m_table = tab ; m_next = next ; m_id = FramepaC::my_job_id ; }
-	    const Table *table() const { return m_table->load() ; }
          } ;
       //------------------------
       class HazardLock
@@ -774,17 +769,18 @@ class HashTable : public HashTableBase
    protected: // methods
       static void thread_backoff(size_t &loops) ;
       void init(size_t initial_size, Table *table = nullptr) ;
-      Table *allocTable() ;
-      void releaseTable(Table *t) ;
-      void freeTables() ;
+      static Table *allocTable() ;
+      static void releaseTable(Table *t) ;
       void updateTable() ;
 
       // set up the per-thread info needed for safe reclamation of
       //   entries and hash arrays, as well as an on-exit callback
       //   to clear that info
-   public: // should only be called from ThreadInitializer
+   public: // should only be called from Initializer / ThreadInitializer
       static void threadInit() ;
       static void threadCleanup() ;
+      static void StaticInitialization() ;
+      static void StaticCleanup() ;
    protected:
       static bool stillLive(const Table *version) ;
 
@@ -850,7 +846,7 @@ class HashTable : public HashTableBase
 #endif /* FrSINGLE_THREADED */
 
    protected:
-      HashTable(size_t initial_size = 1031)
+      HashTable(size_t initial_size = FrHASHTABLE_MIN_SIZE)
 	 : HashTableBase(doAssistResize), m_table(nullptr)
 	 {
 	    init(initial_size) ;
@@ -865,8 +861,13 @@ class HashTable : public HashTableBase
       bool load(const char* mmap_base, size_t mmap_len) ;
       bool save(CFile&) const ;
 
+      // get N instances of Table from the OS and place on our freelist
+      static void preallocateTables(size_t N) ; 
+      // release any unused Table instances
+      static void freeTables() ;
+
       // *** object factories ***
-      static HashTable* create(size_t initial_size = 1031) { return new HashTable(initial_size) ; }
+      static HashTable* create(size_t initial_size = FrHASHTABLE_MIN_SIZE) { return new HashTable(initial_size) ; }
       static HashTable* create(const HashTable& ht) { return new HashTable(ht) ; }
 
       bool resizeTo(size_t newsize) { DELEGATE(resize(newsize)) ; }
@@ -1119,9 +1120,10 @@ class HashTable : public HashTableBase
       HashTableCleanupFunc* cleanup_fn ;		// invoke on destruction of obj
       HashKVFunc*           remove_fn ; 		// invoke on removal of entry/value
       void*                 m_userdata ;		// available for use by isEqual, hashValue, hashValueFull
-      static Fr::ThreadInitializer<HashTable> initializer ;
+      static Fr::Initializer<HashTable> global_initializer ;
       static Atomic<FramepaC::HashBase*> s_freetables ;
 #ifndef FrSINGLE_THREADED
+      static Fr::ThreadInitializer<HashTable> initializer ;
       static TablePtr*    s_thread_entries ;
       static thread_local TablePtr* s_thread_record ;
       static thread_local Table*    s_table ; // thread's announcement which hash table it's using
@@ -1157,6 +1159,9 @@ Allocator HashTable<KeyT,ValT>::s_allocator(FramepaC::Object_VMT<HashTable<KeyT,
 template <typename KeyT, typename ValT>
 Fr::ThreadInitializer<HashTable<KeyT,ValT> > HashTable<KeyT,ValT>::initializer ;
 #endif /* FrSINGLE_THREADED */
+
+template <typename KeyT, typename ValT>
+Fr::Initializer<HashTable<KeyT,ValT> > HashTable<KeyT,ValT>::global_initializer ;
 
 //----------------------------------------------------------------------
 // specializations: Fr::Symbol* keys

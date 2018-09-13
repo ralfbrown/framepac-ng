@@ -41,7 +41,7 @@ thread_local size_t my_job_id ;
 /*	Methods for class HashBase					*/
 /************************************************************************/
 
-HashBase::HashBase(size_t size)
+HashBase::HashBase()
 {
    m_next.store(nullptr) ;
    ifnot_INTERLEAVED(m_ptrs = nullptr ;)
@@ -49,6 +49,17 @@ HashBase::HashBase(size_t size)
    m_resizedone.store(false) ;
    m_resizestarted.clear() ;
    m_resizepending.clear() ;
+   m_segments_assigned.store((size_t)0) ;
+   m_last_incomplete.store(0) ;
+   m_size = 0 ;
+   m_fullsize = 0 ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+HashBase::HashBase(size_t size) : HashBase()
+{
    size_t searchrange = FrHASHTABLE_SEARCHRANGE ;
    if (size < searchrange/2)
       {
@@ -72,10 +83,8 @@ HashBase::HashBase(size_t size)
       }
    size_t num_segs = (capacity() + FrHASHTABLE_SEGMENT_SIZE - 1) / FrHASHTABLE_SEGMENT_SIZE ;
    m_resizepending.init(num_segs) ;
-   m_segments_assigned.store((size_t)0) ;
    m_segments_total.store(num_segs) ;
    m_first_incomplete.store(size) ;
-   m_last_incomplete.store(0) ;
    if (capacity() > 0)
       {
       ifnot_INTERLEAVED(m_ptrs = new HashPtr[capacity()]) ;
