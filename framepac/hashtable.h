@@ -193,13 +193,11 @@ class HashPtr
 	 return val & link_mask ;
 	 }
       Link next() const { return m_next.load() & link_mask ; }
-      bool stale() const { return (m_first.load() & stale_mask) != 0 ; }
       static bool stale(Link stat) { return (stat & stale_mask) != 0 ; }
-      bool inUse() const { return (m_first.load() & inuse_mask) != 0 ; }
-      static bool inUse(Link stat) { return (stat & inuse_mask) != 0 ; }
       bool copyDone() const { return (m_first.load() & copied_mask) != 0 ; }
       static bool copyDone(Link stat) { return (stat & copied_mask) != 0 ; }
-      bool reclaiming() const { return (m_next.load() & reclaim_mask) != 0 ; }
+      bool inUse() const { return (m_first.load() & inuse_mask) != 0 ; }
+      bool reclaiming() const { return (m_first.load() & reclaim_mask) != 0 ; }
 
       // modifiers
       void first(Link ofs) { m_first.store((m_first.load() & ~link_mask) | ofs) ; }
@@ -499,7 +497,6 @@ class HashTable : public HashTableBase
 #else
 	 HashPtr *bucketPtr(size_t N) const { return &m_entries[N].m_info ; }
 #endif /* FrHASHTABLE_INTERLEAVED_ENTRIES */
-	 bool chainIsStale(size_t N) const { return bucketPtr(N)->stale() ; }
 	 bool chainCopied(size_t N) const { return bucketPtr(N)->copyDone() ; }
 	 void copyEntry(size_t N, const Table *othertab)
 	    {
