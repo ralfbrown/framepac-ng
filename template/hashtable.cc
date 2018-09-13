@@ -66,11 +66,9 @@ namespace Fr {
 #if defined(FrSINGLE_THREADED)
 #define FORWARD(delegate,tab,counter)
 #define FORWARD_IF_COPIED(delegate,counter)	\
-      Link status ;				\
-      Link offset = chainHead(bucketnum,status) ;
+      Link offset = chainHead(bucketnum) ;
 #define FORWARD_IF_STALE(delegate,counter)	\
-      Link status ;				\
-      Link offset = chainHead(bucketnum,status) ;
+      Link offset = chainHead(bucketnum) ;
 #else
 #define FORWARD(delegate,tab,counter)					\
       Table* tab = next() ;						\
@@ -458,8 +456,7 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
    // now that we've done all the preliminaries, try to get
    //   write access to actually insert the new entry
    // try to point the hash chain at the new entry
-   Link status = headptr->status() ;
-   if (unlikely(!headptr->first(offset,firstptr,status)))
+   if (unlikely(!headptr->first(offset,firstptr)))
       {
       // oops, someone else messed with the hash chain, which
       //   means there could have been a parallel insert of

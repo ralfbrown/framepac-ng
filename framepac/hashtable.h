@@ -89,7 +89,7 @@
 #  define INT16_MAX 32767
 #endif
 
-#define FrHASHTABLE_SEARCHRANGE 0xFFE
+#define FrHASHTABLE_SEARCHRANGE 0x0FFE
 
 #ifdef FrHASHTABLE_STATS
 #  define if_HASHSTATS(x) x
@@ -196,39 +196,41 @@ class HashPtr
 	 stat = val & ~link_mask ;
 	 return val & link_mask ;
 	 }
-      Link next() const { return m_next.load() ; }
-      Link status() const { return m_first.load() & ~link_mask ; }
+      Link next() const { return m_next.load() & link_mask ; }
       bool stale() const { return (m_first.load() & stale_mask) != 0 ; }
       static bool stale(Link stat) { return (stat & stale_mask) != 0 ; }
       bool inUse() const { return (m_first.load() & inuse_mask) != 0 ; }
       static bool inUse(Link stat) { return (stat & inuse_mask) != 0 ; }
-      bool reclaiming() const { return (m_first.load() & reclaim_mask) != 0 ; }
       bool copyDone() const { return (m_first.load() & copied_mask) != 0 ; }
       static bool copyDone(Link stat) { return (stat & copied_mask) != 0 ; }
+      bool reclaiming() const { return (m_next.load() & reclaim_mask) != 0 ; }
 
       // modifiers
-      void first(Link ofs) { m_first.store(status() | ofs) ; }
-      bool first(Link new_ofs, Link expected, Link stat)
+      void first(Link ofs) { m_first.store((m_first.load() & ~link_mask) | ofs) ; }
+      bool first(Link new_ofs, Link expected)
 	 {
+	    Link stat = m_first.load() & ~link_mask ;
 	    new_ofs = (new_ofs /*& link_mask*/) | stat ;
 	    expected = (expected /*& link_mask*/) | stat ;
 	    return m_first.compare_exchange_weak(expected,new_ofs) ;
 	 }
-      void next(Link ofs) { m_next.store(ofs) ; }
-      bool next(Link new_ofs, Link expected, Link /*stat*/)
+      void next(Link ofs) { m_next.store((m_next.load() & ~link_mask) | ofs) ; }
+#if 0
+      bool next(Link new_ofs, Link expected)
 	 {
-	    // (not using extra flags in m_next yet)
-	    new_ofs = (new_ofs /*& link_mask*/) /*| stat*/ ;
-	    expected = (expected /*& link_mask*/) /*| stat*/ ;
+	    Link stat = m_next.load() & ~link_mask ;
+	    new_ofs = (new_ofs /*& link_mask*/) | stat ;
+	    expected = (expected /*& link_mask*/) | stat ;
 	    return m_next.compare_exchange_strong(expected,new_ofs) ;
 	 }
+#endif
       bool markStale() { return m_first.test_and_set_bit(stale_bit) ; }
       bool markUsed() { return m_first.test_and_set_bit(inuse_bit) ; }
       void markFree() { (void)m_first.fetch_and_relax(~inuse_mask) ; }
-      bool markReclaiming() { return m_first.test_and_set_bit(reclaim_bit) ; }
-      void markReclaimed() { m_first.fetch_and_relax(~reclaim_mask) ; }
       Link markStaleGetStatus() { return m_first.fetch_or(stale_mask) & ~link_mask ; }
       void markCopyDone() { (void)m_first.fetch_or(copied_mask) ; }
+      bool markReclaiming() { return m_first.test_and_set_bit(reclaim_bit) ; }
+      void markReclaimed() { m_first.fetch_and_relax((Link)~reclaim_mask) ; }
 
       
    protected:
@@ -238,13 +240,14 @@ class HashPtr
       static constexpr Link link_mask = 0x0FFF ;
       // flag bits in m_first
       static constexpr unsigned stale_bit = 15 ;
-      static constexpr Link stale_mask = (1 << stale_bit) ;
+      static constexpr Link stale_mask = (1U << stale_bit) ;
       static constexpr unsigned copied_bit = 14 ;
-      static constexpr Link copied_mask = (1 << copied_bit) ;
+      static constexpr Link copied_mask = (1U << copied_bit) ;
       static constexpr unsigned inuse_bit = 13 ;
-      static constexpr Link inuse_mask = (1 << inuse_bit) ;
+      static constexpr Link inuse_mask = (1U << inuse_bit) ;
       static constexpr unsigned reclaim_bit = 12 ;
-      static constexpr Link reclaim_mask = (1 << reclaim_bit) ;
+      static constexpr Link reclaim_mask = (1U << reclaim_bit) ;
+      // flag bits in m_next
    } ;
 
 /************************************************************************/
