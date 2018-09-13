@@ -420,6 +420,13 @@ FramepaC::Link HashTable<KeyT,ValT>::Table::locateEmptySlot(size_t bucketnum, Li
       if (!hp->inUse() && hp->markUsed())
 	 return i ;
       }
+   for (size_t i = 0 ; i < hint ; ++i)
+      {
+      HashPtr* hp = bucketPtr(bucketnum + i) ;
+      // check whether the entry is already known to be in use; if not, try to grab it
+      if (!hp->inUse() && hp->markUsed())
+	 return i ;
+      }
    // if we get here, there were no free slots available
    INCR_COUNT(neighborhood_full) ;
    return FramepaC::NULLPTR ;
