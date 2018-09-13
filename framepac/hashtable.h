@@ -186,10 +186,6 @@ class HashPtr
       ~HashPtr() {}
       // accessors
       Link first() const { return m_first.load() & link_mask ; }
-#ifdef FrSINGLE_THREADED
-      Link* firstPtr() { return reinterpret_cast<Link*>(&m_first) ; }
-      Link* nextPtr() { return reinterpret_cast<Link*>(&m_next) ; }
-#endif /* FrSINGLE_THREADED */
       Link firstAndStatus(Link& stat) const
 	 {
 	 Link val = m_first.load() ;
@@ -527,10 +523,6 @@ class HashTable : public HashTableBase
 	 Link chainHead(size_t N) const { return bucketPtr(N)->first() ; }
 	 Link chainHead(size_t N, Link& status) const { return bucketPtr(N)->firstAndStatus(status) ; }
 	 Link chainNext(size_t N) const { return bucketPtr(N)->next() ; }
-#ifdef FrSINGLE_THREADED
-	 Link* chainHeadPtr(size_t N) const { return bucketPtr(N)->firstPtr() ; }
-	 Link* chainNextPtr(size_t N) const { return bucketPtr(N)->nextPtr() ; }
-#endif /* FrSINGLE_THREADED */
 	 void setChainNext(size_t N, Link nxt) { bucketPtr(N)->next(nxt) ; }
 	 void markCopyDone(size_t N) { bucketPtr(N)->markCopyDone() ; }
 	 void autoResize() ;
