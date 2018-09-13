@@ -259,6 +259,8 @@ class HashBase
       bool superseded() const { return m_next.load() != nullptr ; }
       bool resizingDone() const { return m_resizedone.load() ; }
 
+      void setNext(HashBase* nxt) { m_next.store(nxt) ; }
+
       // ========== STL compatibility ==========
       size_t bucket_count() const { return m_size ; }
       size_t max_bucket_count() const { return m_fullsize ; }
@@ -1114,12 +1116,11 @@ class HashTable : public HashTableBase
    protected: // members of HashTable
       Atomic<Table*>   	    m_table ;			// pointer to currently-active m_tables[] entry
       Atomic<Table*>	    m_oldtables { nullptr } ;	// start of list of currently-live hash arrays
-      Atomic<Table*>	    m_freetables { nullptr } ;
-      Table		    m_tables[FrHT_NUM_TABLES] ;	// hash array, chains, and associated data
       HashTableCleanupFunc* cleanup_fn ;		// invoke on destruction of obj
       HashKVFunc*           remove_fn ; 		// invoke on removal of entry/value
       void*                 m_userdata ;		// available for use by isEqual, hashValue, hashValueFull
       static Fr::ThreadInitializer<HashTable> initializer ;
+      static Atomic<FramepaC::HashBase*> s_freetables ;
 #ifndef FrSINGLE_THREADED
       static TablePtr*    s_thread_entries ;
       static thread_local TablePtr* s_thread_record ;
@@ -1144,6 +1145,10 @@ class HashTable : public HashTableBase
 
 template <typename KeyT, typename ValT>
 const char HashTable<KeyT,ValT>::s_typename[] = "HashTable" ;
+
+template <typename KeyT, typename ValT>
+//Atomic<HashTable<KeyT,ValT>::Table> HashTable<KeyT,ValT>::s_freetables = nullptr ;
+Atomic<FramepaC::HashBase*> HashTable<KeyT,ValT>::s_freetables = nullptr ;
 
 template <typename KeyT, typename ValT>
 Allocator HashTable<KeyT,ValT>::s_allocator(FramepaC::Object_VMT<HashTable<KeyT,ValT>>::instance(),sizeof(HashTable<KeyT,ValT>)) ;

@@ -1466,13 +1466,8 @@ void HashTable<KeyT,ValT>::init(size_t initial_size, Table* table)
    onDelete(nullptr) ;
    m_table.store(nullptr) ;
    m_oldtables.store(nullptr) ;
-   m_freetables.store(nullptr) ;
    clearGlobalStats() ;
    initial_size = Table::normalizeSize(initial_size) ;
-   for (size_t i = 0 ; i < FrHT_NUM_TABLES ; i++)
-      {
-      releaseTable(&m_tables[i]) ;
-      }
    if (!table)
       {
       table = allocTable() ;
@@ -1595,13 +1590,13 @@ template <typename KeyT, typename ValT>
 typename HashTable<KeyT,ValT>::Table* HashTable<KeyT,ValT>::allocTable()
 {
    // pop a table record off the freelist, if available
-   Table* tab = m_freetables.load() ;
+   FramepaC::HashBase* tab = s_freetables.load() ;
    while (tab)
       {
-      Table* nxt = tab->nextFree() ;
-      if (m_freetables.compare_exchange_strong(tab,nxt))
-	 return tab ;
-      tab = m_freetables.load() ;
+      FramepaC::HashBase* nxt = tab->next() ;
+      if (s_freetables.compare_exchange_strong(tab,nxt))
+	 return static_cast<HashTable::Table*>(tab) ;
+      tab = s_freetables.load() ;
       }
    // no table records on the freelist, so create a new one
    return ::new Table ;
@@ -1613,12 +1608,12 @@ template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::releaseTable(Table* t)
 {
    t->cleanup() ;
-   Table* freetab ;
+   FramepaC::HashBase* freetab ;
    do
       {
-      freetab = m_freetables.load() ;
-      t->m_next_free.store(freetab) ;
-      } while (!m_freetables.compare_exchange_weak(freetab,t)) ;
+      freetab = s_freetables.load() ;
+      t->setNext(freetab) ;
+      } while (!s_freetables.compare_exchange_weak(freetab,t)) ;
    return ;
 }
 
@@ -1627,17 +1622,13 @@ void HashTable<KeyT,ValT>::releaseTable(Table* t)
 template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::freeTables()
 {
-   Table* tab ;
-   while ((tab = m_freetables.load()) != nullptr)
+   FramepaC::HashBase* tab ;
+   while ((tab = s_freetables.load()) != nullptr)
       {
-      Table* nxt = tab->nextFree() ;
-      m_freetables.store(nxt) ;
-      if (tab < &m_tables[0] || tab >= &m_tables[FrHT_NUM_TABLES])
-	 {
-	 // not one of the tables inside our own instance, so
-	 //   send back to OS
-	 delete tab ;
-	 }
+      FramepaC::HashBase* nxt = tab->next() ;
+      s_freetables.store(nxt) ;
+      // send back to OS
+      delete static_cast<HashTable::Table*>(tab) ;
       }
    return  ;
 }
