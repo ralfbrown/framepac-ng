@@ -23,6 +23,9 @@
 #include <mutex>
 #include "framepac/init.h"
 #include "framepac/symboltable.h"
+#ifdef __SANITIZE_THREAD__
+#include "framepac/hashhelper.h"
+#endif /* __SANITIZE_THREAD__ */
 
 #ifndef FrSINGLE_THREADED
 #include <thread>
@@ -56,6 +59,11 @@ bool Initialize()
    if (!initialized)
       {
       initialized = true ;
+#ifdef __SANITIZE_THREAD__
+      // TSAN throws up warnings about races during thread shutdown if the hashtable helper thread is started
+      //   from a threadpool worker thread, so start it now
+      HashTableHelper::startHelper() ;
+#endif /* __SANITIZE_THREAD__ */
 //TODO: perform any other required FramepaC-ng initialization
 
       // install termination handler

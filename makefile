@@ -525,7 +525,7 @@ build/hashset_obj$(OBJ):	src/hashset_obj$(C) template/hashtable.cc
 build/hashset_sym$(OBJ):	src/hashset_sym$(C) template/hashtable.cc
 build/hashset_u32$(OBJ):	src/hashset_u32$(C) template/hashtable.cc
 build/hashtable_data$(OBJ):	src/hashtable_data$(C) framepac/hashtable.h
-build/hashtable_helper$(OBJ):	src/hashtable_helper$(C) framepac/hashtable.h framepac/atomic.h
+build/hashtable_helper$(OBJ):	src/hashtable_helper$(C) framepac/hashtable.h framepac/hashhelper.h framepac/atomic.h
 build/hashtable_objobj$(OBJ):	src/hashtable_objobj$(C) template/hashtable.cc
 build/hashtable_objsz$(OBJ):	src/hashtable_objsz$(C) template/hashtable.cc
 build/hashtable_symnul$(OBJ):	src/hashtable_symnul$(C) template/hashtable.cc
@@ -534,7 +534,7 @@ build/hashtable_symsz$(OBJ):	src/hashtable_symsz$(C) template/hashtable.cc
 build/hashtable_u32u32$(OBJ):	src/hashtable_u32u32$(C) template/hashtable.cc template/hashtable_file.cc
 build/hashtable_u32obj$(OBJ):	src/hashtable_u32obj$(C) template/hashtable.cc template/hashtable_file.cc
 build/hazardptr$(OBJ):		src/hazardptr$(C) framepac/atomic.h
-build/init$(OBJ):		src/init$(C) framepac/init.h framepac/symboltable.h
+build/init$(OBJ):		src/init$(C) framepac/init.h framepac/symboltable.h framepac/hashhelper.h
 build/integer$(OBJ):		src/integer$(C) framepac/number.h framepac/fasthash64.h
 build/is_number$(OBJ):		src/is_number$(C) framepac/cstring.h
 build/jsonreader$(OBJ):		src/jsonreader$(C) framepac/objreader.h framepac/stringbuilder.h framepac/list.h \
@@ -790,9 +790,11 @@ framepac/file.h:	framepac/config.h framepac/cstring.h
 framepac/frame.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+framepac/hashhelper.h:	framepac/queue_mpsc.h framepac/semaphore.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 framepac/hashtable.h:	framepac/counter.h framepac/critsect.h framepac/init.h framepac/list.h framepac/number.h \
-			framepac/queue_mpsc.h framepac/semaphore.h framepac/symbol.h framepac/synchevent.h \
-			framepac/fasthash64.h
+			framepac/symbol.h framepac/synchevent.h framepac/fasthash64.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/list.h:	framepac/object.h

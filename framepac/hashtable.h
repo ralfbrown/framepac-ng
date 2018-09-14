@@ -33,8 +33,6 @@
 #include "framepac/init.h"
 #include "framepac/list.h"
 #include "framepac/number.h"
-#include "framepac/queue_mpsc.h"
-#include "framepac/semaphore.h"
 #include "framepac/symbol.h"
 #include "framepac/synchevent.h"
 
@@ -337,28 +335,6 @@ class HashTableBase : public Object
       // we need to protect against threadInit() and threadCleanup() stepping on each other when all of the threads
       //   of a ThreadPool are created or shutdown at once during construction or destruction of a ThreadPool
       static CriticalSection s_global_lock ;
-   } ;
-
-/************************************************************************/
-/*	Declarations for class HashTableHelper				*/
-/************************************************************************/
-
-class HashTableHelper
-   {
-   public:
-      static bool startHelper(HashTableBase* ht) ;
-
-   protected:  // internal methods
-      HashTableHelper() {}
-      ~HashTableHelper() {}
-
-      static void initialize() ;
-      [[gnu::noreturn]] static void helperFunction() ;
-
-   protected:
-      static Semaphore	                 s_semaphore ;
-      static MPSC_Queue<HashTableBase*>  s_queue ;
-      static atom_flag                   s_initialized ;
    } ;
 
 inline HashTableBase::~HashTableBase()

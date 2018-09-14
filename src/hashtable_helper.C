@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.12, last edit 2018-09-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -21,6 +21,7 @@
 
 #include "framepac/atomic.h"
 #include "framepac/hashtable.h"
+#include "framepac/hashhelper.h"
 #include "framepac/message.h"
 
 namespace Fr
@@ -74,8 +75,11 @@ void HashTableHelper::helperFunction()
 bool HashTableHelper::startHelper(HashTableBase* ht)
 {
    initialize() ;
-   s_queue.push(ht) ;
-   s_semaphore.post() ;
+   if (ht)
+      {
+      s_queue.push(ht) ;
+      s_semaphore.post() ;
+      }
    return true ;
 }
 
