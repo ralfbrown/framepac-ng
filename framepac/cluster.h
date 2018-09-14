@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.11, last edit 2018-09-11					*/
+/* Version 0.12, last edit 2018-09-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -347,7 +347,7 @@ class ClusteringAlgo : public ClusteringAlgoBase
    public:
       static ClusteringAlgo* instantiate(const char* algo_name, const char* options,
 	 VectorMeasure<IdxT,ValT>* measure = nullptr) ;
-      virtual ~ClusteringAlgo() {}
+      virtual ~ClusteringAlgo() { if (m_measure) m_measure->free() ; }
 
       virtual const char* algorithmName() const = 0 ;
       const char* measureName() const { return m_measure ? m_measure->canonicalName() : "(none)" ; }
