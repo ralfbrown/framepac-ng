@@ -41,7 +41,7 @@ void CriticalSection::backoff_lock()
    while (true)
       {
       incrCollisions() ;
-      if (try_lock())
+      if (!m_mutex.exchange(true,std::memory_order_acquire))
 	 return ;
       if (++loops > 5)
 	 {

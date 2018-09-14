@@ -89,8 +89,10 @@ class CriticalSection
 	 }
       void lock()
 	 {
-	    if (!try_lock())
-	       backoff_lock() ;
+	    TSAN(__tsan_mutex_pre_lock(this,__tsan_mutex_try_lock)) ;
+	    if (m_mutex.exchange(true,std::memory_order_acquire))
+	       backoff_lock() ;		// flag already set, to back off and try again
+	    TSAN(__tsan_mutex_post_lock(this,__tsan_mutex_try_lock,1)) ;
 	 }
       void unlock()
 	 {
