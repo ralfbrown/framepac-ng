@@ -790,8 +790,9 @@ framepac/file.h:	framepac/config.h framepac/cstring.h
 framepac/frame.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/hashtable.h:	framepac/counter.h framepac/init.h framepac/list.h framepac/number.h framepac/queue_mpsc.h \
-			framepac/semaphore.h framepac/symbol.h framepac/synchevent.h
+framepac/hashtable.h:	framepac/counter.h framepac/critsect.h framepac/init.h framepac/list.h framepac/number.h \
+			framepac/queue_mpsc.h framepac/semaphore.h framepac/symbol.h framepac/synchevent.h \
+			framepac/fasthash64.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/list.h:	framepac/object.h
