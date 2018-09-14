@@ -280,8 +280,6 @@ class TablePtr
    public:
       TablePtr() : m_next(nullptr), m_table(nullptr), m_id(0) {}
       bool initialized() const { return m_table != nullptr ; }
-      void clear()
-	 { m_table = nullptr ; m_next = nullptr ; }
       void init(HashBase** tab, TablePtr* next)
 	 {
 	    m_table = reinterpret_cast<Fr::Atomic<HashBase*>*>(tab) ;

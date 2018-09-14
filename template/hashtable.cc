@@ -1722,7 +1722,6 @@ void HashTable<KeyT,ValT>::threadCleanup()
 	 else
 	    s_thread_entries.store(curr->m_next) ;
 	 }
-      s_thread_record->clear() ;
       }
    delete s_thread_record ;
    s_thread_record = nullptr ;

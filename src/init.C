@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.03, last edit 2018-03-12					*/
+/* Version 0.12, last edit 2018-09-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -118,6 +118,9 @@ bool ThreadInit()
       // call any registered thread-initialization functions
       for (ThreadInitializerBase* ti = registered_init_funcs ; ti ; ti = ti->nextInit())
 	 {
+	 // do so under a lock so that the initialization function doesn't need to take any
+	 //   precautions against reentrant calls
+	 std::lock_guard<std::mutex> guard(registry_lock) ;
 	 ti->init() ;
 	 }
       thread_registered = true ;
