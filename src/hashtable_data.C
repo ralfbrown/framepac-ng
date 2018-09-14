@@ -161,8 +161,6 @@ void HashTable_Stats::add(const HashTable_Stats* other)
 namespace Fr
 {
 
-CriticalSection HashTableBase::s_global_lock ;
-
 } // end of namespace Fr //
 
 // end of file hashtable_data.C //

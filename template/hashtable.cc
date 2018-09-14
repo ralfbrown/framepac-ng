@@ -1674,22 +1674,20 @@ void HashTable<KeyT,ValT>::updateTable()
 template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::threadInit()
 {
+   // [[this function runs under a global lock, so only one thread at a time executes it]]
    // check whether we've initialized the thread-local data yet
 #ifdef FrHASHTABLE_STATS
    if (!s_stats) s_stats = new HashTable_Stats ;
    s_stats->clear() ;
 #endif /* FrHASHTABLE_STATS */
 #ifndef FrSINGLE_THREADED
-   if (!s_thread_record) s_thread_record = new TablePtr ;
-   if (!s_thread_record->initialized())
+   if (!s_thread_record)
       {
-//!!!      std::lock_guard<CriticalSection> _(HashTableBase::s_global_lock) ;
+      s_thread_record = new TablePtr ;
       // push our local-copy variable onto the list of all such variables
       //   for use by the resizer
-      auto head = s_thread_entries.load() ;
-      do {
-         s_thread_record->init((FramepaC::HashBase**)&s_table,head) ;
-         } while (!s_thread_entries.compare_exchange_weak(head,s_thread_record)) ;
+      s_thread_record->init((FramepaC::HashBase**)&s_table,s_thread_entries.load()) ;
+      s_thread_entries.store(s_thread_record) ;
       }
 #endif /* FrSINGLE_THREADED */
    return ;
@@ -1700,28 +1698,25 @@ void HashTable<KeyT,ValT>::threadInit()
 template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::threadCleanup()
 {
+   // [[this function runs under a global lock, so only one thread at a time executes it]]
 #ifndef FrSINGLE_THREADED
    s_table = nullptr ;
    storeBarrier() ;
-   if (s_thread_record->initialized())
+   // unlink from the list of all thread-local table pointers
+   TablePtr* prev = nullptr ;
+   TablePtr* curr = s_thread_entries.load() ;
+   while (curr && (void**)curr->m_table != (void**)&s_table)
       {
-//!!!      std::lock_guard<CriticalSection> _(HashTableBase::s_global_lock) ;
-      // unlink from the list of all thread-local table pointers
-      TablePtr* prev = nullptr ;
-      TablePtr* curr = s_thread_entries.load() ;
-      while (curr && (void**)curr->m_table != (void**)&s_table)
-	 {
-	 prev = curr ;
-	 curr = curr->m_next ;
-	 }
-      if (curr)
-	 {
-	 // found a match, so unlink it
-	 if (prev)
-	    prev->m_next = curr->m_next ;
-	 else
-	    s_thread_entries.store(curr->m_next) ;
-	 }
+      prev = curr ;
+      curr = curr->m_next ;
+      }
+   if (curr)
+      {
+      // found a match, so unlink it
+      if (prev)
+	 prev->m_next = curr->m_next ;
+      else
+	 s_thread_entries.store(curr->m_next) ;
       }
    delete s_thread_record ;
    s_thread_record = nullptr ;

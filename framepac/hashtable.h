@@ -331,10 +331,6 @@ class HashTableBase : public Object
    protected:
       atom_int	     m_active_resizes ;
       bool         (*m_assist)(HashTableBase*) { nullptr } ;
-   protected:
-      // we need to protect against threadInit() and threadCleanup() stepping on each other when all of the threads
-      //   of a ThreadPool are created or shutdown at once during construction or destruction of a ThreadPool
-      static CriticalSection s_global_lock ;
    } ;
 
 inline HashTableBase::~HashTableBase()
