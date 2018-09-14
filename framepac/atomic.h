@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.11, last edit 2018-09-12					*/
+/*  Version 0.12, last edit 2018-09-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File atomic.h		atomic operations on simple variables	*/
@@ -388,24 +388,8 @@ class Atomic
 	 return prev_val & bitmask ;
 	 }
 
-      void decreaseTo(T desired)
-	 {
-	    T oldval ;
-	    do {
-	       oldval = load() ;
-	       if (oldval <= desired)
-		  break ;
-	       } while (!compare_exchange_weak(oldval,desired)) ;
-	 }
-      void increaseTo(T desired)
-	 {
-	    T oldval ;
-	    do {
-	       oldval = load() ;
-	       if (oldval >= desired)
-		  break ;
-	       } while (!compare_exchange_weak(oldval,desired)) ;
-	 }
+      void decreaseTo( T desired ) { if (desired < v) v = desired ; }
+      void increaseTo( T desired ) { if (desired > v) v = desired ; }
 
       // generic functionality built on top of the atomic primitives
       //  (only available in pointer specializations)
@@ -693,8 +677,24 @@ class Atomic
       T test_and_clear_mask( T bitmask ) noexcept { return ref().fetch_and(~bitmask) & bitmask ; }
       T test_and_clear_mask( T bitmask ) volatile noexcept { return ref().fetch_and(~bitmask) & bitmask ; }
 
-      void decreaseTo( T desired ) { if (desired < v) v = desired ; }
-      void increaseTo( T desired ) { if (desired > v) v = desired ; }
+      void decreaseTo(T desired)
+	 {
+	    T oldval ;
+	    do {
+	       oldval = load() ;
+	       if (oldval <= desired)
+		  break ;
+	       } while (!compare_exchange_weak(oldval,desired)) ;
+	 }
+      void increaseTo(T desired)
+	 {
+	    T oldval ;
+	    do {
+	       oldval = load() ;
+	       if (oldval >= desired)
+		  break ;
+	       } while (!compare_exchange_weak(oldval,desired)) ;
+	 }
 
       // generic functionality built on top of the atomic primitives
       //  (only available in pointer specializations)
