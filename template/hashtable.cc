@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2018-09-13					*/
+/* Version 0.12, last edit 2018-09-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -1531,7 +1531,7 @@ bool HashTable<KeyT,ValT>::stillLive(const Table* version)
 {
 #ifndef FrSINGLE_THREADED
    // scan the list of per-thread s_table variables
-   for (const TablePtr *tables = Atomic<TablePtr*>::ref(s_thread_entries).load() ;
+   for (const TablePtr *tables = s_thread_entries.load() ;
 	tables ;
 	tables = ANNOTATE_UNPROTECTED_READ(tables->m_next))
       {
@@ -1683,12 +1683,13 @@ void HashTable<KeyT,ValT>::threadInit()
    if (!s_thread_record) s_thread_record = new TablePtr ;
    if (!s_thread_record->initialized())
       {
+      std::lock_guard<CriticalSection> _(HashTableBase::s_global_lock) ;
       // push our local-copy variable onto the list of all such variables
       //   for use by the resizer
-      auto head = Atomic<TablePtr*>::ref(s_thread_entries).load() ;
+      auto head = s_thread_entries.load() ;
       do {
          s_thread_record->init((FramepaC::HashBase**)&s_table,head) ;
-         } while (!Atomic<TablePtr*>::ref(s_thread_entries).compare_exchange_weak(head,s_thread_record)) ;
+         } while (!s_thread_entries.compare_exchange_weak(head,s_thread_record)) ;
       }
 #endif /* FrSINGLE_THREADED */
    return ;
@@ -1704,9 +1705,10 @@ void HashTable<KeyT,ValT>::threadCleanup()
    storeBarrier() ;
    if (s_thread_record->initialized())
       {
+      std::lock_guard<CriticalSection> _(HashTableBase::s_global_lock) ;
       // unlink from the list of all thread-local table pointers
       TablePtr* prev = nullptr ;
-      TablePtr* curr = s_thread_entries ;
+      TablePtr* curr = s_thread_entries.load() ;
       while (curr && (void**)curr->m_table != (void**)&s_table)
 	 {
 	 prev = curr ;
@@ -1718,7 +1720,7 @@ void HashTable<KeyT,ValT>::threadCleanup()
 	 if (prev)
 	    prev->m_next = curr->m_next ;
 	 else
-	    s_thread_entries = curr->m_next ;
+	    s_thread_entries.store(curr->m_next) ;
 	 }
       s_thread_record->clear() ;
       }
@@ -1785,7 +1787,7 @@ bool HashTable<KeyT,ValT>::doAssistResize(HashTableBase* htb)
 
 #ifndef FrSINGLE_THREADED
 template <typename KeyT, typename ValT>
-typename HashTable<KeyT,ValT>::TablePtr* HashTable<KeyT,ValT>::s_thread_entries = nullptr ;
+Atomic<FramepaC::TablePtr*> HashTable<KeyT,ValT>::s_thread_entries = nullptr ;
 template <typename KeyT, typename ValT>
 thread_local typename HashTable<KeyT,ValT>::Table* HashTable<KeyT,ValT>::s_table = nullptr ;
 template <typename KeyT, typename ValT>

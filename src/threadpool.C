@@ -239,7 +239,7 @@ WorkOrder* WorkQueue::fastPop()
    //   queue is non-empty and the entry pointed at by m_head has not been stolen
    if (m_head < m_tail.load())
       {
-      size_t idx = (m_head++) % FrWORKQUEUE_SIZE ;
+      size_t idx = (m_head++) % FrWORKQUEUE_SIZE ;	//TSAN says this races with the read in push()
       return m_orders[idx].exchange(nullptr) ;
       }
    return nullptr ;
@@ -287,7 +287,7 @@ bool WorkQueue::push(WorkOrder* order)
 {
    if (!order)
       return false ;			// nothing to push
-   size_t fullpos = m_head + FrWORKQUEUE_SIZE ;
+   size_t fullpos = m_head + FrWORKQUEUE_SIZE ;		//TSAN says this races with the ++ in fastPop()
    for ( ; ; )
       {
       size_t tail = m_tail.load() ;

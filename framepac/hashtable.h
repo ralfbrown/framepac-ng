@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2018-09-12					*/
+/* Version 0.12, last edit 2018-09-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -29,6 +29,7 @@
 #include <type_traits>
 #include <utility>
 #include "framepac/counter.h"
+#include "framepac/critsect.h"
 #include "framepac/init.h"
 #include "framepac/list.h"
 #include "framepac/number.h"
@@ -334,6 +335,10 @@ class HashTableBase : public Object
    protected:
       atom_int	     m_active_resizes ;
       bool         (*m_assist)(HashTableBase*) { nullptr } ;
+   protected:
+      // we need to protect against threadInit() and threadCleanup() stepping on each other when all of the threads
+      //   of a ThreadPool are created or shutdown at once during construction or destruction of a ThreadPool
+      static CriticalSection s_global_lock ;
    } ;
 
 /************************************************************************/
@@ -1124,9 +1129,9 @@ class HashTable : public HashTableBase
       static Atomic<FramepaC::HashBase*> s_freetables ;
 #ifndef FrSINGLE_THREADED
       static Fr::ThreadInitializer<HashTable> initializer ;
-      static TablePtr*    s_thread_entries ;
-      static thread_local TablePtr* s_thread_record ;
-      static thread_local Table*    s_table ; // thread's announcement which hash table it's using
+      static Atomic<FramepaC::TablePtr*>      s_thread_entries ;
+      static thread_local TablePtr*           s_thread_record ;
+      static thread_local Table*              s_table ; // thread's announcement which hash table it's using
 #endif /* FrSINGLE_THREADED */
 #ifdef FrHASHTABLE_STATS
       mutable HashTable_Stats	  m_stats ;
