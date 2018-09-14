@@ -1683,7 +1683,7 @@ void HashTable<KeyT,ValT>::threadInit()
    if (!s_thread_record) s_thread_record = new TablePtr ;
    if (!s_thread_record->initialized())
       {
-      std::lock_guard<CriticalSection> _(HashTableBase::s_global_lock) ;
+//!!!      std::lock_guard<CriticalSection> _(HashTableBase::s_global_lock) ;
       // push our local-copy variable onto the list of all such variables
       //   for use by the resizer
       auto head = s_thread_entries.load() ;
@@ -1705,7 +1705,7 @@ void HashTable<KeyT,ValT>::threadCleanup()
    storeBarrier() ;
    if (s_thread_record->initialized())
       {
-      std::lock_guard<CriticalSection> _(HashTableBase::s_global_lock) ;
+//!!!      std::lock_guard<CriticalSection> _(HashTableBase::s_global_lock) ;
       // unlink from the list of all thread-local table pointers
       TablePtr* prev = nullptr ;
       TablePtr* curr = s_thread_entries.load() ;

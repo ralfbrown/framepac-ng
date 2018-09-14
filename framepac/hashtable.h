@@ -276,7 +276,7 @@ class TablePtr
       Fr::Atomic<HashBase*>* m_table { nullptr } ;
       size_t   	             m_id    { 0 } ;	   // thread ID, for help in debugging
    public:
-      TablePtr() : m_next(nullptr), m_table(nullptr), m_id(0) {}
+      TablePtr() {}
       bool initialized() const { return m_table != nullptr ; }
       void init(HashBase** tab, TablePtr* next)
 	 {

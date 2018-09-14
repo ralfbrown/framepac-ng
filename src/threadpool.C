@@ -196,6 +196,9 @@ static void work_function(ThreadPool* pool, unsigned thread_index)
 {
    if (!pool)
       return ;
+   // we can put any necessary initialization here
+   // when done, let the parent thread know we're ready
+   pool->ack(thread_index) ;
    for ( ; ; )
       {
       WorkOrder* order = pool->nextOrder(thread_index) ;
@@ -239,8 +242,12 @@ WorkOrder* WorkQueue::fastPop()
    //   queue is non-empty and the entry pointed at by m_head has not been stolen
    if (m_head < m_tail.load())
       {
-      size_t idx = (m_head++) % FrWORKQUEUE_SIZE ;	//TSAN says this races with the read in push()
-      return m_orders[idx].exchange(nullptr) ;
+      // TSAN complains that the access to m_head here races with the one in push(), but since that is only a
+      //   read, and it's OK for it to lag behind updates made here, the supposed race is completely benign.
+      //   Get TSAN to shut up by wrapping the accesses in a fake lock.
+      size_t idx ;
+      TSAN_FAKE_LOCK(this,idx = m_head++) ;
+      return m_orders[idx % FrWORKQUEUE_SIZE].exchange(nullptr) ;
       }
    return nullptr ;
 }
@@ -287,7 +294,11 @@ bool WorkQueue::push(WorkOrder* order)
 {
    if (!order)
       return false ;			// nothing to push
-   size_t fullpos = m_head + FrWORKQUEUE_SIZE ;		//TSAN says this races with the ++ in fastPop()
+   // TSAN complains that the access to m_head here races with the one in fastPop(), but since this is only a
+   //   read, and it's OK for it to lag behind updates made by fastPop(), the supposed race is completely benign.
+   //   Get TSAN to shut up by wrapping the accesses in a fake lock.
+   size_t fullpos ;
+   TSAN_FAKE_LOCK(this,fullpos = m_head + FrWORKQUEUE_SIZE) ;
    for ( ; ; )
       {
       size_t tail = m_tail.load() ;
@@ -343,6 +354,9 @@ ThreadPool::ThreadPool(unsigned num_threads)
 {
 #ifdef FrSINGLE_THREADED
    m_numthreads = 0 ;
+   m_activethreads = 0 ;
+   m_numCPUs = 1 ;
+   m_queues = nullptr ;
 #else
    m_activethreads = m_numthreads ;
    m_numCPUs = std::thread::hardware_concurrency() ;
@@ -365,10 +379,15 @@ ThreadPool::ThreadPool(unsigned num_threads)
       return ;
       }
    allocateWorkOrders() ;
+   // each worker thread will ack when it's ready to accept jobs
+   m_ack.init(activeThreads()) ;
+   // create the worker threads
    for (unsigned i = 0 ; i < num_threads ; i++)
       {
       m_pool[i] = new_thread(work_function,this,i) ;
       }
+   // wait until all threads have responded
+   m_ack.wait() ;
 #endif /* FrSINGLE_THREADED */
    return ;
 }

@@ -31,7 +31,7 @@ namespace Fr
 /************************************************************************/
 
 atom_flag HashTableHelper::s_initialized ;
-MPSC_Queue<HashTableBase*> HashTableHelper::s_queue ;
+MPSC_Queue<HashTableBase*>* HashTableHelper::s_queue = nullptr ;
 Semaphore HashTableHelper::s_semaphore ; 
 
 /************************************************************************/
@@ -42,6 +42,7 @@ void HashTableHelper::initialize()
    if (!s_initialized.test_and_set())
       {
 #ifndef FrSINGLE_THREADED
+      s_queue = new MPSC_Queue<HashTableBase*> ;
       ScopedPtr<std::thread> thr { new thread(helperFunction) } ;
       thr->detach() ;
 #endif /* !FrSINGLE_THREADED */
@@ -58,13 +59,13 @@ void HashTableHelper::helperFunction()
       {
       s_semaphore.wait() ;
       // pop the first item off the queue
-      HashTableBase* ht = s_queue.pop() ;
+      HashTableBase* ht = s_queue->pop() ;
       // invoke that hash table's assist function
       bool more = ht->assistResize() ;
       // if it returns true, there's more work to be done, so re-queue the hash table
       if (more)
 	 {
-	 s_queue.push(ht) ;
+	 s_queue->push(ht) ;
 	 s_semaphore.post() ;
 	 }
       }
@@ -77,7 +78,7 @@ bool HashTableHelper::startHelper(HashTableBase* ht)
    initialize() ;
    if (ht)
       {
-      s_queue.push(ht) ;
+      s_queue->push(ht) ;
       s_semaphore.post() ;
       }
    return true ;

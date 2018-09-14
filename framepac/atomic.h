@@ -32,8 +32,19 @@
 #  include "sanitizer/tsan_interface_atomic.h"
 #  include "sanitizer/tsan_interface.h"
 #  define TSAN(x) x
+   // suppress TSAN reports of races which are actually benign by telling TSAN that they occur inside a lock;
+   // all accesses which TSAN reports as racing need to refer to the same memory loation as the fake lock
+#  define TSAN_FAKE_LOCK(lck,statement) 		\
+   __tsan_mutex_pre_lock(lck,__tsan_mutex_try_lock) ; 	\
+   __tsan_mutex_post_lock(lck,__tsan_mutex_try_lock,1); \
+   statement ; 						\
+   __tsan_mutex_pre_unlock(lck,0) ;			\
+   __tsan_mutex_post_unlock(lck,0) ;
+   
 #else
 #  define TSAN(x)
+#  define TSAN_FAKE_LOCK(lck,statement) \
+   statement ;
 #endif /* __SANITIZE_THREAD__ */
 
 /************************************************************************/
