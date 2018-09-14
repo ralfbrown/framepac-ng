@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.12, last edit 2019-09-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2015,2017,2018 Carnegie Mellon University		*/
@@ -561,10 +561,7 @@ static void err_msg(const char* what, size_t id, KeyT obj)
 {
    // put everything into a single string to minimize the chances of the output getting interleaved
    //   with that from other threads 
-   //FIXME: generating empty output!
-   ostringstream ss ;
-   ss << ";  Job " << id << " encountered " << what << " " << obj << endl << flush ;
-   const char* str = ss.str().c_str() ;
+   auto str = aprintf(";  Job %lu encountered %s %s\n",id,what,*as_string(obj)) ;
    cerr << str << flush ;
    return ;
 }
@@ -1330,8 +1327,8 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
 		      size_t cycles, KeyT* keys, uint32_t* randnums, ostream &out,
    		      bool terse, int throughput = -1, int timelimit = 4)
 {
-   if_SHOW_CHAINS(size_t* chains[6]);
-   if_SHOW_CHAINS(size_t max_chain[6]) ;
+   if_SHOW_CHAINS(size_t* chains[7]);
+   if_SHOW_CHAINS(size_t max_chain[7]) ;
    size_t* neighborhoods[5] ;
    size_t max_neighbors[5] ;
 
@@ -1386,26 +1383,26 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
       if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
       hash_test(&tpool,out,"Random ops (del=1,full)",writethreads,half_cycles,&ht,maxsize,keys,Op_RANDOM_LOWREMOVE,terse,overhead,true,
 	 	randnums + maxsize/2 - 1) ;
-      if_SHOW_CHAINS(chains[2] = ht->chainLengths(max_chain[2])) ;
+      if_SHOW_CHAINS(chains[3] = ht->chainLengths(max_chain[3])) ;
       hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
       ht = HashT::create(startsize) ;
       hash_test(&tpool,out,"Random ops (del=3)",writethreads,cycles,&ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
 	 randnums + maxsize - 1) ;
-      if_SHOW_CHAINS(chains[3] = ht->chainLengths(max_chain[3])) ;
+      if_SHOW_CHAINS(chains[4] = ht->chainLengths(max_chain[4])) ;
       neighborhoods[1] = show_neighbors ? ht->neighborhoodDensities(max_neighbors[1]) : nullptr ;
       hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
       ht = HashT::create(startsize) ;
       hash_test(&tpool,out,"Random ops (del=7)",writethreads,cycles,&ht,maxsize,keys,Op_RANDOM,terse,overhead,true,
 	 randnums + maxsize - 1) ;
-      if_SHOW_CHAINS(chains[4] = ht->chainLengths(max_chain[4])) ;
+      if_SHOW_CHAINS(chains[5] = ht->chainLengths(max_chain[5])) ;
       neighborhoods[1] = show_neighbors ? ht->neighborhoodDensities(max_neighbors[1]) : nullptr ;
       hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,false) ;
-      if_SHOW_CHAINS(chains[5] = ht->chainLengths(max_chain[5])) ;
+      if_SHOW_CHAINS(chains[6] = ht->chainLengths(max_chain[6])) ;
       }
 #ifdef SHOW_CHAINS
    if (!terse && throughput < 0)
       {
-      for (size_t i = 0 ; i < 6 ; i++)
+      for (size_t i = 0 ; i < 7 ; i++)
 	 {
 	 print_chain_lengths(out,i,chains[i],max_chain[i]) ;
 	 delete[] chains[i] ;

@@ -512,7 +512,7 @@ class HashTable : public HashTableBase
 	 typedef class Fr::HashTable<KeyT,ValT> HT ;
       public:
 	 void* operator new(size_t, Table* ptr) { return ptr ; }
-	 Table() : HashBase()
+	 Table() : HashBase(), m_entries(nullptr), m_container(nullptr), remove_fn(nullptr)
 	    {
 	       return;
 	    }
@@ -768,7 +768,7 @@ class HashTable : public HashTableBase
 #endif /* FrHASHTABLE_VERBOSITY > 1 */
    protected: // methods
       static void thread_backoff(size_t &loops) ;
-      void init(size_t initial_size, Table *table = nullptr) ;
+      void init(size_t initial_size) ;
       static Table *allocTable() ;
       static void releaseTable(Table *t) ;
       void updateTable() ;

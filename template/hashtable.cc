@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2018-09-12					*/
+/* Version 0.12, last edit 2018-09-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -143,6 +143,7 @@ inline void HashTable<KeyT,ValT>::Table::init()
 	 m_fullsize = 0 ;
 	 }
       }
+   memoryBarrier() ;
    return ;
 }
 
@@ -1457,7 +1458,7 @@ HashTable<KeyT,ValT>::HashTable(const HashTable &ht)
 //----------------------------------------------------------------------------
 
 template <typename KeyT, typename ValT>
-void HashTable<KeyT,ValT>::init(size_t initial_size, Table* table)
+void HashTable<KeyT,ValT>::init(size_t initial_size)
 {
    onRemove(nullptr) ;
    onDelete(nullptr) ;
@@ -1465,11 +1466,7 @@ void HashTable<KeyT,ValT>::init(size_t initial_size, Table* table)
    m_oldtables.store(nullptr) ;
    clearGlobalStats() ;
    initial_size = Table::normalizeSize(initial_size) ;
-   if (!table)
-      {
-      table = allocTable() ;
-      }
-   new (table) Table(initial_size) ;
+   Table* table = ::new Table(initial_size) ;
    if (table->good())
       {
       table->m_container = this ;
@@ -1517,7 +1514,13 @@ HashTable<KeyT,ValT>::~HashTable()
       debug_msg("HashTable dtor\n") ;
       }
    remove_fn = nullptr ;
-   releaseTable(table) ;
+   while (auto t = m_oldtables.load())
+      {
+      auto nxt = t->next() ;
+      m_oldtables.store(nxt) ;
+      t->cleanup() ;
+      delete t ;
+      }
    return ;
 }
 
@@ -1586,10 +1589,10 @@ template <typename KeyT, typename ValT>
 typename HashTable<KeyT,ValT>::Table* HashTable<KeyT,ValT>::allocTable()
 {
    // pop a table record off the freelist, if available
-   FramepaC::HashBase* tab = s_freetables.load() ;
+   auto tab = s_freetables.load() ;
    while (tab)
       {
-      FramepaC::HashBase* nxt = tab->next() ;
+      auto nxt = tab->next() ;
       if (s_freetables.compare_exchange_strong(tab,nxt))
 	 return static_cast<HashTable::Table*>(tab) ;
       tab = s_freetables.load() ;
@@ -1603,6 +1606,8 @@ typename HashTable<KeyT,ValT>::Table* HashTable<KeyT,ValT>::allocTable()
 template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::releaseTable(Table* t)
 {
+   if (!t)
+      return ;
    t->cleanup() ;
    FramepaC::HashBase* freetab ;
    do
@@ -1634,7 +1639,7 @@ void HashTable<KeyT,ValT>::freeTables()
    FramepaC::HashBase* tab ;
    while ((tab = s_freetables.load()) != nullptr)
       {
-      FramepaC::HashBase* nxt = tab->next() ;
+      auto nxt = tab->next() ;
       s_freetables.store(nxt) ;
       // send back to OS
       delete static_cast<HashTable::Table*>(tab) ;
@@ -1647,7 +1652,7 @@ void HashTable<KeyT,ValT>::freeTables()
 template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::updateTable()
 {
-   Table* table = m_table.load() ;
+   auto table = m_table.load() ;
    bool updated = false ;
    while (table && table->resizingDone() && table->next())
       {
