@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-05					*/
+/* Version 0.12, last edit 2018-09-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -76,6 +76,7 @@ void Slab::releaseObject(void* obj, Slab*& freelist)
       {
       alloc_size_t old_freelist = m_header.m_freelist ;
       *((alloc_size_t*)obj) = old_freelist ;
+      ASAN(ASAN_POISON_MEMORY_REGION(obj,m_info.m_objsize)) ;
       m_header.m_freelist = slabOffset(obj) ;
       m_header.m_usedcount-- ;
       if (old_freelist == 0)
@@ -138,7 +139,9 @@ namespace FramepaC {
 
 alloc_size_t Slab::makeFreeList(unsigned objsize, unsigned align)
 {
+   ASAN(ASAN_UNPOISON_MEMORY_REGION(m_buffer,sizeof(m_buffer))) ;
    // round up the object size to the next higher multiple of 'align'
+   ASAN(if (align < 8) align = 8) ;
    unsigned multiple { (objsize + align - 1) / align } ;
    objsize = align * multiple ;
    // store the adjusted object size
@@ -171,6 +174,7 @@ alloc_size_t Slab::makeFreeList(unsigned objsize, unsigned align)
       }
    // set the start of the freelist to the last object added to the linked list
    m_header.m_freelist = prev ;
+   ASAN(ASAN_POISON_MEMORY_REGION(m_buffer,sizeof(m_buffer))) ;
    return prev ;
 }
 

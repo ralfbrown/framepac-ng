@@ -318,23 +318,27 @@ class HashTableBase : public Object
    {
    public: // types
       typedef Object super ;
+      typedef bool assist_fn(HashTableBase*) ;
    public:
-      HashTableBase(bool (*assist)(HashTableBase*) = nullptr) : m_active_resizes(0), m_assist(assist) {}
-      ~HashTableBase() ;
+      HashTableBase(bool (*assist)(HashTableBase*) = nullptr) : m_assist(assist) {}
+      ~HashTableBase()
+	 {
+	 while (m_active_resizes.load())
+	    std::this_thread::sleep_for(std::chrono::milliseconds(1)) ;
+	 m_assist.store(nullptr) ;
+	 }
 
       void startResize() ;
       void finishResize() ;
 
       unsigned activeResizes() const { return m_active_resizes ; }
-      bool assistResize() { return m_assist ? m_assist(this) : false ; }
+      bool assistResize()
+	 { auto fn = m_assist.load() ; return fn ? fn(this) : false ; }
 
    protected:
-      atom_int	     m_active_resizes ;
-      bool         (*m_assist)(HashTableBase*) { nullptr } ;
+      atom_int	         m_active_resizes   { 0 } ;
+      Atomic<assist_fn*> m_assist           { nullptr } ;
    } ;
-
-inline HashTableBase::~HashTableBase()
-{ while (m_active_resizes.load()) std::this_thread::sleep_for(std::chrono::milliseconds(1)) ; }
 
 /************************************************************************/
 /*	Declarations for template class HashTable			*/

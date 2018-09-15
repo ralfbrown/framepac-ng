@@ -1713,8 +1713,8 @@ void HashTable<KeyT,ValT>::threadCleanup()
 {
    // [[this function runs under a global lock, so only one thread at a time executes it]]
 #ifndef FrSINGLE_THREADED
-   s_table = nullptr ;
-   storeBarrier() ;
+   //s_table = nullptr ; //!!! not really needed, since we're killing the thread anyway
+   //storeBarrier() ;
    // unlink from the list of all thread-local table pointers
    TablePtr* prev = nullptr ;
    TablePtr* curr = s_thread_entries.load() ;

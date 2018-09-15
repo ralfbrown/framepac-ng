@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-09					*/
+/* Version 0.12, last edit 2018-09-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -113,6 +113,8 @@ class Slab
       void clearOwner() ;
       alloc_size_t makeFreeList(unsigned objsize, unsigned align) ;
       void* initFreelist(unsigned objsize, unsigned align) ;
+      void* bufferStart() { return m_buffer ; }
+      const void* bufferStart() const { return m_buffer ; }
       static unsigned bufferSize() { return sizeof(m_buffer) ; }
 
       // information about this slab
@@ -139,6 +141,7 @@ class Slab
 	 //assert(m_header.m_freelist != 0) ;
 	 m_header.m_usedcount++ ;
 	 void* item = ((char*)this) + m_header.m_freelist ;
+	 ASAN(ASAN_UNPOISON_MEMORY_REGION(item,m_info.m_objsize)) ;
 	 m_header.m_freelist = *((alloc_size_t*)item) ;
 	 return item ;
 	 }
@@ -328,6 +331,7 @@ class Allocator
 	    {
 	    Slab* slb = Slab::slab(blk) ;
 	    slb->releaseObject(blk,s_tls[m_type].m_freelist) ;
+	    ASAN(ASAN_POISON_MEMORY_REGION(blk,s_shared[m_type].m_objsize)) ;
 	    }
 	 }
       [[gnu::hot]]

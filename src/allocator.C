@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.06, last edit 2018-07-11					*/
+/* Version 0.12, last edit 2018-09-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -258,6 +258,7 @@ void* Allocator::allocate_more()
       new_slab = FramepaC::SlabGroup::allocateSlab() ;
       }
    void *item = new_slab->initFreelist(s_shared[m_type].m_objsize,s_shared[m_type].m_alignment) ;
+   ASAN(ASAN_UNPOISON_MEMORY_REGION(item,s_shared[m_type].m_objsize)) ;
    // and insert it on both our list of owned slabs and list of slabs with available objects
    new_slab->setVMT(s_shared[m_type].m_vmt) ;
    new_slab->setOwningAllocator(m_type) ;
