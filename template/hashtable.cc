@@ -414,9 +414,15 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
    // fill in the slot we grabbed and link it to the head of
    //   the chain for the hash bucket
    size_t pos = bucketnum + offset ;
+   // TSAN thinks these two set calls race with the set calls in the if-failed branch below, so get it
+   //   to shut up about them by pretending they run under a mutex lock
+   TSAN(__tsan_mutex_pre_lock(&m_entries[pos],__tsan_mutex_try_lock)) ;
+   TSAN(__tsan_mutex_post_lock(&m_entries[pos],__tsan_mutex_try_lock,1)) ;
    bucketPtr(pos)->next(firstptr) ;
    setValue(pos,value) ;
    setKey(pos,key) ;
+   TSAN(__tsan_mutex_pre_unlock(&m_entries[pos],0)) ;
+   TSAN(__tsan_mutex_post_unlock(&m_entries[pos],0)) ;
    HashPtr* headptr = bucketPtr(bucketnum) ;
    if (superseded())
       return false ;
@@ -436,8 +442,15 @@ bool HashTable<KeyT,ValT>::Table::insertKey(size_t bucketnum, Link firstptr, Key
       //   the same value, or a resize is in progress and
       //   copied the bucket while we were working
       // release the slot we grabbed and tell caller to retry
+      // TSAN thinks these two set calls race with the set calls above, so get it
+      //   to shut up about them by pretending they run under a mutex lock
+      TSAN(__tsan_mutex_pre_lock(&m_entries[pos],__tsan_mutex_try_lock)) ;
+      TSAN(__tsan_mutex_post_lock(&m_entries[pos],__tsan_mutex_try_lock,1)) ;
+      TSAN(setValue(pos,nullVal())) ;
       setKey(pos,Entry::DELETED()) ;
       bucketPtr(pos)->markFree() ;
+      TSAN(__tsan_mutex_pre_unlock(&m_entries[pos],0)) ;
+      TSAN(__tsan_mutex_post_unlock(&m_entries[pos],0)) ;
       INCR_COUNT(CAS_coll) ;
       debug_msg("insertKey: CAS collision\n") ;
       return false ;
