@@ -242,10 +242,9 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 {
    if (m_limit == 0)
       {
-      if (m_firstupdate)
+      if (m_firstupdate.exchange(false))
 	 {
 	 cout << *m_firstprefix << flush ;
-	 m_firstupdate = false ;
 	 }
       size_t intervals = (curr_count / m_interval) ;
       size_t prev_intervals = (size_t)refreshPercent(intervals) ;
@@ -307,9 +306,8 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       }
    else
       {
-      if (m_firstupdate)
+      if (m_firstupdate.exchange(false))
 	 {
-	 m_firstupdate = false ;
 	 cout << *m_firstprefix << '[' << flush ;
 	 }
       // standard output is not a tty (i.e. it's been redirected), so just print up a line of MAX_STARS

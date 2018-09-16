@@ -162,7 +162,7 @@ class ConsoleProgressIndicator : public ProgressIndicator
       size_t  m_barsize ;		// number of stars in progress bar
       char    m_star { '*' } ;		// character to display in progress bar
       bool    m_istty ;			// is output a console?
-      mutable bool m_firstupdate { true } ;  // have we output anything yet?
+      mutable atom_bool m_firstupdate { true } ;  // have we output anything yet?
       mutable bool m_showed_estimated ;
    } ;
 
