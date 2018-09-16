@@ -43,7 +43,7 @@ namespace Fr
 /************************************************************************/
 
 ProgressIndicator::ProgressIndicator(size_t interval, size_t limit)
-   : m_limit(limit), m_interval(interval), m_count((size_t)0), m_prev_update((size_t)0),
+   : m_limit(limit), m_interval(interval), m_count((size_t)0),
      m_show_elapsed(false), m_show_estimated(true)
 {
    return ;
@@ -125,7 +125,7 @@ CharPtr ProgressIndicator::timeString(double time)
 
 ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit, size_t per_line,
 						   const char* first_prefix, const char* rest_prefix)
-   : ProgressIndicator(interval,limit), m_prevfrac(0.0),
+   : ProgressIndicator(interval,limit),
      m_firstprefix(dup_string(first_prefix)), m_restprefix(dup_string(rest_prefix)),
      m_per_line(per_line), m_linewidth(80), m_istty(isatty(fileno(stdout)))
 {
@@ -146,10 +146,20 @@ ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit
 
 ConsoleProgressIndicator::~ConsoleProgressIndicator()
 {
-   m_lastupdate = -1 ;
+   Update lastupdate = lastUpdate() ;
+   refreshUpdate(lastupdate,-1,lastupdate.percent) ; // force dispaly even if rate-limit time has not elapsed
    m_count = m_limit ;
    m_show_estimated = false ;
    updateDisplay(m_count) ;
+   if (m_limit && !tty())
+      {
+      cout << ']' ;
+      if (m_show_elapsed)
+	 {
+	 cout << ' ' << timeString(m_timer.seconds()) ;
+	 m_show_elapsed = false ;
+	 }
+      }
    cout << endl ;
    return ;
 }
@@ -232,15 +242,18 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 {
    if (m_limit == 0)
       {
+      if (m_firstupdate)
+	 {
+	 cout << *m_firstprefix << flush ;
+	 m_firstupdate = false ;
+	 }
       size_t intervals = (curr_count / m_interval) ;
-      size_t prev_intervals = m_prev_update.exchange(intervals) ;
+      size_t prev_intervals = (size_t)refreshPercent(intervals) ;
       // if no new dots to print, we can return immediately
       if (intervals == prev_intervals)
 	 return ;
       // we don't know what fraction has been completed, so just update progress
       //   by adding a period, wrapping after every 'per_line' 
-      if (prev_intervals == 0)
-	 cout << *m_firstprefix ;
       while (prev_intervals < intervals)
 	 {
 	 if (prev_intervals && prev_intervals % m_per_line == 0)
@@ -260,60 +273,56 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
       m_star = '+' ;
       }
    double stars = round(m_barsize * frac) ;
-   double lastupdate = m_lastupdate.load() ;
-   double prevstars = round(m_barsize * m_prevfrac) ;
+   Update lastupdate = lastUpdate() ;
+   double prevstars = round(m_barsize * lastupdate.percent) ;
    if (tty())
       {
-      double elapsed = m_timer.seconds() ;
-      // prevent some race conditions by not updating more than 3 times / second
-      //   (plus it would just be too frenetic for the user)
-      if (elapsed - m_lastupdate < 0.34)
-	 return ;
-      if (frac < 1.0)			// apply rate limiting except at the 100% mark
+      if (prevstars == 0 || stars > prevstars || m_show_estimated || m_show_elapsed)
 	 {
-	 // don't update more often than every two seconds unless there has been
-	 //   a substantial increase in the proportion completed, to avoid generating
-	 //   a huge amount of output (and thus a huge file when capturing output)
-	 if (stars <= prevstars && elapsed < lastupdate + 2)
+	 double elapsed = m_timer.seconds() ;
+	 // prevent some race conditions by not updating more than 3 times / second
+	 //   (plus it would just be too frenetic for the user)
+	 if (elapsed - lastupdate.time < 0.34)
 	    return ;
-	 }
-      double estimated { 0.0 } ;
-      if (m_show_estimated && elapsed * frac > 0.01)
-	 {
-	 estimated = (elapsed / frac) - elapsed ;
-	 }
-      else if (!m_show_elapsed && stars == prevstars && frac < 1.0)
-	 return ;
-      if (m_lastupdate.compare_exchange_strong(lastupdate,elapsed))
-	 {
-	 m_prevfrac = frac ;
-	 displayProgressBar(stars,elapsed,estimated) ;
+	 if (frac < 1.0)			// apply rate limiting except at the 100% mark
+	    {
+	    // don't update more often than every two seconds unless there has been
+	    //   a substantial increase in the proportion completed, to avoid generating
+	    //   a huge amount of output (and thus a huge file when capturing output)
+	    if (stars <= prevstars && elapsed < lastupdate.time + 2)
+	       return ;
+	    }
+	 double estimated { 0.0 } ;
+	 if (m_show_estimated && elapsed * frac > 0.01)
+	    {
+	    estimated = (elapsed / frac) - elapsed ;
+	    }
+	 else if (!m_show_elapsed && stars == prevstars && frac < 1.0)
+	    return ;
+	 if (refreshUpdate(lastupdate,elapsed,frac))
+	    {
+	    displayProgressBar(stars,elapsed,estimated) ;
+	    }
 	 }
       }
    else
       {
+      if (m_firstupdate)
+	 {
+	 m_firstupdate = false ;
+	 cout << *m_firstprefix << '[' << flush ;
+	 }
       // standard output is not a tty (i.e. it's been redirected), so just print up a line of MAX_STARS
       //   asterisks as the progress bar
       if (stars > prevstars || frac == 1.0)
 	 {
 	 double elapsed = m_timer.seconds() ;
-	 if (elapsed - lastupdate < 0.5 && stars < m_barsize)
+	 if (elapsed - lastupdate.time < 0.5 && stars < m_barsize)
 	    return ;			// prevent multiple concurrent outputs
-	 m_prevfrac = frac ;
-	 m_lastupdate.store(elapsed) ;
-	 if (prevstars == 0)
-	    cout << *m_firstprefix << '[' ;
+	 if (!refreshUpdate(lastupdate,elapsed,frac))
+	    return ;			// another thread has already made an update
 	 while (prevstars++ < stars)
 	    cout << m_star ;
-	 if (frac >= 1.0 && (prevstars <= m_barsize || m_show_elapsed))
-	    {
-	    cout << ']' ;
-	    if (m_show_elapsed)
-	       {
-	       cout << ' ' << timeString(elapsed) ;
-	       m_show_elapsed = false ;
-	       }
-	    }
 	 cout << flush ;
 	 }
       }

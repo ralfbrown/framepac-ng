@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2018-09-12					*/
+/* Version 0.12, last edit 2018-09-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -37,6 +37,19 @@ class ElapsedTimer  ;
 
 class ProgressIndicator
    {
+   public: // embedded types
+      // to keep TSAN from generating spurious data-race warnings, encapsulate both last-time and last-percent
+      //    fields in a single struct that we can update atomically
+      class Update
+	 {
+	 public:
+	    float time ;
+	    float percent ;
+	 public:
+	    Update() { time = percent = -1.0 ; }
+	    Update(float t, float p) { time = t ; percent = p ; }
+	 } ;
+
    public:
       ProgressIndicator(size_t interval, size_t limit) ;
       virtual ~ProgressIndicator() ;
@@ -53,9 +66,26 @@ class ProgressIndicator
       void showElapsedTime(bool show) ;
       void showRemainingTime(bool show) ;
 
+      // manipulators
       void incr(size_t add = 1) ;
       ProgressIndicator& operator+= (size_t add) { incr(add) ; return *this ; }
       ProgressIndicator& operator++ () { incr() ; return *this ; }
+      bool refreshUpdate(Update& prev, float time, float percent)
+	 {
+	    Update now(time,percent) ;
+	    return m_lastupdate.compare_exchange_strong(prev,now) ;
+	 }
+      float refreshPercent(float percent)
+	 {
+	    Update prev = lastUpdate() ;
+	    Update now(prev.time,percent) ;
+	    return m_lastupdate.exchange(now).percent ;
+	 }
+      
+      // access to state
+      Update lastUpdate() const { return m_lastupdate.load() ; }
+      float lastUpdateTime() const { return m_lastupdate.load().time ; }
+      float lastUpdatePercent() const { return m_lastupdate.load().percent ; }
 
    protected:
       virtual void updateSettings() { return ; }
@@ -63,13 +93,12 @@ class ProgressIndicator
 
    protected:
       ElapsedTimer    m_timer ;
-      Atomic<double>  m_lastupdate { 0.0 } ;	// time of last display update
+      Atomic<Update>  m_lastupdate ;	// time/percentage of last display update
       size_t          m_limit ;
       size_t          m_interval ;
       Atomic<size_t>  m_count ;
-      Atomic<size_t>  m_prev_update ;
-      bool            m_show_elapsed ;
-      bool	      m_show_estimated ;
+      mutable bool    m_show_elapsed ;
+      mutable bool    m_show_estimated ;
       bool	      m_finalized { false } ;
    } ;
 
@@ -126,7 +155,6 @@ class ConsoleProgressIndicator : public ProgressIndicator
       virtual void finalize() ;
 
    protected:
-      double  m_prevfrac ;		// completion fraction at last incr() call
       CharPtr m_firstprefix ;		// prefix to show on one-line display or first line of multiline display
       CharPtr m_restprefix ;		// prefix to show on subsequent lines of multi-line display
       size_t  m_per_line ;		// dots per line for multi-line display
@@ -134,6 +162,7 @@ class ConsoleProgressIndicator : public ProgressIndicator
       size_t  m_barsize ;		// number of stars in progress bar
       char    m_star { '*' } ;		// character to display in progress bar
       bool    m_istty ;			// is output a console?
+      mutable bool m_firstupdate { true } ;  // have we output anything yet?
       mutable bool m_showed_estimated ;
    } ;
 
