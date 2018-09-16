@@ -67,6 +67,7 @@ void HashTableHelper::helperFunction()
 	 {
 	 s_queue->push(ht) ;
 	 s_semaphore.post() ;
+	 this_thread::yield() ;
 	 }
       }
 }

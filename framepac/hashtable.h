@@ -325,7 +325,7 @@ class HashTableBase : public Object
 	 {
 	 while (m_active_resizes.load())
 	    std::this_thread::sleep_for(std::chrono::milliseconds(1)) ;
-	 m_assist.store(nullptr) ;
+	 m_assist = nullptr ;
 	 }
 
       void startResize() ;
@@ -333,11 +333,11 @@ class HashTableBase : public Object
 
       unsigned activeResizes() const { return m_active_resizes ; }
       bool assistResize()
-	 { auto fn = m_assist.load() ; return fn ? fn(this) : false ; }
+	 { auto fn = m_assist ; return fn ? fn(this) : false ; }
 
    protected:
-      atom_int	         m_active_resizes   { 0 } ;
-      Atomic<assist_fn*> m_assist           { nullptr } ;
+      atom_int	 m_active_resizes   { 0 } ;
+      assist_fn* m_assist           { nullptr } ;
    } ;
 
 /************************************************************************/
