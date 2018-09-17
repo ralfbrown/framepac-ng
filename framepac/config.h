@@ -43,6 +43,13 @@ using namespace std ;
 //   the file LICENSE.
 //#define FRAMEPAC_GPL
 
+// uncomment the following to enable inclusion of LGPL'ed libraries for some
+//   optional features.  If you uncomment the line, you MUST distribute under
+//   the terms of the GPL, and MUST remove any LGPL-incompatible alternate
+//   license from the file LICENSE.
+// note that FRAMEPAC_GPL takes precedence over this setting
+//#define FRAMEPAC_LGPL
+
 /************************************************************************/
 /*	Compile-Time Configuration					*/
 /************************************************************************/
