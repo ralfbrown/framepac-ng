@@ -211,7 +211,7 @@ void HashTable<KeyT,ValT>::Table::autoResize()
    size_t sz = capacity() ;
 #ifdef FrSAVE_MEMORY
    if (sz < searchrange)
-      sz = 2*searchrange ;
+      newsize = 2*searchrange ;
    else if (sz < 100000)
       newsize = (size_t)(2.0*sz) ;
    else if (sz < 1000000)
@@ -224,7 +224,7 @@ void HashTable<KeyT,ValT>::Table::autoResize()
       newsize = (size_t)(1.2*sz) ;
 #else
    if (sz < searchrange)
-      sz = 2*searchrange ;
+      newsize = 2*searchrange ;
    else if (sz < 16*1000*1000)
       newsize = (size_t)(2.0*sz) ;
    else
