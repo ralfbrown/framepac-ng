@@ -46,8 +46,8 @@ class ProgressIndicator
 	    float time ;
 	    float percent ;
 	 public:
-	    Update() { time = percent = -1.0 ; }
-	    Update(float t, float p) { time = t ; percent = p ; }
+	    Update() noexcept { time = percent = -1.0 ; }
+	    Update(float t, float p) noexcept { time = t ; percent = p ; }
 	 } ;
 
    public:
