@@ -208,9 +208,11 @@ template <typename KeyT, typename ValT>
 void HashTable<KeyT,ValT>::Table::autoResize()
 {
    size_t newsize ;
-   size_t sz = m_size ;
+   size_t sz = capacity() ;
 #ifdef FrSAVE_MEMORY
-   if (sz < 100000)
+   if (sz < searchrange)
+      sz = 2*searchrange ;
+   else if (sz < 100000)
       newsize = (size_t)(2.0*sz) ;
    else if (sz < 1000000)
       newsize = (size_t)(1.5*sz) ;
@@ -221,7 +223,9 @@ void HashTable<KeyT,ValT>::Table::autoResize()
    else
       newsize = (size_t)(1.2*sz) ;
 #else
-   if (sz < 16*1000*1000)
+   if (sz < searchrange)
+      sz = 2*searchrange ;
+   else if (sz < 16*1000*1000)
       newsize = (size_t)(2.0*sz) ;
    else
       newsize = (size_t)(1.5*sz) ;
