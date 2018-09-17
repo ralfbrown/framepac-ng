@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-05-09					*/
+/* Version 0.12, last edit 2018-09-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -37,6 +37,18 @@ void Shutdown() ;
 bool ThreadInit() ;
 bool ThreadCleanup() ;
 
+// We have a lock to avoid data races during thread init and cleanup which needs to be grabbed by
+//   any other code which manipulates structures updated by per-class thread init/cleanup functions.
+// The following functions expose this lock.
+void GlobalThreadLock() ;
+void GlobalThreadUnlock() ;
+class ScopedGlobalThreadLock
+   {
+   public:
+      ScopedGlobalThreadLock() { GlobalThreadLock() ; }
+      ~ScopedGlobalThreadLock() { GlobalThreadUnlock() ; }
+   } ;
+      
 //----------------------------------------------------------------------------
 
 class InitializerBase ;

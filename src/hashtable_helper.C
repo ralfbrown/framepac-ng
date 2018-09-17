@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2018-09-14					*/
+/* Version 0.12, last edit 2018-09-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include <cassert>
 #include "framepac/atomic.h"
 #include "framepac/hashtable.h"
 #include "framepac/hashhelper.h"
@@ -31,7 +32,8 @@ namespace Fr
 /************************************************************************/
 
 atom_flag HashTableHelper::s_initialized ;
-MPSC_Queue<HashTableBase*>* HashTableHelper::s_queue = nullptr ;
+MPSC_Queue<HashTableBase*>* HashTableHelper::s_queue ;
+std::thread* HashTableHelper::s_thread ;
 Semaphore HashTableHelper::s_semaphore ; 
 
 /************************************************************************/
@@ -43,8 +45,7 @@ void HashTableHelper::initialize()
       {
 #ifndef FrSINGLE_THREADED
       s_queue = new MPSC_Queue<HashTableBase*> ;
-      ScopedPtr<std::thread> thr { new thread(helperFunction) } ;
-      thr->detach() ;
+      s_thread = new thread(helperFunction) ;
 #endif /* !FrSINGLE_THREADED */
       }
    return ;
@@ -85,9 +86,26 @@ bool HashTableHelper::startHelper(HashTableBase* ht)
    return true ;
 }
 
+//----------------------------------------------------------------------------
+
+void HashTableHelper::StaticCleanup()
+{
+   delete s_thread ;
+   s_thread = nullptr ;
+   return ;
+}
+
 /************************************************************************/
 /*	Methods for class HashTableBase					*/
 /************************************************************************/
+
+HashTableBase::~HashTableBase()
+{
+   assert(activeResizes() == 0) ;
+   return  ;
+}
+
+//----------------------------------------------------------------------------
 
 void HashTableBase::startResize()
 {
@@ -101,6 +119,17 @@ void HashTableBase::startResize()
 void HashTableBase::finishResize()
 {
    m_active_resizes-- ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void HashTableBase::waitForResizes()
+{
+   while (activeResizes())
+      {
+      std::this_thread::sleep_for(std::chrono::milliseconds(1)) ;
+      }
    return ;
 }
 

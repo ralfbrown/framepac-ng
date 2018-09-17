@@ -37,6 +37,7 @@ class HashTableHelper
    public:
       static bool startHelper(HashTableBase* ht = nullptr) ;
 
+      static void StaticCleanup() ;
    protected:  // internal methods
       HashTableHelper() {}
       ~HashTableHelper() { delete s_queue ; }
@@ -45,7 +46,9 @@ class HashTableHelper
       [[gnu::noreturn]] static void helperFunction() ;
 
    protected:
+      static Fr::Initializer<HashTableHelper> s_initializer ;
       static Semaphore	                 s_semaphore ;
+      static std::thread*		 s_thread ; // to avoid detach(), store the pointer to it globally
       // TSAN throws up warnings because the main thread accesses a field only the owning thread should touch,
       //   so make s_queue a pointer and have the helper thread allocate it
       static MPSC_Queue<HashTableBase*>* s_queue ;

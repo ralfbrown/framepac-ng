@@ -451,8 +451,8 @@ class Atomic
    {
    public:
       Atomic() {}
-      Atomic(T value) : v(value) {}
-      Atomic(const Atomic<T>& value) : v(value.load(std::memory_order_acquire)) {}
+      Atomic(T value) { store(value) ; }
+      Atomic(const Atomic<T>& value) { store(value.load(std::memory_order_acquire)) ; }
       ~Atomic() {}
 
       T& operator= (T& value) noexcept { ref().store(value,std::memory_order_release) ; return value ; }

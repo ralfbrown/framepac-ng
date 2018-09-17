@@ -665,7 +665,6 @@ bool assign_vector_to_nearest_center(size_t index, va_list args)
    auto centers = va_arg(args,const Array*) ;
    auto measure = va_arg(args,VM*) ;
    auto threshold = va_arg(args,double) ;
-//   auto changes = va_arg(args,volatile size_t*) ;
    auto changes = va_arg(args,Atomic<size_t>*) ;
    auto prog = va_arg(args,ProgressIndicator*) ;
    if (!vector) return false ;

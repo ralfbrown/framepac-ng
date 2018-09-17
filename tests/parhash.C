@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2019-09-13					*/
+/* Version 0.12, last edit 2019-09-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2015,2017,2018 Carnegie Mellon University		*/
@@ -452,7 +452,7 @@ class HopscotchMap
 /*	Global variables for this module				*/
 /************************************************************************/
 
-static volatile bool stop_run { false } ;
+static atom_bool stop_run { false } ;
 static bool show_neighbors { false } ;
 static int time_limit { 4 } ;
       

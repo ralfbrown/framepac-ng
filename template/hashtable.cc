@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2018-09-14					*/
+/* Version 0.12, last edit 2018-09-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -1499,8 +1499,9 @@ void HashTable<KeyT,ValT>::init(size_t initial_size)
 template <typename KeyT, typename ValT>
 HashTable<KeyT,ValT>::~HashTable()
 {
-   Table *table = m_table.load() ;
-   if (table && table->good())
+   this->waitForResizes() ;		// don't delete while any resizing is still in progress
+   Table *table = m_table.load() ;	// get the current active table
+   if (table && table->good())		// and if it's valid, clean it up
       {
       if (cleanup_fn)
 	 {
@@ -1543,6 +1544,7 @@ template <typename KeyT, typename ValT>
 bool HashTable<KeyT,ValT>::stillLive(const Table* version)
 {
 #ifndef FrSINGLE_THREADED
+   ScopedGlobalThreadLock guard ;
    // scan the list of per-thread s_table variables
    for (const TablePtr *tables = s_thread_entries.load() ;
 	tables ;

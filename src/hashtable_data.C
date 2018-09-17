@@ -61,25 +61,22 @@ HashBase::HashBase()
 HashBase::HashBase(size_t size) : HashBase()
 {
    size_t searchrange = FrHASHTABLE_SEARCHRANGE ;
+   m_size = size ;
    if (size < searchrange/2)
       {
-      m_size = size ;
       m_fullsize = size + size/2 ;
       }
    else if (size < 2*searchrange)
       {
-      m_size = size - searchrange/4 ;
       m_fullsize = size + searchrange/4 ;
       }
    else if (size < 8*searchrange)
       {
-      m_size = size - searchrange/2 ;
-      m_fullsize = size + searchrange/4 ;
+      m_fullsize = size + searchrange/2 ;
       }
    else
       {
-      m_size = size - searchrange ;
-      m_fullsize = size ;
+      m_fullsize = size + searchrange ;
       }
    size_t num_segs = (capacity() + FrHASHTABLE_SEGMENT_SIZE - 1) / FrHASHTABLE_SEGMENT_SIZE ;
    m_resizepending.init(num_segs) ;

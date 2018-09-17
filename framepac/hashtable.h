@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2018-09-14					*/
+/* Version 0.12, last edit 2018-09-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -321,22 +321,18 @@ class HashTableBase : public Object
       typedef bool assist_fn(HashTableBase*) ;
    public:
       HashTableBase(bool (*assist)(HashTableBase*) = nullptr) : m_assist(assist) {}
-      ~HashTableBase()
-	 {
-	 while (m_active_resizes.load())
-	    std::this_thread::sleep_for(std::chrono::milliseconds(1)) ;
-	 m_assist = nullptr ;
-	 }
+      ~HashTableBase() ;
 
       void startResize() ;
       void finishResize() ;
 
-      unsigned activeResizes() const { return m_active_resizes ; }
+      unsigned activeResizes() const { return m_active_resizes.load() ; }
+      void waitForResizes() ;
       bool assistResize()
 	 { auto fn = m_assist ; return fn ? fn(this) : false ; }
 
    protected:
-      atom_int	 m_active_resizes   { 0 } ;
+      atom_uint	 m_active_resizes   { 0 } ;
       assist_fn* m_assist           { nullptr } ;
    } ;
 

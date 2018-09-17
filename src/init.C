@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2018-09-14					*/
+/* Version 0.12, last edit 2018-09-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -69,7 +69,7 @@ bool Initialize()
       // install termination handler
       std::atexit(Shutdown) ;
       // call any registered static-initialization functions
-      for (InitializerBase* init = static_init_funcs ; init ; init = init->nextInit())
+      for (auto init = static_init_funcs ; init ; init = init->nextInit())
 	 {
 	 init->init() ;
 	 }
@@ -86,7 +86,7 @@ void Shutdown()
    if (initialized)
       {
       // call any registered static-cleanup functions
-      for (InitializerBase* cln = static_cleanup_funcs ; cln ; cln = cln->nextCleanup())
+      for (auto cln = static_cleanup_funcs ; cln ; cln = cln->nextCleanup())
 	 {
 	 cln->cleanup() ;
 	 }
@@ -124,11 +124,11 @@ bool ThreadInit()
    if (!thread_registered)
       {
       // call any registered thread-initialization functions
-      for (ThreadInitializerBase* ti = registered_init_funcs ; ti ; ti = ti->nextInit())
+      for (auto ti = registered_init_funcs ; ti ; ti = ti->nextInit())
 	 {
 	 // do so under a lock so that the initialization function doesn't need to take any
 	 //   precautions against reentrant calls
-	 std::lock_guard<std::mutex> guard(registry_lock) ;
+	 ScopedGlobalThreadLock guard ;
 	 ti->init() ;
 	 }
       thread_registered = true ;
@@ -143,11 +143,11 @@ bool ThreadCleanup()
    if (thread_registered)
       {
       // invoke any registered thread-cleanup functions
-      for (ThreadInitializerBase* ti = registered_cleanup_funcs ; ti ; ti = ti->nextCleanup())
+      for (auto ti = registered_cleanup_funcs ; ti ; ti = ti->nextCleanup())
 	 {
 	 // do so under a lock so that the cleanup function doesn't need to take any
 	 //   precautions against reentrant calls
-	 std::lock_guard<std::mutex> guard(registry_lock) ;
+	 ScopedGlobalThreadLock guard ;
 	 ti->cleanup() ;
 	 }
       thread_registered = false ;
@@ -160,6 +160,7 @@ bool ThreadCleanup()
 
 void RegisterThreadInit(ThreadInitializerBase *ti)
 {
+   ScopedGlobalThreadLock guard ;
    ti->setNextInit(registered_init_funcs) ;
    registered_init_funcs = ti ;
    return ;
@@ -169,6 +170,7 @@ void RegisterThreadInit(ThreadInitializerBase *ti)
 
 void RegisterThreadCleanup(ThreadInitializerBase *ti)
 {
+   ScopedGlobalThreadLock guard ;
    ti->setNextCleanup(registered_cleanup_funcs) ;
    registered_cleanup_funcs = ti ;
    return ;
@@ -178,7 +180,7 @@ void RegisterThreadCleanup(ThreadInitializerBase *ti)
 
 void UnregisterThreadInit(ThreadInitializerBase *ti)
 {
-   std::lock_guard<std::mutex> guard(registry_lock) ;
+   ScopedGlobalThreadLock guard ;
    if (registered_init_funcs == ti)
       {
       registered_init_funcs = ti->nextInit() ;
@@ -186,9 +188,8 @@ void UnregisterThreadInit(ThreadInitializerBase *ti)
       }
    if (!registered_init_funcs)
       return;
-   ThreadInitializerBase* prev = registered_init_funcs ;
-   ThreadInitializerBase* next ;
-   while ((next = prev->nextInit()) != nullptr)
+   auto prev = registered_init_funcs ;
+   while (auto next = prev->nextInit())
       {
       if (next == ti)
 	 {
@@ -204,7 +205,7 @@ void UnregisterThreadInit(ThreadInitializerBase *ti)
 
 void UnregisterThreadCleanup(ThreadInitializerBase *ti)
 {
-   std::lock_guard<std::mutex> guard(registry_lock) ;
+   ScopedGlobalThreadLock guard ;
    if (registered_cleanup_funcs == ti)
       {
       registered_cleanup_funcs = ti->nextCleanup() ;
@@ -212,9 +213,8 @@ void UnregisterThreadCleanup(ThreadInitializerBase *ti)
       }
    if (!registered_cleanup_funcs)
       return;
-   ThreadInitializerBase* prev = registered_cleanup_funcs ;
-   ThreadInitializerBase* next ;
-   while ((next = prev->nextCleanup()) != nullptr)
+   auto prev = registered_cleanup_funcs ;
+   while (auto next = prev->nextCleanup())
       {
       if (next == ti)
 	 {
@@ -223,6 +223,26 @@ void UnregisterThreadCleanup(ThreadInitializerBase *ti)
 	 }
       prev = next ;
       }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void GlobalThreadLock()
+{
+#ifndef FrSINGLE_THREADED
+   registry_lock.lock() ;
+#endif /* !FrSINGLE_THREADED */
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void GlobalThreadUnlock()
+{
+#ifndef FrSINGLE_THREADED
+   registry_lock.unlock() ;
+#endif /* !FrSINGLE_THREADED */
    return ;
 }
 
