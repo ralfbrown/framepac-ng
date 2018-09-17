@@ -126,8 +126,10 @@ CharPtr ProgressIndicator::timeString(double time)
 ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit, size_t per_line,
 						   const char* first_prefix, const char* rest_prefix)
    : ProgressIndicator(interval,limit),
-     m_firstprefix(dup_string(first_prefix)), m_restprefix(dup_string(rest_prefix)),
-     m_per_line(per_line), m_linewidth(80), m_istty(isatty(fileno(stdout)))
+     m_firstprefix(dup_string(first_prefix)),
+     m_restprefix(dup_string(rest_prefix)),
+     m_per_line(per_line),
+     m_istty(isatty(fileno(stdout)))
 {
    // get actual line width rather than always assuming an 80-column display
 #ifdef TIOCGWINSZ
@@ -147,7 +149,7 @@ ConsoleProgressIndicator::ConsoleProgressIndicator(size_t interval, size_t limit
 ConsoleProgressIndicator::~ConsoleProgressIndicator()
 {
    Update lastupdate = lastUpdate() ;
-   refreshUpdate(lastupdate,-1,lastupdate.percent) ; // force dispaly even if rate-limit time has not elapsed
+   refreshUpdate(lastupdate,-1,lastupdate.percent) ; // force display even if rate-limit time has not elapsed
    m_count = m_limit ;
    m_show_estimated = false ;
    updateDisplay(m_count) ;
@@ -312,11 +314,9 @@ void ConsoleProgressIndicator::updateDisplay(size_t curr_count)
 	 }
       // standard output is not a tty (i.e. it's been redirected), so just print up a line of MAX_STARS
       //   asterisks as the progress bar
-      if (stars > prevstars || frac == 1.0)
+      if (stars > prevstars)
 	 {
 	 double elapsed = m_timer.seconds() ;
-	 if (elapsed - lastupdate.time < 0.5 && stars < m_barsize)
-	    return ;			// prevent multiple concurrent outputs
 	 if (!refreshUpdate(lastupdate,elapsed,frac))
 	    return ;			// another thread has already made an update
 	 while (prevstars++ < stars)
