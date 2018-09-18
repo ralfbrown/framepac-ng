@@ -482,7 +482,8 @@ bool SuffixArray<IdT,IdxT>::enumerateSegment(IdxT startpos, IdT firstID, IdT las
             //   invocations elsewhere
             for (size_t len = maxlen ; len >= minlen ; --len)
                {
-               fn(this,m_ids + m_index[startpos],len,1,startpos) ;
+	       if (!filter || filter(this,m_ids+m_index[startpos],len,1,false))
+		  fn(this,m_ids + m_index[startpos],len,1,startpos) ;
                }
             }
          }
