@@ -37,10 +37,16 @@ bool CFile::readStringArray(class Fr::CString*& strings, size_t& count)
       return false ;
    char* buf = new char[total_length] ;
    if (!buf || !read(buf,total_length))
+      {
+      delete[] buf ;
       return false ;
+      }
    strings = new CString[num_strings] ;
    if (!strings)
+      {
+      delete[] buf ;
       return false ;
+      }
    for (size_t i = 0 ; i < num_strings ; ++i)
       {
       strings[i] = buf ;
