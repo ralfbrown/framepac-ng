@@ -694,7 +694,7 @@ void WordCorpusT<IdT,IdxT>::setAttributes(IdT word, uint8_t mask) const
    size_t cap = vocabSize() ;
    if (cap > m_attributes_alloc)
       {
-      uint8_t* new_attr = new uint8_t[cap] ;
+      auto new_attr = new uint8_t[cap] ;
       if (new_attr)
 	 {
 	 if (m_attributes_alloc)

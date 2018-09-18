@@ -295,10 +295,10 @@ SparseVector<IdxT,ValT>* SparseVector<IdxT,ValT>::incr(const Vector<IdxT,ValT>* 
    if (!other)
       return static_cast<SparseVector<IdxT,ValT>*>(&*this->clone().move()) ;
    size_t new_size { totalElements(this,other) } ;
-   IdxT* new_indices { new IdxT[new_size] } ;
-   ValT* new_values { new ValT[new_size] } ;
-   size_t elts1 { this->numElements() } ;
-   size_t elts2 { other->numElements() } ;
+   auto new_indices = new IdxT[new_size] ;
+   auto new_values = new ValT[new_size] ;
+   auto elts1 = this->numElements() ;
+   auto elts2 = other->numElements() ;
    size_t pos1 { 0 } ;
    size_t pos2 { 0 } ;
    size_t count { 0 } ;

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2019-09-15					*/
+/* Version 0.13, last edit 2019-09-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2015,2017,2018 Carnegie Mellon University		*/
@@ -1445,7 +1445,7 @@ void hash_command(ostream &out, int threads, bool terse, uint32_t* randnums,
 
 static INTEGER_TYPE* gen_keys(ostream& out, size_t maxsize, size_t order, size_t stride, bool terse)
 {
-   INTEGER_TYPE* keys = new INTEGER_TYPE[2*maxsize] ;
+   auto keys = new INTEGER_TYPE[2*maxsize] ;
    if (order == 0)
       {
       if (!terse)
