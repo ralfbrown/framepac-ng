@@ -466,7 +466,12 @@ bool SuffixArray<IdT,IdxT>::enumerateSegment(IdxT startpos, IdT firstID, IdT las
       IdxT freq = getFreq(i) ;
       if (!filter || filter(this,&firstID,1,freq,maxlen>1))
          {
-         if (freq > 1)
+	 if (maxlen == 1)
+	    {
+	    // go right to calling the enumeration function, as there is no further checking needed
+	    fn(this,&firstID,1,freq,startpos) ;
+	    }
+         else if (freq > 1)
             {
             if (!enumerate(startpos,startpos+freq,minlen,maxlen,fn,filter))
                return false ;
@@ -515,23 +520,20 @@ bool SuffixArray<IdT,IdxT>::enumerate(IdxT startpos, IdxT endpos, unsigned minle
       //   caller's function for each length from prefix-len to
       //   'maxlen', provided that the phrase passes the filter
       //   function
-      if (common < maxlen)
-         {
-         for (size_t len = maxlen ; len > common ; --len)
-            {
-            if (len >= minlen)
-               {
-               size_t freq = idx - keystart[len] ;
-	       if (!filter || filter(this,keyval,len,freq,false))
-                  {
-                  fn(this,keyval, len, freq, keystart[len]) ;
-                  }
-               }
-            // update the first occurrence of a key of the current length
-            keystart[len] = idx ;
-            keyval[len-1] = idAt(m_index[idx]+len-1) ;
-            }
-         }
+      for (size_t len = maxlen ; len > common ; --len)
+	 {
+	 if (len >= minlen)
+	    {
+	    size_t freq = idx - keystart[len] ;
+	    if (!filter || filter(this,keyval,len,freq,false))
+	       {
+	       fn(this,keyval, len, freq, keystart[len]) ;
+	       }
+	    }
+	 // update the first occurrence of a key of the current length
+	 keystart[len] = idx ;
+	 keyval[len-1] = idAt(m_index[idx]+len-1) ;
+	 }
       }
    // process the final key at each length
    for (size_t len = maxlen ; len >= minlen ; --len)
