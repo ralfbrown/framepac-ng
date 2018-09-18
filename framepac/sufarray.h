@@ -37,7 +37,9 @@ template <typename IdT, typename IdxT>
 class SuffixArray
    {
    public:
-      typedef bool FilterFunc(const SuffixArray*, const IdT* key, unsigned keylen, size_t freq) ;
+      typedef bool FilterFunc(const SuffixArray*, const IdT* key, unsigned keylen, size_t freq, bool all) ;
+      // all==true means eliminate all phrases starting with this key; all==false means eliminate only
+      //   this exact key
       typedef bool EnumFunc(const SuffixArray*, const IdT* key, unsigned keylen, size_t freq, IdxT first_match) ;
       static constexpr IdT ErrorID { IdT(~0) } ;
    public:

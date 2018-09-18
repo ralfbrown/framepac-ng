@@ -464,7 +464,7 @@ bool SuffixArray<IdT,IdxT>::enumerateSegment(IdxT startpos, IdT firstID, IdT las
    for (IdT i = firstID ; i < lastID ; ++i)
       {
       IdxT freq = getFreq(i) ;
-      if (!filter || filter(this,&firstID,1,freq))
+      if (!filter || filter(this,&firstID,1,freq,maxlen>1))
          {
          if (freq > 1)
             {
@@ -522,7 +522,7 @@ bool SuffixArray<IdT,IdxT>::enumerate(IdxT startpos, IdxT endpos, unsigned minle
             if (len >= minlen)
                {
                size_t freq = idx - keystart[len] ;
-	       if (!filter || filter(this,keyval,len,freq))
+	       if (!filter || filter(this,keyval,len,freq,false))
                   {
                   fn(this,keyval, len, freq, keystart[len]) ;
                   }
@@ -537,7 +537,7 @@ bool SuffixArray<IdT,IdxT>::enumerate(IdxT startpos, IdxT endpos, unsigned minle
    for (size_t len = maxlen ; len >= minlen ; --len)
       {
       size_t freq = endpos - keystart[len] ;
-      if (!filter | filter(this,keyval,len,freq))
+      if (!filter | filter(this,keyval,len,freq,false))
          {
          fn(this, keyval, len, freq, keystart[len]) ;
          }
