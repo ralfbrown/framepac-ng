@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2018-09-15					*/
+/* Version 0.13, last edit 2018-09-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -1289,10 +1289,7 @@ size_t* HashTable<KeyT,ValT>::Table::chainLengths(size_t &max_length) const
    if (next())
       return next()->chainLengths(max_length) ;
    size_t* lengths = new size_t[searchrange+2] ;
-   for (size_t i = 0 ; i <= searchrange+1 ; i++)
-      {
-      lengths[i] = 0 ;
-      }
+   std::fill(lengths,lengths+searchrange+2,0) ;
    max_length = 0 ;
    for (size_t i = 0 ; i < capacity() ; ++i)
       {
@@ -1312,11 +1309,8 @@ size_t* HashTable<KeyT,ValT>::Table::neighborhoodDensities(size_t &num_densities
    if (next())
       return next()->neighborhoodDensities(num_densities) ;
    size_t* densities = new size_t[searchrange+2] ;
+   std::fill(densities,densities+searchrange+2,0) ;
    num_densities = searchrange+1 ;
-   for (size_t i = 0 ; i <= searchrange+1 ; i++)
-      {
-      densities[i] = 0 ;
-      }
    // count up the active neighbors of the left-most entry in the hash array
    size_t density = 0 ;
    for (size_t i = 0 ; i <= (size_t)searchrange && i < capacity() ; ++i)
