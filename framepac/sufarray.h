@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-26					*/
+/* Version 0.13, last edit 2018-09-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -22,6 +22,7 @@
 #ifndef _Fr_SUFARRAY_H_INCLUDED
 #define _Fr_SUFARRAY_H_INCLUDED
 
+#include <functional>
 #include "framepac/file.h"
 #include "framepac/mmapfile.h"
 
@@ -36,8 +37,8 @@ template <typename IdT, typename IdxT>
 class SuffixArray
    {
    public:
-      typedef bool EnumFunc(const IdT* key, unsigned keylen, size_t freq, const SuffixArray*, IdxT first_match,
-                            void *user_arg) ;
+      typedef bool FilterFunc(const SuffixArray*, const IdT* key, unsigned keylen, size_t freq) ;
+      typedef bool EnumFunc(const SuffixArray*, const IdT* key, unsigned keylen, size_t freq, IdxT first_match) ;
       static constexpr IdT ErrorID { IdT(~0) } ;
    public:
       SuffixArray() {}
@@ -80,11 +81,12 @@ class SuffixArray
       IdxT getFreq(IdT N) const { return (m_freq && N < m_types) ? m_freq[N] : (IdxT)0 ; }
       bool lookup(const IdT* key, unsigned keylen, IdxT& first_match, IdxT& last_match) const ;
 
-      bool enumerate(IdxT startpos, IdxT endpos, unsigned minlen, unsigned maxlen, size_t minfreq,
-	              EnumFunc* fn, void* user_arg) const ;
+      bool enumerate(IdxT startpos, IdxT endpos, unsigned minlen, unsigned maxlen,
+	 const std::function<EnumFunc>& fn, const std::function<FilterFunc>& filter) const ;
       bool enumerateSegment(IdxT startpos, IdT firstID,  IdT lastID, unsigned minlen, unsigned maxlen,
- 	              size_t minfreq, EnumFunc* fn, void* user_arg) const ;
-      bool enumerateParallel(unsigned minlen, unsigned maxlen, size_t minfreq, EnumFunc* fn, void* user_arg) const ;
+	 const std::function<EnumFunc>& fn, const std::function<FilterFunc>& filter) const ;
+      bool enumerateParallel(unsigned minlen, unsigned maxlen, const std::function<EnumFunc>& fn,
+	 const std::function<FilterFunc>& filter) const ;
       void clear() ;
 
       operator bool () const { return m_index != nullptr ; }
@@ -95,15 +97,19 @@ class SuffixArray
    protected:
       struct Job
 	 {
+	    const SuffixArray* index ;
+	    const std::function<EnumFunc>& fn ;
+	    const std::function<FilterFunc>& filter ;
 	    IdxT startpos ;
 	    IdT startID ;
 	    IdT stopID ;
 	    unsigned minlen ;
 	    unsigned maxlen ;
-	    size_t minfreq ;
-	    const SuffixArray* index ;
-	    EnumFunc* fn ;
-	    void* user_arg ;
+	 public:
+	    Job(const SuffixArray* sa, unsigned minl, unsigned maxl, const std::function<EnumFunc>& enum_fn,
+	       const std::function<FilterFunc>& filter_fn)
+	       : index(sa), fn(enum_fn), filter(filter_fn), minlen(minl), maxlen(maxl)
+	       {}
 	 } ;
 
    protected:

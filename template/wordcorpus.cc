@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.11, last edit 2018-09-11					*/
+/* Version 0.13, last edit 2018-09-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -767,73 +767,75 @@ bool WordCorpusT<IdT,IdxT>::lookup(const IdT *key, unsigned keylen, IdxT& first_
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::enumerateForward(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc* fn, void* user)
+bool WordCorpusT<IdT,IdxT>::enumerateForward(unsigned minlen, unsigned maxlen,
+   const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter)
 {
    if (!fn)
       return false ;			// can't enumerate without a function to call!
    if (!createForwardIndex())
       return false ;			// didn't have an index and couldn't create it, so fail
-   return m_fwdindex.enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,minfreq,fn,user) ;
+   return m_fwdindex.enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,fn,filter) ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::enumerateForward(IdxT start, IdxT stop, unsigned minlen, unsigned maxlen, size_t minfreq,
-   SAEnumFunc* fn, void* user) const
+bool WordCorpusT<IdT,IdxT>::enumerateForward(IdxT start, IdxT stop, unsigned minlen, unsigned maxlen,
+   const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter) const
 {
    if (!m_fwdindex)
       return false ;
-   return m_fwdindex.enumerate(start,stop,minlen,maxlen,minfreq,fn,user) ;
+   return m_fwdindex.enumerate(start,stop,minlen,maxlen,fn,filter) ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::enumerateForwardParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
-   SAEnumFunc* fn, void* user)
+bool WordCorpusT<IdT,IdxT>::enumerateForwardParallel(unsigned minlen, unsigned maxlen,
+   const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter)
 {
    if (!fn)
       return false ;			// can't enumerate without a function to call!
    if (!createForwardIndex())
       return false ;			// didn't have an index and couldn't create it, so fail
-   return m_fwdindex.enumerateParallel(minlen,maxlen,minfreq,fn,user) ;
+   return m_fwdindex.enumerateParallel(minlen,maxlen,fn,filter) ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::enumerateReverse(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc* fn, void* user)
+bool WordCorpusT<IdT,IdxT>::enumerateReverse(unsigned minlen, unsigned maxlen,
+   const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter)
 {
    if (!fn)
       return false ;			// can't enumerate without a function to call!
    if (!createReverseIndex())
       return false ;			// didn't have an index and couldn't create it, so fail
-   return m_revindex.enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,minfreq,fn,user) ;
+   return m_revindex.enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,fn,filter) ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::enumerateReverse(IdxT start, IdxT stop, unsigned minlen, unsigned maxlen, size_t minfreq,
-   SAEnumFunc* fn, void* user) const
+bool WordCorpusT<IdT,IdxT>::enumerateReverse(IdxT start, IdxT stop, unsigned minlen, unsigned maxlen,
+   const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter) const
 {
    if (!m_revindex)
       return false ;
-   return m_revindex.enumerate(start,stop,minlen,maxlen,minfreq,fn,user) ;
+   return m_revindex.enumerate(start,stop,minlen,maxlen,fn,filter) ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool WordCorpusT<IdT,IdxT>::enumerateReverseParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
-   SAEnumFunc* fn, void* user)
+bool WordCorpusT<IdT,IdxT>::enumerateReverseParallel(unsigned minlen, unsigned maxlen,
+   const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter)
 {
    if (!fn)
       return false ;			// can't enumerate without a function to call!
    if (!createReverseIndex())
       return false ;			// didn't have an index and couldn't create it, so fail
-   return m_revindex.enumerateParallel(minlen,maxlen,minfreq,fn,user) ;
+   return m_revindex.enumerateParallel(minlen,maxlen,fn,filter) ;
 }
 
 //----------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-16					*/
+/* Version 0.13, last edit 2018-09-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -20,6 +20,7 @@
 /************************************************************************/
 
 #include <cstring>
+#include <vector>
 #include "framepac/bitvector.h"
 #include "framepac/sufarray.h"
 #include "framepac/threadpool.h"
@@ -58,7 +59,7 @@ IdxT* SuffixArray<IdT,IdxT>::bucketBoundaries(const I* ids, IdxT num_ids, IdT nu
    IdxT* buckets = new IdxT[num_types+2] ;
    if (buckets)
       {
-      std::memset(buckets,'\0',sizeof(IdxT)*(num_types+2)) ;
+      std::fill(buckets,buckets+num_types+2,0) ;
       if (!freqs)
 	 {
 	 // accumulate bucket sizes
@@ -93,7 +94,7 @@ IdxT* SuffixArray<IdT,IdxT>::copyBucketBoundaries(const IdxT* bounds, IdT num_ty
    IdxT* copy = new IdxT[num_types+1] ;
    if (copy)
       {
-      memcpy(copy,bounds,sizeof(IdxT)*(num_types+1)) ;
+      std::copy(bounds,bounds+num_types+1,copy) ;
       }
    return copy ;
 }
@@ -451,22 +452,23 @@ bool SuffixArray<IdT,IdxT>::lookup(const IdT* key, unsigned keylen, IdxT& first_
 
 template <typename IdT, typename IdxT>
 bool SuffixArray<IdT,IdxT>::enumerateSegment(IdxT startpos, IdT firstID, IdT lastID,
-   unsigned minlen, unsigned maxlen, size_t minfreq, EnumFunc* fn, void* user_arg) const
+   unsigned minlen, unsigned maxlen, const std::function<EnumFunc>& fn,
+   const std::function<FilterFunc>& filter) const
 {
    if (minlen < 1)
       minlen = 1 ;
    if (maxlen < minlen)
       maxlen = minlen ;
    // use the unigram frequency table to quickly skip over all phrases starting with a word
-   //   that is below the frequency threshold
+   //   that fails to pass the filter function
    for (IdT i = firstID ; i < lastID ; ++i)
       {
       IdxT freq = getFreq(i) ;
-      if (freq >= minfreq)
+      if (!filter || filter(this,&firstID,1,freq))
          {
          if (freq > 1)
             {
-            if (!enumerate(startpos,startpos+freq,minlen,maxlen,minfreq,fn,user_arg))
+            if (!enumerate(startpos,startpos+freq,minlen,maxlen,fn,filter))
                return false ;
             }
          else
@@ -475,7 +477,7 @@ bool SuffixArray<IdT,IdxT>::enumerateSegment(IdxT startpos, IdT firstID, IdT las
             //   invocations elsewhere
             for (size_t len = maxlen ; len >= minlen ; --len)
                {
-               fn(m_ids + m_index[startpos],len,1,this,startpos,user_arg) ;
+               fn(this,m_ids + m_index[startpos],len,1,startpos) ;
                }
             }
          }
@@ -488,7 +490,7 @@ bool SuffixArray<IdT,IdxT>::enumerateSegment(IdxT startpos, IdT firstID, IdT las
 
 template <typename IdT, typename IdxT>
 bool SuffixArray<IdT,IdxT>::enumerate(IdxT startpos, IdxT endpos, unsigned minlen, unsigned maxlen,
-   size_t minfreq, EnumFunc* fn, void* user_arg) const
+   const std::function<EnumFunc>& fn, const std::function<FilterFunc>& filter) const
 {
    IdxT keystart[maxlen+1] ;
    IdT keyval[maxlen+1] ;
@@ -511,8 +513,8 @@ bool SuffixArray<IdT,IdxT>::enumerate(IdxT startpos, IdxT endpos, unsigned minle
          }
       // if the common prefix is less than 'maxlen', invoke the
       //   caller's function for each length from prefix-len to
-      //   'maxlen', provided that the number of occurrences at that
-      //   length is at least 'minfreq'
+      //   'maxlen', provided that the phrase passes the filter
+      //   function
       if (common < maxlen)
          {
          for (size_t len = maxlen ; len > common ; --len)
@@ -520,9 +522,9 @@ bool SuffixArray<IdT,IdxT>::enumerate(IdxT startpos, IdxT endpos, unsigned minle
             if (len >= minlen)
                {
                size_t freq = idx - keystart[len] ;
-               if (freq >= minfreq)
+	       if (!filter || filter(this,keyval,len,freq))
                   {
-                  fn(keyval, len, freq, this, keystart[len], user_arg) ;
+                  fn(this,keyval, len, freq, keystart[len]) ;
                   }
                }
             // update the first occurrence of a key of the current length
@@ -535,12 +537,13 @@ bool SuffixArray<IdT,IdxT>::enumerate(IdxT startpos, IdxT endpos, unsigned minle
    for (size_t len = maxlen ; len >= minlen ; --len)
       {
       size_t freq = endpos - keystart[len] ;
-      if (freq >= minfreq)
+      if (!filter | filter(this,keyval,len,freq))
          {
-         fn(keyval, len, freq, this, keystart[len], user_arg) ;
+         fn(this, keyval, len, freq, keystart[len]) ;
          }
       }
-   return true ;                                                                                                           }
+   return true ;
+}
 
 //----------------------------------------------------------------------------
 
@@ -549,29 +552,29 @@ void SuffixArray<IdT,IdxT>::enumerate_segment(const void* in, void*)
 {
    const Job* info = reinterpret_cast<const Job*>(in) ;
    info->index->enumerateSegment(info->startpos,info->startID,info->stopID,info->minlen,info->maxlen,
-      info->minfreq,info->fn,info->user_arg) ;
+      info->fn,info->filter) ;
    return ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool SuffixArray<IdT,IdxT>::enumerateParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
-   EnumFunc* fn, void* user_arg) const
+bool SuffixArray<IdT,IdxT>::enumerateParallel(unsigned minlen, unsigned maxlen,
+   const std::function<EnumFunc>& fn, const std::function<FilterFunc>& filter) const
 {
-   // split the suffix array into segments on first-word boundaries;
-   //   we use 16 times the number of threads to keep overhead low
-   //   while avoiding having one or two stragglers at the end
+   // split the suffix array into segments on first-word boundaries; we
+   //   use 32 times the number of threads to keep overhead reasonably
+   //   low while avoiding long waits for stragglers at the end
    ThreadPool *tpool = ThreadPool::defaultPool() ;
-   size_t num_segments(tpool->numThreads() * 16) ;
+   size_t num_segments(tpool->numThreads() * 32) ;
    if (num_segments == 0)
-      return enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,minfreq,fn,user_arg) ;
+      return enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,fn,filter) ;
    size_t segment_size((m_numids - getFreq(m_sentinel) + num_segments-1) / num_segments) ;
    size_t prev_start(getFreq(m_sentinel)) ;
    size_t count(0) ;
    size_t prev_id(1) ;
    bool success(true) ;
-   Job orders[num_segments] ;
+   std::vector<Job> orders(num_segments, Job(this,minlen,maxlen,fn,filter)) ;
    size_t jobnum(0) ;
    for (size_t i = 1 ; i < vocabSize() ; ++i)
       {
@@ -581,12 +584,6 @@ bool SuffixArray<IdT,IdxT>::enumerateParallel(unsigned minlen, unsigned maxlen, 
          orders[jobnum].startpos = prev_start ;
          orders[jobnum].startID = prev_id ;
          orders[jobnum].stopID = i+1 ;
-         orders[jobnum].minlen = minlen ;
-         orders[jobnum].maxlen = maxlen ;
-         orders[jobnum].minfreq = minfreq ;
-         orders[jobnum].index = this ;
-         orders[jobnum].fn = fn ;
-         orders[jobnum].user_arg = user_arg ;
          tpool->dispatch(&enumerate_segment,&orders[jobnum],nullptr) ;
          jobnum++ ;
          prev_start += count ;
@@ -598,12 +595,6 @@ bool SuffixArray<IdT,IdxT>::enumerateParallel(unsigned minlen, unsigned maxlen, 
    orders[jobnum].startpos = prev_start ;
    orders[jobnum].startID = prev_id ;
    orders[jobnum].stopID = vocabSize() ;
-   orders[jobnum].minlen = minlen ;
-   orders[jobnum].maxlen = maxlen ;
-   orders[jobnum].minfreq = minfreq ;
-   orders[jobnum].index = this ;
-   orders[jobnum].fn = fn ;
-   orders[jobnum].user_arg = user_arg ;
    tpool->dispatch(&enumerate_segment,&orders[jobnum],nullptr) ;
    tpool->waitUntilIdle() ;
    return success ;

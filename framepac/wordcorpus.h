@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.11, last edit 2018-09-11					*/
+/* Version 0.13, last edit 2018-09-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -85,9 +85,8 @@ class WordCorpusT
       typedef Fr::SuffixArray<IdT,IdxT> SufArr ;
       typedef Fr::HashTable<Fr::CString,IdT> Map ;
       typedef Fr::BidirIndex<Fr::CString,IdT> BiMap ;
-      typedef bool SAEnumFunc(const IdT* key, unsigned keylen, size_t freq,
-	 		      const SufArr*, IdxT first_match,
-			      void *user_arg) ;
+      typedef typename Fr::SuffixArray<IdT,IdxT>::EnumFunc SAEnumFunc ;
+      typedef typename Fr::SuffixArray<IdT,IdxT>::FilterFunc SAFilterFunc ;
       typedef bool AttrCheckFunc(const char *word) ;
 
    public: // constants
@@ -143,12 +142,14 @@ class WordCorpusT
       void freeTermFrequencies() ;
       bool freeIndices() ;
       bool lookup(const ID *key, unsigned keylen, Index &first_match, Index &last_match) const ;
-      bool enumerateForward(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc *fn, void *user_arg) ;
-      bool enumerateForwardParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
-				    SAEnumFunc *fn, void *user_arg) ;
-      bool enumerateReverse(unsigned minlen, unsigned maxlen, size_t minfreq, SAEnumFunc *fn, void *user_arg) ;
-      bool enumerateReverseParallel(unsigned minlen, unsigned maxlen, size_t minfreq,
-				    SAEnumFunc *fn, void *user_arg) ;
+      bool enumerateForward(unsigned minlen, unsigned maxlen, const std::function<SAEnumFunc>& fn,
+	 const std::function<SAFilterFunc>& filter) ;
+      bool enumerateForwardParallel(unsigned minlen, unsigned maxlen, 
+	 const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter) ;
+      bool enumerateReverse(unsigned minlen, unsigned maxlen, const std::function<SAEnumFunc>& fn,
+	 const std::function<SAFilterFunc>& filter) ;
+      bool enumerateReverseParallel(unsigned minlen, unsigned maxlen,
+	 const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter) ;
 
       IdxT rareWordThreshold() const { return  m_rare_thresh ; }
       size_t numContextEquivs() const { return m_contextmap->size() ; }
@@ -202,10 +203,10 @@ class WordCorpusT
       void computeTermFrequencies() ;
       bool createForwardIndex() ;
       bool createReverseIndex() ;
-      bool enumerateForward(IdxT start, IdxT stop, unsigned minlen, unsigned maxlen, size_t minfreq,
-			    SAEnumFunc *fn, void *user_arg) const ;
-      bool enumerateReverse(IdxT start, IdxT stop, unsigned minlen, unsigned maxlen, size_t minfreq,
-			    SAEnumFunc *fn, void *user_arg) const ;
+      bool enumerateForward(IdxT start, IdxT stop, unsigned minlen, unsigned maxlen,
+	 const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter) const ;
+      bool enumerateReverse(IdxT start, IdxT stop, unsigned minlen, unsigned maxlen,
+	 const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter) const ;
 
    protected:
       MemMappedFile      m_mmap ;
