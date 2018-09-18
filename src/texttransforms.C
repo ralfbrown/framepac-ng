@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.13, last edit 2018-09-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -46,7 +46,7 @@ CharPtr dup_string(const char* s)
    size_t len = strlen(s) + 1 ;
    char* copy = new char[len+1] ;
    if (copy)
-      memcpy(copy,s,len) ;
+      std::copy(s,s+len,copy) ;
    return copy ;
 }
 
@@ -60,7 +60,7 @@ CharPtr dup_string(const char* s, size_t len)
    char* copy = new char[len+1] ;
    if (copy)
       {
-      memcpy(copy,s,len) ;
+      std::copy(s,s+len,copy) ;
       copy[len] = '\0' ;
       }
    return copy ;
@@ -76,7 +76,7 @@ CharPtr dup_string_n(const char* s, size_t len)
    char* copy = new char[len+1] ;
    if (copy)
       {
-      memcpy(copy,s,len) ;
+      std::copy(s,s+len,copy) ;
       copy[len] = '\0' ;
       }
    return copy ;
@@ -165,7 +165,8 @@ char* trim_whitespace(char* s)
       while (s_end > nonwhite && isspace(s_end[-1]))
 	 s_end-- ;
       size_t len = s_end - nonwhite ;
-      memcpy(s,nonwhite,len) ;
+      if (nonwhite > s)
+	 std::copy(nonwhite,nonwhite+len,s) ;
       s[len] = '\0' ;
       }
    return s ;
@@ -182,7 +183,8 @@ char* trim_whitespace(char* s, std::locale& locale)
       while (s_end > nonwhite && isspace(s_end[-1],locale))
 	 s_end-- ;
       size_t len = s_end - nonwhite ;
-      memcpy(s,nonwhite,len) ;
+      if (nonwhite > s)
+	 std::copy(nonwhite,nonwhite+len,s) ;
       s[len] = '\0' ;
       }
    return s ;
