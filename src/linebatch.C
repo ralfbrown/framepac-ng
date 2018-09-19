@@ -158,21 +158,22 @@ LineBatch* CFile::getLines(size_t batchsize)
 LineBatch* CFile::getLines(size_t batchsize, int mono_skip)
 {
    LineBatch* batch = new LineBatch(batchsize) ;
-   if (batch)
+   if (!batch)
+      return nullptr ;
+   off_t startpos = tell() ;
+   while (!eof() && batch->size() < batch->capacity())
       {
-      while (!eof() && batch->size() < batch->capacity())
-	 {
-	 // read the next non-blank line from the file
-	 // if mono_skip < 0, we skip the first of each pair and read the second
-	 // if mono_skip > 0, we read the first of each pair and skip the second
-	 skipBlankLines() ;
-	 skipLines((mono_skip<0) ? 1 : 0) ;
-	 CharPtr line { getTrimmedLine() } ;
-	 skipLines((mono_skip>0) ? 1 : 0) ;
-	 if (line && **line)
-	    batch->append(line.move()) ;
-	 }
+      // read the next non-blank line from the file
+      // if mono_skip < 0, we skip the first of each pair and read the second
+      // if mono_skip > 0, we read the first of each pair and skip the second
+      skipBlankLines() ;
+      skipLines((mono_skip<0) ? 1 : 0) ;
+      CharPtr line { getTrimmedLine() } ;
+      skipLines((mono_skip>0) ? 1 : 0) ;
+      if (line && **line)
+	 batch->append(line.move()) ;
       }
+   batch->addInput(tell() - startpos) ;
    return batch ;
 }
 
