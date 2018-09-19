@@ -451,7 +451,7 @@ bool SuffixArray<IdT,IdxT>::lookup(const IdT* key, unsigned keylen, IdxT& first_
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool SuffixArray<IdT,IdxT>::enumerateSegment(Range<IdxT> positions, Range<IdT> IDs,
+bool SuffixArray<IdT,IdxT>::enumerateSegment(Range<IdxT> positions, size_t offset, Range<IdT> IDs,
    Range<unsigned> lengths, const std::function<EnumFunc>& fn,
    const std::function<FilterFunc>& filter) const
 {
@@ -464,10 +464,13 @@ bool SuffixArray<IdT,IdxT>::enumerateSegment(Range<IdxT> positions, Range<IdT> I
    IdxT startpos = positions.first() ;
    for (auto id : IDs)
       {
-      IdxT freq = getFreq(id) ;
-      IdT firstID = id ;
+      // positions.first() is not necessarily the first occurrence of phrases starting with 'id', so we have the
+      //   'offset' parameter to correct for this mismatch
+      IdxT freq = getFreq(id) - offset ;
+      offset = 0 ;
       if (startpos + freq > positions.last())
 	 freq = positions.last() - startpos ;
+      IdT firstID = id ;
       if (!filter || filter(this,&firstID,1,freq,lengths.last()>1))
          {
 	 if (lengths.last() == 1)
@@ -561,7 +564,7 @@ template <typename IdT, typename IdxT>
 void SuffixArray<IdT,IdxT>::enumerate_segment(const void* in, void*)
 {
    const Job* info = reinterpret_cast<const Job*>(in) ;
-   info->index->enumerateSegment(info->positions,info->IDs,info->lengths,info->fn,info->filter) ;
+   info->index->enumerateSegment(info->positions,info->offset,info->IDs,info->lengths,info->fn,info->filter) ;
    return ;
 }
 
@@ -578,7 +581,7 @@ bool SuffixArray<IdT,IdxT>::enumerateParallel(Range<unsigned> lengths,
    size_t num_segments(tpool->numThreads() * 32) ;
    size_t prev_start(getFreq(m_sentinel)) ;
    if (num_segments == 0)
-      return enumerateSegment(Range<IdxT>(prev_start,indexSize()),Range<IdT>(1,vocabSize()),
+      return enumerateSegment(Range<IdxT>(prev_start,indexSize()),0,Range<IdT>(1,vocabSize()),
 	 lengths,fn,filter) ;
    size_t segment_size((indexSize() - getFreq(m_sentinel) + num_segments-1) / num_segments) ;
    size_t count(0) ;
@@ -586,22 +589,67 @@ bool SuffixArray<IdT,IdxT>::enumerateParallel(Range<unsigned> lengths,
    bool success(true) ;
    std::vector<Job> orders(num_segments, Job(this,lengths,fn,filter)) ;
    size_t jobnum(0) ;
-   for (IdT i = 1 ; i < vocabSize() ; ++i)
+   size_t offset(0) ;
+   for (IdT id = 1 ; id < vocabSize() ; ++id)
       {
-      count += getFreq(i) ;
-      if (count >= segment_size)
+      size_t id_start = prev_start + count  ;
+      size_t id_first = id_start - offset ; // first occurrence of ID in index
+      size_t freq = getFreq(id) ;
+      size_t id_end = id_start + freq ;
+      while (count + freq >= segment_size)
          {
-         orders[jobnum].positions = Range<IdxT>(prev_start,prev_start+count) ;
-         orders[jobnum].IDs = Range<IdT>(prev_id,i+1) ;
-         tpool->dispatch(&enumerate_segment,&orders[jobnum],nullptr) ;
-         jobnum++ ;
-         prev_start += count ;
-         prev_id = i+1 ;
-         count = 0 ;
+	 if (lengths.first() == 1)
+	    {
+	    // minlen==1 means we can't split any further, so go with it
+	    count += freq ;
+	    freq = 0 ;
+	    }
+	 else
+	    {
+	    freq = 0 ;
+	    // split on a bigram boundary
+	    IdT second = idAt(indexAt(id_start)+1) ;
+	    for (size_t bg = id_start+1 ; bg < id_end ; ++bg)
+	       {
+	       IdT curr = idAt(indexAt(bg)+1) ;
+	       if (curr == second)
+		  continue ;
+	       if (bg - prev_start < segment_size)
+		  {
+		  // we haven't yet filled out the segment, so continue to the next bigram
+		  second = curr ;
+		  }
+	       else
+		  {
+		  count = bg - prev_start ;
+		  id_start = bg ;
+		  freq = id_end - bg ;	
+		  break ;
+		  }
+	       }
+	    }
+	 if (count >= segment_size)
+	    {
+	    orders[jobnum].positions = Range<IdxT>(prev_start,prev_start+count) ;
+	    orders[jobnum].offset = offset ;
+	    orders[jobnum].IDs = Range<IdT>(prev_id,id+1) ;
+	    tpool->dispatch(&enumerate_segment,&orders[jobnum],nullptr) ;
+	    jobnum++ ;
+	    prev_start += count ;
+	    offset = (id > prev_id) ? 0 : (prev_start + count - id_first) ;
+	    prev_id = freq ? id : id+1 ;// set next starting ID based on whether we split the current ID
+	    count = freq ;  		// remember any remnant we split off
+	    freq = 0 ;
+	    }
          }
+      if (freq)
+	 count += freq ;
+      else
+	 offset = 0 ;
       }
    // handle the leftover at the end
    orders[jobnum].positions = Range<IdxT>(prev_start,indexSize()) ;
+   orders[jobnum].offset = offset ;
    orders[jobnum].IDs = Range<IdT>(prev_id,vocabSize()) ;
    tpool->dispatch(&enumerate_segment,&orders[jobnum],nullptr) ;
    tpool->waitUntilIdle() ;

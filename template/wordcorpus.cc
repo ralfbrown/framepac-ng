@@ -774,8 +774,8 @@ bool WordCorpusT<IdT,IdxT>::enumerateForward(unsigned minlen, unsigned maxlen,
       return false ;			// can't enumerate without a function to call!
    if (!createForwardIndex())
       return false ;			// didn't have an index and couldn't create it, so fail
-   return m_fwdindex.enumerateSegment(Range<IdxT>(getFreq(m_sentinel),m_fwdindex.indexSize()),Range<IdT>(1,vocabSize()),
-	 Range<unsigned>(minlen,maxlen),fn,filter) ;
+   return m_fwdindex.enumerateSegment(Range<IdxT>(getFreq(m_sentinel),m_fwdindex.indexSize()),0,
+      Range<IdT>(1,vocabSize()),Range<unsigned>(minlen,maxlen),fn,filter) ;
 }
 
 //----------------------------------------------------------------------------
@@ -812,7 +812,7 @@ bool WordCorpusT<IdT,IdxT>::enumerateReverse(unsigned minlen, unsigned maxlen,
       return false ;			// can't enumerate without a function to call!
    if (!createReverseIndex())
       return false ;			// didn't have an index and couldn't create it, so fail
-   return m_revindex.enumerateSegment(Range<IdxT>(getFreq(m_sentinel),m_revindex.indexSize()),
+   return m_revindex.enumerateSegment(Range<IdxT>(getFreq(m_sentinel),m_revindex.indexSize()),0,
       Range<IdT>(1,vocabSize()),Range<unsigned>(minlen,maxlen),fn,filter) ;
 }
 

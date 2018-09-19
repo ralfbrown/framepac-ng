@@ -86,7 +86,7 @@ class SuffixArray
 
       bool enumerate(Range<IdxT> positions, Range<unsigned> lengths,
 	 const std::function<EnumFunc>& fn, const std::function<FilterFunc>& filter) const ;
-      bool enumerateSegment(Range<IdxT> positions, Range<IdT> IDs, Range<unsigned> lengths,
+      bool enumerateSegment(Range<IdxT> positions, size_t offset, Range<IdT> IDs, Range<unsigned> lengths,
 	 const std::function<EnumFunc>& fn, const std::function<FilterFunc>& filter) const ;
       bool enumerateParallel(Range<unsigned> lengths, const std::function<EnumFunc>& fn,
 	 const std::function<FilterFunc>& filter) const ;
@@ -106,6 +106,7 @@ class SuffixArray
 	    Range<IdxT> positions ;
 	    Range<IdT> IDs ;
 	    Range<unsigned> lengths ;
+	    size_t offset ;
 	 public:
 	    Job(const SuffixArray* sa, Range<unsigned> lens, const std::function<EnumFunc>& enum_fn,
 	       const std::function<FilterFunc>& filter_fn)
