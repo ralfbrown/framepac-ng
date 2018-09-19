@@ -851,7 +851,7 @@ framepac/string.h:	framepac/object.h
 framepac/stringbuilder.h:	framepac/builder.h framepac/cstring.h framepac/string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/sufarray.h:	framepac/file.h framepac/mmapfile.h
+framepac/sufarray.h:	framepac/file.h framepac/mmapfile.h framepac/range.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/symbol.h:	framepac/string.h

@@ -774,7 +774,8 @@ bool WordCorpusT<IdT,IdxT>::enumerateForward(unsigned minlen, unsigned maxlen,
       return false ;			// can't enumerate without a function to call!
    if (!createForwardIndex())
       return false ;			// didn't have an index and couldn't create it, so fail
-   return m_fwdindex.enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,fn,filter) ;
+   return m_fwdindex.enumerateSegment(Range<IdxT>(getFreq(m_sentinel),m_fwdindex.indexSize()),Range<IdT>(1,vocabSize()),
+	 Range<unsigned>(minlen,maxlen),fn,filter) ;
 }
 
 //----------------------------------------------------------------------------
@@ -785,7 +786,7 @@ bool WordCorpusT<IdT,IdxT>::enumerateForward(IdxT start, IdxT stop, unsigned min
 {
    if (!m_fwdindex)
       return false ;
-   return m_fwdindex.enumerate(start,stop,minlen,maxlen,fn,filter) ;
+   return m_fwdindex.enumerate(Range<IdxT>(start,stop),Range<unsigned>(minlen,maxlen),fn,filter) ;
 }
 
 //----------------------------------------------------------------------------
@@ -798,7 +799,7 @@ bool WordCorpusT<IdT,IdxT>::enumerateForwardParallel(unsigned minlen, unsigned m
       return false ;			// can't enumerate without a function to call!
    if (!createForwardIndex())
       return false ;			// didn't have an index and couldn't create it, so fail
-   return m_fwdindex.enumerateParallel(minlen,maxlen,fn,filter) ;
+   return m_fwdindex.enumerateParallel(Range<unsigned>(minlen,maxlen),fn,filter) ;
 }
 
 //----------------------------------------------------------------------------
@@ -811,7 +812,8 @@ bool WordCorpusT<IdT,IdxT>::enumerateReverse(unsigned minlen, unsigned maxlen,
       return false ;			// can't enumerate without a function to call!
    if (!createReverseIndex())
       return false ;			// didn't have an index and couldn't create it, so fail
-   return m_revindex.enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,fn,filter) ;
+   return m_revindex.enumerateSegment(Range<IdxT>(getFreq(m_sentinel),m_revindex.indexSize()),
+      Range<IdT>(1,vocabSize()),Range<unsigned>(minlen,maxlen),fn,filter) ;
 }
 
 //----------------------------------------------------------------------------
@@ -822,7 +824,7 @@ bool WordCorpusT<IdT,IdxT>::enumerateReverse(IdxT start, IdxT stop, unsigned min
 {
    if (!m_revindex)
       return false ;
-   return m_revindex.enumerate(start,stop,minlen,maxlen,fn,filter) ;
+   return m_revindex.enumerate(Range<IdxT>(start,stop),Range<unsigned>(minlen,maxlen),fn,filter) ;
 }
 
 //----------------------------------------------------------------------------
@@ -835,7 +837,7 @@ bool WordCorpusT<IdT,IdxT>::enumerateReverseParallel(unsigned minlen, unsigned m
       return false ;			// can't enumerate without a function to call!
    if (!createReverseIndex())
       return false ;			// didn't have an index and couldn't create it, so fail
-   return m_revindex.enumerateParallel(minlen,maxlen,fn,filter) ;
+   return m_revindex.enumerateParallel(Range<unsigned>(minlen,maxlen),fn,filter) ;
 }
 
 //----------------------------------------------------------------------------

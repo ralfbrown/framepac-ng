@@ -25,6 +25,7 @@
 #include <functional>
 #include "framepac/file.h"
 #include "framepac/mmapfile.h"
+#include "framepac/range.h"
 
 namespace Fr {
 
@@ -83,11 +84,11 @@ class SuffixArray
       IdxT getFreq(IdT N) const { return (m_freq && N < m_types) ? m_freq[N] : (IdxT)0 ; }
       bool lookup(const IdT* key, unsigned keylen, IdxT& first_match, IdxT& last_match) const ;
 
-      bool enumerate(IdxT startpos, IdxT endpos, unsigned minlen, unsigned maxlen,
+      bool enumerate(Range<IdxT> positions, Range<unsigned> lengths,
 	 const std::function<EnumFunc>& fn, const std::function<FilterFunc>& filter) const ;
-      bool enumerateSegment(IdxT startpos, IdT firstID,  IdT lastID, unsigned minlen, unsigned maxlen,
+      bool enumerateSegment(Range<IdxT> positions, Range<IdT> IDs, Range<unsigned> lengths,
 	 const std::function<EnumFunc>& fn, const std::function<FilterFunc>& filter) const ;
-      bool enumerateParallel(unsigned minlen, unsigned maxlen, const std::function<EnumFunc>& fn,
+      bool enumerateParallel(Range<unsigned> lengths, const std::function<EnumFunc>& fn,
 	 const std::function<FilterFunc>& filter) const ;
       void clear() ;
 
@@ -102,15 +103,13 @@ class SuffixArray
 	    const SuffixArray* index ;
 	    const std::function<EnumFunc>& fn ;
 	    const std::function<FilterFunc>& filter ;
-	    IdxT startpos ;
-	    IdT startID ;
-	    IdT stopID ;
-	    unsigned minlen ;
-	    unsigned maxlen ;
+	    Range<IdxT> positions ;
+	    Range<IdT> IDs ;
+	    Range<unsigned> lengths ;
 	 public:
-	    Job(const SuffixArray* sa, unsigned minl, unsigned maxl, const std::function<EnumFunc>& enum_fn,
+	    Job(const SuffixArray* sa, Range<unsigned> lens, const std::function<EnumFunc>& enum_fn,
 	       const std::function<FilterFunc>& filter_fn)
-	       : index(sa), fn(enum_fn), filter(filter_fn), minlen(minl), maxlen(maxl)
+	       : index(sa), fn(enum_fn), filter(filter_fn), lengths(lens)
 	       {}
 	 } ;
 

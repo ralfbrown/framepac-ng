@@ -451,36 +451,40 @@ bool SuffixArray<IdT,IdxT>::lookup(const IdT* key, unsigned keylen, IdxT& first_
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool SuffixArray<IdT,IdxT>::enumerateSegment(IdxT startpos, IdT firstID, IdT lastID,
-   unsigned minlen, unsigned maxlen, const std::function<EnumFunc>& fn,
+bool SuffixArray<IdT,IdxT>::enumerateSegment(Range<IdxT> positions, Range<IdT> IDs,
+   Range<unsigned> lengths, const std::function<EnumFunc>& fn,
    const std::function<FilterFunc>& filter) const
 {
-   if (minlen < 1)
-      minlen = 1 ;
-   if (maxlen < minlen)
-      maxlen = minlen ;
+   if (lengths.first() < 1)
+      lengths.setFirst(1) ;
+   if (lengths.last() < lengths.first())
+      lengths.setLast(lengths.first()) ;
    // use the unigram frequency table to quickly skip over all phrases starting with a word
    //   that fails to pass the filter function
-   for (IdT i = firstID ; i < lastID ; ++i)
+   IdxT startpos = positions.first() ;
+   for (auto id : IDs)
       {
-      IdxT freq = getFreq(i) ;
-      if (!filter || filter(this,&firstID,1,freq,maxlen>1))
+      IdxT freq = getFreq(id) ;
+      IdT firstID = id ;
+      if (startpos + freq > positions.last())
+	 freq = positions.last() - startpos ;
+      if (!filter || filter(this,&firstID,1,freq,lengths.last()>1))
          {
-	 if (maxlen == 1)
+	 if (lengths.last() == 1)
 	    {
 	    // go right to calling the enumeration function, as there is no further checking needed
 	    fn(this,&firstID,1,freq,startpos) ;
 	    }
          else if (freq > 1)
             {
-            if (!enumerate(startpos,startpos+freq,minlen,maxlen,fn,filter))
+            if (!enumerate(Range<IdxT>(startpos,startpos+freq),lengths,fn,filter))
                return false ;
             }
          else
             {
             // special-case singletons; go from long to short to match the user function
             //   invocations elsewhere
-            for (size_t len = maxlen ; len >= minlen ; --len)
+            for (size_t len = lengths.last() ; len >= lengths.first() ; --len)
                {
 	       if (!filter || filter(this,m_ids+m_index[startpos],len,1,false))
 		  fn(this,m_ids + m_index[startpos],len,1,startpos) ;
@@ -495,17 +499,20 @@ bool SuffixArray<IdT,IdxT>::enumerateSegment(IdxT startpos, IdT firstID, IdT las
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool SuffixArray<IdT,IdxT>::enumerate(IdxT startpos, IdxT endpos, unsigned minlen, unsigned maxlen,
+bool SuffixArray<IdT,IdxT>::enumerate(Range<IdxT> positions, Range<unsigned> lengths,
    const std::function<EnumFunc>& fn, const std::function<FilterFunc>& filter) const
 {
+   unsigned minlen = lengths.first() ;
+   unsigned maxlen = lengths.last() ;
    IdxT keystart[maxlen+1] ;
    IdT keyval[maxlen+1] ;
+   std::fill(keystart,keystart+maxlen+1,positions.first()) ;
    for (unsigned i = 0 ; i < maxlen ; i++)
       {
-      keystart[i+1] = startpos ;
-      keyval[i] = idAt(m_index[startpos] + i) ;
+      keyval[i] = idAt(m_index[positions.first()] + i) ;
       }
-   for (IdxT idx = startpos+1 ; idx < endpos ; ++idx)
+   positions.incrFirst() ;
+   for (auto idx : positions)
       {
       // compare the key for the current position in the index to that
       //   of the previous position, and figure out the length of the
@@ -539,7 +546,7 @@ bool SuffixArray<IdT,IdxT>::enumerate(IdxT startpos, IdxT endpos, unsigned minle
    // process the final key at each length
    for (size_t len = maxlen ; len >= minlen ; --len)
       {
-      size_t freq = endpos - keystart[len] ;
+      size_t freq = positions.last() - keystart[len] ;
       if (!filter | filter(this,keyval,len,freq,false))
          {
          fn(this, keyval, len, freq, keystart[len]) ;
@@ -554,15 +561,14 @@ template <typename IdT, typename IdxT>
 void SuffixArray<IdT,IdxT>::enumerate_segment(const void* in, void*)
 {
    const Job* info = reinterpret_cast<const Job*>(in) ;
-   info->index->enumerateSegment(info->startpos,info->startID,info->stopID,info->minlen,info->maxlen,
-      info->fn,info->filter) ;
+   info->index->enumerateSegment(info->positions,info->IDs,info->lengths,info->fn,info->filter) ;
    return ;
 }
 
 //----------------------------------------------------------------------------
 
 template <typename IdT, typename IdxT>
-bool SuffixArray<IdT,IdxT>::enumerateParallel(unsigned minlen, unsigned maxlen,
+bool SuffixArray<IdT,IdxT>::enumerateParallel(Range<unsigned> lengths,
    const std::function<EnumFunc>& fn, const std::function<FilterFunc>& filter) const
 {
    // split the suffix array into segments on first-word boundaries; we
@@ -570,23 +576,23 @@ bool SuffixArray<IdT,IdxT>::enumerateParallel(unsigned minlen, unsigned maxlen,
    //   low while avoiding long waits for stragglers at the end
    ThreadPool *tpool = ThreadPool::defaultPool() ;
    size_t num_segments(tpool->numThreads() * 32) ;
-   if (num_segments == 0)
-      return enumerateSegment(getFreq(m_sentinel),1,vocabSize(),minlen,maxlen,fn,filter) ;
-   size_t segment_size((m_numids - getFreq(m_sentinel) + num_segments-1) / num_segments) ;
    size_t prev_start(getFreq(m_sentinel)) ;
+   if (num_segments == 0)
+      return enumerateSegment(Range<IdxT>(prev_start,indexSize()),Range<IdT>(1,vocabSize()),
+	 lengths,fn,filter) ;
+   size_t segment_size((indexSize() - getFreq(m_sentinel) + num_segments-1) / num_segments) ;
    size_t count(0) ;
    size_t prev_id(1) ;
    bool success(true) ;
-   std::vector<Job> orders(num_segments, Job(this,minlen,maxlen,fn,filter)) ;
+   std::vector<Job> orders(num_segments, Job(this,lengths,fn,filter)) ;
    size_t jobnum(0) ;
-   for (size_t i = 1 ; i < vocabSize() ; ++i)
+   for (IdT i = 1 ; i < vocabSize() ; ++i)
       {
       count += getFreq(i) ;
       if (count >= segment_size)
          {
-         orders[jobnum].startpos = prev_start ;
-         orders[jobnum].startID = prev_id ;
-         orders[jobnum].stopID = i+1 ;
+         orders[jobnum].positions = Range<IdxT>(prev_start,prev_start+count) ;
+         orders[jobnum].IDs = Range<IdT>(prev_id,i+1) ;
          tpool->dispatch(&enumerate_segment,&orders[jobnum],nullptr) ;
          jobnum++ ;
          prev_start += count ;
@@ -595,9 +601,8 @@ bool SuffixArray<IdT,IdxT>::enumerateParallel(unsigned minlen, unsigned maxlen,
          }
       }
    // handle the leftover at the end
-   orders[jobnum].startpos = prev_start ;
-   orders[jobnum].startID = prev_id ;
-   orders[jobnum].stopID = vocabSize() ;
+   orders[jobnum].positions = Range<IdxT>(prev_start,indexSize()) ;
+   orders[jobnum].IDs = Range<IdT>(prev_id,vocabSize()) ;
    tpool->dispatch(&enumerate_segment,&orders[jobnum],nullptr) ;
    tpool->waitUntilIdle() ;
    return success ;
