@@ -56,10 +56,10 @@ template <typename I>
 IdxT* SuffixArray<IdT,IdxT>::bucketBoundaries(const I* ids, IdxT num_ids, IdT num_types, const IdxT* freqs)
 {
    // allocate and clear buckets
-   IdxT* buckets = new IdxT[num_types+2] ;
+   IdxT* buckets = new IdxT[num_types+1] ;
    if (buckets)
       {
-      std::fill(buckets,buckets+num_types+2,0) ;
+      std::fill(buckets,buckets+num_types+1,0) ;
       if (!freqs)
 	 {
 	 // accumulate bucket sizes
@@ -74,13 +74,13 @@ IdxT* SuffixArray<IdT,IdxT>::bucketBoundaries(const I* ids, IdxT num_ids, IdT nu
       //   buckets[i] is the start of the ith bucket, and buckets[i+1]
       //   points just past the bucket's end
       IdxT total = 0 ;
-      for (IdxT i = 0 ; i <= num_types ; ++i)
+      for (IdxT i = 0 ; i < num_types ; ++i)
 	 {
 	 IdxT bcount = freqs[i] ;
 	 buckets[i] = total ;
 	 total += bcount ;
 	 }
-      buckets[num_types+1] = total ;
+      buckets[num_types] = total ;
       }
    return buckets ;
 }
@@ -94,7 +94,7 @@ IdxT* SuffixArray<IdT,IdxT>::copyBucketBoundaries(const IdxT* bounds, IdT num_ty
    IdxT* copy = new IdxT[num_types+1] ;
    if (copy)
       {
-      std::copy(bounds,bounds+num_types+1,copy) ;
+      std::copy(bounds,bounds+num_types,copy) ;
       }
    return copy ;
 }
