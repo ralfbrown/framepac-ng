@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2018-09-13					*/
+/* Version 0.13, last edit 2018-09-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -33,6 +33,23 @@ namespace Fr
 /************************************************************************/
 
 template <typename T, size_t minsize>
+BufferBuilder<T,minsize>::BufferBuilder()
+{
+   m_currsize = 0 ;
+#ifdef __SANITIZE_ADDRESS__
+   // don't use the local buffer under ASAN, so that it can properly track the memory
+   m_alloc = 0 ;
+   m_buffer = nullptr ;
+#else
+   m_alloc = minsize ;
+   m_buffer = m_localbuf ;
+#endif
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, size_t minsize>
 BufferBuilder<T,minsize>::~BufferBuilder()
 {
    freeBuffer() ;
@@ -45,11 +62,24 @@ BufferBuilder<T,minsize>::~BufferBuilder()
 template <typename T, size_t minsize>
 void BufferBuilder<T,minsize>::freeBuffer()
 {
-   if (m_buffer != m_localbuf && !m_external_buffer)
+   if (m_buffer != m_localbuf)
       {
-      ASAN(__sanitizer_annotate_contiguous_container(m_buffer,m_buffer+capacity(),m_buffer+size(), \
-	    m_buffer+capacity())) ;
-      delete[] m_buffer ;
+      if (!m_external_buffer && m_buffer)
+	 {
+	 ASAN(__sanitizer_annotate_contiguous_container(m_buffer,m_buffer+capacity(),m_buffer+size(), \
+	       m_buffer+capacity())) ;
+	 delete[] m_buffer ;
+	 }
+      else
+	 m_external_buffer = false ;
+      m_currsize = 0 ;
+#ifdef __SANITIZE_ADDRESS__
+      m_buffer = nullptr ;
+      m_alloc = 0 ;
+#else
+      m_buffer = m_localbuf ;
+      m_alloc = minsize ;
+#endif /* __SANITIZE_ADDRESS__ */
       }
    return ;
 }
@@ -62,12 +92,13 @@ bool BufferBuilder<T,minsize>::preallocate(size_t newsize)
    T* newbuf { new T[newsize] };
    if (newbuf)
       {
-      std::copy(m_buffer,m_buffer+m_currsize,newbuf) ;
+      size_t sz = m_currsize ;
+      std::copy(m_buffer,m_buffer+sz,newbuf) ;
       freeBuffer() ;
       m_buffer = newbuf ;
-      ASAN(__sanitizer_annotate_contiguous_container(m_buffer,m_buffer+newsize,m_buffer+size(),m_buffer+size())) ;
+      m_currsize = sz ;
+      ASAN(__sanitizer_annotate_contiguous_container(m_buffer,m_buffer+newsize,m_buffer+sz,m_buffer+sz)) ;
       m_alloc = newsize ;
-      m_external_buffer = false ;
       return true ;
       }
    return false ;
@@ -126,7 +157,7 @@ void BufferBuilder<T,minsize>::append(T value)
 {
    if (m_currsize >= m_alloc)
       {
-      size_t newalloc = m_currsize > 200000000 ? 5*m_currsize/4 : (m_currsize > 1000000 ? 3*m_currsize/2 : 2*m_currsize) ;
+      size_t newalloc = m_currsize > 200000000 ? 5*m_currsize/4 : (m_currsize > 1000000 ? 3*m_currsize/2 : 2*m_currsize+50) ;
       preallocate(newalloc) ;
       }
    ASAN(__sanitizer_annotate_contiguous_container(m_buffer,m_buffer+capacity(),m_buffer+size(),m_buffer+size()+1)) ;
@@ -143,7 +174,7 @@ void BufferBuilder<T,minsize>::append(T value, size_t count)
       return ;
    if (m_currsize + count  >= m_alloc)
       {
-      size_t newalloc = m_currsize > 200000000 ? 5*m_currsize/4 : (m_currsize > 1000000 ? 3*m_currsize/2 : 2*m_currsize) ;
+      size_t newalloc = m_currsize > 200000000 ? 5*m_currsize/4 : (m_currsize > 1000000 ? 3*m_currsize/2 : 2*m_currsize+50) ;
       if (newalloc < m_currsize + count)
 	 newalloc = 5*(m_currsize + count)/4 ;
       preallocate(newalloc) ;

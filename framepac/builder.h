@@ -36,7 +36,7 @@ template <typename T, size_t minsize = 200>
 class BufferBuilder
    {
    public:
-      BufferBuilder() {}
+      BufferBuilder() ;
       BufferBuilder(const BufferBuilder&) = delete ;
       ~BufferBuilder() ;
       void operator= (const BufferBuilder&) = delete ;
@@ -79,11 +79,11 @@ class BufferBuilder
       void freeBuffer() ;
 
    protected:
-      T        *m_buffer = m_localbuf ;
-      size_t	m_alloc = minsize ;
-      size_t	m_currsize = 0 ;
-      T		m_localbuf[minsize] ;
+      T        *m_buffer ;
+      size_t	m_currsize { 0 } ;
+      size_t	m_alloc ;
       bool	m_external_buffer { false } ;
+      T		m_localbuf[minsize] ;
 
       // magic values for serializing
       static constexpr auto signature = "\x7F""BufBuild" ;
