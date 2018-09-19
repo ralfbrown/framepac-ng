@@ -63,6 +63,7 @@ IdxT* SuffixArray<IdT,IdxT>::bucketBoundaries(const I* ids, IdxT num_ids, IdT nu
       if (!freqs)
 	 {
 	 // accumulate bucket sizes
+	 // TODO: parallelize this loop
 	 for (IdxT i = 0 ; i < num_ids ; ++i)
 	    {
 	    IdT id = convertEOL(ids[i],num_types) ;

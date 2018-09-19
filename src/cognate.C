@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-08-27					*/
+/* Version 0.13, last edit 2018-09-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -109,10 +109,7 @@ void CognateData::reset()
       // by default, no benefit from any insertions/deletions/substitutions
       m_insertion[row] = 0.0f ;
       m_deletion[row] = 0.0f ;
-      for (size_t col = 0; col < 256 ; ++col)
-	 {
-	 m_one2one[row][col] = 0.0f ;
-	 }
+      std::fill(m_one2one[row],m_one2one[row]+256,0.0f) ;
       // but "substituting" a byte for itself gets full weight
       m_one2one[row][row] = 1.0f ;
       }

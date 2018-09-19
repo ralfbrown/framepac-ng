@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 12sep2018
+# Last change: 19sep2018
 
 #########################################################################
 # define the locations of all the files
@@ -249,7 +249,7 @@ $(BINDIR)/%$(EXE) : tests/%$(OBJ)
 # define the package info and files to be used
 
 PACKAGE=framepacng
-RELEASE=0.12
+RELEASE=0.13
 
 # the object modules to be included in the library file
 OBJS = \

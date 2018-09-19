@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.13, last edit 2018-09-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -32,10 +32,10 @@ namespace Fr
 template <typename IdxT, unsigned bits>
 TrieNodeValueless<IdxT,bits>::TrieNodeValueless()
 {
-   //std::fill(m_children,m_children + (1<<bits),NULL_INDEX) ;
+   std::fill(m_children,m_children + (1<<bits),NULL_INDEX) ;
    //!! for some reason, the above generates a link error on NULL_INDEX, so we'll just revert to the loop
-   for (size_t i = 0 ; i < (1<<bits) ; ++i)
-      m_children[i] = NULL_INDEX ;
+//   for (size_t i = 0 ; i < (1<<bits) ; ++i)
+//      m_children[i] = NULL_INDEX ;
    return  ;
 }
 

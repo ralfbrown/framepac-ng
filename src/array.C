@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.11, last edit 2018-09-06					*/
+/* Version 0.13, last edit 2018-09-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -79,9 +79,16 @@ Array::Array(const Array *orig)
 Array::Array(const Object *obj, size_t repeat)
    : Array(repeat)
 {
-   for (size_t i = 0 ; i < repeat ; i++)
+   if (obj)
       {
-      m_array[i] = obj ? obj->clone().move() : nullptr ;
+      for (size_t i = 0 ; i < repeat ; i++)
+	 {
+	 m_array[i] = obj->clone().move() ;
+	 }
+      }
+   else
+      {
+      std::fill(m_array,m_array+repeat,nullptr) ;
       }
    return ;
 }
@@ -263,8 +270,15 @@ void Array::resize(size_t N, Object* obj)
       {
       size_t newsize = std::min(size(),N) ;
       std::copy(m_array,m_array+newsize,new_arr) ;
-      for (size_t i = size() ; i < N ; ++i)
-	 new_arr[i] = obj ? obj->clone().move() : nullptr ;
+      if (obj)
+	 {
+	 for (size_t i = size() ; i < N ; ++i)
+	    new_arr[i] = obj->clone().move() ;
+	 }
+      else
+	 {
+	 std::fill(new_arr+size(),new_arr+N,nullptr) ;
+	 }
       delete[] m_array ;
       m_array = new_arr ;
       m_size = newsize ;
