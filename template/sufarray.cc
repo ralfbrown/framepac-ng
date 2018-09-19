@@ -175,10 +175,7 @@ bool SuffixArray<IdT,IdxT>::Create(const I* ids, IdxT* index, IdxT num_ids, IdT 
    if (!ls_types)
       return false ;
    classifyLS(*ls_types,ids,num_ids,num_types) ;
-   for (IdxT i = 0U ; i < num_ids ; ++i)
-      {
-      index[i] = (IdxT)-1 ;
-      }
+   std::fill(index,index+num_ids,IdxT(-1)) ;
    IdxT* buckets = bucketBoundaries(ids, num_ids, num_types, freqs) ;
    IdxT* bucket_ends = copyBucketBoundaries(buckets+1,num_types) ;
    bool prev_type = ls_types->getBit(0) ;
@@ -207,11 +204,8 @@ bool SuffixArray<IdT,IdxT>::Create(const I* ids, IdxT* index, IdxT num_ids, IdT 
 	 }
       }
    //!assert(subsize > 0) ;
-   for (IdxT i = subsize ; i < num_ids ; ++i)
-      {
-      // init as-yet-unused part of buffer
-      index[i] = -1 ;
-      }
+   // init as-yet-unused part of buffer
+   std::fill(index+subsize,index+num_ids,-1) ;
    IdxT *s1 = index + subsize ;
    // find the lexicographic names of the substrings, storing them in
    //   the now-spare part of the suffix array
@@ -301,10 +295,7 @@ bool SuffixArray<IdT,IdxT>::Create(const I* ids, IdxT* index, IdxT num_ids, IdT 
       {
       index[i] = s1[index[i]] ;
       }
-   for (IdxT i = subsize ; i < num_ids ; ++i)
-      {
-      index[i] = -1 ;		// init remainder of suffix_index
-      }
+   std::fill(index+subsize,index+num_ids,-1) ;   // init remainder of suffix_index
    buckets = bucketBoundaries(ids, num_ids, num_types, freqs) ;
    bucket_ends = copyBucketBoundaries(buckets+1, num_types) ;
    for (IdxT i = subsize ; i > 0 ; --i)
