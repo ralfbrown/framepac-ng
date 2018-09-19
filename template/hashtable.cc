@@ -1134,6 +1134,8 @@ KeyT HashTable<KeyT,ValT>::Table::addKey(size_t hashval, const char* name, size_
 	 // advance to next item in chain
 	 offset = chainNext(pos) ;
 	 }
+      if (already_existed)
+	 *already_existed = false ;
       // when we get here, we know that the item is not yet in the
       //   hash table, so try to add it
       KeyT key = m_container->createSymbol(name) ;

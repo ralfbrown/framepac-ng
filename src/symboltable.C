@@ -135,7 +135,7 @@ Symbol* SymbolTable::gensym(const char* basename, const char* suffix)
    if (!basename) basename = "GS" ;
    if (!suffix) suffix = "" ;
    const Symbol* sym ;
-   bool existed ;
+   bool existed(false) ;
    do {
       // get a unique count
       size_t cnt = gensym_count++ ;
