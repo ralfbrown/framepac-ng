@@ -793,13 +793,22 @@ bool WordCorpusT<IdT,IdxT>::enumerateForward(IdxT start, IdxT stop, unsigned min
 
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::enumerateForwardParallel(unsigned minlen, unsigned maxlen,
-   const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter)
+   const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter, bool async)
 {
    if (!fn)
       return false ;			// can't enumerate without a function to call!
    if (!createForwardIndex())
       return false ;			// didn't have an index and couldn't create it, so fail
-   return m_fwdindex.enumerateParallel(Range<unsigned>(minlen,maxlen),fn,filter) ;
+   return m_fwdindex.enumerateParallel(Range<unsigned>(minlen,maxlen),fn,filter,async) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+void WordCorpusT<IdT,IdxT>::finishForwardParallel() const
+{
+   m_fwdindex.finishParallel() ;
+   return ;
 }
 
 //----------------------------------------------------------------------------
@@ -831,13 +840,22 @@ bool WordCorpusT<IdT,IdxT>::enumerateReverse(IdxT start, IdxT stop, unsigned min
 
 template <typename IdT, typename IdxT>
 bool WordCorpusT<IdT,IdxT>::enumerateReverseParallel(unsigned minlen, unsigned maxlen,
-   const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter)
+   const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter, bool async)
 {
    if (!fn)
       return false ;			// can't enumerate without a function to call!
    if (!createReverseIndex())
       return false ;			// didn't have an index and couldn't create it, so fail
-   return m_revindex.enumerateParallel(Range<unsigned>(minlen,maxlen),fn,filter) ;
+   return m_revindex.enumerateParallel(Range<unsigned>(minlen,maxlen),fn,filter,async) ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+void WordCorpusT<IdT,IdxT>::finishReverseParallel() const
+{
+   m_revindex.finishParallel() ;
+   return ;
 }
 
 //----------------------------------------------------------------------------

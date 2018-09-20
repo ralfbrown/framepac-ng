@@ -557,6 +557,7 @@ void SuffixArray<IdT,IdxT>::enumerate_segment(const void* in, void*)
 {
    const Job* info = reinterpret_cast<const Job*>(in) ;
    info->index->enumerateSegment(info->positions,info->offset,info->IDs,info->lengths,info->fn,info->filter) ;
+   delete info ;
    return ;
 }
 
@@ -564,7 +565,7 @@ void SuffixArray<IdT,IdxT>::enumerate_segment(const void* in, void*)
 
 template <typename IdT, typename IdxT>
 bool SuffixArray<IdT,IdxT>::enumerateParallel(Range<unsigned> lengths,
-   const std::function<EnumFunc>& fn, const std::function<FilterFunc>& filter) const
+   const std::function<EnumFunc>& fn, const std::function<FilterFunc>& filter, bool async) const
 {
    // split the suffix array into segments on first-word boundaries; we
    //   use 32 times the number of threads to keep overhead reasonably
@@ -576,8 +577,6 @@ bool SuffixArray<IdT,IdxT>::enumerateParallel(Range<unsigned> lengths,
       return enumerateSegment(Range<IdxT>(curr_id_start,indexSize()),0,Range<IdT>(1,vocabSize()),
 	 lengths,fn,filter) ;
    size_t segment_size((indexSize() - curr_id_start + num_segments-1) / num_segments) ;
-   std::vector<Job> orders(num_segments, Job(this,lengths,fn,filter)) ;
-   size_t jobnum(0) ;
    size_t count(0) ;
    size_t prev_id(1) ;
    size_t offset(0) ;
@@ -614,11 +613,11 @@ bool SuffixArray<IdT,IdxT>::enumerateParallel(Range<unsigned> lengths,
 	    }
 	 if (count >= segment_size)
 	    {
-	    orders[jobnum].positions = Range<IdxT>(seg_start,seg_start+count) ;
-	    orders[jobnum].offset = offset ;
-	    orders[jobnum].IDs = Range<IdT>(prev_id,id+1) ;
-	    tpool->dispatch(&enumerate_segment,&orders[jobnum],nullptr) ;
-	    jobnum++ ;
+	    Job* order = new Job(this,lengths,fn,filter) ;
+	    order->positions = Range<IdxT>(seg_start,seg_start+count) ;
+	    order->offset = offset ;
+	    order->IDs = Range<IdT>(prev_id,id+1) ;
+	    tpool->dispatch(&enumerate_segment,order,nullptr) ;
 	    seg_start += count ;	// compute start of next segment
 	    count = 0 ;			// next segment doesn't contain anything yet
 	    if (seg_start >= next_id_start)
@@ -636,12 +635,24 @@ bool SuffixArray<IdT,IdxT>::enumerateParallel(Range<unsigned> lengths,
       curr_id_start = next_id_start ;
       }
    // handle the leftover at the end
-   orders[jobnum].positions = Range<IdxT>(seg_start,indexSize()) ;
-   orders[jobnum].offset = offset ;
-   orders[jobnum].IDs = Range<IdT>(prev_id,vocabSize()) ;
-   tpool->dispatch(&enumerate_segment,&orders[jobnum],nullptr) ;
-   tpool->waitUntilIdle() ;
+   Job* order = new Job(this,lengths,fn,filter) ;
+   order->positions = Range<IdxT>(seg_start,indexSize()) ;
+   order->offset = offset ;
+   order->IDs = Range<IdT>(prev_id,vocabSize()) ;
+   tpool->dispatch(&enumerate_segment,order,nullptr) ;
+   if (!async)
+      tpool->waitUntilIdle() ;
    return true ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename IdT, typename IdxT>
+void SuffixArray<IdT,IdxT>::finishParallel() const
+{
+   ThreadPool *tpool = ThreadPool::defaultPool() ;
+   tpool->waitUntilIdle() ;
+   return ;
 }
 
 //----------------------------------------------------------------------------

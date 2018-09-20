@@ -89,7 +89,8 @@ class SuffixArray
       bool enumerateSegment(Range<IdxT> positions, size_t offset, Range<IdT> IDs, Range<unsigned> lengths,
 	 const std::function<EnumFunc>& fn, const std::function<FilterFunc>& filter) const ;
       bool enumerateParallel(Range<unsigned> lengths, const std::function<EnumFunc>& fn,
-	 const std::function<FilterFunc>& filter) const ;
+	 const std::function<FilterFunc>& filter, bool async = false) const ;
+      void finishParallel() const ; // wait until the preceding enumerateParallel(...,true) finishes
       void clear() ;
 
       operator bool () const { return m_index != nullptr ; }

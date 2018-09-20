@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.13, last edit 2018-09-18					*/
+/* Version 0.13, last edit 2018-09-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -145,11 +145,13 @@ class WordCorpusT
       bool enumerateForward(unsigned minlen, unsigned maxlen, const std::function<SAEnumFunc>& fn,
 	 const std::function<SAFilterFunc>& filter) ;
       bool enumerateForwardParallel(unsigned minlen, unsigned maxlen, 
-	 const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter) ;
+	 const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter, bool async = false) ;
+      void finishForwardParallel() const ;
       bool enumerateReverse(unsigned minlen, unsigned maxlen, const std::function<SAEnumFunc>& fn,
 	 const std::function<SAFilterFunc>& filter) ;
       bool enumerateReverseParallel(unsigned minlen, unsigned maxlen,
-	 const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter) ;
+	 const std::function<SAEnumFunc>& fn, const std::function<SAFilterFunc>& filter, bool async = false) ;
+      void finishReverseParallel() const ;
 
       IdxT rareWordThreshold() const { return  m_rare_thresh ; }
       size_t numContextEquivs() const { return m_contextmap->size() ; }
