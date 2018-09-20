@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.13, last edit 2018-09-18					*/
+/* Version 0.13, last edit 2018-09-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -95,7 +95,13 @@ namespace FramepaC
 //   typical 256KB 4-way cache, a slab size of 64KB would put EVERY
 //   SlabFooter in the same cache set!)
 // MUST BE A POWER OF TWO
+#if defined(__SANITIZE_ADDRESS__) ||  defined(__SANITIZE_THREAD__)
+// use a much smaller slab (at the cost of higher memory use) when sanitizing, to get
+//   better resolution of the problem location
+constexpr int SLAB_SIZE = 512 ;
+#else
 constexpr int SLAB_SIZE = 4096 ;
+#endif /* __SANITIZE_ADDRESS__ || __SANITIZE_THREAD__ */
 
 // number of slabs to allocate from the OS at once; higher values
 //   reduce OS overhead and reduce the wastage due to the need to
@@ -104,7 +110,13 @@ constexpr int SLAB_SIZE = 4096 ;
 //   Setting this to one less than a power of two will make SlabGroups
 //   use up memory in powers of two
 // 4096 slabs of 4096 bytes = 16MB
+#if defined(__SANITIZE_ADDRESS__) ||  defined(__SANITIZE_THREAD__)
+// use a much smaller slabgroup (at the cost of higher memory use) when sanitizing, to get
+//   better resolution of the problem location
+constexpr int SLAB_GROUP_SIZE = 3 ;
+#else
 constexpr int SLAB_GROUP_SIZE = 4095 ;
+#endif /* __SANITIZE_ADDRESS__ || __SANITIZE_THREAD__ */
 
 } ;
 

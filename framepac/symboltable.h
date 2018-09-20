@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-18					*/
+/* Version 0.13, last edit 2018-09-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -61,7 +61,7 @@ class SymbolTable : public SymHashSet
 
       // *** startup/shutdown functions ***
       static void StaticInitialization() ;
-      //static void StaticCleanup() ;
+      static void StaticCleanup() ;
 
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }

@@ -107,7 +107,17 @@ void String::init(const char* s, size_t len)
 String::~String()
 {
    if (c_len() < max_small_alloc)
+      {
+#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
+      // when sanitizing, SmallAlloc doesn't go through the regular NonObject allocator, so we need to call
+      //   the free function directly
+      allocators[c_len()]->release(m_buffer.pointer()) ;
+#else
+      // when NOT sanitizing, we can use the generic Allocator free method, since it will pick up the correct
+      //   release() function via the VMT
       Allocator::free(m_buffer.pointer()) ;
+#endif /* __SANITIZE_ADDRESS__ || __SANITIZE_THREAD__ */
+      }
    else
       {
       // get the base pointer to the allocated string

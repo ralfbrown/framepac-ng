@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2018-09-14					*/
+/* Version 0.13, last edit 2018-09-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -315,6 +315,8 @@ class Allocator
       Allocator(const Allocator&) = delete ;
       void operator= (const Allocator&) = delete ;
 
+      size_t objectSize() const { return s_shared[m_type].m_objsize ; }
+
       [[gnu::hot]] [[gnu::malloc]]
       void* allocate()
 	 {
@@ -381,8 +383,14 @@ class SmallAlloc
       static SmallAlloc* create(size_t objsize) ;
       static SmallAlloc* create(size_t objsize, size_t align) ;
 
+#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
+      // when sanitizing, just forward to the system allocator so that the sanitizer can track allocations
+      void* allocate() { return ::new char[m_allocator->objectSize()] ; }
+      void release(void* blk) { ::delete[] reinterpret_cast<char*>(blk) ; }
+#else
       void* allocate() { return m_allocator->allocate() ; }
       void release(void* blk) { m_allocator->release(blk) ; }
+#endif /* __SANITIZE_ADDRESS__ || __SANITIZE_THREAD__ */
 
       void reclaim() { m_allocator->reclaim() ; }
 

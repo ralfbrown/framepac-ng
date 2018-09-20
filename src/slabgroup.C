@@ -30,9 +30,13 @@ using namespace std ;
 namespace FramepaC
 {
 
+#if defined(__SANITIZE_ADDRESS__) ||  defined(__SANITIZE_THREAD__)
+#define COLL_SIZE (512*1024)
+#else
 // with the default 4K per slab and 4K slabs per group, this collection size
 //   permits just under 1TB of total memory allocations
 #define COLL_SIZE 65536
+#endif /* __SANITIZE_ADDRESS__ || __SANITIZE_THREAD__ */
 
 /************************************************************************/
 /*	Types for this module						*/

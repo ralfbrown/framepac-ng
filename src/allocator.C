@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2018-09-14					*/
+/* Version 0.13, last edit 2018-09-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include <cassert>
 #include "framepac/atomic.h"
 #include "framepac/memory.h"
 
@@ -93,6 +94,7 @@ static unsigned find_match(Allocator::SharedInfo* info, const FramepaC::ObjectVM
 
 Allocator::Allocator(const FramepaC::ObjectVMT* vmt, unsigned objsize)
 {
+   assert(objsize <= Slab::DATA_SIZE) ;
    unsigned align { alignof(double) } ;
    if (objsize < align)
       align = objsize ;

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-08-27					*/
+/* Version 0.13, last edit 2018-09-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -284,6 +284,24 @@ void SymbolTable::StaticInitialization()
       symtab->select() ;
       }
    return;
+}
+
+//----------------------------------------------------------------------------
+
+void SymbolTable::StaticCleanup()
+{
+   // flag that there is no current symbol table
+   current_symbol_table = lengthof(symbol_tables) ;
+   // then delete all symbol tables
+   for (size_t i = 0 ; i < lengthof(symbol_tables) ; ++i)
+      {
+      auto symtab = symbol_tables[i].load() ;
+      if (symtab)
+	 symtab->free() ;
+      }
+   // all symbol tables must be completely destructed before we set the pointers to null
+   std::fill(symbol_tables,symbol_tables+lengthof(symbol_tables),nullptr) ;
+   return ;
 }
 
 //----------------------------------------------------------------------------
