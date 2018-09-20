@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.12, last edit 2018-09-13					*/
+/*  Version 0.13, last edit 2018-09-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File atomic.h		atomic operations on simple variables	*/
@@ -373,6 +373,18 @@ class Atomic
 	 bool was_set = (v & mask) != 0 ;
 	 v &= ~mask ;
 	 return was_set ;
+	 }
+      T fetch_or( T bitmask ) noexcept
+	 {
+	 T prev_val = v ;
+	 v |= bitmask ;
+	 return v ;
+	 }
+      T fetch_and( T bitmask ) noexcept
+	 {
+	 T prev_val = v ;
+	 v &= bitmask ;
+	 return v ;
 	 }
       T test_and_set_mask( T bitmask ) noexcept
 	 {
@@ -760,7 +772,7 @@ class Atomic
 //----------------------------------------------------------------------------
 // specializations for Atomic<bool>
 
-// bool doesn't support fetch_or or fetch_and, so we need specific specialization
+// bool doesn't support fetch_or or fetch_and, so we need specific specializations
 template <>
 inline bool Atomic<bool>::test_and_set_mask(bool mask) noexcept
 {

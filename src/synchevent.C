@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.11, last edit 2018-09-10					*/
+/*  Version 0.13, last edit 2018-09-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File synchevent.C		synchronization events			*/
@@ -135,7 +135,7 @@ void SynchEventCounted::clearAll()
 
 void SynchEventCounted::set()
 {
-   unsigned status { m_futex_val.test_and_set_mask(m_mask_set) };
+   unsigned status { m_futex_val.fetch_or(m_mask_set) };
    if ((status & m_mask_set) == 0 && status > 0)
       {
       // event hasn't triggered yet, but there are waiters, so wake them up
@@ -213,7 +213,7 @@ void SynchEventCountdown::wait()
    //   flag
    while (m_futex_val.load() > 1)
       {
-      int counter { m_futex_val.test_and_set_mask(1) };
+      int counter { m_futex_val.fetch_or(1) };
       if (counter > 1)
 	 {
 	 // wait as long as 'waiting' bit is still set and count > 0
