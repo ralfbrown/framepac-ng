@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.12, last edit 2018-09-14					*/
+/* Version 0.13, last edit 2018-09-19					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include <cassert>
 #include <cstddef> // for offsetof()
 #include "framepac/memory.h"
 
@@ -161,7 +162,8 @@ alloc_size_t Slab::makeFreeList(unsigned objsize, unsigned align)
    size_t objcount { space / objsize } ;
    m_info.m_objcount = objcount ;
    alloc_size_t prev = 0 ;
-   if (objcount >= 2)			// require at least two objects so we don't have to special-case
+   assert(objcount > 1) ;
+   if (objcount > 1)			// require at least two objects so we don't have to special-case
       {		      			//   the 'full slab' condition during allocation
       //  link together all of the objects
       for (size_t i = 0 ; i < objcount ; ++i)

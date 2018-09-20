@@ -1185,17 +1185,15 @@ template <>
 inline const Symbol* HashTable<const Symbol*,NullObject>::createSymbol(const char* name) const
 {
    if (!name) return nullKey() ;
-   Symbol* sym = Symbol::create(name) ;
-   // mark symbol as belonging to the current symbol table
-   //FIXME: set proper table ID
-   sym->symtabID(1) ;
-   return sym ;
+   return Symbol::createInCurrentSymtab(name) ;
 }
 
 template <>
 inline void HashTable<const Symbol*,NullObject>::deleteSymbol(const Symbol* sym) const
 {
-   const_cast<Symbol*>(sym)->free() ;
+   auto symbol = const_cast<Symbol*>(sym) ;
+   symbol->symtabID(0) ;
+   symbol->free() ;
    return ;
 }
 

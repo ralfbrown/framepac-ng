@@ -49,8 +49,19 @@ Atomic<size_t> gensym_count ;
 /*	Methods for class SymbolTable					*/
 /************************************************************************/
 
+static void cleanup_symbol(SymHashSet*, const Symbol* sym, NullObject)
+{
+   auto symbol = const_cast<Symbol*>(sym) ;
+   symbol->symtabID(0) ;
+   symbol->free() ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
 SymbolTable::SymbolTable(size_t initial_size) : super(initial_size)
 {
+   onDelete(cleanup_symbol) ;
    return ;
 }
 
@@ -66,9 +77,9 @@ SymbolTable::SymbolTable(const SymbolTable &orig) : super(orig.bucket_count())
 SymbolTable::~SymbolTable()
 {
    // de-register the symbol table from the global list of tables
-   if (m_table_id < lengthof(symbol_tables))
-      symbol_tables[m_table_id].store(nullptr) ;
-   m_table_id = ~0 ;
+   if (m_table_id && m_table_id <= lengthof(symbol_tables))
+      symbol_tables[m_table_id-1].store(nullptr) ;
+   m_table_id = 0 ;
 
    return ;
 }
@@ -87,7 +98,7 @@ SymbolTable* SymbolTable::create(size_t capacity)
       if (symbol_tables[i].compare_exchange_strong(expected,symtab))
 	 {
 	 // we've successfully allocated a slot, so remember the ID
-	 symtab->m_table_id = i ;
+	 symtab->m_table_id = i+1 ;
 	 return symtab.move() ;
 	 }
       }
@@ -99,8 +110,21 @@ SymbolTable* SymbolTable::create(size_t capacity)
 
 SymbolTable* SymbolTable::current()
 {
-   if (current_symbol_table >= lengthof(symbol_tables)) return nullptr ;
-   return symbol_tables[current_symbol_table].load() ;
+   return current_symbol_table ? symbol_tables[current_symbol_table-1].load() : nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+uint16_t SymbolTable::currentID()
+{
+   return current_symbol_table ;
+}
+
+//----------------------------------------------------------------------------
+
+SymbolTable* SymbolTable::table(uint16_t id)
+{
+   return (id && id <= lengthof(symbol_tables)) ? symbol_tables[id-1] : nullptr ;
 }
 
 //----------------------------------------------------------------------------
@@ -291,7 +315,7 @@ void SymbolTable::StaticInitialization()
 void SymbolTable::StaticCleanup()
 {
    // flag that there is no current symbol table
-   current_symbol_table = lengthof(symbol_tables) ;
+   current_symbol_table = 0 ;
    // then delete all symbol tables
    for (size_t i = 0 ; i < lengthof(symbol_tables) ; ++i)
       {
@@ -299,8 +323,6 @@ void SymbolTable::StaticCleanup()
       if (symtab)
 	 symtab->free() ;
       }
-   // all symbol tables must be completely destructed before we set the pointers to null
-   std::fill(symbol_tables,symbol_tables+lengthof(symbol_tables),nullptr) ;
    return ;
 }
 

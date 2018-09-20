@@ -96,8 +96,10 @@ namespace FramepaC
 //   SlabFooter in the same cache set!)
 // MUST BE A POWER OF TWO
 #if defined(__SANITIZE_ADDRESS__) ||  defined(__SANITIZE_THREAD__)
-// use a much smaller slab (at the cost of higher memory use) when sanitizing, to get
-//   better resolution of the problem location
+// use a much smaller slab (at the cost of higher memory use) when
+//   sanitizing, to get better resolution of the problem location;
+//   Slab::DATA_SIZE must remain at least twice the size of the
+//   largest object we allocate with Allocator
 constexpr int SLAB_SIZE = 512 ;
 #else
 constexpr int SLAB_SIZE = 4096 ;
@@ -113,7 +115,7 @@ constexpr int SLAB_SIZE = 4096 ;
 #if defined(__SANITIZE_ADDRESS__) ||  defined(__SANITIZE_THREAD__)
 // use a much smaller slabgroup (at the cost of higher memory use) when sanitizing, to get
 //   better resolution of the problem location
-constexpr int SLAB_GROUP_SIZE = 3 ;
+constexpr int SLAB_GROUP_SIZE = 2 ;
 #else
 constexpr int SLAB_GROUP_SIZE = 4095 ;
 #endif /* __SANITIZE_ADDRESS__ || __SANITIZE_THREAD__ */

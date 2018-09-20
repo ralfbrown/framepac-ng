@@ -101,6 +101,7 @@ class Symbol : public String
       static Symbol* create(const String* str) { return new Symbol(str) ; }
       static Symbol* create(const Object* obj) ;
       static Symbol* create(istream&) ;
+      static Symbol* createInCurrentSymtab(const char* name) ;
 
       const char* name() const { return c_str() ; }
 

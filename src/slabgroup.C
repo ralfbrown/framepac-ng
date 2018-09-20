@@ -176,6 +176,7 @@ SlabGroup::SlabGroup()
    Slab* next = nullptr ;
    for (size_t i = 0 ; i < SLAB_GROUP_SIZE ; ++i)
       {
+      ASAN(ASAN_UNPOISON_MEMORY_REGION(&m_slabs[i].m_info,sizeof(m_slabs[i].m_info))) ;
       m_slabs[i].setVMT(nullptr) ;
       m_slabs[i].setOwningAllocator(~0) ;
       m_slabs[i].setSlabID(i) ;
@@ -278,7 +279,7 @@ void SlabGroup::releaseSlab(Slab* slb)
    do {
       slb->setNextFreeSlab(freelist) ;
       } while (!sg->m_freeslabs.compare_exchange_weak(freelist,slb)) ;
-   ASAN(ASAN_POISON_MEMORY_REGION(slb,sizeof(Slab))) ;
+   ASAN(ASAN_POISON_MEMORY_REGION(slb->bufferStart(),slb->bufferSize())) ;
    // update statistics
    sg->m_numfree++ ;
    if (!freelist)

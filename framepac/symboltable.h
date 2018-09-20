@@ -40,9 +40,11 @@ class SymbolTable : public SymHashSet
    public:
       static SymbolTable* create(size_t capacity = 0) ;
       static SymbolTable* current() ;
+      static uint16_t currentID() ;
 
       void select() const ; // make this symbol table the current one
       static bool select(const char* name) ; // select the symbol table with the given name
+      static SymbolTable* table(uint16_t id) ; // find symbol table with given ID number
 
       Symbol* gensym(const char* basename = nullptr, const char* suffix = nullptr) ;
 

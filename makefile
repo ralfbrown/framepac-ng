@@ -576,7 +576,7 @@ build/stringbuilder$(OBJ):	src/stringbuilder$(C) framepac/stringbuilder.h framep
 build/sufarray_u32u32$(OBJ):	src/sufarray_u32u32$(C) template/sufarray.cc template/sufarray_file.cc
 build/sufarray_u32u40$(OBJ):	src/sufarray_u32u40$(C) template/sufarray.cc template/sufarray_file.cc \
 				framepac/byteorder.h
-build/symbol$(OBJ):		src/symbol$(C) framepac/symbol.h framepac/nonobject.h framepac/fasthash64.h
+build/symbol$(OBJ):		src/symbol$(C) framepac/symboltable.h framepac/nonobject.h framepac/fasthash64.h
 build/symbolprop$(OBJ):		src/symbolprop$(C) framepac/frame.h framepac/list.h framepac/symbol.h
 build/symboltable$(OBJ):	src/symboltable$(C) framepac/symboltable.h framepac/fasthash64.h \
 				framepac/texttransforms.h

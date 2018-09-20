@@ -94,7 +94,7 @@ static unsigned find_match(Allocator::SharedInfo* info, const FramepaC::ObjectVM
 
 Allocator::Allocator(const FramepaC::ObjectVMT* vmt, unsigned objsize)
 {
-   assert(objsize <= Slab::DATA_SIZE) ;
+   assert(2*objsize <= Slab::DATA_SIZE) ;
    unsigned align { alignof(double) } ;
    if (objsize < align)
       align = objsize ;

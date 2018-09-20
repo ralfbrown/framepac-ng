@@ -20,7 +20,7 @@
 /************************************************************************/
 
 #include <cstring>
-#include "framepac/symbol.h"
+#include "framepac/symboltable.h"
 #include "framepac/nonobject.h"
 #include "framepac/fasthash64.h"
 
@@ -54,9 +54,23 @@ Symbol* Symbol::create(istream&)
 
 //----------------------------------------------------------------------------
 
+Symbol* Symbol::createInCurrentSymtab(const char* name)
+{
+   auto sym = Symbol::create(name) ;
+   if (sym)
+      sym->symtabID(SymbolTable::currentID()) ;
+   return sym ;
+}
+
+//----------------------------------------------------------------------------
+
 void Symbol::unintern()
 {
-   //FIXME
+   auto id = symtabID() ;
+   symtabID(0) ;
+   auto symtab = SymbolTable::table(id) ;
+   if (symtab)
+      symtab->remove(this) ;
    return ;
 }
 
