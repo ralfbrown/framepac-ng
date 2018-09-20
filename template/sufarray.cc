@@ -571,81 +571,77 @@ bool SuffixArray<IdT,IdxT>::enumerateParallel(Range<unsigned> lengths,
    //   low while avoiding long waits for stragglers at the end
    ThreadPool *tpool = ThreadPool::defaultPool() ;
    size_t num_segments(tpool->numThreads() * 32) ;
-   size_t prev_start(getFreq(m_sentinel)) ;
+   size_t curr_id_start(getFreq(m_sentinel)) ;
    if (num_segments == 0)
-      return enumerateSegment(Range<IdxT>(prev_start,indexSize()),0,Range<IdT>(1,vocabSize()),
+      return enumerateSegment(Range<IdxT>(curr_id_start,indexSize()),0,Range<IdT>(1,vocabSize()),
 	 lengths,fn,filter) ;
-   size_t segment_size((indexSize() - getFreq(m_sentinel) + num_segments-1) / num_segments) ;
-   size_t count(0) ;
-   size_t prev_id(1) ;
-   bool success(true) ;
+   size_t segment_size((indexSize() - curr_id_start + num_segments-1) / num_segments) ;
    std::vector<Job> orders(num_segments, Job(this,lengths,fn,filter)) ;
    size_t jobnum(0) ;
+   size_t count(0) ;
+   size_t prev_id(1) ;
    size_t offset(0) ;
+   size_t seg_start = curr_id_start ;		// start of the segment to be dispatched
+   size_t next_id_start = curr_id_start ;
    for (IdT id = 1 ; id < vocabSize() ; ++id)
       {
-      size_t id_start = prev_start + count  ;
-      size_t id_first = id_start - offset ; // first occurrence of ID in index
       size_t freq = getFreq(id) ;
-      size_t id_end = id_start + freq ;
-      while (count + freq >= segment_size)
-         {
-	 if (lengths.first() == 1)
+      next_id_start += freq ;
+      count += freq ;
+      while (next_id_start >= seg_start + segment_size)
+	 {
+	 if (lengths.first() > 1)
 	    {
-	    // minlen==1 means we can't split any further, so go with it
-	    count += freq ;
-	    freq = 0 ;
-	    }
-	 else
-	    {
-	    freq = 0 ;
-	    // split on a bigram boundary
-	    IdT second = idAt(indexAt(id_start)+1) ;
-	    for (size_t bg = id_start+1 ; bg < id_end ; ++bg)
+	    // split on the first bigram boundary after the total size exceeds the segment size
+	    IdT second = idAt(indexAt(seg_start+segment_size)+1) ;
+	    count = next_id_start - seg_start ;  // assume we don't find any suitable boundary
+	    for (size_t bg = seg_start + segment_size + 1 ; bg < next_id_start ; ++bg)
 	       {
 	       IdT curr = idAt(indexAt(bg)+1) ;
 	       if (curr == second)
 		  continue ;
-	       if (bg - prev_start < segment_size)
+	       if (bg - seg_start < segment_size)
 		  {
 		  // we haven't yet filled out the segment, so continue to the next bigram
 		  second = curr ;
 		  }
 	       else
 		  {
-		  count = bg - prev_start ;
-		  id_start = bg ;
-		  freq = id_end - bg ;	
+		  count = bg - seg_start ;
 		  break ;
 		  }
 	       }
 	    }
 	 if (count >= segment_size)
 	    {
-	    orders[jobnum].positions = Range<IdxT>(prev_start,prev_start+count) ;
+	    orders[jobnum].positions = Range<IdxT>(seg_start,seg_start+count) ;
 	    orders[jobnum].offset = offset ;
 	    orders[jobnum].IDs = Range<IdT>(prev_id,id+1) ;
 	    tpool->dispatch(&enumerate_segment,&orders[jobnum],nullptr) ;
 	    jobnum++ ;
-	    prev_start += count ;
-	    offset = (id > prev_id) ? 0 : (prev_start + count - id_first) ;
-	    prev_id = freq ? id : id+1 ;// set next starting ID based on whether we split the current ID
-	    count = freq ;  		// remember any remnant we split off
-	    freq = 0 ;
+	    seg_start += count ;	// compute start of next segment
+	    count = 0 ;			// next segment doesn't contain anything yet
+	    if (seg_start >= next_id_start)
+	       {			// did we use up all instances of the current ID?
+	       prev_id = id+1 ;		// yes, so the next segment starts with the next ID
+	       offset = 0 ;		// and we don't have to offset from the start of that ID
+	       }
+	    else
+	       {			// if we haven't used up all instances of the current ID
+	       prev_id = id ;		// the next segment continues the current ID
+	       offset = seg_start - curr_id_start ;  // and we have to offset from the first instance
+	       }
 	    }
-         }
-      if (freq)
-	 count += freq ;
-      else
-	 offset = 0 ;
+	 }
+      curr_id_start = next_id_start ;
       }
    // handle the leftover at the end
-   orders[jobnum].positions = Range<IdxT>(prev_start,indexSize()) ;
+   orders[jobnum].positions = Range<IdxT>(seg_start,indexSize()) ;
    orders[jobnum].offset = offset ;
    orders[jobnum].IDs = Range<IdT>(prev_id,vocabSize()) ;
    tpool->dispatch(&enumerate_segment,&orders[jobnum],nullptr) ;
    tpool->waitUntilIdle() ;
-   return success ;
+   return true ;
 }
 
 //----------------------------------------------------------------------------
