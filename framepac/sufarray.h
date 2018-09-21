@@ -102,8 +102,16 @@ class SuffixArray
       struct Job
 	 {
 	    const SuffixArray* index ;
+#if defined(__GCC__) && __GCC__ < 5
+	    // GCC 4.8 breaks async version of enumerateParallel unless we make a copy of the closures,
+	    //   even though the original closure we are referencing lives until after the following
+	    //   finishParallel
+	    const std::function<EnumFunc> fn ;
+	    const std::function<FilterFunc> filter ;
+#else
 	    const std::function<EnumFunc>& fn ;
 	    const std::function<FilterFunc>& filter ;
+#endif /* GCC < 5 */
 	    Range<IdxT> positions ;
 	    Range<IdT> IDs ;
 	    Range<unsigned> lengths ;
