@@ -119,6 +119,8 @@ class WordCorpusT
       IdxT corpusSize() const { return m_wordbuf.size() ; }
       IdT vocabSize() const { return m_wordmap->indexSize() ; }
 
+      const SufArr* forwardIndex() const { return &m_fwdindex ; }
+
       IdT findID(const char* word) const ;
       IdT findOrAddID(const char* word) ;
       IdT addWord(const char* word) ;

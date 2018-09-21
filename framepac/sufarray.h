@@ -102,7 +102,7 @@ class SuffixArray
       struct Job
 	 {
 	    const SuffixArray* index ;
-#if defined(__GCC__) && __GCC__ < 5
+#if defined(__GNUC__) && __GNUC__ < 5
 	    // GCC 4.8 breaks async version of enumerateParallel unless we make a copy of the closures,
 	    //   even though the original closure we are referencing lives until after the following
 	    //   finishParallel
