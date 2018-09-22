@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.10, last edit 2018-08-27					*/
+/* Version 0.13, last edit 2018-09-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -174,7 +174,7 @@ bool List::member(const Object* o) const
       {
       for (auto f : *l)
 	 {
-	 if (f == o || (f && f-equal(o)))
+	 if (f == o || (f && f->equal(o)))
 	    return true ;
 	 }
       }
@@ -597,7 +597,7 @@ bool List::toJSONString_(const Object* obj, char* buffer, size_t buflen,
 size_t List::size() const
 {
    size_t sz(0) ;
-   for (const List *l = this ; l != empty_list ; l = l->next())
+   for (const List *l = this ; l && l != empty_list ; l = l->next())
       {
       sz++ ;
       }
@@ -609,7 +609,7 @@ size_t List::size() const
 size_t List::size_(const Object *obj)
 {
    size_t sz(0) ;
-   for (const List *l = static_cast<const List*>(obj) ; l != empty_list ; l = l->next())
+   for (const List *l = static_cast<const List*>(obj) ; l && l != empty_list ; l = l->next())
       {
       sz++ ;
       }

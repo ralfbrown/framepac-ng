@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-07					*/
+/* Version 0.13, last edit 2018-09-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018 Carnegie Mellon University			*/
@@ -47,11 +47,8 @@ List* load_file_list(bool use_stdin, const char* listfile, const char* what, boo
 	    exit(1) ;
 	 return nullptr ;
 	 }
-      for ( ; ; )
+      while (CharPtr filename = listfp.getTrimmedLine())
 	 {
-	 CharPtr filename = listfp.getTrimmedLine() ;
-	 if (!filename)
-	    break ;
 	 if (**filename && **filename != '#' && **filename != ';')
 	    files += filename ;
 	 }

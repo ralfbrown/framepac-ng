@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.11, last edit 2018-09-10					*/
+/* Version 0.13, last edit 2018-09-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -719,7 +719,7 @@ WorkOrder* ThreadPool::nextOrder(unsigned index)
       {
       // if we're one of the active threads, try to steal something from another queue
       // TODO: be more sophisticated than a simple round-robin scan
-      // if only makes sense to try to steal if our hardware threads are not massively over-subscribed
+      // it only makes sense to try to steal if our hardware threads are not massively over-subscribed
       if (m_numCPUs == 0 || nt < 4 * m_numCPUs)
 	 {
 	 for (unsigned next = (index+1)%nt ; next != index ; next = (next+1)%nt)

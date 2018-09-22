@@ -88,7 +88,7 @@ Array::Array(const Object *obj, size_t repeat)
       }
    else
       {
-      std::fill(m_array,m_array+repeat,nullptr) ;
+      std::fill_n(m_array,repeat,nullptr) ;
       }
    return ;
 }
@@ -364,10 +364,8 @@ size_t Array::cStringLength_(const Object* obj,size_t wrap_at, size_t indent, si
    (void)wrapped_indent; //TODO
    for (auto o : *arr)
       {
-      if (o)
-	 len += o->cStringLength(wrap_at,wrapped?indent+3:0,wrapped_indent) ;
-      else
-	 len += 4 ; // nullptr generates #N<> in the printed representation
+      len += o ? o->cStringLength(wrap_at,wrapped?indent+3:0,wrapped_indent) : 4 ;
+      // (nullptr generates #N<> in the printed representation)
       }
    return len ;
 }

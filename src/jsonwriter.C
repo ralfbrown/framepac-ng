@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.13, last edit 2018-09-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -81,10 +81,9 @@ static void write_json_item(CFile& outfp, const Object* item, int indent)
       }
    else if (item->isList())
       {
-      List *list = (List*)item ;
-      if (list->front() && list->front()->isList()
-	  && ((List*)list->front())->front()
-	  && ((List*)list->front())->front()->isString())
+      auto list = static_cast<const List*>(item) ;
+      auto first = static_cast<const List*>(list->front()) ;
+      if (first && first->isList() && first->front() && first->front()->isString())
 	 {
 	 outfp.writeJSON(list,indent+1,true) ;
 	 }
@@ -92,10 +91,12 @@ static void write_json_item(CFile& outfp, const Object* item, int indent)
 	 {
 	 // it's a plain list, not a map
 	 outfp << "[" ;
-	 for ( ; list ; list = list->next())
+	 auto end = list->end() ;
+	 for (auto it = list->begin() ; it != end ; ++it)
 	    {
-	    write_json_item(outfp,list->front(),indent) ;
-	    if (list->next())
+	    write_json_item(outfp,*it,indent) ;
+	    auto next = it ;
+	    if (++next != end)
 	       outfp << "," ;
 	    }
 	 outfp << "]" ;
@@ -133,7 +134,7 @@ void CFile::writeJSON(const List *json, int indent, bool recursive)
       if (value->size() > 1)
 	 {
 	 (*this) << "[" ;
-	 for ( ; value ; value = value->next())
+	 for ( ; value && value != List::emptyList() ; value = value->next())
 	    {
 	    write_json_item((*this),value->front(),indent) ;
 	    if (value->next())

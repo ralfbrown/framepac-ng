@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.13, last edit 2018-09-18					*/
+/* Version 0.13, last edit 2018-09-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -342,9 +342,31 @@ void uppercase_string(CharPtr& s, std::locale* loc)
 //#include <codecvt> //C++11 standard
 #include <bits/codecvt.h>  // needed in G++ 4.9, since no <codecvt> header
 // for a codepoint-wise case conversion, we need to convert to a wide-char strings,
-//   apply toupper to each of the wide characters, then convert back to UTF8. And
+//   apply tolower to each of the wide characters, then convert back to UTF8. And
 //   the result is likely to differ in size, so we can't do it in place...
 std::string lowercase_utf8_string(char* s)
+{
+   std::string utf8(s) ;
+   std::wstring_convert<std::codecvt_utf8<char16_t> > converter ;
+   std::wstring widestr = converter.from_bytes(utf8) ;
+   for (auto& c : widestr)
+      {
+      c = std::tolower(c, utf8locale) ;
+      }
+   return converter.to_bytes(widestr) ;
+}
+#endif
+
+//----------------------------------------------------------------------------
+
+#if 0
+//FUTURE:  not supported in G++ 4.9
+//#include <codecvt> //C++11 standard
+#include <bits/codecvt.h>  // needed in G++ 4.9, since no <codecvt> header
+// for a codepoint-wise case conversion, we need to convert to a wide-char strings,
+//   apply toupper to each of the wide characters, then convert back to UTF8. And
+//   the result is likely to differ in size, so we can't do it in place...
+std::string uppercase_utf8_string(char* s)
 {
    std::string utf8(s) ;
    std::wstring_convert<std::codecvt_utf8<char16_t> > converter ;
