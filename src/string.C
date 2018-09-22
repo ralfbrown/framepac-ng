@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.08, last edit 2018-08-15					*/
+/* Version 0.13, last edit 2018-09-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
@@ -106,22 +106,16 @@ void String::init(const char* s, size_t len)
 
 String::~String()
 {
-   if (c_len() < max_small_alloc)
+   // get the base pointer to the allocated string
+   char* buf = m_buffer.pointer() ;
+   // figure out whether we used SmallAlloc or new[]
+   size_t l = c_len() ;
+   if (l < max_small_alloc)
       {
-#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
-      // when sanitizing, SmallAlloc doesn't go through the regular NonObject allocator, so we need to call
-      //   the free function directly
-      allocators[c_len()]->release(m_buffer.pointer()) ;
-#else
-      // when NOT sanitizing, we can use the generic Allocator free method, since it will pick up the correct
-      //   release() function via the VMT
-      Allocator::free(m_buffer.pointer()) ;
-#endif /* __SANITIZE_ADDRESS__ || __SANITIZE_THREAD__ */
+      allocators[l]->release(buf) ;
       }
    else
       {
-      // get the base pointer to the allocated string
-      char* buf = m_buffer.pointer() ;
       // adjust for length field, if present
       if (buf && m_buffer.extra() == 0xFFFF)
 	 buf -= sizeof(size_t) ;
