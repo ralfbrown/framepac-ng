@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.09, last edit 2019-01-29					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -92,6 +92,9 @@ IdxT Trie<T,IdxT,bits>::allocValuelessNode()
       }
    if (m_size_valueless < m_capacity_valueless)
       {
+      // we can't allocate node 0, as index 0 means "no child" and results in the first key entered into the trie
+      //   being lost
+      if (m_size_valueless == 0) ++m_size_valueless ;
       return m_size_valueless++ ;
       }
    return NULL_INDEX ;
