@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 19sep2018
+# Last change: 30jan2019
 
 #########################################################################
 # define the locations of all the files
@@ -310,6 +310,7 @@ OBJS = \
 	build/is_number$(OBJ) \
 	build/jsonreader$(OBJ) \
 	build/jsonwriter$(OBJ) \
+	build/keylayout$(OBJ) \
 	build/linebatch$(OBJ) \
 	build/list$(OBJ) \
 	build/listbuilder$(OBJ) \
@@ -540,6 +541,7 @@ build/is_number$(OBJ):		src/is_number$(C) framepac/cstring.h
 build/jsonreader$(OBJ):		src/jsonreader$(C) framepac/objreader.h framepac/stringbuilder.h framepac/list.h \
 				framepac/map.h framepac/number.h framepac/cstring.h
 build/jsonwriter$(OBJ):		src/jsonwriter$(C) framepac/file.h framepac/list.h
+build/keylayout$(OBJ):		src/keylayout$(C) framepac/spelling.h
 build/linebatch$(OBJ):		src/linebatch$(C) framepac/file.h
 build/list$(OBJ):		src/list$(C) framepac/list.h framepac/fasthash64.h framepac/init.h
 build/listbuilder$(OBJ):	src/listbuilder$(C) framepac/list.h framepac/string.h

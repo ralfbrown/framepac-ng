@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-21					*/
+/* Version 0.09, last edit 2019-01-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -121,7 +121,8 @@ class CognateData
       bool setCognateScoring(const char* src, const char* trg, double score) ;
       bool setCognateScoring(const char* cognates) ;
       bool setCognateScoring(const List* cognates) ;
-      
+      bool setAdjacentKeys(const char* layout, double nearscore, double farscore = 0.0) ;
+
       void relativeToShorter(bool rel) { m_rel_to_shorter = rel ; m_rel_to_average = false ; }
       void relativeToAverage(bool rel) { m_rel_to_average = rel ; m_rel_to_shorter = false ; }
       void defaultScoring() { m_rel_to_average = false ; m_rel_to_shorter = false ; }
