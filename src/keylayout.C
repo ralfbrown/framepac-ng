@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.13, last edit 2019-01-30					*/
+/* Version 0.13, last edit 2019-02-04					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2019 Carnegie Mellon University			*/
@@ -125,7 +125,7 @@ static void add_near_neighbors(CognateData* cd, const char* line1, const char* l
    char str1up[8] ;
    char str2[8] ;
    char str2up[8] ;
-   for (size_t i = 0 ; i < len1 ; ++len1)
+   for (size_t i = 0 ; i < len1 ; ++i)
       {
       bool letter = get_key(line1[i],str1,str1up) ;
       if (!*str1)
@@ -170,7 +170,7 @@ static void add_far_neighbors(CognateData* cd, const char* line1, const char* li
    char str1up[8] ;
    char str2[8] ;
    char str2up[8] ;
-   for (size_t i = 0 ; i < len1 ; ++len1)
+   for (size_t i = 0 ; i < len1 ; ++i)
       {
       bool letter = get_key(line1[i],str1,str1up) ;
       if (!*str1)
