@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.13, last edit 2018-09-21					*/
+/* Version 0.13, last edit 2019-02-04					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
+/* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -270,8 +270,10 @@ void lowercase_string(char* s, std::locale& loc)
 
 void lowercase_string(char* s, std::locale* loc)
 {
-   if (!s || !loc)
+   if (!s)
       return ;
+   if (!loc)
+      return lowercase_string(s) ;
    // see http://en.cppreference.com/w/cpp/locale/ctype/tolower
    char* last = strchr(s,'\0') ;
    std::use_facet<std::ctype<char> >(*loc).tolower(s, last) ;
@@ -320,8 +322,10 @@ void uppercase_string(char* s, std::locale& loc)
 
 void uppercase_string(char* s, std::locale* loc)
 {
-   if (!s || !loc)
+   if (!s)
       return ;
+   if (!loc)
+      return uppercase_string(s) ;
    char* last = strchr(s,'\0') ;
    std::use_facet<std::ctype<char> >(*loc).toupper(s, last) ;
    return ;
