@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.13, last edit 2018-09-21					*/
+/* Version 0.14, last edit 2019-02-04					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
+/* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -440,11 +440,84 @@ List* List::reverse()
 
 //----------------------------------------------------------------------------
 
+static List* merge(List* l1, List* l2, ObjectOrderingFn* cmp)
+{
+   if (!l2 || l2 == List::emptyList())
+      return l1 ;
+   if (!l1)
+      return l2 ;
+   List *result ;
+   if (cmp(l1->front(),l2->front()) <= 0)
+      {
+      result = l1 ;
+      l1 = l1->next() ;
+      }
+   else
+      {
+      result = l2 ;
+      l2 = l2->next() ;
+      }
+   List* prev = result ;
+   while (*l1 && *l2)
+      {
+      if (cmp(l1->front(),l2->front()) <= 0)
+	 {
+	 prev->setNext(l1) ;		// glue item from first list onto end of result
+	 prev = l1 ;
+	 l1 = l1->next() ;		// then advance down the first list
+	 }
+      else
+	 {
+	 prev->setNext(l2) ;		// glue item from second list onto end of result
+	 prev = l2 ;
+	 l2 = l2->next() ;		// then advance down the second list
+	 }
+      }
+   if (l1)
+      prev->setNext(l1) ;
+   else
+      prev->setNext(l2) ;
+   return result ;
+}
+
+//----------------------------------------------------------------------------
+
 List* List::sort(ObjectOrderingFn* cmp)
 {
-   if (!cmp) return this ; //FIXME
+   if (!cmp || next() == emptyList())	// single-element/empty list or no compare func?
+      return this ;			// nothing to be done
+   List *sorted[CHAR_BIT * sizeof(size_t)] ; // sorted sublists, with lengths in powers of two
+   List* list = this ;
+   // initialize sublists
+   size_t maxsize = 0 ;
+   sorted[0] = nullptr ;
+   // scan down the input, creating sorted sublists as we go
+   while (list != emptyList())
+      {
+      // remove the head node from the list
+      List* sublist = list ;
+      list = list->next() ;
+      sublist->setNext(emptyList()) ;
 
-   return this ;
+      // merge with successively longer sublists until we get to a currently-unused power of two
+      size_t i ;
+      for (i = 0 ; i <= maxsize && sorted[i] ; ++i)
+	 {
+	 sublist = merge(sorted[i],sublist,cmp) ;
+	 sorted[i] = nullptr ;
+	 }
+      sorted[i] = sublist ;
+      if (i > maxsize)
+	 ++maxsize ;
+      }
+   // we've now consumed all the input, so just merge the remaining already-sorted sublists
+   List* result = sorted[0] ;
+   for (size_t i = 1 ; i <= maxsize ; ++i)
+      {
+      if (sorted[i])
+	 result = merge(sorted[i],result,cmp) ;
+      }
+   return result ;
 }
 
 //----------------------------------------------------------------------------
