@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-21					*/
+/* Version 0.14, last edit 2019-02-04					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -76,7 +76,7 @@ List* SpellCorrectionData::spellingSuggestions(const char* term, const char* typ
 {
    (void)term; (void)typo_letters; (void)allow_norm; (void)allow_self;
 
-   return nullptr ; //FIXME
+   return List::emptyList() ;
 }
 
 

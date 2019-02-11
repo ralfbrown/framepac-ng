@@ -442,7 +442,7 @@ List* List::reverse()
 
 static List* merge(List* l1, List* l2, ObjectOrderingFn* cmp)
 {
-   if (!l2 || l2 == List::emptyList())
+   if (!l2 || !*l2)
       return l1 ;
    if (!l1)
       return l2 ;
@@ -473,7 +473,7 @@ static List* merge(List* l1, List* l2, ObjectOrderingFn* cmp)
 	 l2 = l2->next() ;		// then advance down the second list
 	 }
       }
-   if (l1)
+   if (*l1)
       prev->setNext(l1) ;
    else
       prev->setNext(l2) ;
