@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.14, last edit 2019-02-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
+/* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -155,7 +155,7 @@ class Trie
 
 // a trie with a variable list of items as node values
 
-template <typename T, typename IdxT = std::uint32_t>
+template <typename T, typename IdxT = std::uint32_t, unsigned bits=4>
 class MultiTrie
    {
    public:
@@ -169,7 +169,7 @@ class MultiTrie
 /************************************************************************/
 /************************************************************************/
 
-template <typename T, typename IdxT>
+template <typename T, typename IdxT, unsigned bits=4>
 class PackedTrie
    {
    public:
@@ -193,6 +193,8 @@ class PackedTrie
 	 protected:
 	    IdxT   m_firstchild ;	// children are stored breadth-first, so we need only
 	    Int16  m_children ;		//   the index of the first child and an offset from there
+					// m_children is a bitmask of the nonzero children, which we use
+					//   to compute the offset from the first child
          } ;
       // a full node can contain both a value and child pointers
       class Node : public ValuelessNode
@@ -200,8 +202,10 @@ class PackedTrie
 	 public: // types
 	    typedef ValuelessNode super ;
 	 public:
-	    Node() ;
-	    ~Node() ;
+	    Node() {}
+	    Node(T val) { m_value = val ; }
+	    ~Node() {}
+	    void setValue(T val) { m_value = val ; }
 	    T nodeValue() const { return m_value ; }
 
 	 protected:
@@ -212,7 +216,9 @@ class PackedTrie
          {
 	 public:
 	    LeafNode() ;
+	    LeafNode(T val) { m_value = val ; }
 	    ~LeafNode() ;
+	    void setValue(T val) { m_value = val ; }
 	    T nodeValue() const { return m_value ; }
 
 	 protected:
@@ -220,8 +226,8 @@ class PackedTrie
          } ;
 
       PackedTrie() ;
-      PackedTrie(const Trie<T,IdxT>*) ;
-      PackedTrie(const char *filename) ;
+      PackedTrie(const Trie<T,IdxT,bits>*) ;
+      PackedTrie(const char* filename) ;
       PackedTrie(const PackedTrie&) = delete ;
       ~PackedTrie() ;
       PackedTrie& operator= (const PackedTrie&) = delete ;
@@ -233,6 +239,9 @@ class PackedTrie
       bool nodeHasValue(IdxT& index) const ;
       T nodeValue(IdxT& index) const ;
       bool nodeValue(IdxT& index, T& value) const ;
+
+   protected:
+      void init(IdxT cap) ;
 
    protected:
       // because we have three different types of nodes, we need to
@@ -256,7 +265,7 @@ class PackedTrie
 //   a node in a packed trie by storing an index in the node and
 //   having a separate array of items
 
-template <typename T, typename IdxT = std::uint32_t, typename ValIdxT = std::uint32_t>
+template <typename T, typename IdxT = std::uint32_t, typename ValIdxT = std::uint32_t, unsigned bits=4>
 class PackedMultiTrie : public PackedTrie<IdxT,ValIdxT>
    {
    public: // types
