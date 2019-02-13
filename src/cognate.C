@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.13, last edit 2018-09-19					*/
+/* Version 0.14, last edit 2019-02-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -159,7 +159,20 @@ CognateData* CognateData::load(const char* filename, size_t fuzzy_match_score)
 	 while (!f.eof())
 	    {
 	    CharPtr line { f.getCLine() } ;
-	    //TODO
+	    const char* ptr { line } ;
+	    auto src { Object::create(ptr) } ;
+	    auto trg { Object::create(ptr) } ;
+	    auto score { Object::create(ptr) } ;
+	    if (src && trg && score && src->isString() && trg->isString() && score->isNumber())
+	       {
+	       pushlist(List::create(src,trg,score),cognates) ;
+	       }
+	    else
+	       {
+	       if (src) src->free() ;
+	       if (trg) trg->free() ;
+	       if (score) score->free() ;
+	       }
 	    }
 	 }
       else
@@ -180,8 +193,8 @@ CognateData* CognateData::load(const char* filename, size_t fuzzy_match_score)
 
 bool CognateData::save(const char* /*filename*/)
 {
-
-   return false ; //FIXME
+//TODO
+   return false ;
 }
 
 //----------------------------------------------------------------------------
@@ -263,8 +276,16 @@ bool CognateData::setCognateScoring(const char* src, const char* trg, double sc)
       // add to generic M-to-N substitutions
       if (!m_mappings)
 	 m_mappings = new Fr::Trie<List*> ;
-
-      return false; //FIXME
+      // get the current target mappings for the source string (if any)
+      List* targets = m_mappings->find(reinterpret_cast<const uint8_t*>(src),srclen) ;
+      if (!targets)
+	 targets = List::emptyList() ;
+      // add the new target mapping
+      List* value = List::create(String::create(trg),Float::create(sc)) ;
+      pushlist(value,targets) ;
+      // and update the trie
+      m_mappings->insert(reinterpret_cast<const uint8_t*>(src),srclen,targets) ;
+      return true ;
       }
 }
 
@@ -274,6 +295,7 @@ bool CognateData::setCognateScoring(const List* cognates)
 {
    if (!cognates)
       return true ;			// trivially successful
+   bool success = true ;
    for (const Object* cog : *cognates)
       {
       // each element of 'cognates' is of the form
@@ -290,10 +312,10 @@ bool CognateData::setCognateScoring(const List* cognates)
 	 const char* trgstr = trg->stringValue() ;
 	 if (!trgstr) continue ;
 	 auto sc = target->nthFloat(1) ;
-	 setCognateScoring(srcstr,trgstr,sc) ;
+	 success &= setCognateScoring(srcstr,trgstr,sc) ;
 	 }
       }
-   return false; //FIXME
+   return success ;
 }
 
 //----------------------------------------------------------------------------
@@ -325,8 +347,8 @@ bool CognateData::areCognate(char letter1, char letter2, bool case_fold) const
 size_t CognateData::cognateLetters(const char* str1, const char* str2, size_t& len1, size_t& len2) const
 {
    (void)str1; (void)str2; (void)len1; (void)len2;
-
-   return 0 ; //FIXME
+//TODO
+   return 0 ;
 }
 
 //----------------------------------------------------------------------------
@@ -431,18 +453,18 @@ float CognateData::best_match(const char* word1, size_t len1, size_t index1,
 	 auto n = m_mappings->node(idx) ;
 	 if (n->leaf())
 	    {
-	    const List* targets = n->value() ;
+	    auto targets = n->value() ;
 	    if (!targets) continue ;
 	    // iterate through list of target strings
-	    for (const Object* target : *targets)
+	    for (auto target : *targets)
 	       {
 	       if (!target) continue ;
-	       const List* targetspec = reinterpret_cast<const List*>(target) ;
-	       const String* targetstr = reinterpret_cast<const String*>(targetspec->front()) ;
-	       size_t targetlen = targetstr->c_len() ;
+	       auto targetspec = reinterpret_cast<const List*>(target) ;
+	       auto targetstr = reinterpret_cast<const String*>(targetspec->front()) ;
+	       auto targetlen = targetstr->c_len() ;
 	       if (targetlen > index2)
 		  continue ;		// too long to match word2
-	       const char* trgstr = targetstr->c_str() ;
+	       auto trgstr = targetstr->c_str() ;
 	       if (memcmp(trgstr,word2+index2-targetlen,targetlen) == 0)
 		  {
 		  // we found a match, so compute its score, scaling for the
@@ -548,7 +570,7 @@ static CognateAlignment* extract_alignment(const CogScoreInfo* const* score_buf,
       cur_trg -= info.trglen ;
       }
    // allocate the alignment array
-   CognateAlignment* align = new CognateAlignment[count+1] ;
+   auto align = new CognateAlignment[count+1] ;
    align[count].init(0,0) ;		// add the terminating sentinel
    if (count > 0)
       {
