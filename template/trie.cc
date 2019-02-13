@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2019-01-29					*/
+/* Version 0.14, last edit 2019-02-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018,2019 Carnegie Mellon University		*/
@@ -222,8 +222,8 @@ bool Trie<T,IdxT,bits>::insert(const uint8_t* key, unsigned keylength, T value)
 	 n->markAsLeaf() ;
 	 if (keylength > m_maxkey)
 	    m_maxkey = keylength ;
+	 return true ;
 	 }
-      return true ;
       }
    return false ;
 }

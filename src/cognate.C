@@ -29,6 +29,7 @@ namespace Fr
 {
 
 // request explicit instantiation
+template <> template <> List* Trie<List*>::nullVal() { return List::emptyList() ; }
 template class Trie<List*> ;
 
 /************************************************************************/
@@ -289,7 +290,7 @@ bool CognateData::setCognateScoring(const char* src, const char* trg, double sc)
       List* value = List::create(String::create(trg),Float::create(sc)) ;
       pushlist(value,targets) ;
       // and update the trie
-      m_mappings->insert(reinterpret_cast<const uint8_t*>(src),srclen,targets) ;
+      m_mappings->insert(reinterpret_cast<const uint8_t*>(*reversed),srclen,targets) ;
       return true ;
       }
 }
