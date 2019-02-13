@@ -477,7 +477,7 @@ float CognateData::best_match(const char* word1, size_t len1, size_t index1,
 		  {
 		  // we found a match, so compute its score, scaling for the
 		  //   relative lengths of the match and input strings
-		  float rawscore = (float)targetspec->nth(2)->floatValue() ;
+		  float rawscore = (float)targetspec->nth(1)->floatValue() ;
 		  float sc = scale_match(i,targetlen,len1,len2) * rawscore ;
 		  if (sc > best_score)
 		     {
