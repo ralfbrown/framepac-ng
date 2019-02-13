@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-02-04					*/
+/* Version 0.14, last edit 2019-02-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018,2019 Carnegie Mellon University		*/
@@ -29,10 +29,9 @@ namespace Fr
 /************************************************************************/
 
 SpellCorrectionData::SpellCorrectionData(const SymHashTable* gw, const SymCountHashTable* wc,
-   LetterConfusionMatrix* cm, ObjHashTable* subst, size_t maxsubst)
+   ObjHashTable* subst, size_t maxsubst)
    : m_good_words(gw), m_wordcounts(wc)
 {
-   m_confmatrix = cm ;
    m_substitutions = subst ;
    m_maxsubst = maxsubst ;
    return ;
@@ -45,7 +44,6 @@ SpellCorrectionData::~SpellCorrectionData()
    m_good_words = nullptr ;
    m_wordcounts = nullptr  ;
    m_substitutions = nullptr ;
-   m_confmatrix = nullptr ;
    m_maxsubst = 0 ;
    return ;
 }

@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2019-01-30					*/
+/* Version 0.14, last edit 2019-02-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018,2019 Carnegie Mellon University		*/
@@ -159,28 +159,11 @@ class CognateData
 
 //----------------------------------------------------------------------------
 
-class LetterConfusionMatrix
-   {
-   public:
-      LetterConfusionMatrix() ;
-      ~LetterConfusionMatrix() ;
-
-      static LetterConfusionMatrix* load(const char* filename) ;
-      bool save(const char* filename) const ;
-
-      double score(char letter1, char letter2) const ;
-      double score(const char* seq1,const char* seq2) const ;
-   protected:
-
-   } ;
-
-//----------------------------------------------------------------------------
-
 class SpellCorrectionData
    {
    public:
       SpellCorrectionData(const SymHashTable* gw = nullptr, const SymCountHashTable* wc = nullptr,
-	 LetterConfusionMatrix* cm = nullptr, ObjHashTable* subst = nullptr, size_t maxsubst = 0) ;
+	 ObjHashTable* subst = nullptr, size_t maxsubst = 0) ;
       ~SpellCorrectionData() ;
 
       // modifiers
@@ -194,7 +177,6 @@ class SpellCorrectionData
       const SymHashTable* goodWords() const { return m_good_words ; }
       const SymCountHashTable* wordCounts() const { return m_wordcounts ; }
       const ObjHashTable* substitutions() const { return m_substitutions ; }
-      const LetterConfusionMatrix* confusionMatrix() const { return m_confmatrix ; }
 
       bool knownPhrase(const char* term, bool allow_norm = true, char split_char = ' ') const ;
       // get a spelling suggestion; 'suggestion' must point at a buffer at least twice as long as 'term' !!
@@ -208,7 +190,6 @@ class SpellCorrectionData
       const SymHashTable* m_good_words ;
       const SymCountHashTable* m_wordcounts ;
       ObjHashTable* m_substitutions ;
-      LetterConfusionMatrix* m_confmatrix ;
       size_t m_maxsubst ;
    } ;
 

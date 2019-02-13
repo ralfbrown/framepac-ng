@@ -279,7 +279,6 @@ OBJS = \
 	build/clusterinfo$(OBJ) \
 	build/cognate$(OBJ) \
 	build/complex$(OBJ) \
-	build/confmatrix$(OBJ) \
 	build/contextcoll_sym$(OBJ) \
 	build/contextcoll_u32$(OBJ) \
 	build/convert$(OBJ) \
@@ -508,7 +507,6 @@ build/cluster_u32_u32$(OBJ):	src/cluster_u32_u32$(C) template/cluster_factory.cc
 build/cognate$(OBJ):		src/cognate$(C) framepac/file.h framepac/spelling.h framepac/stringbuilder.h \
 				framepac/cstring.h
 build/complex$(OBJ):		src/complex$(C) framepac/complex.h framepac/fasthash64.h
-build/confmatrix$(OBJ):		src/confmatrix$(C) framepac/spelling.h
 build/contextcoll_sym$(OBJ):	src/contextcoll_sym$(C) template/contextcoll.cc
 build/contextcoll_u32$(OBJ):	src/contextcoll_u32$(C) template/contextcoll.cc
 build/convert$(OBJ):		src/convert$(C) framepac/convert.h
