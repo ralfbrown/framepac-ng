@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include <algorithm>
 #include "framepac/cstring.h"
 #include "framepac/file.h"
 #include "framepac/spelling.h"
@@ -277,7 +278,11 @@ bool CognateData::setCognateScoring(const char* src, const char* trg, double sc)
       if (!m_mappings)
 	 m_mappings = new Fr::Trie<List*> ;
       // get the current target mappings for the source string (if any)
-      List* targets = m_mappings->find(reinterpret_cast<const uint8_t*>(src),srclen) ;
+      // because the scoring code looks backwards from its current position, we need to reverse
+      //   the order of the letters in the source string before putting them in the trie
+      CharPtr reversed { dup_string(src) } ;
+      std::reverse(*reversed,*reversed+srclen) ;
+      List* targets = m_mappings->find(reinterpret_cast<const uint8_t*>(*reversed),srclen) ;
       if (!targets)
 	 targets = List::emptyList() ;
       // add the new target mapping
@@ -449,7 +454,9 @@ float CognateData::best_match(const char* word1, size_t len1, size_t index1,
       for (size_t i = 1 ; i <= maxsrc ; ++i)
 	 {
 	 if (!m_mappings->extendKey(idx,(uint8_t)word1[index1-i]))
+	    {
 	    break ;
+	    }
 	 auto n = m_mappings->node(idx) ;
 	 if (n->leaf())
 	    {
