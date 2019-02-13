@@ -46,7 +46,8 @@ enum CompressionType
       lzma,
       lzo,
       lzip,
-      lrzip
+      lrzip,
+      zstd
    } ;
 
 /************************************************************************/
@@ -73,6 +74,7 @@ static FILE *open_piped_input(CompressionType comp, const char *filename,
       case CompressionType::lzo:	pipe_command = "lzop -dcq %s" ; break ;
       case CompressionType::lzip:	pipe_command = "lzip -dcq %s" ; break ;
       case CompressionType::lrzip:	pipe_command = "lrzip -dq <%s" ; break ;
+      case CompressionType::zstd:	pipe_command = "zstd -dcq %s" ; break ;
       default:				return nullptr ;
       }
    char *cmd = nullptr ;
@@ -141,6 +143,8 @@ static CompressionType check_file_signature(const char *filename)
       return CompressionType::lzip ;
    else if (siglen >= 4 && memcmp(sigbuf,"BZh",3) == 0 && sigbuf[3] >= '1' && sigbuf[3] <= '9')
       return CompressionType::bzip2 ;
+   else if (siglen >= 4 && memcmp(sigbuf,"(\xB5/\xFD",4) == 0)
+      return CompressionType::zstd ;
    // unfortunately, .lzma files don't have an official signature, so check for the most common
    //   starting bytes accompanied by the usual file extension
    else if (siglen >= 3 && memcmp(sigbuf,"\0x5D\0\0",3) == 0 && tail_is(filename,strlen(filename),".lzma"))
@@ -216,6 +220,8 @@ bool CFile::openRead(const char *filename, int options)
       if (!m_file)
 	 m_file = open_piped_input(lzma,filename,".lzma") ;
       if (!m_file)
+	 m_file = open_piped_input(zstd,filename,".zstd") ;
+      if (!m_file)
 	 m_file = open_piped_input(lrzip,filename,".lrz") ;
       if (!m_file)
 	 m_file = open_piped_input(lzo,filename,".lzo") ;
@@ -287,6 +293,8 @@ bool CFile::openWrite(const char *filename, int options)
       m_file = open_piped_output("lzip -qfo %s",filename) ;
    else if (tail_is(filename,namelen,".lrz"))
       m_file = open_piped_output("lrzip -qfo %s",filename) ;
+   else if (tail_is(filename,namelen,".zstd"))
+      m_file = open_piped_output("zstd -9q -o %s",filename) ;
    if (m_file)
       {
       m_piped = true ;
