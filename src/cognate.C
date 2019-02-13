@@ -81,7 +81,6 @@ CognateData::CognateData(const List* cognates, size_t fuzzy_match_score)
 {
    (void)fuzzy_match_score; //FIXME
    setCognateScoring(cognates) ;
-
    return ;
 }
 
@@ -123,7 +122,7 @@ void CognateData::reset()
 CognateData* CognateData::load(const char* filename, size_t fuzzy_match_score)
 {
    CInputFile f(filename) ;
-   List* cognates = nullptr ;
+   List* cognates { List::emptyList() } ;
    if (f)
       {
       // determine the format of the data in the file
@@ -167,7 +166,7 @@ CognateData* CognateData::load(const char* filename, size_t fuzzy_match_score)
 	    auto score { Object::create(ptr) } ;
 	    if (src && trg && score && src->isString() && trg->isString() && score->isNumber())
 	       {
-	       pushlist(List::create(src,trg,score),cognates) ;
+	       pushlist(List::create(src.move(),trg.move(),score.move()),cognates) ;
 	       }
 	    else
 	       {
@@ -304,20 +303,36 @@ bool CognateData::setCognateScoring(const List* cognates)
    bool success = true ;
    for (const Object* cog : *cognates)
       {
+      if (!cog || !cog->isList())
+	 continue ;
+      auto coglist = reinterpret_cast<const List*>(cog) ;
       // each element of 'cognates' is of the form
+      //    ("src" "trg" sc)
+      // or
       //    ("src" ("trg1" sc1) ("trg2" sc2) ...)
-      auto src = cog->front() ;
+      auto src = coglist->front() ;
       if (!src) continue ;
       const char* srcstr = src->stringValue() ;
       if (!srcstr) continue ;
-      auto targets = cog->next() ;
-      for (auto target : *targets)
+      auto targets = coglist->next() ;
+      if (!targets)
+	 continue ;
+      if (targets->front() && targets->front()->isList())
 	 {
-	 auto trg = target->front() ;
-	 if (!trg) continue ;
-	 const char* trgstr = trg->stringValue() ;
-	 if (!trgstr) continue ;
-	 auto sc = target->nthFloat(1) ;
+	 for (auto target : *targets)
+	    {
+	    auto trg = target->front() ;
+	    if (!trg) continue ;
+	    const char* trgstr = trg->stringValue() ;
+	    if (!trgstr) continue ;
+	    auto sc = target->nthFloat(1) ;
+	    success &= setCognateScoring(srcstr,trgstr,sc) ;
+	    }
+	 }
+      else
+	 {
+	 const char* trgstr = targets->front()->stringValue() ;
+	 auto sc = cog->nthFloat(2) ;
 	 success &= setCognateScoring(srcstr,trgstr,sc) ;
 	 }
       }
