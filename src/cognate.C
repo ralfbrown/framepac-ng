@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-02-12					*/
+/* Version 0.14, last edit 2019-02-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2017,2018,2019 Carnegie Mellon University		*/
@@ -357,19 +357,19 @@ static float score_exact_matches(const char* word1, size_t len1, const char* wor
    CogScoreInfo** score_buf, size_t rows)
 {
    // initialize the first row of the scoring matrix
-   for (size_t col = 0 ; col < len2 ; ++col)
+   for (size_t col = 0 ; col <= len2 ; ++col)
       {
       score_buf[0][col].init(0.0f,0,1) ;
       }
    // now iterate each row, checking for best choice of substitute/delete/insert
-   for (size_t row = 1 ; row < len1 ; ++row)
+   for (size_t row = 1 ; row <= len1 ; ++row)
       {
       score_buf[row%rows][0] = score_buf[(row-1)%rows][0] ;
-      for (size_t col = 1 ; col < len2 ; ++col)
+      for (size_t col = 1 ; col <= len2 ; ++col)
 	 {
 	 float ins = score_buf[row%rows][col-1] ;
 	 float del = score_buf[(row-1)%rows][col] ;
-	 float subst = score_buf[(row-1)%rows][col-1] + (word1[row] == word2[col]) ? 1.0 : 0.0 ;
+	 float subst = score_buf[(row-1)%rows][col-1] + (word1[row] == word2[col] ? 1.0 : 0.0) ;
 	 if (ins > del && ins > subst)
 	    score_buf[row%rows][col].init(ins,0,1) ;
 	 else if (del > ins && del > subst)
@@ -378,7 +378,7 @@ static float score_exact_matches(const char* word1, size_t len1, const char* wor
 	    score_buf[row%rows][col].init(subst,1,1) ;
 	 }
       }
-   return score_buf[(len1-1)%rows][len2-1].score ;
+   return score_buf[len1%rows][len2].score ;
 }
 
 //----------------------------------------------------------------------------
@@ -388,15 +388,15 @@ float CognateData::score_single_byte(const char* word1, size_t len1, const char*
 {
    // initialize the first row of the scoring matrix
    score_buf[0][0].init(0.0,0,0) ;
-   for (size_t col = 0 ; col < len2 ; ++col)
+   for (size_t col = 0 ; col <= len2 ; ++col)
       {
       score_buf[0][col].init(score_buf[0][col-1] + m_insertion[(unsigned char)word2[col-1]],0,1) ;
       }
    // now iterate each row, checking for best choice of substitute/delete/insert
-   for (size_t row = 1 ; row < len1 ; ++row)
+   for (size_t row = 1 ; row <= len1 ; ++row)
       {
       score_buf[row%rows][0].init(score_buf[(row-1)%rows][0] + m_deletion[(unsigned char)word1[row-1]],1,0) ;
-      for (size_t col = 1 ; col < len2 ; ++col)
+      for (size_t col = 1 ; col <= len2 ; ++col)
 	 {
 	 float ins = score_buf[row%rows][col-1] + m_insertion[(unsigned char)word2[col-1]] ;
 	 float del = score_buf[(row-1)%rows][col] + m_deletion[(unsigned char)word1[row-1]] ;
@@ -410,7 +410,7 @@ float CognateData::score_single_byte(const char* word1, size_t len1, const char*
 	    score_buf[row%rows][col].init(subst,1,1) ;
 	 }
       }
-   return score_buf[(len1-1)%rows][len2-1].score ;
+   return score_buf[len1%rows][len2].score ;
 }
 
 //----------------------------------------------------------------------------
@@ -494,15 +494,15 @@ float CognateData::score_general(const char* word1, size_t len1, const char* wor
 {
    // initialize the first row of the scoring matrix
    score_buf[0][0].init(0.0f,0,0) ;
-   for (size_t col = 1 ; col < len2 ; ++col)
+   for (size_t col = 1 ; col <= len2 ; ++col)
       {
       score_buf[0][col].init(score_buf[0][col-1] + m_insertion[(unsigned char)word2[col-1]],0,1) ;
       }
    // now iterate each row, checking for best choice of substitute/delete/insert
-   for (size_t row = 1 ; row < len1 ; ++row)
+   for (size_t row = 1 ; row <= len1 ; ++row)
       {
       score_buf[row%rows][0].init(score_buf[(row-1)%rows][0] + m_deletion[(unsigned char)word1[row-1]],1,0) ;
-      for (size_t col = 1 ; col < len2 ; ++col)
+      for (size_t col = 1 ; col <= len2 ; ++col)
 	 {
 	 float subst = score_buf[(row-1)%rows][col-1]
 	    + m_one2one[(unsigned char)word1[row]][(unsigned char)word2[col]] ;
@@ -532,7 +532,7 @@ float CognateData::score_general(const char* word1, size_t len1, const char* wor
 	    score_buf[row%rows][col].init(subst,slen,tlen) ;
 	 }
       }
-   return score_buf[(len1-1)%rows][len2-1].score ;
+   return score_buf[len1%rows][len2].score ;
 }
 
 //----------------------------------------------------------------------------
