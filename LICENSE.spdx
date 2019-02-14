@@ -1,0 +1,11 @@
+SPDXVersion: SPDX-2.1
+LicenceListVersion: 3.0
+SPDX-Licence-Identifier: GPL-3.0-only
+Creator: Person: Ralf Brown
+PackageName: FramepaC-ng
+PackageVersion: 0.14
+PackageLicenceDeclared: GPL-3.0
+PackageHomePage: https://www.github.com/ralfbrown/FramepaC-ng
+PackageDownloadLocation: git://github.com/ralfbrown/FramepaC-ng
+PackageDownloadLocation: git+https://github.com/ralfbrown/FramepaC-ng.git
+PackageCopyrightText: 2019, Carnegie Mellon University
