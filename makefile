@@ -287,6 +287,7 @@ OBJS = \
 	build/cstring$(OBJ) \
 	build/cstring_file$(OBJ) \
 	build/dbllist$(OBJ) \
+	build/dbllistbuilder$(OBJ) \
 	build/fasthash64$(OBJ) \
 	build/filename$(OBJ) \
 	build/float$(OBJ) \
@@ -515,6 +516,7 @@ build/critsect$(OBJ):		src/critsect$(C) framepac/critsect.h
 build/cstring$(OBJ):		src/cstring$(C) framepac/cstring.h framepac/fasthash64.h
 build/cstring_file$(OBJ):	src/cstring_file$(C) framepac/cstring.h framepac/file.h
 build/dbllist$(OBJ):		src/dbllist$(C) framepac/list.h
+build/dbllistbuilder$(OBJ):	src/dbllistbuilder$(C) framepac/list.h framepac/string.h
 build/fasthash64$(OBJ):		src/fasthash64$(C) framepac/fasthash64.h
 build/filename$(OBJ):		src/filename$(C) framepac/file.h framepac/texttransforms.h
 build/float$(OBJ):		src/float$(C) framepac/number.h framepac/fasthash64.h

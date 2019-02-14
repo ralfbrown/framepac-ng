@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-02-04					*/
+/* Version 0.14, last edit 2019-02-13					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -30,6 +30,7 @@ namespace Fr {
 class List ;
 class DblList ;
 class ListBuilder ;
+class DblListBuilder ;
 
 //----------------------------------------------------------------------------
 // due to the circular dependencies, we can't actually define many of the functions
@@ -38,13 +39,11 @@ class ListBuilder ;
 
 class ListIter
    {
-   private:
-      List	*m_list ;
    public:
-      ListIter(List *l) : m_list(l) {}
-      ListIter(const List *l) : m_list(const_cast<List*>(l)) {}
-      ListIter(const ListIter &o) : m_list(o.m_list) {}
-      ListIter(ObjectIter &o) : m_list((List*)o.baseObject()) {}
+      ListIter(List* l) : m_list(l) {}
+      ListIter(const List* l) : m_list(const_cast<List*>(l)) {}
+      ListIter(const ListIter& o) : m_list(o.m_list) {}
+      ListIter(ObjectIter& o) : m_list((List*)o.baseObject()) {}
       ~ListIter() = default ;
 
       inline Object* operator* () const ;
@@ -53,6 +52,8 @@ class ListIter
       inline ListIter operator++ (int) ;
       bool operator== (const ListIter& other) const { return m_list == other.m_list ; }
       bool operator!= (const ListIter& other) const { return m_list != other.m_list ; }
+   private:
+      List*  m_list ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -122,7 +123,7 @@ class List : public Object
 
       void setNext(List* nxt) { m_next = nxt ; }
       List** nextPtr() { return &m_next ; }
-      List* const * nextPtr() const { return &m_next ; }
+      List* const* nextPtr() const { return &m_next ; }
       static List* emptyList() { return empty_list ; }
 
       // *** startup/shutdown functions ***
@@ -231,10 +232,10 @@ inline ListIter ListIter::operator++ (int)
 class DblListIter
    {
    public:
-      DblListIter(DblList *l) : m_list(l) {}
-      DblListIter(const DblList *l) : m_list(const_cast<DblList*>(l)) {}
-      DblListIter(const DblListIter &o) : m_list(o.m_list) {}
-      DblListIter(ObjectIter &o) : m_list((DblList*)o.baseObject()) {}
+      DblListIter(DblList* l) : m_list(l) {}
+      DblListIter(const DblList* l) : m_list(const_cast<DblList*>(l)) {}
+      DblListIter(const DblListIter& o) : m_list(o.m_list) {}
+      DblListIter(ObjectIter& o) : m_list((DblList*)o.baseObject()) {}
       ~DblListIter() = default ;
 
       inline Object* operator* () const ;
@@ -247,7 +248,7 @@ class DblListIter
       bool operator!= (const DblListIter& other) const { return m_list != other.m_list ; }
 
    private:
-      DblList	*m_list ;
+      DblList*	m_list ;
    } ;
 
 //----------------------------------------------------------------------------
@@ -271,6 +272,8 @@ class DblList : public List
       static DblList* emptyList() { return static_cast<DblList*>(empty_list) ; }
       //TODO
 
+      void setPrev(List* prv) { m_next = static_cast<DblList*>(prv) ; }
+
    protected: // construction/destruction
       void* operator new(size_t) { return s_allocator.allocate() ; }
       void operator delete(void* blk,size_t) { s_allocator.release(blk) ; }
@@ -292,13 +295,12 @@ class DblList : public List
    private: // static members
       static Allocator s_allocator ;
       static Initializer s_init ;
-      
    } ;
 
 //----------------------------------------------------------------------------
 
 template <>
-inline Ptr<DblList>::Ptr() : m_object(static_cast<DblList*>(List::emptyList())) { }
+inline Ptr<DblList>::Ptr() : m_object(DblList::emptyList()) { }
 
 typedef Ptr<DblList> DblListPtr ;
 
@@ -356,8 +358,54 @@ class ListBuilder
       ListBuilder& operator += (const char* s) { append(s) ; return *this ; }
 
    private:
-      List  *m_list ;
-      List **m_list_end ;
+      List*  m_list ;
+      List** m_list_end ;
+   } ;
+
+/************************************************************************/
+/************************************************************************/
+
+class DblListBuilder
+   {
+   public:
+      DblListBuilder() : m_list(DblList::emptyList()), m_list_end((List**)&m_list) {}
+      DblListBuilder(const ListBuilder&) = delete ;
+      DblListBuilder(DblList*&) ;  // move given list
+      DblListBuilder(const DblList*, bool) ; // copy given list
+      ~DblListBuilder() { clear() ; }
+      DblListBuilder& operator= (const ListBuilder&) = delete ;
+
+      // retrieve contents
+      operator bool () const { return m_list != DblList::emptyList() ; }
+      DblList* operator * () const { return m_list ; }
+      DblList* operator-> () const { return m_list ; }
+      DblList* move() { auto l = m_list ; m_list = DblList::emptyList() ; return l ; }
+
+      // discard contents
+      void clear() { m_list->free() ; m_list = DblList::emptyList() ; }
+      
+      // add an element to the start of the list
+      void push(Object* o) ;
+      // concatenate an entire list at the front of the existing list
+      void prependList(List* l) ;
+      void prependDblList(DblList* l) ;
+      // add an element to the end of the list
+      void append(Object* o) ;
+      void append(const char* o) ;
+      void appendClone(Object* o) ;
+      // concatenate an entire list to the end of the existing list
+      void appendList(List* l) ;
+      // remove the first element of the list
+      Object* pop() ;
+      // reverse the order of elements in the list
+      void reverse() ;
+
+      DblListBuilder& operator += (Object* o) { append(o) ; return *this ; }
+      DblListBuilder& operator += (const char* s) { append(s) ; return *this ; }
+
+   private:
+      DblList* m_list ;
+      List**   m_list_end ;
    } ;
 
 /************************************************************************/
