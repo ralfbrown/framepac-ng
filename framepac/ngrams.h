@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-02-11					*/
+/* Version 0.14, last edit 2019-02-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -340,6 +340,33 @@ class NgramRecord
 /************************************************************************/
 /************************************************************************/
 
+class NGramHistory
+   {
+   public:
+      NGramHistory() {}
+      ~NGramHistory() {}
+
+      // accessors
+      uint32_t startLoc() const { return m_hist ; }
+      uint32_t endLoc() const { return m_hist + m_count - 1 ; }
+      uint32_t wordID() const { return m_hist ; }
+      uint32_t count() const { return m_count ; }
+
+      // manipulators
+      void setID(uint32_t ID) { m_hist = ID ; }
+      void setCount(size_t cnt) { m_count = (uint32_t)cnt ; }
+      void setLoc(uint32_t first, uint32_t last)
+	 { m_hist = first ; m_count = (last - first) + 1 ; }
+//      void setLoc(BWTLocation loc) { m_hist = loc.first() ; m_count = loc.rangeSize() ; }
+
+   private:
+      uint32_t m_hist ;			// location in NGramsFile; raw word ID for unsmoothed/joint-prob model
+      uint32_t m_count ;
+   } ;
+
+/************************************************************************/
+/************************************************************************/
+
 // to update from old FramepaC
 class NGramsFile
    {
@@ -382,7 +409,7 @@ class NGramsFile
       size_t longestMatch(const LmWordID_t* IDs, size_t numIDs) const ;
       double probability(const LmWordID_t* IDs, size_t numIDs,
 			 size_t* max_exist = 0) const ;
-      double probability(FrNGramHistory* history, size_t numIDs,
+      double probability(NGramHistory* history, size_t numIDs,
 			 LmWordID_t ID, size_t* max_exist = 0) const ;
       double probability(const char* const* words, size_t numwords,
 			 size_t* max_exist = 0) const ;
@@ -417,18 +444,18 @@ class NGramsFile
       double smoothingFactor(size_t rank, uint32_t index) const ;
       double rawCondProbability(const LmWordID_t* history, size_t histlen, LmWordID_t ID,
 	 			  size_t class_size) const ;
-      double rawCondProbability(FrNGramHistory* history, size_t histlen, LmWordID_t ID, size_t class_size) const ;
+      double rawCondProbability(NGramHistory* history, size_t histlen, LmWordID_t ID, size_t class_size) const ;
       double probabilityKN(const LmWordID_t* IDs, size_t numIDs, size_t* max_exist = 0) const ;
-      double probabilityKN(const FrNGramHistory* history, FrNGramHistory* newhistory,
+      double probabilityKN(const NGramHistory* history, NGramHistory* newhistory,
 	 		     size_t numIDs, LmWordID_t ID, size_t* max_exist = 0) const ;
       double probabilityMax(const LmWordID_t* IDs, size_t numIDs, size_t* max_exist = 0) const ;
-      double probabilityMax(FrNGramHistory* history, size_t numIDs, LmWordID_t ID, size_t* max_exist = 0) const ;
+      double probabilityMax(NGramHistory* history, size_t numIDs, LmWordID_t ID, size_t* max_exist = 0) const ;
       double probabilityMean(const LmWordID_t* IDs, size_t numIDs, size_t* max_exist = 0) const ;
-      double probabilityMean(FrNGramHistory* history, size_t numIDs, LmWordID_t ID, size_t* max_exist = 0) const ;
+      double probabilityMean(NGramHistory* history, size_t numIDs, LmWordID_t ID, size_t* max_exist = 0) const ;
       double probabilityBackoff(const LmWordID_t* IDs, size_t numIDs, size_t* max_exist = 0) const ;
-      double probabilityBackoff(FrNGramHistory* history, size_t numIDs, LmWordID_t ID,
+      double probabilityBackoff(NGramHistory* history, size_t numIDs, LmWordID_t ID,
 	 			  size_t* max_exist = 0) const ;
-      void initZerogram(FrNGramHistory* history) const ;
+      void initZerogram(NGramHistory* history) const ;
 
    private:
       Vocabulary* m_vocab ;			// map from word to ID
@@ -549,7 +576,7 @@ class NGramModel
       virtual LmWordID_t getUnknownID() const ;
 
       virtual double rawProbability(size_t numwords, const LmWordID_t* IDs, size_t* max_exist) const ;
-      virtual double rawProbability(size_t numwords, FrNGramHistory* hist,
+      virtual double rawProbability(size_t numwords, NGramHistory* hist,
 				    LmWordID_t ID, size_t* max_exist) const ;
 
       static int string2words(const char* string, char**& wordlist) ;
@@ -560,11 +587,11 @@ class NGramModel
       double rawProbability(const LmWordID_t* IDs, size_t numIDs,
 			    size_t* max_exist = 0,
 			    const char* surf_word = 0) const ;
-      double rawProbability(FrNGramHistory* history, size_t numIDs,
+      double rawProbability(NGramHistory* history, size_t numIDs,
 			    LmWordID_t ID, size_t* max_exist = 0, const char* surf_word = 0) const ;
       double probability(const LmWordID_t* IDs, size_t numwords,
 			 size_t* max_exist = 0, const char* surf_word = 0) const ;
-      double probability(FrNGramHistory* history, size_t numIDs,
+      double probability(NGramHistory* history, size_t numIDs,
 			 LmWordID_t ID, size_t* max_exist, const char* surf_word = 0) const ;
       double probability(const List* ngram) const ;
       size_t frequency(const List* words) const ;
@@ -650,7 +677,7 @@ class NGramModelNGM : public NGramModel
       virtual size_t frequency(const LmWordID_t* IDs, size_t numwords) const ;
       virtual size_t longestMatch(const LmWordID_t* IDs, size_t numwords) const ;
       virtual double rawProbability(size_t numwords, const LmWordID_t* IDs, size_t* max_exist) const ;
-      virtual double rawProbability(size_t numwords, FrNGramHistory* hist,
+      virtual double rawProbability(size_t numwords, NGramHistory* hist,
 				    LmWordID_t ID, size_t* max_exist) const ;
       virtual bool isCaseSensitive() const ;
       virtual bool isCharBased() const ;
