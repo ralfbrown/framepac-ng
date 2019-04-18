@@ -22,6 +22,7 @@
 #ifndef _Fr_BUILDER_H_INCLUDED
 #define _Fr_BUILDER_H_INCLUDED
 
+#include <array>
 #include <mutex>
 #include "framepac/config.h"
 
@@ -32,7 +33,7 @@ namespace Fr {
 
 class CFile ;
 
-template <typename T, size_t minsize = 200>
+template <typename T, size_t minsize = 0>
 class BufferBuilder
    {
    public:
@@ -77,6 +78,8 @@ class BufferBuilder
       BufferBuilder &operator += (const BufferBuilder& buf) { append(buf) ; return *this ; }
 
    protected:
+      T* localBuffer() { return minsize ? m_localbuf.begin() : nullptr ; }
+      const T* localBuffer() const { return minsize ? m_localbuf.begin() : nullptr ; }
       void freeBuffer() ;
 
    protected:
@@ -84,7 +87,7 @@ class BufferBuilder
       size_t	m_currsize { 0 } ;
       size_t	m_alloc ;
       bool	m_external_buffer { false } ;
-      T		m_localbuf[minsize] ;
+      std::array<T,minsize> m_localbuf ;
 
       // magic values for serializing
       static constexpr auto signature = "\x7F""BufBuild" ;

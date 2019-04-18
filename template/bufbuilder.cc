@@ -42,7 +42,7 @@ BufferBuilder<T,minsize>::BufferBuilder()
    m_buffer = nullptr ;
 #else
    m_alloc = minsize ;
-   m_buffer = m_localbuf ;
+   m_buffer = localBuffer() ;
 #endif
    return ;
 }
@@ -62,7 +62,7 @@ BufferBuilder<T,minsize>::~BufferBuilder()
 template <typename T, size_t minsize>
 void BufferBuilder<T,minsize>::freeBuffer()
 {
-   if (m_buffer != m_localbuf)
+   if (m_buffer != localBuffer())
       {
       if (!m_external_buffer && m_buffer)
 	 {
@@ -77,7 +77,7 @@ void BufferBuilder<T,minsize>::freeBuffer()
       m_buffer = nullptr ;
       m_alloc = 0 ;
 #else
-      m_buffer = m_localbuf ;
+      m_buffer = localBuffer() ;
       m_alloc = minsize ;
 #endif /* __SANITIZE_ADDRESS__ */
       }
@@ -110,7 +110,7 @@ template <typename T, size_t minsize>
 void BufferBuilder<T,minsize>::clear()
 {
    freeBuffer() ;
-   m_buffer = m_localbuf ;
+   m_buffer = localBuffer() ;
    m_alloc = minsize ;
    m_currsize = 0 ;
    m_external_buffer = false ;
@@ -136,14 +136,14 @@ template <typename T, size_t minsize>
 T* BufferBuilder<T,minsize>::move()
 {
    T* buf { m_buffer } ;
-   if (buf == m_localbuf)
+   if (buf == localBuffer() && minsize > 0)
       {
       // we need to make a copy of the buffer
       buf = new T[this->capacity()] ;
       std::copy(m_buffer,m_buffer+m_currsize,buf) ;
       }
    // reset our buffer
-   m_buffer = m_localbuf ;
+   m_buffer = localBuffer() ;
    m_alloc = minsize ;
    m_currsize = 0 ;
    // and return the buffer that had been built
