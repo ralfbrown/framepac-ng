@@ -101,8 +101,8 @@ class GraphT<V,Eidx,L>
    public:
       typedef GraphVertex<V> Vertex ;
       typedef GraphEdgeLengthT<Eidx,L> Edge ;
-      typedef BufferBuilder<Vertex,16> VertexList ;
-      typedef BufferBuilder<Edge,16> EdgeList ;
+      typedef BufferBuilder<Vertex,1> VertexList ;
+      typedef BufferBuilder<Edge,1> EdgeList ;
    public:
       GraphT()
 	 {
@@ -125,15 +125,26 @@ class GraphT<V,Eidx,L>
       bool isSubgraph() const { return m_is_subgraph ; }
       size_t numVertices() const { return m_vertices.currentLength() ; }
       size_t numEdges() const { return m_edges.currentLength() ; }
-      V* vertex(Eidx index) const { return m_vertices[index] ; }
-      Edge* edge(Eidx index) const { return m_edges[index] ; }
+      V* vertex(size_t index) const { return m_vertices[index] ; }
+      Edge* edge(size_t index) const { return m_edges[index] ; }
+
+      // iterator support
+      const Vertex* beginVert() const { return m_vertices.begin() ; }
+      const Vertex* endVert() const { return m_vertices.end() ; }
+      const Edge* beginEdge() const { return m_edges.begin() ; }
+      const Edge* endEdge() const { return m_edges.end() ; }
 
       // algorithms
+      // return an array of subgraphs such that each has roughly the same number of vertices
+      //    (used by parallel algorithms)
+      GraphT** split(size_t num_segments) const ;
+      // return a list of edges forming a minimum spanning tree over the graph
       EdgeList&& minSpanningTreePrims() const ;
 
    protected:
       VertexList m_vertices ;
       EdgeList m_edges ;
+      EdgeList m_leaving_edges ;	// in a subgraph, the edges leading to vertices outside the subgraph
       bool m_directed  { true } ;
       bool m_is_subgraph { false } ;
    } ;
