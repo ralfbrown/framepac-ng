@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-19					*/
+/* Version 0.14, last edit 2019-07-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
+/* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -105,7 +105,8 @@ class CFile
       explicit operator bool () const { return m_file != nullptr ; }
       bool operator! () const { return m_file == nullptr ; }
 
-      void writeComplete() { m_complete = true ; }
+      void writeComplete() { m_complete = true ; }	// indicate that write of new file was successful
+      void discardBackup() { m_keep_backup = false ; } // delete original version instead of moving to *.bak
       FILE* fp() const { return m_file ; }
       bool eof() const { return m_file ? feof(m_file) : true ; }
       bool good() const ;
@@ -233,8 +234,9 @@ class CFile
       CharPtr m_tempname  { nullptr } ;	// if safe-overwrite chosen, write to temp file and
       CharPtr m_finalname { nullptr } ; // move it to the final name on close
       int   m_errcode     { 0 } ;
-      bool  m_piped       { false } ;
+      bool  m_piped       { false } ;	// are we piping through an external process?
       bool  m_complete    { false } ;   // have we successfully finished writing?
+      bool  m_keep_backup { true } ;	// should we retain original file as a backup?
    } ;
 
 //----------------------------------------------------------------------------
@@ -301,8 +303,19 @@ class FilePath
 List* load_file_list(bool use_stdin, const char* listfile, const char* what = nullptr,
    bool terminate_on_error = true) ;
 
+bool file_exists(const char *filename) ;
+bool is_writeable_directory(const char *filename) ;
+
+off_t file_size(FILE*) ;
+off_t file_size(const char* filename) ;
+
+bool create_path(const char* path) ;
+
 bool copy_file(const char* srcname, const char* destname) ;
 bool copy_file(const char* srcname, FILE* dest) ;
+
+bool safely_replace_file(const char *tempname, const char *filename, bool keep_backup = true,
+   bool print_errmsg = false) ;
 
 } // end namespace Fr
 

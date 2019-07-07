@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-19					*/
+/* Version 0.14, last edit 2019-07-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
+/* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -257,9 +257,12 @@ bool CFile::openWrite(const char *filename, int options)
 {
    if ((options & fail_if_exists) != 0)
       {
-      //TODO: check whether the output file exists
-      // if it does, set m_errcode
-
+      // check whether the output file exists; if it does, set m_errcode
+      if (file_exists(filename))
+	 {
+	 m_errcode = -1 ; //FIXME
+	 return false ;
+	 }
       }
    if ((options & safe_rewrite) != 0)
       {
@@ -343,8 +346,8 @@ bool CFile::close()
 	 {
 	 // we can now rename the temporary file we've been using to the final name,
 	 //   removing the previous version in the process
-	 rename(m_tempname,m_finalname) ;
-//TODO: lots of possible error returns from rename, should handle the most important ones...
+	 if (!safely_replace_file(m_tempname,m_finalname,m_keep_backup,false))
+	    success = false ;
 	 }
       else
 	 {
