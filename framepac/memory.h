@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.13, last edit 2018-09-19					*/
+/* Version 0.14, last edit 2019-07-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
+/* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -382,6 +382,8 @@ class SmallAlloc
    public:
       static SmallAlloc* create(size_t objsize) ;
       static SmallAlloc* create(size_t objsize, size_t align) ;
+
+      void free() { m_allocator = nullptr ; delete this ; }
 
 #if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
       // when sanitizing, just forward to the system allocator so that the sanitizer can track allocations
