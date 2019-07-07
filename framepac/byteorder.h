@@ -101,6 +101,10 @@ class ByteOrdered
       ByteOrdered& operator -= (numtype v) { store(load()-v) ; return *this ; }
       ByteOrdered& operator *= (numtype v) { store(load()*v) ; return *this ; }
       ByteOrdered& operator /= (numtype v) { store(load()/v) ; return *this ; }
+      ByteOrdered& operator |= (numtype v) { store(load()|v) ; return *this ; }
+      ByteOrdered& operator &= (numtype v) { store(load()&v) ; return *this ; }
+      ByteOrdered& operator <<= (unsigned n) { store(load()<<n) ; return *this ; }
+      ByteOrdered& operator >>= (unsigned n) { store(load()>>n) ; return *this ; }
       ByteOrdered& operator -- () { store(load()-1) ; return *this ; }
       ByteOrdered& operator ++ () { store(load()+1) ; return *this ; }
    } ;
