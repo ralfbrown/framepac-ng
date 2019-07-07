@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-02-04					*/
+/* Version 0.14, last edit 2019-07-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -806,6 +806,17 @@ void pushlist(Object* obj, List*& list)
    newhead->setNext(list) ;
    list = newhead ;
    return ;
+}
+
+//----------------------------------------------------------------------------
+
+Object* poplist(List*& list)
+{
+   if (!list)
+      return nullptr ;
+   Object* o ;
+   list = list->pop(o) ;
+   return o ;
 }
 
 } ; // end namespace Fr

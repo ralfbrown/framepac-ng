@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-02-13					*/
+/* Version 0.14, last edit 2019-07-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -412,6 +412,7 @@ class DblListBuilder
 /************************************************************************/
 
 void pushlist(Object*, List*&) ;
+Object* poplist(List*&) ;
 
 // end of namespace Fr
 } ;

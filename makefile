@@ -1,5 +1,5 @@
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 30jan2019
+# Last change: 07jul2019
 
 #########################################################################
 # define the locations of all the files
@@ -60,12 +60,14 @@ SANITIZE=-fsanitize=thread -fPIC
 LINKSAN=-fPIC -pie
 EXTRAOBJS=dynamic_annotations.o
 else ifeq ($(SANE),2)
-SANITIZE=-fsanitize=address -fno-omit-frame-pointer -DPURIFY
+SANITIZE=-fsanitize=address -fsanitize=pointer-compare -fno-omit-frame-pointer -DPURIFY
 else ifeq ($(SANE),3)
 SANITIZE=-fsanitize=leak -DPURIFY
 else ifeq ($(SANE),4)
 SANITIZE=-fsanitize=memory -fno-omit-frame-pointer
 else ifeq ($(SANE),5)
+SANITIZE=-fsanitize=thread
+else ifeq ($(SANE),6)
 # fasthash64, BiDirIndex, and SuffixArray make deliberate misaligned accesses
 SANITIZE=-fsanitize=undefined -fno-sanitize=alignment
 endif
@@ -181,7 +183,8 @@ ifeq ($(BUILD_DBG),2)
 else ifeq ($(BUILD_DBG),1)
   CFLAGS += -ggdb3 -Og -g3 -fno-extern-tls-init
 else
-  CFLAGS += -O3 -fexpensive-optimizations -fno-extern-tls-init -g$(DBGLVL) $(GDB)
+  EXPENSIVE_OPT = -fgcse-sm -fgcse-las -fipa-pta -floop-nest-optimize -ftree-loop-im -ftree-loop-ivcanon -fivopts -fvariable-expansion-in-unroller -fno-align-labels -fno-align-loops
+  CFLAGS += -O3 -fexpensive-optimizations -fno-extern-tls-init $(EXPENSIVE_OPT) -g$(DBGLVL) $(GDB)
 # CFLAGS += -fweb -ftracer -fgcse-sm -fgcse-las -fno-math-errno
 endif
 
