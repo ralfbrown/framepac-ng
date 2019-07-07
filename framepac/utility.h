@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.11, last edit 2018-09-10					*/
+/* Version 0.14, last edit 2019-07-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2018 Carnegie Mellon University			*/
+/* (c) Copyright 2018,2019 Carnegie Mellon University			*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -56,6 +56,16 @@ class PrefixMatcher
       bool      m_casefold ;
       mutable Status m_status { NoMatch } ;
    } ;
+
+//----------------------------------------------------------------------------
+
+#if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)) && (defined(__SSE4_2__) || !defined(FrFAST_MULTIPLY))
+inline unsigned popcount(uint64_t value) { return __builtin_popcountl(value) ; }
+inline unsigned popcount(uint32_t value) { return __builtin_popcount(value) ; }
+#else
+unsigned popcount(uint64_t value) ;
+unsigned popcount(uint32_t value) ;
+#endif
 
 //----------------------------------------------------------------------------
 

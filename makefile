@@ -328,6 +328,7 @@ OBJS = \
 	build/number$(OBJ) \
 	build/object$(OBJ) \
 	build/objreader$(OBJ) \
+	build/popcount$(OBJ) \
 	build/prefixmatcher$(OBJ) \
 	build/printf$(OBJ) \
 	build/progress$(OBJ) \
@@ -477,33 +478,33 @@ $(BINDIR)/objtest$(EXE):	tests/objtest$(OBJ) $(LIBRARY)
 $(BINDIR)/parhash$(EXE):	tests/parhash$(OBJ) $(LIBRARY)
 $(BINDIR)/splitwords$(EXE):	tests/splitwords$(OBJ) $(LIBRARY)
 $(BINDIR)/stringtest$(EXE):	tests/stringtest$(OBJ) $(LIBRARY)
-$(BINDIR)/tpool$(EXE):		tests/tpool$(OBJ) $(LIBRARY)
+$(BINDIR)/tpool$(EXE):	tests/tpool$(OBJ) $(LIBRARY)
 
-build/allocator$(OBJ):		src/allocator$(C) framepac/atomic.h framepac/memory.h
+build/allocator$(OBJ):	src/allocator$(C) framepac/atomic.h framepac/memory.h
 build/argopt$(OBJ):		src/argopt$(C) template/argopt.cc
 build/argopt_real$(OBJ):	src/argopt_real$(C) template/argopt.cc
-build/argparser$(OBJ):		src/argparser$(C) framepac/argparser.h framepac/texttransforms.h
+build/argparser$(OBJ):	src/argparser$(C) framepac/argparser.h framepac/texttransforms.h
 build/array$(OBJ):		src/array$(C) framepac/array.h framepac/fasthash64.h
-build/as_string$(OBJ):		src/as_string$(C) framepac/as_string.h framepac/object.h framepac/texttransforms.h
+build/as_string$(OBJ):	src/as_string$(C) framepac/as_string.h framepac/object.h framepac/texttransforms.h
 build/basisvector_u32$(OBJ):	src/basisvector_u32$(C) template/basisvector.cc
 build/basisvector_u32flt$(OBJ):	src/basisvector_u32flt$(C) template/basisvector.cc
 build/bidindex_cstr$(OBJ):	src/bidindex_cstr$(C) template/bidindex.cc framepac/cstring.h
 build/bignum$(OBJ):		src/bignum$(C) framepac/bignum.h
-build/bitvector$(OBJ):		src/bitvector$(C) framepac/bitvector.h framepac/number.h framepac/fasthash64.h
+build/bitvector$(OBJ):	src/bitvector$(C) framepac/bitvector.h framepac/number.h framepac/fasthash64.h
 build/bufbuilder_char$(OBJ):	src/bufbuilder_char$(C) template/bufbuilder.cc
 build/bwt$(OBJ):		src/bwt$(C) framepac/config.h
-build/canonsent$(OBJ):		src/canonsent$(C) framepac/texttransforms.h framepac/words.h
+build/canonsent$(OBJ):	src/canonsent$(C) framepac/texttransforms.h framepac/words.h
 build/charget$(OBJ):		src/charget$(C) framepac/charget.h framepac/builder.h
 build/cfgfile$(OBJ):		src/cfgfile$(C) framepac/configfile.h framepac/charget.h framepac/list.h \
-				framepac/as_string.h framepac/message.h framepac/string.h framepac/symbol.h \
-				framepac/texttransforms.h
+			framepac/as_string.h framepac/message.h framepac/string.h framepac/symbol.h \
+			framepac/texttransforms.h
 build/cfile$(OBJ):		src/cfile$(C) framepac/file.h framepac/message.h framepac/stringbuilder.h \
-				framepac/texttransforms.h
+			framepac/texttransforms.h
 build/cluster$(OBJ):		src/cluster$(C) framepac/cluster.h framepac/message.h framepac/progress.h \
-				framepac/signal.h framepac/texttransforms.h framepac/cstring.h framepac/convert.h \
-				framepac/stringbuilder.h framepac/utility.h framepac/words.h
+			framepac/signal.h framepac/texttransforms.h framepac/cstring.h framepac/convert.h \
+			framepac/stringbuilder.h framepac/utility.h framepac/words.h
 build/clusterinfo$(OBJ):	src/clusterinfo$(C) framepac/atomic.h framepac/cluster.h framepac/symboltable.h \
-				framepac/cstring.h framepac/texttransforms.h
+			framepac/cstring.h framepac/texttransforms.h
 build/cluster_name$(OBJ):	src/cluster_name$(C) framepac/cluster.h
 build/cluster_u32_dbl$(OBJ):	src/cluster_u32_dbl$(C) template/cluster_factory.cc
 build/cluster_u32_flt$(OBJ):	src/cluster_u32_flt$(C) template/cluster_factory.cc
@@ -514,17 +515,17 @@ build/complex$(OBJ):		src/complex$(C) framepac/complex.h framepac/fasthash64.h
 build/contextcoll_sym$(OBJ):	src/contextcoll_sym$(C) template/contextcoll.cc
 build/contextcoll_u32$(OBJ):	src/contextcoll_u32$(C) template/contextcoll.cc
 build/convert$(OBJ):		src/convert$(C) framepac/convert.h
-build/copyfile$(OBJ):		src/copyfile$(C) framepac/file.h
-build/critsect$(OBJ):		src/critsect$(C) framepac/critsect.h
+build/copyfile$(OBJ):	src/copyfile$(C) framepac/file.h
+build/critsect$(OBJ):	src/critsect$(C) framepac/critsect.h
 build/cstring$(OBJ):		src/cstring$(C) framepac/cstring.h framepac/fasthash64.h
 build/cstring_file$(OBJ):	src/cstring_file$(C) framepac/cstring.h framepac/file.h
 build/dbllist$(OBJ):		src/dbllist$(C) framepac/list.h
 build/dbllistbuilder$(OBJ):	src/dbllistbuilder$(C) framepac/list.h framepac/string.h
-build/fasthash64$(OBJ):		src/fasthash64$(C) framepac/fasthash64.h
-build/filename$(OBJ):		src/filename$(C) framepac/file.h framepac/texttransforms.h
+build/fasthash64$(OBJ):	src/fasthash64$(C) framepac/fasthash64.h
+build/filename$(OBJ):	src/filename$(C) framepac/file.h framepac/texttransforms.h
 build/float$(OBJ):		src/float$(C) framepac/number.h framepac/fasthash64.h
 build/frame$(OBJ):		src/frame$(C) framepac/frame.h
-build/globaldata$(OBJ):		src/globaldata$(C)
+build/globaldata$(OBJ):	src/globaldata$(C)
 build/hashset_obj$(OBJ):	src/hashset_obj$(C) template/hashtable.cc
 build/hashset_sym$(OBJ):	src/hashset_sym$(C) template/hashtable.cc
 build/hashset_u32$(OBJ):	src/hashset_u32$(C) template/hashtable.cc
@@ -540,62 +541,63 @@ build/hashtable_u32obj$(OBJ):	src/hashtable_u32obj$(C) template/hashtable.cc tem
 build/hazardptr$(OBJ):		src/hazardptr$(C) framepac/atomic.h
 build/init$(OBJ):		src/init$(C) framepac/init.h framepac/symboltable.h framepac/hashhelper.h
 build/integer$(OBJ):		src/integer$(C) framepac/number.h framepac/fasthash64.h
-build/is_number$(OBJ):		src/is_number$(C) framepac/cstring.h
-build/jsonreader$(OBJ):		src/jsonreader$(C) framepac/objreader.h framepac/stringbuilder.h framepac/list.h \
-				framepac/map.h framepac/number.h framepac/cstring.h
-build/jsonwriter$(OBJ):		src/jsonwriter$(C) framepac/file.h framepac/list.h
-build/keylayout$(OBJ):		src/keylayout$(C) framepac/spelling.h
-build/linebatch$(OBJ):		src/linebatch$(C) framepac/file.h
+build/is_number$(OBJ):	src/is_number$(C) framepac/cstring.h
+build/jsonreader$(OBJ):	src/jsonreader$(C) framepac/objreader.h framepac/stringbuilder.h framepac/list.h \
+			framepac/map.h framepac/number.h framepac/cstring.h
+build/jsonwriter$(OBJ):	src/jsonwriter$(C) framepac/file.h framepac/list.h
+build/keylayout$(OBJ):	src/keylayout$(C) framepac/spelling.h
+build/linebatch$(OBJ):	src/linebatch$(C) framepac/file.h
 build/list$(OBJ):		src/list$(C) framepac/list.h framepac/fasthash64.h framepac/init.h
 build/listbuilder$(OBJ):	src/listbuilder$(C) framepac/list.h framepac/string.h
-build/listutil$(OBJ):		src/listutil$(C) framepac/list.h framepac/string.h
+build/listutil$(OBJ):	src/listutil$(C) framepac/list.h framepac/string.h
 build/loadfilelist$(OBJ):	src/loadfilelist$(C) framepac/file.h framepac/list.h framepac/message.h
 build/map$(OBJ):		src/map$(C) framepac/map.h framepac/fasthash64.h
-build/map_file$(OBJ):		src/map_file$(C) framepac/map.h framepac/file.h
+build/map_file$(OBJ):	src/map_file$(C) framepac/map.h framepac/file.h
 build/matrix$(OBJ):		src/matrix$(C) framepac/matrix.h
 build/message$(OBJ):		src/message$(C) framepac/message.h framepac/texttransforms.h
-build/mmapfile$(OBJ):		src/mmapfile$(C) framepac/mmapfile.h framepac/file.h
-build/nonobject$(OBJ):		src/nonobject$(C) framepac/nonobject.h
+build/mmapfile$(OBJ):	src/mmapfile$(C) framepac/mmapfile.h framepac/file.h
+build/nonobject$(OBJ):	src/nonobject$(C) framepac/nonobject.h
 build/number$(OBJ):		src/number$(C) framepac/bignum.h framepac/rational.h
 build/object$(OBJ):		src/object$(C) framepac/object.h framepac/objreader.h framepac/cstring.h
-build/objreader$(OBJ):		src/objreader$(C) framepac/objreader.h framepac/symboltable.h framepac/array.h \
+build/objreader$(OBJ):	src/objreader$(C) framepac/objreader.h framepac/symboltable.h framepac/array.h \
 			framepac/bignum.h framepac/bitvector.h framepac/map.h framepac/rational.h \
 			framepac/list.h framepac/number.h framepac/stringbuilder.h framepac/termvector.h \
 			framepac/texttransforms.h
+build/popcount$(OBJ):	src/popcount$(C) framepac/utility.h
 build/prefixmatcher$(OBJ):	src/prefixmatcher$(C) framepac/utility.h
 build/printf$(OBJ):		src/printf$(C) framepac/texttransforms.h
-build/progress$(OBJ):		src/progress$(C) framepac/progress.h framepac/stringbuilder.h framepac/texttransforms.h
-build/ptrie_u32$(OBJ):		src/ptrie_u32$(C) template/ptrie.cc
+build/progress$(OBJ):	src/progress$(C) framepac/progress.h framepac/stringbuilder.h framepac/texttransforms.h
+build/ptrie_u32$(OBJ):	src/ptrie_u32$(C) template/ptrie.cc
 build/random$(OBJ):		src/random$(C) framepac/message.h framepac/random.h framepac/critsect.h
-build/rational$(OBJ):		src/rational$(C) framepac/rational.h
-build/refarray$(OBJ):		src/refarray$(C) framepac/array.h framepac/fasthash64.h framepac/random.h
+build/rational$(OBJ):	src/rational$(C) framepac/rational.h
+build/refarray$(OBJ):	src/refarray$(C) framepac/array.h framepac/fasthash64.h framepac/random.h
 build/set$(OBJ):		src/set$(C) framepac/set.h
 build/signal$(OBJ):		src/signal$(C) framepac/signal.h framepac/message.h
 build/slab$(OBJ):		src/slab$(C) framepac/memory.h
-build/slabgroup$(OBJ):		src/slabgroup$(C) framepac/memory.h framepac/semaphore.h framepac/critsect.h
-build/smallalloc$(OBJ):		src/smallalloc$(C) framepac/memory.h
+build/slabgroup$(OBJ):	src/slabgroup$(C) framepac/memory.h framepac/semaphore.h framepac/critsect.h
+build/smallalloc$(OBJ):	src/smallalloc$(C) framepac/memory.h
 build/sparsematrix$(OBJ):	src/sparsematrix$(C) framepac/matrix.h
-build/spelling$(OBJ):		src/spelling$(C) framepac/spelling.h
+build/spelling$(OBJ):	src/spelling$(C) framepac/spelling.h
 build/string$(OBJ):		src/string$(C) framepac/string.h framepac/fasthash64.h
 build/stringbuilder$(OBJ):	src/stringbuilder$(C) framepac/stringbuilder.h framepac/file.h
 build/sufarray_u32u32$(OBJ):	src/sufarray_u32u32$(C) template/sufarray.cc template/sufarray_file.cc
 build/sufarray_u32u40$(OBJ):	src/sufarray_u32u40$(C) template/sufarray.cc template/sufarray_file.cc \
-				framepac/byteorder.h
+			framepac/byteorder.h
 build/symbol$(OBJ):		src/symbol$(C) framepac/symboltable.h framepac/nonobject.h framepac/fasthash64.h
-build/symbolprop$(OBJ):		src/symbolprop$(C) framepac/frame.h framepac/list.h framepac/symbol.h
+build/symbolprop$(OBJ):	src/symbolprop$(C) framepac/frame.h framepac/list.h framepac/symbol.h
 build/symboltable$(OBJ):	src/symboltable$(C) framepac/symboltable.h framepac/fasthash64.h \
-				framepac/texttransforms.h
-build/synchevent$(OBJ):		src/synchevent$(C) framepac/synchevent.h
-build/termvector$(OBJ):		src/termvector$(C) template/termvector.cc
+			framepac/texttransforms.h
+build/synchevent$(OBJ):	src/synchevent$(C) framepac/synchevent.h
+build/termvector$(OBJ):	src/termvector$(C) template/termvector.cc
 build/texttransforms$(OBJ):	src/texttransforms$(C) framepac/texttransforms.h
-build/threadpool$(OBJ):		src/threadpool$(C) framepac/threadpool.h framepac/memory.h framepac/thread.h
-build/threshold$(OBJ):		src/threshold$(C) framepac/threshold.h
+build/threadpool$(OBJ):	src/threadpool$(C) framepac/threadpool.h framepac/memory.h framepac/thread.h
+build/threshold$(OBJ):	src/threshold$(C) framepac/threshold.h
 build/timer$(OBJ):		src/timer$(C) framepac/timer.h framepac/texttransforms.h
 build/trie$(OBJ):		src/trie$(C) framepac/trie.h
 build/trie_u32dbl$(OBJ):	src/trie_u32dbl$(C) template/trie.cc
 build/trie_u32lst$(OBJ):	src/trie_u32lst$(C) template/trie.cc framepac/list.h
 build/trie_u32u32$(OBJ):	src/trie_u32u32$(C) template/trie.cc
-build/vecsimopt$(OBJ):		src/vecsimopt$(C) framepac/vecsim.h
+build/vecsimopt$(OBJ):	src/vecsimopt$(C) framepac/vecsim.h
 build/vecsim_name$(OBJ):	src/vecsim_name$(C) framepac/utility.h framepac/vecsim.h
 build/vecsim_u32_dbl$(OBJ):	src/vecsim_u32_dbl$(C) template/vecsim_factory.cc
 build/vecsim_u32_flt$(OBJ):	src/vecsim_u32_flt$(C) template/vecsim_factory.cc
@@ -603,27 +605,27 @@ build/vecsim_u32_u32$(OBJ):	src/vecsim_u32_u32$(C) template/vecsim_factory.cc
 build/vector_obj_dbl$(OBJ):	src/vector_obj_dbl$(C) template/sparsevector.cc
 build/vector_obj_flt$(OBJ):	src/vector_obj_flt$(C) template/sparsevector.cc
 build/vector_u32_dbl$(OBJ):	src/vector_u32_dbl$(C) template/vector.cc template/densevector.cc \
-				template/sparsevector.cc
+			template/sparsevector.cc
 build/vector_u32_flt$(OBJ):	src/vector_u32_flt$(C) template/vector.cc template/densevector.cc \
-				template/sparsevector.cc
+			template/sparsevector.cc
 build/vector_u32_u32$(OBJ):	src/vector_u32_u32$(C) template/vector.cc template/densevector.cc \
-				template/sparsevector.cc
+			template/sparsevector.cc
 build/wordcorpus_u24u32$(OBJ): 	src/wordcorpus_u32u40$(C) template/wordcorpus.cc template/concbuilder.cc
 build/wordcorpus_u32u32$(OBJ): 	src/wordcorpus_u32u32$(C) template/wordcorpus.cc template/hashtable.cc \
-				template/concbuilder.cc template/bufbuilder_file.cc template/hashtable_file.cc \
-				template/sufarray_file.cc
+			template/concbuilder.cc template/bufbuilder_file.cc template/hashtable_file.cc \
+			template/sufarray_file.cc
 build/wordcorpus_u32u40$(OBJ): 	src/wordcorpus_u32u40$(C) template/wordcorpus.cc
-build/wordsplit$(OBJ):		src/wordsplit$(C) framepac/charget.h framepac/list.h framepac/stringbuilder.h \
+build/wordsplit$(OBJ):	src/wordsplit$(C) framepac/charget.h framepac/list.h framepac/stringbuilder.h \
 				framepac/words.h
 build/wordsplit_eng$(OBJ):	src/wordsplit_eng$(C) framepac/words.h
 
 globaldata$(C):
 	@mkdir -p build
 
-template/argopt.cc:	framepac/argparser.h framepac/as_string.h framepac/texttransforms.h
+template/argopt.cc:		framepac/argparser.h framepac/as_string.h framepac/texttransforms.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/basisvector.cc: framepac/random.h framepac/basisvector.h
+template/basisvector.cc:	framepac/random.h framepac/basisvector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/bidindex.cc:	framepac/bidindex.h framepac/file.h framepac/message.h framepac/mmapfile.h
@@ -687,13 +689,13 @@ template/hashtable.cc:	framepac/hashtable.h framepac/message.h framepac/fasthash
 template/hashtable_file.cc:	framepac/hashtable.h framepac/file.h framepac/message.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/mtrie.cc:	framepac/trie.h
+template/mtrie.cc:		framepac/trie.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/pmtrie.cc:	framepac/trie.h
+template/pmtrie.cc:		framepac/trie.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/ptrie.cc:	framepac/trie.h
+template/ptrie.cc:		framepac/trie.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/sufarray.cc:	framepac/sufarray.h framepac/bitvector.h
@@ -708,13 +710,13 @@ template/sparsevector.cc:	framepac/fasthash64.h framepac/vector.h template/bufbu
 template/termvector.cc:	framepac/termvector.h framepac/charget.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/trie.cc:	framepac/trie.h template/trienode.cc
+template/trie.cc:		framepac/trie.h template/trienode.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/trienode.cc:	framepac/trie.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/vecsim.cc:	framepac/vecsim.h
+template/vecsim.cc:		framepac/vecsim.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/vecsim_ct.cc:	framepac/vecsim.h
@@ -723,7 +725,7 @@ template/vecsim_ct.cc:	framepac/vecsim.h
 template/vecsim_factory.cc:	framepac/message.h template/vecsim.cc template/vecsim_ct.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
-template/vector.cc:	framepac/fasthash64.h framepac/vector.h
+template/vector.cc:		framepac/fasthash64.h framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 template/vector_arith.cc:	template/vector.cc
@@ -735,40 +737,40 @@ template/wordcorpus.cc:	framepac/wordcorpus.h framepac/mmapfile.h framepac/textt
 framepac/argparser.h:	framepac/as_string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/array.h:	framepac/object.h
+framepac/array.h:		framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/as_string.h:	framepac/cstring.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/atomic.h:	framepac/config.h
+framepac/atomic.h:		framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/basisvector.h:	framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/bidindex.h:	framepac/cstring.h framepac/hashtable.h
+framepac/bidindex.h:		framepac/cstring.h framepac/hashtable.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/bignum.h:	framepac/number.h
+framepac/bignum.h:		framepac/number.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/bitvector.h:	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/builder.h:	framepac/config.h
+framepac/builder.h:		framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/bwt.h:	framepac/config.h
+framepac/bwt.h:		framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/charget.h:	framepac/file.h
+framepac/charget.h:		framepac/file.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/cluster.h:	framepac/array.h framepac/list.h framepac/symbol.h
+framepac/cluster.h:		framepac/array.h framepac/list.h framepac/symbol.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/complex.h:	framepac/number.h
+framepac/complex.h:		framepac/number.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/configfile.h:	framepac/cstring.h
@@ -780,47 +782,47 @@ framepac/concbuilder.h:	framepac/builder.h
 framepac/contextcoll.h:	framepac/hashtable.h framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/counter.h:	framepac/atomic.h
+framepac/counter.h:		framepac/atomic.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/critsect.h:	framepac/config.h
+framepac/critsect.h:		framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/cstring.h:	framepac/smartptr.h
+framepac/cstring.h:		framepac/smartptr.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/file.h:	framepac/config.h framepac/cstring.h
+framepac/file.h:		framepac/config.h framepac/cstring.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/frame.h:	framepac/object.h
+framepac/frame.h:		framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/hashhelper.h:	framepac/queue_mpsc.h framepac/semaphore.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/hashtable.h:	framepac/counter.h framepac/critsect.h framepac/init.h framepac/list.h framepac/number.h \
-			framepac/symbol.h framepac/synchevent.h framepac/fasthash64.h
+framepac/hashtable.h:	framepac/counter.h framepac/critsect.h framepac/init.h framepac/list.h \
+			framepac/number.h framepac/symbol.h framepac/synchevent.h framepac/fasthash64.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/list.h:	framepac/object.h
+framepac/list.h:		framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/map.h:		framepac/hashtable.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/matrix.h:	framepac/object.h
+framepac/matrix.h:		framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/memory.h:	framepac/atomic.h framepac/init.h framepac/objectvmt.h
+framepac/memory.h:		framepac/atomic.h framepac/init.h framepac/objectvmt.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/nonobject.h: framepac/object.h
+framepac/nonobject.h: 	framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/number.h:	framepac/object.h
+framepac/number.h:		framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/object.h:	framepac/cstring.h framepac/memory.h
+framepac/object.h:		framepac/cstring.h framepac/memory.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/objectvmt.h:	framepac/config.h
@@ -832,34 +834,34 @@ framepac/objreader.h:	framepac/object.h framepac/charget.h
 framepac/perthread.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/progress.h:	framepac/atomic.h framepac/cstring.h framepac/timer.h
+framepac/progress.h:		framepac/atomic.h framepac/cstring.h framepac/timer.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/random.h:	framepac/smartptr.h
+framepac/random.h:		framepac/smartptr.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/rational.h:	framepac/number.h
+framepac/rational.h:		framepac/number.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/semaphore.h:	framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/set.h:	framepac/hashtable.h
+framepac/set.h:		framepac/hashtable.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/spelling.h:	framepac/hashtable.h framepac/texttransforms.h framepac/trie.h
+framepac/spelling.h:		framepac/hashtable.h framepac/texttransforms.h framepac/trie.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/string.h:	framepac/object.h
+framepac/string.h:		framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/stringbuilder.h:	framepac/builder.h framepac/cstring.h framepac/string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/sufarray.h:	framepac/file.h framepac/mmapfile.h framepac/range.h
+framepac/sufarray.h:		framepac/file.h framepac/mmapfile.h framepac/range.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/symbol.h:	framepac/string.h
+framepac/symbol.h:		framepac/string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/symboltable.h:	framepac/hashtable.h framepac/init.h
@@ -874,52 +876,54 @@ framepac/termvector.h:	framepac/vector.h
 framepac/texttransforms.h:	framepac/cstring.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/thread.h:	framepac/init.h
+framepac/thread.h:		framepac/init.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/threadpool.h:	framepac/atomic.h framepac/critsect.h framepac/semaphore.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/timer.h:	framepac/cstring.h
+framepac/timer.h:		framepac/cstring.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/trie.h:	framepac/config.h
+framepac/trie.h:		framepac/config.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/utility.h:	framepac/list.h
+framepac/utility.h:		framepac/list.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/vecsim.h:	framepac/vector.h
+framepac/vecsim.h:		framepac/vector.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/vector.h:	framepac/as_string.h framepac/critsect.h framepac/list.h framepac/symbol.h framepac/smartptr.h
+framepac/vector.h:		framepac/as_string.h framepac/critsect.h framepac/list.h framepac/symbol.h \
+			framepac/smartptr.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/words.h:	framepac/bidindex.h framepac/file.h framepac/string.h
+framepac/words.h:		framepac/bidindex.h framepac/file.h framepac/string.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/wordcorpus.h:	framepac/bidindex.h framepac/builder.h framepac/byteorder.h \
 		framepac/cstring.h framepac/file.h framepac/mmapfile.h framepac/sufarray.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-FramepaC.h:		framepac/config.h framepac/argparser.h framepac/hashtable.h framepac/cluster.h \
+FramepaC.h:			framepac/config.h framepac/argparser.h framepac/hashtable.h framepac/cluster.h \
 		framepac/sufarray.h framepac/threadpool.h framepac/wordcorpus.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 tests/argparser$(OBJ):	tests/argparser$(C) framepac/argparser.h
-tests/clustertest$(OBJ): tests/clustertest$(C) framepac/argparser.h framepac/cluster.h framepac/file.h \
+tests/clustertest$(OBJ): 	tests/clustertest$(C) framepac/argparser.h framepac/cluster.h framepac/file.h \
 			framepac/message.h framepac/threadpool.h framepac/timer.h framepac/cstring.h
 tests/cogscore$(OBJ):	tests/cogscore$(C) framepac/argparser.h framepac/file.h framepac/spelling.h
 tests/membench$(OBJ):	tests/membench$(C) framepac/argparser.h framepac/memory.h framepac/threadpool.h \
 			framepac/timer.h
-tests/objtest$(OBJ):	tests/objtest$(C) framepac/objreader.h framepac/symboltable.h
-tests/parhash$(OBJ):	tests/parhash$(C) framepac/argparser.h framepac/fasthash64.h framepac/hashtable.h \
+tests/objtest$(OBJ):		tests/objtest$(C) framepac/objreader.h framepac/symboltable.h
+tests/parhash$(OBJ):		tests/parhash$(C) framepac/argparser.h framepac/fasthash64.h framepac/hashtable.h \
 			framepac/message.h framepac/random.h framepac/symboltable.h framepac/texttransforms.h \
 			framepac/threadpool.h framepac/timer.h framepac/cstring.h
-tests/splitwords$(OBJ): tests/splitwords$(C) framepac/words.h framepac/argparser.h framepac/charget.h \
+tests/splitwords$(OBJ): 	tests/splitwords$(C) framepac/words.h framepac/argparser.h framepac/charget.h \
 			framepac/cstring.h framepac/file.h
 tests/stringtest$(OBJ):	tests/stringtest$(C) framepac/argparser.h framepac/string.h framepac/memory.h \
 			framepac/threadpool.h framepac/timer.h
-tests/tpool$(OBJ):	tests/tpool$(C) framepac/argparser.h framepac/random.h framepac/threadpool.h framepac/timer.h
+tests/tpool$(OBJ):		tests/tpool$(C) framepac/argparser.h framepac/random.h framepac/threadpool.h \
+			framepac/timer.h
 
 # End of Makefile #
