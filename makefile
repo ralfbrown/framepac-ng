@@ -360,6 +360,7 @@ OBJS = \
 	build/trie_u32dbl$(OBJ) \
 	build/trie_u32lst$(OBJ) \
 	build/trie_u32u32$(OBJ) \
+	build/unicode$(OBJ) \
 	build/vecsim_name$(OBJ) \
 	build/vecsim_u32_dbl$(OBJ) \
 	build/vecsim_u32_flt$(OBJ) \
@@ -597,6 +598,7 @@ build/trie$(OBJ):		src/trie$(C) framepac/trie.h
 build/trie_u32dbl$(OBJ):	src/trie_u32dbl$(C) template/trie.cc
 build/trie_u32lst$(OBJ):	src/trie_u32lst$(C) template/trie.cc framepac/list.h
 build/trie_u32u32$(OBJ):	src/trie_u32u32$(C) template/trie.cc
+build/unicode$(OBJ):		src/unicode$(C) framepac/unicode.h
 build/vecsimopt$(OBJ):	src/vecsimopt$(C) framepac/vecsim.h
 build/vecsim_name$(OBJ):	src/vecsim_name$(C) framepac/utility.h framepac/vecsim.h
 build/vecsim_u32_dbl$(OBJ):	src/vecsim_u32_dbl$(C) template/vecsim_factory.cc
