@@ -130,7 +130,7 @@ class CFile
       CharPtr getTrimmedLine(size_t maxline = (size_t)~0) ; // result must be freed
       LineBatch* getLines(size_t batchsize = 0) ;
       LineBatch* getLines(size_t batchsize, int mono_skip) ;
-      void putc(char c) { fputc(c,m_file) ; }
+      bool putc(char c) { return fputc(c,m_file) != EOF ; }
       void puts(const char* s) { fputs(s,m_file) ; }
       void putlines(const LineBatch* batch) ;
       [[gnu::format(gnu_printf,2,0)]] bool printf(const char* fmt, ...) const ;
