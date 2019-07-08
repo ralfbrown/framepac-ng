@@ -133,6 +133,7 @@ class CFile
       bool putc(char c) { return fputc(c,m_file) != EOF ; }
       void puts(const char* s) { fputs(s,m_file) ; }
       void putlines(const LineBatch* batch) ;
+      bool putNulls(size_t count) ;
       [[gnu::format(gnu_printf,2,0)]] bool printf(const char* fmt, ...) const ;
       off_t tell() const { return ftell(m_file) ; }
       bool seek(off_t loc, int whence = SEEK_SET) { return fseek(m_file,loc,whence) == 0 ; }

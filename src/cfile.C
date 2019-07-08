@@ -617,6 +617,21 @@ size_t CFile::write(const void *buf, size_t itemcount, size_t itemsize)
 
 //----------------------------------------------------------------------------
 
+bool CFile::putNulls(size_t count)
+{
+   if (!m_file)
+      return false ;
+
+   for (size_t i = 0 ; i < count ; ++i)
+      {
+      if (fputc('\0',m_file) == EOF)
+	 return false ;
+      }
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
 bool CFile::writeSignature(const char* sigstring, int version)
 {
    if (!sigstring || !*sigstring || version < 1)
