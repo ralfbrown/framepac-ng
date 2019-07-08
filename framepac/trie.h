@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-02-11					*/
+/* Version 0.14, last edit 2019-07-07					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -78,9 +78,13 @@ class TrieNode : public TrieNodeValueless<IdxT,bits>
 
       T value() const { return m_value ; }
       void setValue(T v) { m_value = v ; }
+
+      uint16_t userData() const { return m_userdata ; }
+      void setUserData(uint16_t u) { m_userdata = u ; }
    protected:
-      T     m_value ;
-      bool  m_leaf ;
+      T        m_value ;
+      uint16_t m_userdata ;	// alignment constraints leave padding, so let user store data there
+      bool     m_leaf ;
    } ;
 
 //----------------------------------------------------------------------------
