@@ -161,6 +161,52 @@ class Trie
 /************************************************************************/
 /************************************************************************/
 
+template <typename T, typename IdxT = std::uint32_t, unsigned bits=4>
+class TrieCursor
+   {
+   public:
+      typedef Trie<T,IdxT,bits> trie ;
+   public:
+      TrieCursor(const trie* t) : m_trie(t) { resetKey() ; }
+
+      // manipulators
+      void resetKey() { m_index = trie::ROOT_INDEX ; m_keylen = 0 ; m_failed = false ; }
+      bool extendKey(uint8_t keybyte)
+	 {
+	    if (m_failed) return false ;
+	    bool success = m_trie->extendKey(m_index,keybyte) ;
+	    if (success)
+	       ++m_keylen ;
+	    else
+	       m_failed = true ;
+	    return success ;
+	 }
+
+      // accessors
+      bool OK() const
+	 {
+	    if (m_failed) return false ;
+	    auto n = m_trie->node(m_index) ;
+	    return n && n->leaf() ;
+	 }
+      unsigned keyLength() const { return m_keylen ; }
+      typename trie::Node* node() const { return m_failed ? nullptr : m_trie->node(m_index) ; }
+      bool hasExtension(uint8_t keybyte) const
+	 {
+	    IdxT index = m_index ;
+	    return m_trie->extendKey(index,keybyte) ;
+	 }
+      
+   private:
+      const trie* m_trie ;
+      IdxT        m_index ;
+      unsigned    m_keylen ;
+      bool        m_failed ;
+   } ;
+
+/************************************************************************/
+/************************************************************************/
+
 // a trie with a variable list of items as node values
 
 template <typename T, typename IdxT = std::uint32_t, unsigned bits=4>
