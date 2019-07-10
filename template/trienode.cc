@@ -30,18 +30,6 @@ namespace Fr
 /************************************************************************/
 
 template <typename IdxT, unsigned bits>
-TrieNodeValueless<IdxT,bits>::TrieNodeValueless()
-{
-   //std::fill(m_children,m_children + (1<<bits),NULL_INDEX) ;
-   //!! for some reason, the above generates a link error on NULL_INDEX, so we'll just revert to the loop
-   for (size_t i = 0 ; i < (1<<bits) ; ++i)
-      m_children[i] = NULL_INDEX ;
-   return  ;
-}
-
-//----------------------------------------------------------------------------
-
-template <typename IdxT, unsigned bits>
 IdxT TrieNodeValueless<IdxT,bits>::setChild(unsigned N, IdxT ch)
 {
    // CAS in the child; if that fails, someone else beat us to the insertion,

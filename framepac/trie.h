@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-09					*/
+/* Version 0.14, last edit 2019-07-10					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -26,6 +26,7 @@
 #include <mutex>
 #include <type_traits>
 #include "framepac/byteorder.h"
+#include "framepac/itempool.h"
 
 namespace Fr
 {
@@ -39,7 +40,7 @@ class TrieNodeValueless
    public:
       static constexpr IdxT NULL_INDEX = (IdxT)0 ;
    public:
-      TrieNodeValueless() ;
+      TrieNodeValueless() { std::fill_n(m_children,1<<bits,NULL_INDEX) ; }
       TrieNodeValueless(const TrieNodeValueless&) = default ;
       ~TrieNodeValueless() {}
       TrieNodeValueless& operator= (const TrieNodeValueless&) = default ;
@@ -100,8 +101,8 @@ class Trie
       typedef TrieNode<T,IdxT,bits> Node ;
 
       // construct an empty trie, optionally pre-allocating nodes
-      Trie(IdxT cap = 0) { init(cap) ; }
-      ~Trie() ;
+      Trie(IdxT cap = 4) : m_valueless(cap), m_nodes(cap), m_maxkey(0) { (void) allocNode() ; }
+      ~Trie() = default ;
 
       template <typename RetT = T>
       constexpr static typename std::enable_if<std::is_pointer<T>::value, RetT>::type
@@ -117,10 +118,10 @@ class Trie
       T find(const uint8_t* key, unsigned keylength) const ;
       bool contains(const uint8_t* key, unsigned keylength) const ;
 
-      IdxT size() const { return m_size_valueless + m_size_full ; }
-      IdxT capacity() const { return m_capacity_valueless + m_capacity_full ; }
-      IdxT fullNodes() const { return m_size_full ; }
-      IdxT valuelessNodes() const { return m_size_valueless ; }
+      IdxT size() const { return fullNodes() + valuelessNodes() ; }
+      IdxT capacity() const { return m_valueless.capacity() + m_nodes.capacity() ; }
+      IdxT fullNodes() const { return m_nodes.size() ; }
+      IdxT valuelessNodes() const { return m_valueless.size() ; }
       IdxT terminalNodes() const  ; // number of leaf (value-containing) nodes without children
       unsigned longestKey() const { return m_maxkey ; }
 
@@ -134,26 +135,19 @@ class Trie
 	    return status ;
 	 }
 
-      Node* rootNode() const { return &m_nodes[ROOT_INDEX] ; }
-      Node* node(IdxT N) const { return &m_nodes[N] ; }
+      Node* rootNode() const { return m_nodes.item(ROOT_INDEX) ; }
+      Node* node(IdxT N) const { return m_nodes.item(N) ; }
 
    protected:
-      std::mutex      m_valueless_mutex ;
-      ValuelessNode*  m_valueless ;
-      IdxT            m_capacity_valueless ;
-      IdxT            m_size_valueless ;
-      std::mutex      m_full_mutex ;
-      Node*           m_nodes ;
-      IdxT            m_capacity_full ;
-      IdxT            m_size_full ;
-      unsigned        m_maxkey ;
+      ItemPool<ValuelessNode> m_valueless ;
+      ItemPool<Node>	      m_nodes ;
+      unsigned                m_maxkey ;
    private:
-      void init(IdxT cap) ;
-      IdxT allocNode() ;
-      IdxT allocValuelessNode() ;
-      void releaseNode(IdxT index) ;
-      void releaseValuelessNode(IdxT index) ;
-      ValuelessNode* valuelessNode(IdxT N) const { return &m_valueless[N] ; }
+      IdxT allocNode() { return (IdxT)m_nodes.alloc() ; }
+      IdxT allocValuelessNode() { return (IdxT)m_valueless.alloc() ; }
+      void releaseNode(IdxT index) { m_nodes.release(index) ; }
+      void releaseValuelessNode(IdxT index) { m_valueless.release(index) ; }
+      ValuelessNode* valuelessNode(IdxT N) const { return m_valueless.item(N) ; }
       void insertChild(IdxT& index, uint8_t keybyte) ;
       bool enumerateVA(uint8_t* keybuf, size_t keylen, IdxT node, EnumFunc* fn, std::va_list args) const  ;
    } ;
@@ -210,14 +204,22 @@ class TrieCursor
 // a trie with a variable list of items as node values
 
 template <typename T, typename IdxT = std::uint32_t, unsigned bits=4>
-class MultiTrie
+class MultiTrie : public Trie<IdxT,IdxT,bits>
    {
    public:
-      MultiTrie() ;
+      typedef Trie<IdxT,IdxT,bits> super ;
+      class TList
+	 {
+	 public:
+	    T    m_item ;
+	    IdxT m_next ;
+	 } ;
+   public:
+      MultiTrie() : super() {}
       ~MultiTrie() ;
 
    protected:
-
+      ItemPool<TList>  m_values ;
    } ;
 
 /************************************************************************/

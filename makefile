@@ -810,6 +810,9 @@ framepac/hashtable.h:	framepac/counter.h framepac/critsect.h framepac/init.h fra
 			framepac/number.h framepac/symbol.h framepac/synchevent.h framepac/fasthash64.h
 	$(TOUCH) $@ $(BITBUCKET)
 
+framepac/itempool.h:	framepac/atomic.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 framepac/list.h:		framepac/object.h
 	$(TOUCH) $@ $(BITBUCKET)
 
@@ -891,7 +894,7 @@ framepac/threadpool.h:	framepac/atomic.h framepac/critsect.h framepac/semaphore.
 framepac/timer.h:		framepac/cstring.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/trie.h:		framepac/config.h
+framepac/trie.h:		framepac/config.h framepac/itempool.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/utility.h:		framepac/list.h
