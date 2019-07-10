@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-07					*/
+/* Version 0.14, last edit 2019-07-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -68,8 +68,8 @@ class TrieNode : public TrieNodeValueless<IdxT,bits>
    public: // types
       typedef TrieNodeValueless<IdxT,bits> super ;
    public:
-      TrieNode() : super(), m_leaf(false) {}
-      TrieNode(T v, bool lf = false) : super(), m_value(v), m_leaf(lf) {}
+      TrieNode() : super(), m_userdata(0), m_leaf(false) {}
+      TrieNode(T v, bool lf = false) : super(), m_value(v), m_userdata(0), m_leaf(lf) {}
       TrieNode(const TrieNode&) = default ;
       ~TrieNode() {}
 
@@ -111,6 +111,7 @@ class Trie
       nullVal() { return (RetT)0 ; }
 
       bool insert(const uint8_t* key, unsigned keylength, T value) ;
+      bool insert(const uint8_t* key, unsigned keylength, T value, uint16_t user_data) ;
       bool extendKey(IdxT& index, uint8_t keybyte) const ;
       IdxT findNode(const uint8_t* key, unsigned keylength) const ;
       T find(const uint8_t* key, unsigned keylength) const ;
@@ -118,6 +119,9 @@ class Trie
 
       IdxT size() const { return m_size_valueless + m_size_full ; }
       IdxT capacity() const { return m_capacity_valueless + m_capacity_full ; }
+      IdxT fullNodes() const { return m_size_full ; }
+      IdxT valuelessNodes() const { return m_size_valueless ; }
+      IdxT terminalNodes() const  ; // number of leaf (value-containing) nodes without children
       unsigned longestKey() const { return m_maxkey ; }
 
       bool enumerateVA(EnumFunc* fn, std::va_list args) const ;

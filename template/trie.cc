@@ -67,6 +67,8 @@ Trie<T,IdxT,bits>::~Trie()
    delete[] m_nodes ;
    m_capacity_full = 0 ;
    m_capacity_valueless = 0 ;
+   m_size_full = 0 ;
+   m_size_valueless = 0 ;
    return ;
 }
 
@@ -289,6 +291,21 @@ bool Trie<T,IdxT,bits>::contains(const uint8_t* key, unsigned keylength) const
    if (n != ROOT_INDEX || node(n)->leaf())
       return true ;
    return false ;
+}
+
+//----------------------------------------------------------------------------
+
+template <typename T, typename IdxT, unsigned bits>
+IdxT Trie<T,IdxT,bits>::terminalNodes() const
+{
+   IdxT count = 0 ;
+   // scan the full (value-containing) nodes for those marked as leaves which have no children
+   for (IdxT i = 0 ; i < fullNodes() ; ++i)
+      {
+      if (m_nodes[i].leaf() && !m_nodes[i].hasChildren())
+	 ++count ;
+      }
+   return count ;
 }
 
 //----------------------------------------------------------------------------
