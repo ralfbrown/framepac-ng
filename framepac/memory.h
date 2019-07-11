@@ -435,6 +435,8 @@ class LocalAlloc
       const T& operator [] (size_t idx) const { return m_buffer[idx] ; }
       operator T* () const { return m_buffer ; }
 
+      T* begin() const { return m_buffer ; }
+
    private:
       T  m_localbuffer[SZ] ;
       T* m_buffer ;
@@ -488,7 +490,7 @@ void gc() ;
 // print memory usage statistics
 void memory_stats(std::ostream&) ;
 
-} ; // end namespace Fr
+} // end namespace Fr
 
 #endif /* !__Fr_MEMORY_H_INCLUDED */
 

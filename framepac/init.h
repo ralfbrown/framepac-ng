@@ -206,7 +206,7 @@ class ThreadInitializer : public ThreadInitializerBase
 
 //----------------------------------------------------------------------------
 
-} ; // end namespace Fr
+} // end namespace Fr
 
 #endif /* !__FrINIT_H_INCLUDED */
 

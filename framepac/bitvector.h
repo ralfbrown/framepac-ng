@@ -163,7 +163,7 @@ bool BitVectorIter::operator* () const
 
 //----------------------------------------------------------------------------
 
-} ;  // end of namespace Fr
+}  // end of namespace Fr
 
 #endif /* !__Fr_BITVECTOR_H_INCLUDED */
 

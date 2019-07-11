@@ -109,8 +109,7 @@ inline std::ostream& operator<< (std::ostream& out, Fr::CString& s)
 bool is_number(const char*) ;
 bool is_punct(const char*) ;
 
-// end of namespace Fr
-} ;
+} // end of namespace Fr
 
 #endif /* !_Fr_CSTRING_H_INCLUDED */
 

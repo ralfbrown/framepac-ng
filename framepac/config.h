@@ -120,7 +120,7 @@ constexpr int SLAB_GROUP_SIZE = 2 ;
 constexpr int SLAB_GROUP_SIZE = 4095 ;
 #endif /* __SANITIZE_ADDRESS__ || __SANITIZE_THREAD__ */
 
-} ;
+} // end namespace Fr
 
 /************************************************************************/
 /************************************************************************/

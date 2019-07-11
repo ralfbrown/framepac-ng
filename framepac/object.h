@@ -273,8 +273,7 @@ inline ostream& operator << (ostream& out, const Object* obj)
    return obj->print(out) ;
 }
 
-// end of namespace Fr
-} ;
+} // end of namespace Fr
 
 /************************************************************************/
 /************************************************************************/
