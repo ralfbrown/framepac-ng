@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-10					*/
+/* Version 0.14, last edit 2019-07-11					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2019 Carnegie Mellon University			*/
@@ -80,10 +80,18 @@ class ItemPool
 	       resize(new_cap) ;
 	       }
 	 }
+      size_t allocBatch(size_t incr)
+	 {
+	 size_t currsize = size() ;
+	 size_t newsize = currsize + incr ;
+	 reserve(newsize) ;
+	 m_size = newsize ;
+	 return currsize ;
+	 }
 
       // access to the allocated items
       T& operator[] (size_t N) const { return N < size() ? m_items[N] : m_items[capacity()-1] ; }
-      T* item(size_t N) const { return N < size() ? &m_items[N] : &m_items[capacity()-1] ; }
+      T* item(size_t N) const { return N < size() ? &m_items[N] : nullptr ; }
 
       // iterator support
       T* begin() const { return m_items ; }
