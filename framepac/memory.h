@@ -418,7 +418,7 @@ class LocalAlloc
 	 {
 	 m_buffer = (alloc > SZ) ? new T[alloc] : m_localbuffer ;
 	 if (m_buffer && clear)
-	    std::memset(m_buffer,'\0',sizeof(T)*alloc) ;
+	    std::fill_n(m_buffer,alloc,0) ;
 	 }
       LocalAlloc(T* buf)
 	 {
