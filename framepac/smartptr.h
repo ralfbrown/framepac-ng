@@ -53,7 +53,19 @@ class NewPtr
       void clear() { m_items = nullptr ; }
       void reset(T* ptr) { T* old = m_items ; m_items = ptr ; delete[] old ; }
       T* release() { T* ptr = m_items ; clear() ; return ptr ; }
-
+      bool reallocate(size_t prevsize, size_t newsize)
+	 {
+	    T* new_items = new T[newsize] ;
+	    if (new_items)
+	       {
+	       std::move(m_items,m_items+prevsize,new_items) ;
+	       delete[] m_items ;
+	       m_items = new_items ;
+	       return true ;
+	       }
+	    return false ;
+	 }
+      
       T* operator-> () { return m_items ; }
       const T* operator-> () const { return m_items ; }
       T* operator* () { return m_items ; }
