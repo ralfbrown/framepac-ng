@@ -58,6 +58,7 @@ class NewPtr
 	    T* new_items = new T[newsize] ;
 	    if (new_items)
 	       {
+	       if (newsize < prevsize) prevsize = newsize ;
 	       std::move(m_items,m_items+prevsize,new_items) ;
 	       delete[] m_items ;
 	       m_items = new_items ;
