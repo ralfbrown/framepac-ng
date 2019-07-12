@@ -60,8 +60,7 @@ class NewPtr
       const T* operator* () const { return m_items ; }
       explicit operator T* () const { return m_items ; }
       operator const T* () const { return m_items ; }
-      T& operator[] (size_t N) { return m_items[N] ; }
-      const T& operator[] (size_t N) const { return m_items[N] ; }
+      T& operator[] (size_t N) const { return m_items[N] ; }
       explicit operator bool () const { return m_items != nullptr ; }
       bool operator ! () const { return m_items == nullptr ; }
    protected:
