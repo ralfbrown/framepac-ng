@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-07					*/
+/* Version 0.14, last edit 2019-07-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -440,46 +440,6 @@ class LocalAlloc
    private:
       T  m_localbuffer[SZ] ;
       T* m_buffer ;
-   } ;
-
-//----------------------------------------------------------------------------
-
-template <typename T>
-class ScopedPtr
-   {
-   public:
-      typedef T* pointer ;
-      typedef T element_type ;
-   public:
-      ScopedPtr(unsigned N) { m_item = new T[N] ; }
-      ScopedPtr(unsigned N, const T* s, unsigned copyN)
-	 { m_item = new T[N] ; std::copy(s,s+copyN,m_item) ; }
-      ScopedPtr(T* item = nullptr) { m_item = item ; }
-      ScopedPtr(const ScopedPtr&) = delete ;
-      ScopedPtr(ScopedPtr&& orig) { m_item = orig.move() ; }
-      ~ScopedPtr() { reset(nullptr) ; }
-      ScopedPtr& operator= (const ScopedPtr&) = delete ;
-      ScopedPtr& operator= (ScopedPtr&& orig) { reset(orig.release()) ; return *this ; }
-      ScopedPtr& operator= (T* new_item) { reset(new_item) ; return *this ; }
-
-      T* get() const noexcept { return m_item ; }
-      T* move() { T* s = m_item ; clear() ; return s ; }
-      void clear() { m_item = nullptr ; }
-      void reset(T* ptr) { T* old = m_item ; m_item = ptr ; delete old ; }
-      T* release() { T* ptr = m_item ; clear() ; return ptr ; }
-
-      T* operator-> () { return m_item ; }
-      const T* operator-> () const { return m_item ; }
-      T* operator* () { return m_item ; }
-      const T* operator* () const { return m_item ; }
-      explicit operator T* () const { return m_item ; }
-      operator const T* () const { return m_item ; }
-      T& operator[] (size_t N) { return m_item[N] ; }
-      const T& operator[] (size_t N) const { return m_item[N] ; }
-      explicit operator bool () const { return m_item != nullptr ; }
-      bool operator ! () const { return m_item == nullptr ; }
-   protected:
-      T* m_item ;
    } ;
 
 //----------------------------------------------------------------------------
