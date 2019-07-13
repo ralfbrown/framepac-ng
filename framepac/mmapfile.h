@@ -28,6 +28,8 @@ using namespace std ;
 namespace Fr
 {
 
+class MemMappedROFile ;
+
 class MemMappedFile
    {
    public:
@@ -45,6 +47,7 @@ class MemMappedFile
 	 orig.m_length = 0 ;
 	 }
       ~MemMappedFile() ;
+      MemMappedFile& operator= (const MemMappedFile& orig) = delete ;
       MemMappedFile& operator= (MemMappedFile&& orig)
 	 {
 	 m_address = orig.m_address ;
