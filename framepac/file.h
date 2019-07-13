@@ -99,6 +99,7 @@ class CFile
       CFile(const char *filename, bool writing, int options = default_options) ;
       CFile(String *filename, bool writing, int options = default_options) ;
       CFile(const CFile&) = delete ;
+      CFile(CFile&& orig) ;
       CFile(FILE*) ;
       ~CFile() ;
       void operator= (const CFile&) = delete ;

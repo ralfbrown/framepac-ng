@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-07					*/
+/* Version 0.14, last edit 2019-07-12					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -173,6 +173,20 @@ CFile::CFile(String *filename, bool writing, int options)
       openWrite(filename->c_str(),options) ;
    else
       openRead(filename->c_str(),options) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+CFile::CFile(CFile&& orig)
+{
+   m_file = orig.m_file ;    orig.m_file = nullptr ;
+   m_tempname = orig.m_tempname ;
+   m_finalname = orig.m_finalname ;
+   m_errcode = orig.m_errcode ;
+   m_piped = orig.m_piped ;
+   m_complete = orig.m_complete ;
+   m_keep_backup = orig.m_keep_backup ;
    return ;
 }
 
