@@ -65,6 +65,21 @@ class Owned
    } ;
 
 //----------------------------------------------------------------------------
+// smart pointer to single item, initialized to nullptr (which is not possible
+//   with Owned<> if the item type has a constructor taking a single pointer)
+
+template <typename T>
+class OwnedNull : public Owned<T>
+   {
+   public:
+      OwnedNull() { this->m_item = nullptr ; }
+      OwnedNull& operator= (const Owned<T>&) = delete ;
+      OwnedNull& operator= (Owned<T>& orig) { this->reset(orig.move()) ; return *this ; }
+      OwnedNull& operator= (Owned<T>&& orig) { this->reset(orig.move()) ; return *this ; }
+      OwnedNull& operator= (T* new_s) { this->reset(new_s) ; return *this ; }
+   } ;
+
+//----------------------------------------------------------------------------
 // smart pointer to an array of items
 
 template <typename T>
