@@ -26,6 +26,46 @@ namespace Fr
 {
 
 //----------------------------------------------------------------------------
+// smart pointer to a single item
+
+template <typename T>
+class OwnPtr
+   {
+   public:
+      typedef T* pointer ;
+      typedef T element_type ;
+   public:
+      OwnPtr() { m_item = new T ; }
+      OwnPtr(T* s) { m_item = s ; }
+      template <typename ...Args>
+      OwnPtr(Args ...args) { m_item = new T(args...) ; }
+      OwnPtr(const OwnPtr&) = delete ;
+      OwnPtr(OwnPtr& orig) { m_item = orig.move() ; }
+      OwnPtr(OwnPtr&& orig) { m_item = orig.move() ; }
+      ~OwnPtr() { reset(nullptr) ; }
+      OwnPtr& operator= (const OwnPtr&) = delete ;
+      OwnPtr& operator= (OwnPtr& orig) { reset(orig.move()) ; return *this ; }
+      OwnPtr& operator= (OwnPtr&& orig) { reset(orig.move()) ; return *this ; }
+      OwnPtr& operator= (T* new_s) { reset(new_s) ; return *this ; }
+
+      T* get() const noexcept { return m_item ; }
+      T* move() { T* s = m_item ; m_item = nullptr ; return s ; }
+      void reset(T* ptr) { T* old = m_item ; m_item = ptr ; delete old ; }
+      
+      T* operator-> () { return m_item ; }
+      const T* operator-> () const { return m_item ; }
+      T* operator* () { return m_item ; }
+      const T* operator* () const { return m_item ; }
+      operator T* () { return m_item ; }
+      operator const T* () const { return m_item ; }
+      explicit operator bool () const { return m_item != nullptr ; }
+      bool operator ! () const { return m_item == nullptr ; }
+   protected:
+      T* m_item ;
+   } ;
+
+//----------------------------------------------------------------------------
+// smart pointer to an array of items
 
 template <typename T>
 class NewPtr
@@ -80,6 +120,18 @@ class NewPtr
    protected:
       T* m_items ;
    } ;
+
+//----------------------------------------------------------------------
+// pre-declare pointers to standard types
+
+typedef NewPtr<char> CharPtr ;
+typedef NewPtr<uint8_t> UInt8Ptr ;
+typedef NewPtr<short> ShortPtr ;
+typedef NewPtr<unsigned short> UShortPtr ;
+typedef NewPtr<int> IntPtr ;
+typedef NewPtr<unsigned> UIntPtr ;
+typedef NewPtr<float> FloatPtr ;
+typedef NewPtr<double> DoublePtr ;
 
 } // end of namespace Fr
 
