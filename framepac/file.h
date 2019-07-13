@@ -96,6 +96,7 @@ class CFile
 	     binary = 4
            } ;
    public:
+      CFile() = default ;
       CFile(const char *filename, bool writing, int options = default_options) ;
       CFile(String *filename, bool writing, int options = default_options) ;
       CFile(const CFile&) = delete ;
@@ -103,6 +104,7 @@ class CFile
       CFile(FILE*) ;
       ~CFile() ;
       void operator= (const CFile&) = delete ;
+      CFile& operator= (CFile*) ;  // move semantics!
       explicit operator bool () const { return m_file != nullptr ; }
       bool operator! () const { return m_file == nullptr ; }
 
