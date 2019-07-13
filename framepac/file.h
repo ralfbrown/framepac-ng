@@ -116,7 +116,7 @@ class CFile
       int error() const ;
       bool filtered() const { return m_piped ; }
       FILE* operator* () const { return m_file ; }
-      size_t read(char* buf, size_t buflen) ;
+      size_t read(void* buf, size_t buflen) ;
       size_t read(void* buf, size_t itemcount, size_t itemsize) ;
       size_t write(const char* buf, size_t buflen) ;
       size_t write(const void* buf, size_t itemcount, size_t itemsize) ;

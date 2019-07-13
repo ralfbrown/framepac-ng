@@ -414,7 +414,7 @@ int CFile::error() const
 
 //----------------------------------------------------------------------------
 
-size_t CFile::read(char *buf, size_t buflen)
+size_t CFile::read(void *buf, size_t buflen)
 {
    if (m_file)
       return fread(buf,sizeof(char),buflen,m_file) ;
