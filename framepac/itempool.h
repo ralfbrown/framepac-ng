@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-11					*/
+/* Version 0.14, last edit 2019-07-14					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2019 Carnegie Mellon University			*/
@@ -99,6 +99,10 @@ class ItemPool
 	       std::lock_guard<std::mutex> _(s_mutex) ;
 	       resize(new_cap) ;
 	       }
+	 }
+      void shrink(size_t newsize)  // forget about any elements past 'newsize'
+	 {
+	    if (newsize < m_size) m_size = newsize ;
 	 }
       size_t allocBatch(size_t incr)
 	 {
