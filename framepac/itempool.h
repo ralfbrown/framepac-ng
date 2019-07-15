@@ -24,6 +24,7 @@
 
 #include<algorithm>
 #include <mutex>
+#include <stdexcept>
 #include "framepac/atomic.h"
 #include "framepac/file.h"
 
@@ -134,24 +135,57 @@ class ItemPool
       
       bool load(CFile& f, size_t N)
 	 {
-	    if (N == 0) return true ;
+	    if (N == 0) return true ;		// trivially successful
 	    auto start = allocBatch(N) ;
-	    bool success = m_data.m_items && f.read(m_data.m_items+start,N,sizeof(T)) == N ;
+	    bool success = true;
+	    if (chunksize == 0)
+	       {
+	       success = m_data.m_items && f.read(m_data.m_items+start,N,sizeof(T)) == N ;
+	       }
+	    else
+	       {
+	       //assert(start == 0); //TODO: handle load into non-empty pool
+	       for (size_t i = 0 ; success && i < N/chunksize ; ++i)
+		  {
+		  success = f.read(m_data.m_chunks[i],chunksize,sizeof(T)) == chunksize ;
+		  }
+	       unsigned remain = N % chunksize ;
+	       if (success && remain)
+		  success = f.read(m_data.m_chunks[N/chunksize],remain,sizeof(T)) == remain ;
+	       }
 	    if (success) m_size += N ;
 	    return success ;
 	 }
       
       bool save(CFile& f) const
 	 {
-	    return !size() || !m_data.m_items || f.write(m_data.m_items,m_size,sizeof(T)) == m_size ;
+	    if (size() == 0) return true ; 	// trivially successful
+	    if (chunksize == 0)
+	       return !m_data.m_items || f.write(m_data.m_items,m_size,sizeof(T)) == m_size ;
+	    bool success = true ;
+	    for (size_t i = 0 ; success && i < size()/chunksize ; ++i)
+	       {
+	       success = f.write(m_data.m_chunks[i],chunksize,sizeof(T)) == chunksize ;
+	       }
+	    unsigned remain = size()%chunksize ;
+	    if (remain && success)
+	       success = f.write(m_data.m_chunks[size()/chunksize],remain,sizeof(T)) == remain ;
+	    return success ;
 	 }
       
       explicit operator bool () const { return capacity() > 0 ; }
       bool operator ! () const { return capacity() == 0 || !m_data.m_items ; }
 
       // access to the allocated items
-      T& operator[] (size_t N) const { return N < size() ? m_data.m_items[N] : m_data.m_items[capacity()-1] ; }
-      T* item(size_t N) const { return N < size() ? &m_data.m_items[N] : nullptr ; }
+      T& operator[] (size_t N) const
+	 { if (N >= size())
+	       throw std::out_of_range("ItemPool") ;
+           return (chunksize == 0) ? m_data.m_items[N] : m_data.m_chunks[N/chunksize]->m_items[N%chunksize] ;
+	 }
+      T* item(size_t N) const
+	 { return N < size()
+		    ? ((chunksize == 0) ? &m_data.m_items[N] : &m_data.m_chunks[N/chunksize]->m_items[N%chunksize])
+		    : nullptr ; }
 
       // iterator support
       iter_type begin() const { return m_data.m_items ; }
