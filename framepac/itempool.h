@@ -34,6 +34,9 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
+template <typename T, unsigned chunksize>
+class ItemPoolIter ;			// forward declaration, as we need def of ItemPool
+
 // (header-only) class for allocate-only management of a smallish pool
 //   of items of a given type.  The pool can optionally be pointed at
 //   an external area such as a memory-mapped file, in which case any
@@ -245,6 +248,34 @@ class ItemPool
 
 template <typename T, unsigned chunksize>
 std::mutex ItemPool<T,chunksize>::s_mutex ;
+
+//----------------------------------------------------------------------
+
+template <typename T, unsigned chunksize>
+class ItemPoolIter
+   {
+   public:
+      typedef ItemPool<T,chunksize> Pool ;
+   public:
+      ItemPoolIter(const Pool* pool, size_t index = 0) : m_pool(pool), m_index(index) {}
+      ItemPoolIter(const ItemPoolIter&) = default ;
+      ~ItemPoolIter() = default ;
+      ItemPoolIter& operator= (const ItemPoolIter&) = default ;
+
+      const Pool* pool() const { return m_pool ; }
+      size_t currIndex() const { return m_index ; }
+
+      T* operator* () const { return m_pool->item(m_index) ; }
+      T* operator-> () const { return m_pool->item(m_index) ; }
+      ItemPoolIter& operator++() { m_index++ ; }
+      bool operator== (const ItemPoolIter& other) const
+	 { return m_index == other.m_index && m_pool == other.m_pool ; }
+      bool operator!= (const ItemPoolIter& other) const
+	 { return m_index != other.m_index || m_pool != other.m_pool ; }
+   protected:
+      const Pool* m_pool ;
+      size_t      m_index ;
+   } ;
 
 } // end namespace Fr
 
