@@ -26,32 +26,27 @@ namespace Fr
 {
 
 //----------------------------------------------------------------------------
-// smart pointer to a single item
+// smart pointer to single item, initialized to nullptr (which is not possible
+//   with Owned<> if the item type has a constructor taking a single pointer)
 
 template <typename T>
-class Owned
+class Owned ;
+
+template <typename T>
+class OwnedNull
    {
    public:
-      typedef T* pointer ;
-      typedef T element_type ;
-   public:
-      Owned() { m_item = new T ; }
-      Owned(T* s) { m_item = s ; }
-      template <typename ...Args>
-      Owned(Args ...args) { m_item = new T(args...) ; }
-      Owned(const Owned&) = delete ;
-      Owned(Owned& orig) { m_item = orig.move() ; }
-      Owned(Owned&& orig) { m_item = orig.move() ; }
-      ~Owned() { reset(nullptr) ; }
-      Owned& operator= (const Owned&) = delete ;
-      Owned& operator= (Owned& orig) { reset(orig.move()) ; return *this ; }
-      Owned& operator= (Owned&& orig) { reset(orig.move()) ; return *this ; }
-      Owned& operator= (T* new_s) { reset(new_s) ; return *this ; }
+      OwnedNull() { this->m_item = nullptr ; }
+      ~OwnedNull() { reset(nullptr) ; }
+      OwnedNull& operator= (const Owned<T>&) = delete ;
+      OwnedNull& operator= (Owned<T>& orig) { this->reset(orig.move()) ; return *this ; }
+      OwnedNull& operator= (Owned<T>&& orig) { this->reset(orig.move()) ; return *this ; }
+      OwnedNull& operator= (T* new_s) { this->reset(new_s) ; return *this ; }
 
-      T* get() const noexcept { return m_item ; }
+      T* get() const noexcept { return this->m_item ; }
       T* move() { T* s = m_item ; m_item = nullptr ; return s ; }
       void reset(T* ptr) { T* old = m_item ; m_item = ptr ; delete old ; }
-      
+
       T* operator-> () { return m_item ; }
       const T* operator-> () const { return m_item ; }
       T* operator* () { return m_item ; }
@@ -65,19 +60,29 @@ class Owned
    } ;
 
 //----------------------------------------------------------------------------
-// smart pointer to single item, initialized to nullptr (which is not possible
-//   with Owned<> if the item type has a constructor taking a single pointer)
+// smart pointer to a single item
 
 template <typename T>
-class OwnedNull : public Owned<T>
+class Owned : public OwnedNull<T>
    {
    public:
-      OwnedNull() { this->m_item = nullptr ; }
-      OwnedNull& operator= (const Owned<T>&) = delete ;
-      OwnedNull& operator= (Owned<T>& orig) { this->reset(orig.move()) ; return *this ; }
-      OwnedNull& operator= (Owned<T>&& orig) { this->reset(orig.move()) ; return *this ; }
-      OwnedNull& operator= (T* new_s) { this->reset(new_s) ; return *this ; }
-   } ;
+      typedef T* pointer ;
+      typedef T element_type ;
+   public:
+      Owned() { this->m_item = new T ; }
+      Owned(std::false_type) {}
+      Owned(T* s) { this->m_item = s ; }
+      template <typename ...Args>
+      Owned(Args ...args) { this->m_item = new T(args...) ; }
+      Owned(const Owned&) = delete ;
+      Owned(Owned& orig) { this->m_item = orig.move() ; }
+      Owned(Owned&& orig) { this->m_item = orig.move() ; }
+
+      Owned& operator= (const Owned&) = delete ;
+      Owned& operator= (Owned& orig) { this->reset(orig.move()) ; return *this ; }
+      Owned& operator= (Owned&& orig) { this->reset(orig.move()) ; return *this ; }
+      Owned& operator= (T* new_s) { this->reset(new_s) ; return *this ; }
+} ;
 
 //----------------------------------------------------------------------------
 // smart pointer to an array of items
