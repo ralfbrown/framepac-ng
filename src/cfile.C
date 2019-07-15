@@ -166,17 +166,6 @@ CFile::CFile(const char *filename, bool writing, int options)
 
 //----------------------------------------------------------------------------
 
-CFile::CFile(String *filename, bool writing, int options)
-{
-   if (writing)
-      openWrite(filename->c_str(),options) ;
-   else
-      openRead(filename->c_str(),options) ;
-   return ;
-}
-
-//----------------------------------------------------------------------------
-
 CFile::CFile(CFile&& orig)
 {
    m_file = orig.m_file ;    orig.m_file = nullptr ;
@@ -533,16 +522,6 @@ size_t CFile::skipBlankLines(size_t maxskip)
       skipped++ ;
       }
    return skipped ;
-}
-
-//----------------------------------------------------------------------------
-
-String* CFile::getline(size_t maxline)
-{
-   if (!m_file || feof(m_file))
-      return nullptr ;
-   StringBuilder str(this,maxline) ;
-   return str.string() ;
 }
 
 //----------------------------------------------------------------------------

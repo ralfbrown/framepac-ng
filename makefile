@@ -275,6 +275,7 @@ OBJS = \
 	build/cfgfile$(OBJ) \
 	build/cfile$(OBJ) \
 	build/cfile_sig$(OBJ) \
+	build/cfile_str$(OBJ) \
 	build/charget$(OBJ) \
 	build/cluster_name$(OBJ) \
 	build/cluster_u32_dbl$(OBJ) \
@@ -505,6 +506,7 @@ build/cfgfile$(OBJ):		src/cfgfile$(C) framepac/configfile.h framepac/charget.h f
 			framepac/texttransforms.h
 build/cfile$(OBJ):		src/cfile$(C) framepac/file.h framepac/stringbuilder.h framepac/texttransforms.h
 build/cfile_sig$(OBJ):	src/cfile_sig$(C) framepac/file.h framepac/memory.h framepac/message.h
+build/cfile_str$(OBJ):	src/cfile_str$(C) framepac/file.h framepac/stringbuilder.h
 build/cluster$(OBJ):		src/cluster$(C) framepac/cluster.h framepac/message.h framepac/progress.h \
 			framepac/signal.h framepac/texttransforms.h framepac/smartptr.h framepac/convert.h \
 			framepac/stringbuilder.h framepac/utility.h framepac/words.h
