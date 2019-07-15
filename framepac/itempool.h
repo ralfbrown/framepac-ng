@@ -39,12 +39,22 @@ namespace Fr
 //   requests to allocate additional items will result in the contents
 //   of the memory-mapped file being copied into an allocated buffer
 
-template <typename T>
+template <typename T, unsigned chunksize=64>
 class ItemPool
    {
    public:
-      ItemPool(size_t init_cap = 0) : m_items(nullptr), m_capacity(0), m_size(0) { if (init_cap) resize(init_cap) ; }
-      ~ItemPool() { if (m_ownbuf) delete[] m_items ; }
+      typedef T* iter_type ;
+      typedef const T* const_iter_type ;
+      class Chunk
+	 {
+	 public:
+	    T m_items[chunksize] ;
+	 } ;
+      
+   public:
+      ItemPool(size_t init_cap = 0)
+	 : m_capacity(0) { if (init_cap) resize(init_cap) ; }
+      ~ItemPool() { if (m_ownbuf) delete[] m_data.m_items ; }
 
       size_t alloc()
 	 {
@@ -80,8 +90,8 @@ class ItemPool
       bool external_buffer(T* base, size_t N)
 	 {
 	    if (!base) return false ;
-	    if (m_ownbuf) delete[] m_items ;
-	    m_items = base ;
+	    if (m_ownbuf) delete[] m_data.m_items ;
+	    m_data.m_items = base ;
 	    m_size = m_capacity = N ;
 	    m_ownbuf = false ;
 	    return true ;
@@ -91,7 +101,7 @@ class ItemPool
 
       size_t size() const { return m_size ; }
       size_t capacity() const { return m_capacity ; }
-      bool inBuffer(const T* item) const { return item >= m_items && item  < m_items+m_size ; }
+      bool inBuffer(const T* item) const { return item >= m_data.m_items && item  < m_data.m_items+m_size ; }
       void reserve(size_t new_cap)
 	 {
 	    if (new_cap > m_capacity)
@@ -118,28 +128,28 @@ class ItemPool
 	 {
 	    if (N == 0) return true ;
 	    auto start = allocBatch(N) ;
-	    bool success = m_items && f.read(m_items+start,N,sizeof(T)) == N ;
+	    bool success = m_data.m_items && f.read(m_data.m_items+start,N,sizeof(T)) == N ;
 	    if (success) m_size += N ;
 	    return success ;
 	 }
       
       bool save(CFile& f) const
 	 {
-	    return !size() || !m_items || f.write(m_items,m_size,sizeof(T)) == m_size ;
+	    return !size() || !m_data.m_items || f.write(m_data.m_items,m_size,sizeof(T)) == m_size ;
 	 }
       
       explicit operator bool () const { return capacity() > 0 ; }
-      bool operator ! () const { return capacity() == 0 || !m_items ; }
+      bool operator ! () const { return capacity() == 0 || !m_data.m_items ; }
 
       // access to the allocated items
-      T& operator[] (size_t N) const { return N < size() ? m_items[N] : m_items[capacity()-1] ; }
-      T* item(size_t N) const { return N < size() ? &m_items[N] : nullptr ; }
+      T& operator[] (size_t N) const { return N < size() ? m_data.m_items[N] : m_data.m_items[capacity()-1] ; }
+      T* item(size_t N) const { return N < size() ? &m_data.m_items[N] : nullptr ; }
 
       // iterator support
-      T* begin() const { return m_items ; }
-      const T* cbegin() const { return m_items ; }
-      T* end() const { return m_items + m_size ; }
-      const T* cend() const { return m_items + m_size ; }
+      iter_type begin() const { return m_data.m_items ; }
+      const_iter_type cbegin() const { return m_data.m_items ; }
+      iter_type end() const { return m_data.m_items + m_size ; }
+      const_iter_type cend() const { return m_data.m_items + m_size ; }
 
    protected:
       void resize(size_t new_cap)
@@ -148,25 +158,29 @@ class ItemPool
 	    if (new_items)
 	       {
 	       size_t cap = m_capacity ;
-	       if (cap && m_items)
-		  std::copy_n(m_items,cap,new_items) ;
+	       if (cap && m_data.m_items)
+		  std::copy_n(m_data.m_items,cap,new_items) ;
 	       if (m_ownbuf)
-		  delete[] m_items ;
-	       m_items = new_items ;
+		  delete[] m_data.m_items ;
+	       m_data.m_items = new_items ;
 	       m_capacity = new_cap ;
 	       m_ownbuf = true ;
 	       }
 	 }
    protected:
-      T*          m_items ;		// the buffer for the items
+      union {
+	 Chunk*   m_chunks ;		// the list of chunks (if chunksize > 0)
+	 T*       m_items { nullptr } ;	// the buffer for the items (if chunksize==0)
+	 } m_data ;
       atom_size_t m_capacity ;		// size of the allocated array
-      atom_size_t m_size ;		// number of items actually in use
+      atom_size_t m_size { 0 } ;	// number of items actually in use
+      size_t      m_extdata { 0 } ;	// how many items are stored in an external buffer we don't own?
       bool        m_ownbuf { false } ;	// have we allocated the buffer ourselves?
       static std::mutex s_mutex ;	// lock for use when resizing m_items
    } ;
 
-template <typename T>
-std::mutex ItemPool<T>::s_mutex ;
+template <typename T, unsigned chunksize>
+std::mutex ItemPool<T,chunksize>::s_mutex ;
 
 } // end namespace Fr
 
