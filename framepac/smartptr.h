@@ -26,51 +26,19 @@ namespace Fr
 {
 
 //----------------------------------------------------------------------------
-// smart pointer to single item, initialized to nullptr (which is not possible
-//   with Owned<> if the item type has a constructor taking a single pointer)
-
-template <typename T>
-class Owned ;
-
-template <typename T>
-class OwnedNull
-   {
-   public:
-      OwnedNull() { this->m_item = nullptr ; }
-      ~OwnedNull() { reset(nullptr) ; }
-      OwnedNull& operator= (const Owned<T>&) = delete ;
-      OwnedNull& operator= (Owned<T>& orig) { this->reset(orig.move()) ; return *this ; }
-      OwnedNull& operator= (Owned<T>&& orig) { this->reset(orig.move()) ; return *this ; }
-      OwnedNull& operator= (T* new_s) { this->reset(new_s) ; return *this ; }
-
-      T* get() const noexcept { return this->m_item ; }
-      T* move() { T* s = m_item ; m_item = nullptr ; return s ; }
-      void reset(T* ptr) { T* old = m_item ; m_item = ptr ; delete old ; }
-
-      T* operator-> () { return m_item ; }
-      const T* operator-> () const { return m_item ; }
-      T* operator* () { return m_item ; }
-      const T* operator* () const { return m_item ; }
-      operator T* () { return m_item ; }
-      operator const T* () const { return m_item ; }
-      explicit operator bool () const { return m_item != nullptr ; }
-      bool operator ! () const { return m_item == nullptr ; }
-   protected:
-      T* m_item ;
-   } ;
-
-//----------------------------------------------------------------------------
 // smart pointer to a single item
 
+enum nullinit_t { null } ;
+
 template <typename T>
-class Owned : public OwnedNull<T>
+class Owned
    {
    public:
       typedef T* pointer ;
       typedef T element_type ;
    public:
       Owned() { this->m_item = new T ; }
-      Owned(std::false_type) {}
+      Owned(nullinit_t) { this->m_item = nullptr ; }
       Owned(T* s) { this->m_item = s ; }
       template <typename ...Args>
       Owned(Args ...args) { this->m_item = new T(args...) ; }
@@ -82,6 +50,21 @@ class Owned : public OwnedNull<T>
       Owned& operator= (Owned& orig) { this->reset(orig.move()) ; return *this ; }
       Owned& operator= (Owned&& orig) { this->reset(orig.move()) ; return *this ; }
       Owned& operator= (T* new_s) { this->reset(new_s) ; return *this ; }
+
+      T* get() const { return this->m_item ; }
+      T* move() { T* s = m_item ; m_item = nullptr ; return s ; }
+      void reset(T* ptr) { T* old = m_item ; m_item = ptr ; delete old ; }
+      
+      T* operator-> () { return this->m_item ; }
+      const T* operator-> () const { return this->m_item ; }
+      T* operator* () { return this->m_item ; }
+      const T* operator* () const { return this->m_item ; }
+      operator T* () { return this->m_item ; }
+      operator const T* () const { return this->m_item ; }
+      explicit operator bool () const { return this->m_item != nullptr ; }
+      bool operator ! () const { return this->m_item == nullptr ; }
+   private:
+      T* m_item ;
 } ;
 
 //----------------------------------------------------------------------------
