@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-07					*/
+/* Version 0.14, last edit 2019-07-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -25,7 +25,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include "framepac/config.h"
-#include "framepac/cstring.h"
+#include "framepac/smartptr.h"
 
 namespace Fr
 {

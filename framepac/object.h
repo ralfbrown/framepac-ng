@@ -24,7 +24,7 @@
 
 #include <iostream>
 #include <string>
-#include "framepac/cstring.h"
+#include "framepac/smartptr.h"
 #include "framepac/memory.h"
 
 /************************************************************************/

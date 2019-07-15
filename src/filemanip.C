@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-01					*/
+/* Version 0.14, last edit 2019-07-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2019 Carnegie Mellon University			*/
@@ -19,14 +19,17 @@
 /*									*/
 /************************************************************************/
 
+#include <algorithm>
+#include <cstring>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "framepac/cstring.h"
 #include "framepac/file.h"
 #include "framepac/message.h"
 #include "framepac/texttransforms.h"
+
+using namespace std ;
 
 /************************************************************************/
 /*	Manifest Constants						*/

@@ -26,7 +26,6 @@
 #include <string>
 #include <unistd.h>
 #include "framepac/file.h"
-#include "framepac/message.h"
 #include "framepac/stringbuilder.h"
 #include "framepac/texttransforms.h"
 
@@ -569,71 +568,6 @@ CharPtr CFile::getTrimmedLine(size_t maxline)
 
 //----------------------------------------------------------------------------
 
-size_t CFile::signatureSize(const char* sigstring)
-{
-   if (!sigstring) return 0 ;
-   return strlen(sigstring) + 1 + sizeof(uint16_t) + sizeof(uint32_t) ;
-}
-
-//----------------------------------------------------------------------------
-
-int CFile::verifySignature(const char* sigstring)
-{
-   if (!sigstring || !*sigstring) return -1 ;
-   size_t len = strlen(sigstring) + 1 ;
-   LocalAlloc<char> buf(len) ;
-   uint16_t version ;
-   uint32_t byteorder ;
-   if (read(buf,len) < len || !readValue(&version) || !readValue(&byteorder))
-      return -1 ;
-   if (memcmp(sigstring,buf,len) != 0)
-      return -2 ;
-   if (byteorder != 0x12345678)
-      return -3 ;
-   return version ;
-}
-
-//----------------------------------------------------------------------------
-
-bool CFile::verifySignature(const char* sigstring, const char* filename, int &currver, int minver, bool silent)
-{
-   int ver = verifySignature(sigstring) ;
-   if (ver == -1)
-      {
-      if (!silent)
-	 SystemMessage::error("read error on %s",filename) ;
-      return false ;
-      }
-   else if (ver == -2)
-      {
-      if (!silent)
-	 SystemMessage::error("wrong file type for %s",filename) ;
-      return false ;
-      }
-   else if (ver == -3)
-      {
-      if (!silent)
-	 SystemMessage::error("file '%s' was written by a system with a different byte order",filename) ;
-      return false ;
-      }
-   else if (ver < minver)
-      {
-      if (!silent)
-	 SystemMessage::error("file '%s' is in an obsolete format",filename) ;
-      return false ;
-      }
-   else if (ver > currver)
-      {
-      if (!silent)
-	 SystemMessage::error("file '%s' is from a newer version of the program",filename) ;
-      return false ;
-      }
-   currver = ver ;
-   return true ;
-}
-
-//----------------------------------------------------------------------------
-
 size_t CFile::write(const char *buf, size_t buflen)
 {
    if (m_file)
@@ -664,22 +598,6 @@ bool CFile::putNulls(size_t count)
       if (fputc('\0',m_file) == EOF)
 	 return false ;
       }
-   return true ;
-}
-
-//----------------------------------------------------------------------------
-
-bool CFile::writeSignature(const char* sigstring, int version)
-{
-   if (!sigstring || !*sigstring || version < 1)
-      return false ;
-   size_t len = strlen(sigstring) + 1 ;
-   if (write(sigstring,len) < len)
-      return false ;
-   uint32_t byteorder { 0x12345678 } ;
-   uint16_t ver { (uint16_t)version } ;
-   if (!writeValue(ver) || !writeValue(byteorder))
-      return false ;
    return true ;
 }
 

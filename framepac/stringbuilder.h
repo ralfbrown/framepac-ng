@@ -23,7 +23,7 @@
 #define _Fr_STRINGBUILDER_H_INCLUDED
 
 #include "framepac/builder.h"
-#include "framepac/cstring.h"
+#include "framepac/smartptr.h"
 #include "framepac/string.h"
 
 /************************************************************************/

@@ -22,6 +22,9 @@
 #ifndef _Fr_SMARTPTR_H_INCLUDED
 #define _Fr_SMARTPTR_H_INCLUDED
 
+#include <algorithm>
+#include <cstdint>
+
 namespace Fr
 {
 

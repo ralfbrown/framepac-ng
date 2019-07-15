@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.13, last edit 2019-09-18					*/
+/* Version 0.14, last edit 2019-07-15					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2015,2017,2018 Carnegie Mellon University		*/
+/* (c) Copyright 2015,2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -26,7 +26,6 @@
 #include <unistd.h>
 #include <unordered_set>
 #include "framepac/argparser.h"
-#include "framepac/cstring.h"
 #include "framepac/fasthash64.h"
 #include "framepac/hashtable.h"
 #include "framepac/message.h"

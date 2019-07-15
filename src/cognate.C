@@ -20,7 +20,6 @@
 /************************************************************************/
 
 #include <algorithm>
-#include "framepac/cstring.h"
 #include "framepac/file.h"
 #include "framepac/spelling.h"
 #include "framepac/stringbuilder.h"
