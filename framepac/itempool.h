@@ -284,8 +284,8 @@ class ItemPool
 	 {
 	    if (N == 0) return true ;		// trivially successful
 	    auto start = allocBatch(N) ;
+	    if (start != 0) return false ;      // can't yet handle load into non-empty pool
 	    bool success = true;
-	    //assert(start == 0); //TODO: handle load into non-empty pool
 	    for (size_t i = 0 ; success && i < N/chunksize ; ++i)
 	       {
 	       success = f.read(m_chunks[i],chunksize,sizeof(T)) == chunksize ;
