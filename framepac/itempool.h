@@ -54,7 +54,7 @@ class ItemPool
    public:
       ItemPool(size_t init_cap = 0)
 	 : m_capacity(0) { if (init_cap) resize(init_cap) ; }
-      ~ItemPool() { if (m_ownbuf) delete[] m_data.m_items ; }
+      ~ItemPool() { reset() ; }
 
       size_t alloc()
 	 {
@@ -81,7 +81,7 @@ class ItemPool
 	 {
 	    // we can release the last item allocated; if any more have been allocated since, the
 	    //   request is ignored and that item simply goes to waste
-	    if (m_ownbuf)
+	    //if (???)
 	       {
 	       // TODO: use CAS to ensure that the compare and decrement happen atomically
 
@@ -90,10 +90,19 @@ class ItemPool
       bool external_buffer(T* base, size_t N)
 	 {
 	    if (!base) return false ;
-	    if (m_ownbuf) delete[] m_data.m_items ;
-	    m_data.m_items = base ;
-	    m_size = m_capacity = N ;
-	    m_ownbuf = false ;
+	    reset() ;			// remove any existing items
+	    if (chunksize == 0)
+	       m_data.m_items = base ;
+	    else
+	       {
+	       // allocate chunk list and point each at the appropriate segment of the external buffer
+	       m_data.m_chunks = new Chunk*[(N/chunksize)+1] ;
+	       for (size_t i = 0 ; i <= N/chunksize ; ++i)
+		  {
+		  m_data.m_chunks[i] = reinterpret_cast<Chunk*>(base) + i ;
+		  }
+	       }
+	    m_extdata = m_size = m_capacity = N ;
 	    return true ;
 	 }
       bool external_buffer(const char* base, size_t N)
@@ -101,7 +110,6 @@ class ItemPool
 
       size_t size() const { return m_size ; }
       size_t capacity() const { return m_capacity ; }
-      bool inBuffer(const T* item) const { return item >= m_data.m_items && item  < m_data.m_items+m_size ; }
       void reserve(size_t new_cap)
 	 {
 	    if (new_cap > m_capacity)
@@ -152,6 +160,28 @@ class ItemPool
       const_iter_type cend() const { return m_data.m_items + m_size ; }
 
    protected:
+      void reset()  // set pool back to initial empty state
+	 {
+	    if (chunksize == 0)
+	       {
+	       if (m_extdata == 0)
+		  delete[] m_data.m_items ;
+	       m_data.m_items = nullptr ;
+	       }
+	    else if (m_size > m_extdata)
+	       {
+	       for (size_t i = m_extdata/chunksize ; i < (m_size+chunksize-1)/chunksize ; ++i)
+		  {
+		  delete m_data.m_chunks[i] ;
+		  }
+	       delete[] m_data.m_chunks ;
+	       m_data.m_chunks = nullptr ;
+	       }
+	    m_size = 0 ;
+	    m_capacity = 0 ;
+	    m_extdata = 0 ;
+	    return ;
+	 }
       void resize(size_t new_cap)
 	 {
 	    T* new_items = new T[new_cap] ;
@@ -169,7 +199,7 @@ class ItemPool
 	 }
    protected:
       union {
-	 Chunk*   m_chunks ;		// the list of chunks (if chunksize > 0)
+	 Chunk**  m_chunks ;		// the list of chunks (if chunksize > 0)
 	 T*       m_items { nullptr } ;	// the buffer for the items (if chunksize==0)
 	 } m_data ;
       atom_size_t m_capacity ;		// size of the allocated array
