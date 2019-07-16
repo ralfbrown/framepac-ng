@@ -225,6 +225,15 @@ class ItemPool
 		  resize(new_cap) ;
 		  }
 	       }
+	    // make sure we have allocated a chunk for the new item
+	    if (m_chunks[idx/chunksize] == nullptr)
+	       {
+	       Chunk* chunk = new Chunk ;
+	       // atomically swap the new chunk into the array
+	       Chunk* expected = nullptr ;
+	       if (!Atomic<Chunk*>::ref(m_chunks[idx/chunksize]).compare_exchange_strong(expected,chunk))
+		  delete chunk ;
+	       }
 	    return idx ;
 	 }
       void release(size_t index)
@@ -355,13 +364,18 @@ class ItemPool
 	    Chunk** new_chunks = new Chunk*[(new_cap/chunksize)+1] ;
 	    if (new_chunks)
 	       {
-	       size_t cap = m_capacity ;
+	       size_t cap = std::min(m_capacity.load(),new_cap) ;
 	       if (cap && m_chunks)
 		  {
-//FIXME:	  std::copy_n(m_data.m_items,cap,new_items) ;
+		  std::copy_n(m_chunks,cap,new_chunks) ;
 		  }
-//FIXME	       if (m_ownbuf)
-		  delete[] m_chunks ;
+	       if (new_cap < m_capacity)
+		  {
+		  // free up any chunks which are no longer used
+		  for (size_t i = (new_cap+chunksize-1)/chunksize ; i < m_capacity/chunksize ; ++i)
+		     delete m_chunks[i] ;
+		  }
+	       delete[] m_chunks ;
 	       m_chunks = new_chunks ;
 	       m_capacity = new_cap ;
 	       m_extdata = 0 ;
