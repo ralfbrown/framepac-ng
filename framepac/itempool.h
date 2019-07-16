@@ -87,7 +87,7 @@ class ItemPoolFlat
 	    m_extdata = m_size = m_capacity = N ;
 	    return true ;
 	 }
-      bool external_buffer(const char* base, size_t N)
+      bool external_buffer(const void* base, size_t N)
 	 { return external_buffer(const_cast<T*>(reinterpret_cast<const T*>(base)),N) ; }
 
       size_t size() const { return m_size ; }
@@ -227,15 +227,13 @@ class ItemPool
 	       }
 	    return idx ;
 	 }
-      void release(size_t /*index*/)
+      void release(size_t index)
 	 {
 	    // we can release the last item allocated; if any more have been allocated since, the
 	    //   request is ignored and that item simply goes to waste
-	    //if (???)
-	       {
-	       // TODO: use CAS to ensure that the compare and decrement happen atomically
-
-	       }
+	    // use CAS to atomically decrement size only if it is exactly one more than the given index.
+	    size_t expected = index+1 ;
+	    m_size.compare_exchange_weak(expected,index) ;
 	 }
       bool external_buffer(T* base, size_t N)
 	 {
@@ -250,7 +248,7 @@ class ItemPool
 	    m_extdata = m_size = m_capacity = N ;
 	    return true ;
 	 }
-      bool external_buffer(const char* base, size_t N)
+      bool external_buffer(const void* base, size_t N)
 	 { return external_buffer(const_cast<T*>(reinterpret_cast<const T*>(base)),N) ; }
 
       size_t size() const { return m_size ; }
@@ -281,12 +279,21 @@ class ItemPool
 	 {
 	    if (N == 0) return true ;		// trivially successful
 	    auto start = allocBatch(N) ;
-	    if (start != 0) return false ;      // can't yet handle load into non-empty pool
 	    bool success = true;
-	    for (size_t i = 0 ; success && i < N/chunksize ; ++i)
+	    N += start ;			// adjust end to account for items already in pool
+	    unsigned partial = (chunksize - (start % chunksize)) % chunksize ;
+	    if (partial)
+	       {
+	       // read a partial chunk if the pool already had a partial last chunk
+	       success = f.read(m_chunks[start/chunksize]+(start%chunksize),partial,sizeof(T)) == partial ;
+	       start += partial ;
+	       }
+	    // read full chunks
+	    for (size_t i = start ; success && i < N/chunksize ; ++i)
 	       {
 	       success = f.read(m_chunks[i],chunksize,sizeof(T)) == chunksize ;
 	       }
+	    // read any left-over in a partial last chunk
 	    unsigned remain = N % chunksize ;
 	    if (success && remain)
 	       success = f.read(m_chunks[N/chunksize],remain,sizeof(T)) == remain ;
