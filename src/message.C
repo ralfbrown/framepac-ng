@@ -157,6 +157,26 @@ bool SystemMessage::warning(const char* fmt, ...)
 
 //----------------------------------------------------------------------------
 
+bool SystemMessage::debug(const char* fmt, va_list args)
+{
+   CharPtr msg { vaprintf(fmt,args) } ;
+   instance().showDebug(msg) ;
+   return true ;
+}
+
+//----------------------------------------------------------------------------
+
+bool SystemMessage::debug(const char* fmt, ...)
+{
+   va_list args ;
+   va_start(args,fmt) ;
+   bool res = debug(fmt,args) ;
+   va_end(args) ;
+   return res ;
+}
+
+//----------------------------------------------------------------------------
+
 bool SystemMessage::error(const char* fmt, va_list args)
 {
    CharPtr msg { vaprintf(fmt,args) } ;
