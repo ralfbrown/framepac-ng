@@ -42,6 +42,9 @@ class ItemPoolIter ;			// forward declaration, as we need def of ItemPool
 //   an external area such as a memory-mapped file, in which case any
 //   requests to allocate additional items will result in the contents
 //   of the memory-mapped file being copied into an allocated buffer
+// This flat-mapped version of the pool is not thread-safe, as an
+//   allocation may cause all pointers to items in the pool to be
+//   invalidated.
 
 template <typename T>
 class ItemPoolFlat
@@ -57,34 +60,24 @@ class ItemPoolFlat
 
       size_t alloc()
 	 {
-	    // atomically allocate an index in the array
+	    // allocate an index in the array
 	    size_t idx = m_size++ ;
 	    if (idx >= m_capacity)
 	       {
 	       // array was full, so we must resize
-	       // start by grabbing the lock
-	       std::lock_guard<std::mutex> _(s_mutex) ;
-	       // check whether another thread beat us to the resize
-	       if (m_size >= m_capacity)
-		  {
-		  // still need to resize, so do it
-		  // compute the new capacity, then ask to increase to that capacity
-		  size_t cap = m_capacity ;
-		  size_t new_cap = cap < 32 ? 32 : (cap < 65536 ? 2*cap : 3*cap/2) ;
-		  resize(new_cap) ;
-		  }
+	       // compute the new capacity, then ask to increase to that capacity
+	       size_t cap = m_capacity ;
+	       size_t new_cap = cap < 32 ? 32 : (cap < 65536 ? 2*cap : 3*cap/2) ;
+	       resize(new_cap) ;
 	       }
 	    return idx ;
 	 }
-      void release(size_t /*index*/)
+      void release(size_t index)
 	 {
-	    // we can release the last item allocated; if any more have been allocated since, the
-	    //   request is ignored and that item simply goes to waste
-	    //if (???)
-	       {
-	       // TODO: use CAS to ensure that the compare and decrement happen atomically
-
-	       }
+	    // We can release the most recently allocated item.  If any others have been allocated since,
+	    //   this call simply does nothing, and the item goes to waste.
+	    if (index+1 == m_size)
+	       --m_size ;
 	 }
       bool external_buffer(T* base, size_t N)
 	 {
@@ -103,7 +96,6 @@ class ItemPoolFlat
 	 {
 	    if (new_cap > m_capacity)
 	       {
-	       std::lock_guard<std::mutex> _(s_mutex) ;
 	       resize(new_cap) ;
 	       }
 	 }
@@ -169,10 +161,10 @@ class ItemPoolFlat
 	    T* new_items = new T[new_cap] ;
 	    if (new_items)
 	       {
-	       size_t cap = m_capacity ;
+	       size_t cap = std::min(m_capacity,new_cap) ;
 	       if (cap && m_items)
 		  std::copy_n(m_items,cap,new_items) ;
-//FIXME	       if (m_ownbuf)
+	       if (m_extdata == 0)
 		  delete[] m_items ;
 	       m_items = new_items ;
 	       m_capacity = new_cap ;
@@ -180,17 +172,22 @@ class ItemPoolFlat
 	       }
 	 }
    protected:
-      T*          m_items { nullptr } ;	// the buffer for the items (if chunksize==0)
-      atom_size_t m_capacity ;		// size of the allocated array
-      atom_size_t m_size { 0 } ;	// number of items actually in use
-      size_t      m_extdata { 0 } ;	// how many items are stored in an external buffer we don't own?
-      static std::mutex s_mutex ;	// lock for use when resizing m_items
+      T*     m_items { nullptr } ;	// the buffer for the items
+      size_t m_capacity ;		// size of the allocated array
+      size_t m_size { 0 } ;		// number of items actually in use
+      size_t m_extdata { 0 } ;		// how many items are stored in an external buffer we don't own?
    } ;
 
-template <typename T>
-std::mutex ItemPoolFlat<T>::s_mutex ;
-
 //----------------------------------------------------------------------
+
+// (header-only) class for allocate-only management of a smallish pool
+//   of items of a given type.  The pool can optionally be pointed at
+//   an external area such as a memory-mapped file, in which case any
+//   requests to allocate additional items will result in the contents
+//   of the memory-mapped file being copied into an allocated buffer
+// This chunked version is thread-safe, as items do not move on a
+//   reallocation (unless there is a partial final chunk in the
+//   external storage).
 
 template <typename T, unsigned chunksize=64>
 class ItemPool
