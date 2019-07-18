@@ -25,6 +25,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include "framepac/config.h"
+#include "framepac/objectvmt.h"
 #include "framepac/smartptr.h"
 
 namespace Fr
@@ -128,7 +129,7 @@ class CFile
       void skipAllWS() ;	// skip until a non-whitespace char is seen, may skip multiple lines
       size_t skipLines(size_t maxskip = 1) ;
       size_t skipBlankLines(size_t maxskip = (size_t)~0) ;
-      class Fr::String* getline(size_t maxline = (size_t)~0) ; // result must be freed
+      Fr::Ptr<Fr::String> getline(size_t maxline = (size_t)~0) ; // result must be freed
       CharPtr getCLine(size_t maxline = (size_t)~0) ; // result must be freed
       CharPtr getTrimmedLine(size_t maxline = (size_t)~0) ; // result must be freed
       LineBatch* getLines(size_t batchsize = 0) ;

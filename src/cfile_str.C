@@ -42,7 +42,7 @@ CFile::CFile(String *filename, bool writing, int options)
 
 //----------------------------------------------------------------------------
 
-String* CFile::getline(size_t maxline)
+StringPtr CFile::getline(size_t maxline)
 {
    if (!m_file || feof(m_file))
       return nullptr ;
