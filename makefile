@@ -781,7 +781,7 @@ framepac/cluster.h:		framepac/array.h framepac/list.h framepac/symbol.h
 framepac/complex.h:		framepac/number.h
 	$(TOUCH) $@ $(BITBUCKET)
 
-framepac/configfile.h:	framepac/smartptr.h
+framepac/configfile.h:	framepac/config.h framepac/objectvmt.h framepac/smartptr.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/concbuilder.h:	framepac/builder.h
