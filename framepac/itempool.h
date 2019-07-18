@@ -359,20 +359,31 @@ class ItemPool
 	    m_extdata = 0 ;
 	    return ;
 	 }
+      static constexpr size_t chunk_count(size_t cap) { return (cap+chunksize-1) / chunksize ; }
       void resize(size_t new_cap)
 	 {
-	    Chunk** new_chunks = new Chunk*[(new_cap/chunksize)+1] ;
+	    size_t new_count = chunk_count(new_cap) ;
+	    size_t old_count = chunk_count(m_capacity) ;
+	    if (new_count == old_count)
+	       return ;			// no need to reallocate
+	    new_cap = new_count * chunksize ;
+	    Chunk** new_chunks = new Chunk*[new_count] ;
 	    if (new_chunks)
 	       {
-	       size_t cap = std::min(m_capacity.load(),new_cap) ;
-	       if (cap && m_chunks)
+	       size_t min_count = std::min(old_count,new_count) ;
+	       if (min_count && m_chunks)
 		  {
-		  std::copy_n(m_chunks,cap,new_chunks) ;
+		  std::copy_n(m_chunks,min_count,new_chunks) ;
 		  }
-	       if (new_cap < m_capacity)
+	       if (new_count > old_count)
+		  {
+		  // zero out any new chunk pointers
+		  std::fill_n(new_chunks + old_count, new_count - old_count, nullptr) ;
+		  }
+	       else if (new_count < old_count)
 		  {
 		  // free up any chunks which are no longer used
-		  for (size_t i = (new_cap+chunksize-1)/chunksize ; i < m_capacity/chunksize ; ++i)
+		  for (size_t i = new_count ; i < old_count ; ++i)
 		     delete m_chunks[i] ;
 		  }
 	       delete[] m_chunks ;
@@ -382,7 +393,7 @@ class ItemPool
 	       }
 	 }
    protected:
-      Chunk**     m_chunks ;		// the list of chunks
+      Chunk**     m_chunks { nullptr } ;// the list of chunks
       atom_size_t m_capacity ;		// size of the allocated array
       atom_size_t m_size { 0 } ;	// number of items actually in use
       size_t      m_extdata { 0 } ;	// how many items are stored in an external buffer we don't own?
