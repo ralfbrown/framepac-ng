@@ -48,6 +48,7 @@ class Owned
       Owned(const Owned&) = delete ;
       Owned(Owned& orig) { this->m_item = orig.move() ; }
       Owned(Owned&& orig) { this->m_item = orig.move() ; }
+      ~Owned() { delete m_item ; }
 
       Owned& operator= (const Owned&) = delete ;
       Owned& operator= (Owned& orig) { this->reset(orig.move()) ; return *this ; }
