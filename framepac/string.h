@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-18					*/
+/* Version 0.14, last edit 2019-07-18					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
+/* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -112,12 +112,12 @@ class String : public Object
    public: // types
       typedef Object super ;
    public:
-      static String* create() { return new String ; }
-      static String* create(const char* s) { return new String(s) ; }
-      static String* create(const char* s, size_t len) { return new String(s,len) ; }
-      static String* create(const String* s) { return new String(s) ; }
-      static String* create(const Object* obj) { return new String(obj) ; }
-      static String* create(istream&) ;
+      static StringPtr create() { return new String ; }
+      static StringPtr create(const char* s) { return new String(s) ; }
+      static StringPtr create(const char* s, size_t len) { return new String(s,len) ; }
+      static StringPtr create(const String* s) { return new String(s) ; }
+      static StringPtr create(const Object* obj) { return new String(obj) ; }
+      static StringPtr create(istream&) ;
 
       size_t c_len() const
 	 { size_t len = m_buffer.extra() ; return (len == 0xFFFF) ? ((size_t*)m_buffer.pointer())[-1] : len ; }
