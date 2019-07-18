@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-07					*/
+/* Version 0.14, last edit 2019-07-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -776,12 +776,15 @@ int List::lessThan_(const Object *obj, const Object *other)
 
 void List::StaticInitialization()
 {
-   empty_list = new List ;
-   // point both head and tail of the empty list at itself; if we somehow wind
-   //   up trying to deref the empty list, we'll get back another empty list
-   //   instead of a null pointer
-   empty_list->m_item = empty_list ;
-   empty_list->m_next = empty_list ;
+   if (!empty_list)
+      {
+      empty_list = new List ;
+      // point both head and tail of the empty list at itself; if we somehow wind
+      //   up trying to deref the empty list, we'll get back another empty list
+      //   instead of a null pointer
+      empty_list->m_item = empty_list ;
+      empty_list->m_next = empty_list ;
+      }
    return ;
 }
 
