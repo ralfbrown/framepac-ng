@@ -62,6 +62,7 @@ class Owned
       const T* operator-> () const { return this->m_item ; }
       T* operator* () { return this->m_item ; }
       const T* operator* () const { return this->m_item ; }
+      T& operator& () { return *this->m_item ; }
       operator T* () { return this->m_item ; }
       operator const T* () const { return this->m_item ; }
       explicit operator bool () const { return this->m_item != nullptr ; }
