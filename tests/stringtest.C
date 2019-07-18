@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.09, last edit 2018-08-17					*/
+/* Version 0.14, last edit 2019-07-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -32,7 +32,7 @@ using namespace Fr ;
 /************************************************************************/
 
 typedef String* CreateStringFunc(const char*) ;
-typedef Symbol* CreateSymbolFunc(const char*) ;
+//typedef SymbolPtr CreateSymbolFunc(const char*) ;
 
 struct BatchInfo
    {
@@ -51,6 +51,20 @@ static const char* get_object_type(CreateStringFunc* create)
 {
    ObjectPtr obj { create(" ") } ;
    return obj->typeName() ;
+}
+
+//----------------------------------------------------------------------------
+
+static String* create_string(const char* s)
+{
+   return String::create(s).move() ;
+}
+
+//----------------------------------------------------------------------------
+
+static String* create_symbol(const char* s)
+{
+   return Symbol::create(s).move() ;
 }
 
 //----------------------------------------------------------------------------
@@ -244,9 +258,7 @@ int main(int argc, char** argv)
       cmdline_flags.showHelp() ;
       return 1 ;
       }
-   CreateSymbolFunc* create_sym = Symbol::create ;
-   CreateStringFunc* create_str = String::create ;
-   CreateStringFunc* create = use_symbols ? (CreateStringFunc*)create_sym : create_str ;
+   CreateStringFunc* create = use_symbols ? create_symbol : create_string ;
 #ifdef FrSINGLE_THREADED
    threads = 0 ;
 #endif
