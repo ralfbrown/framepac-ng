@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-07					*/
+/* Version 0.14, last edit 2019-07-17					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -208,8 +208,17 @@ class List : public Object
 
 //----------------------------------------------------------------------------
 
-template <>
+template<>
 inline Ptr<List>::Ptr() : m_object(List::emptyList()) { }
+
+template<>
+inline void Ptr<List>::release() { m_object = List::emptyList() ; }
+
+template<>
+inline Ptr<List>::operator bool() const { return m_object && m_object != List::emptyList() ; }
+
+template<>
+inline bool Ptr<List>::operator! () const { return !m_object || m_object == List::emptyList() ; }
 
 typedef Ptr<List> ListPtr ;
 
@@ -332,6 +341,7 @@ class ListBuilder
 
       // retrieve contents
       operator bool () const { return m_list != List::emptyList() ; }
+      operator ListPtr () { return move() ; }
       List* operator * () const { return m_list ; }
       List* operator-> () const { return m_list ; }
       List* move() { List* l = m_list ; m_list = List::emptyList() ; return l ; }
@@ -413,6 +423,7 @@ class DblListBuilder
 
 void pushlist(Object*, List*&) ;
 Object* poplist(List*&) ;
+Object* poplist(ListPtr&) ;
 
 // end of namespace Fr
 } ;

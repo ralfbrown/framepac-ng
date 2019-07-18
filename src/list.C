@@ -822,6 +822,17 @@ Object* poplist(List*& list)
    return o ;
 }
 
+//----------------------------------------------------------------------------
+
+Object* poplist(ListPtr& list)
+{
+   if (!list)
+      return nullptr ;
+   Object* o ;
+   list.update(list->pop(o)) ;
+   return o ;
+}
+
 } ; // end namespace Fr
 
 /************************************************************************/
