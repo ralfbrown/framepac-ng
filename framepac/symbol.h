@@ -38,6 +38,10 @@ class Symbol ;
 
 //----------------------------------------------------------------------------
 
+typedef Ptr<Symbol> SymbolPtr ;
+
+//----------------------------------------------------------------------------
+
 class SymbolIter
    {
    private:
@@ -97,11 +101,11 @@ class Symbol : public String
    public: // types
       typedef String super ;
    public:
-      static Symbol* create(const char* name) { return new Symbol(name) ; }
-      static Symbol* create(const String* str) { return new Symbol(str) ; }
-      static Symbol* create(const Object* obj) ;
-      static Symbol* create(istream&) ;
-      static Symbol* createInCurrentSymtab(const char* name) ;
+      static SymbolPtr create(const char* name) { return new Symbol(name) ; }
+      static SymbolPtr create(const String* str) { return new Symbol(str) ; }
+      static SymbolPtr create(const Object* obj) ;
+      static SymbolPtr create(istream&) ;
+      static SymbolPtr createInCurrentSymtab(const char* name) ;
 
       const char* name() const { return c_str() ; }
 

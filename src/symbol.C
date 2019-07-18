@@ -46,7 +46,7 @@ Symbol::~Symbol()
 
 //----------------------------------------------------------------------------
 
-Symbol* Symbol::create(istream&)
+SymbolPtr Symbol::create(istream&)
 {
    //FIXME
    return nullptr ;
@@ -54,7 +54,7 @@ Symbol* Symbol::create(istream&)
 
 //----------------------------------------------------------------------------
 
-Symbol* Symbol::createInCurrentSymtab(const char* name)
+SymbolPtr Symbol::createInCurrentSymtab(const char* name)
 {
    auto sym = Symbol::create(name) ;
    if (sym)
