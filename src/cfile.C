@@ -221,7 +221,6 @@ CFile& CFile::operator= (CFile* orig)
 
 bool CFile::openRead(const char *filename, int options)
 {
-(void)options;
    m_piped = false ;
    if (!filename || !*filename)
       {
