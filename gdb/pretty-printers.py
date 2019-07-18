@@ -200,7 +200,7 @@ class FrCharPtrPrinter(FrPrinter):
         return 'CharPtr'
 
     def children(self):
-        return [('str',self.val['m_string'])]
+        return [('str',self.val['m_items'])]
 
 ##########################################################################
 
