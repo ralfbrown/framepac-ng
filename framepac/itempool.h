@@ -280,6 +280,15 @@ class ItemPool
 	 size_t newsize = currsize + incr ;
 	 reserve(newsize) ;
 	 m_size = newsize ;
+	 for (size_t i = chunk_count(currsize) ; i < chunk_count(newsize) ; ++i)
+	    {
+	    if (m_chunks[i] != nullptr) continue ;
+	    auto chunk = new Chunk ;
+	    // atomically swap the new chunk into the array
+	    Chunk* expected = nullptr ;
+	    if (!Atomic<Chunk*>::ref(m_chunks[i]).compare_exchange_strong(expected,chunk))
+	       delete chunk ;
+	    }
 	 return currsize ;
 	 }
       void clear() { m_size = 0 ; }
@@ -343,11 +352,12 @@ class ItemPool
       const_iter_type cend() const { return iter_type(this,m_size.load()) ; }
 
    protected:
+      static constexpr size_t chunk_count(size_t cap) { return (cap+chunksize-1) / chunksize ; }
       void reset()  // set pool back to initial empty state
 	 {
 	    if (m_size > m_extdata)
 	       {
-	       for (size_t i = m_extdata/chunksize ; i < (m_size+chunksize-1)/chunksize ; ++i)
+	       for (size_t i = chunk_count(m_extdata) ; i < chunk_count(m_size) ; ++i)
 		  {
 		  delete m_chunks[i] ;
 		  }
@@ -359,7 +369,6 @@ class ItemPool
 	    m_extdata = 0 ;
 	    return ;
 	 }
-      static constexpr size_t chunk_count(size_t cap) { return (cap+chunksize-1) / chunksize ; }
       void resize(size_t new_cap)
 	 {
 	    size_t new_count = chunk_count(new_cap) ;
