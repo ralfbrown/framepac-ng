@@ -31,8 +31,6 @@ namespace Fr
 //----------------------------------------------------------------------------
 // smart pointer to a single item
 
-enum nullinit_t { null } ;
-
 template <typename T>
 class Owned
    {
@@ -41,7 +39,7 @@ class Owned
       typedef T element_type ;
    public:
       Owned() { this->m_item = new T ; }
-      Owned(nullinit_t) { this->m_item = nullptr ; }
+      Owned(nullptr_t) { this->m_item = nullptr ; }
       Owned(T* s) { this->m_item = s ; }
       template <typename ...Args>
       Owned(Args ...args) { this->m_item = new T(args...) ; }
