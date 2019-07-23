@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-27					*/
+/* Version 0.14, last edit 2019-07-23					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
+/* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -32,12 +32,9 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-MemMappedFile::MemMappedFile(const char *filename, off_t start_offset,
-			     off_t length, bool readonly)
+MemMappedFile::MemMappedFile(const char *filename, off_t start_offset, off_t length, bool readonly)
    : m_address(nullptr), m_length(0)
 {
-   if (!filename || !*filename)
-      return ;
    CInputFile file(filename) ;
    if (file)
       init(fileno(*file),start_offset,length,readonly) ;
@@ -46,13 +43,22 @@ MemMappedFile::MemMappedFile(const char *filename, off_t start_offset,
 
 //----------------------------------------------------------------------------
 
-MemMappedFile::MemMappedFile(CFile &file, off_t start_offset,
-			     off_t length, bool readonly)
+MemMappedFile::MemMappedFile(CFile &file, off_t start_offset, off_t length, bool readonly)
    : m_address(nullptr), m_length(0)
 {
    FILE *fp = *file ;
    if (fp)
       init(fileno(fp),start_offset,length,readonly) ;
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void MemMappedFile::open(const char *filename, off_t start_offset, off_t length, bool readonly)
+{
+   CInputFile file(filename) ;
+   if (file)
+      init(fileno(*file),start_offset,length,readonly) ;
    return ;
 }
 

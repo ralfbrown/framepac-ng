@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.07, last edit 2018-07-16					*/
+/* Version 0.14, last edit 2019-07-23					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
+/* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -34,10 +34,8 @@ class MemMappedFile
    {
    public:
       MemMappedFile() : m_address(nullptr), m_length(0) {}
-      MemMappedFile(const char *filename, off_t start_offset = 0,
-		    off_t length = ~0, bool readonly = false) ;
-      MemMappedFile(class CFile &, off_t start_offset = 0,
-		    off_t length = ~0, bool readonly = false) ;
+      MemMappedFile(const char *filename, off_t start_offset = 0, off_t length = ~0, bool readonly = false) ;
+      MemMappedFile(class CFile &, off_t start_offset = 0, off_t length = ~0, bool readonly = false) ;
       MemMappedFile(const MemMappedFile&) = delete ;
       MemMappedFile(MemMappedFile&& orig)
 	 {
@@ -56,6 +54,8 @@ class MemMappedFile
 	 orig.m_length = 0 ;
 	 return *this ;
 	 }
+      // instantiate a file mapping into a default-constructed instance
+      void open(const char* filename, off_t start_offset = 0, off_t length = ~0, bool readonly = false) ;
 
       size_t size() const { return m_length ; }
       explicit operator bool () const { return m_address != nullptr ; }
