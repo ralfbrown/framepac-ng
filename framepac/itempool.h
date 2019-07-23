@@ -315,7 +315,7 @@ class ItemPool
 	    unsigned remain = N % chunksize ;
 	    if (success && remain)
 	       success = f.read(m_chunks[N/chunksize],remain,sizeof(T)) == remain ;
-	    if (success) m_size += N ;
+	    if (!success) m_size = start ; // shrink back to original size on failure
 	    return success ;
 	 }
       
@@ -373,33 +373,38 @@ class ItemPool
 	 {
 	    size_t new_count = chunk_count(new_cap) ;
 	    size_t old_count = chunk_count(m_capacity) ;
-	    if (new_count == old_count)
-	       return ;			// no need to reallocate
 	    new_cap = new_count * chunksize ;
-	    Chunk** new_chunks = new Chunk*[new_count] ;
-	    if (new_chunks)
-	       {
-	       size_t min_count = std::min(old_count,new_count) ;
-	       if (min_count && m_chunks)
+	    if (new_count != old_count)
+	       {			// no need to reallocate, just adjust our record of sizes
+	       Chunk** new_chunks = new Chunk*[new_count] ;
+	       if (!new_chunks)
+		  return ; 		// don't change anything if we could not allocate memory
+	       else
 		  {
-		  std::copy_n(m_chunks,min_count,new_chunks) ;
+		  size_t min_count = std::min(old_count,new_count) ;
+		  if (min_count && m_chunks)
+		     {
+		     std::copy_n(m_chunks,min_count,new_chunks) ;
+		     }
+		  if (new_count > old_count)
+		     {
+		     // zero out any new chunk pointers
+		     std::fill_n(new_chunks + old_count, new_count - old_count, nullptr) ;
+		     }
+		  else if (new_count < old_count)
+		     {
+		     // free up any chunks which are no longer used
+		     for (size_t i = new_count ; i < old_count ; ++i)
+			delete m_chunks[i] ;
+		     }
+		  delete[] m_chunks ;
+		  m_extdata = 0 ;
+		  m_chunks = new_chunks ;
 		  }
-	       if (new_count > old_count)
-		  {
-		  // zero out any new chunk pointers
-		  std::fill_n(new_chunks + old_count, new_count - old_count, nullptr) ;
-		  }
-	       else if (new_count < old_count)
-		  {
-		  // free up any chunks which are no longer used
-		  for (size_t i = new_count ; i < old_count ; ++i)
-		     delete m_chunks[i] ;
-		  }
-	       delete[] m_chunks ;
-	       m_chunks = new_chunks ;
-	       m_capacity = new_cap ;
-	       m_extdata = 0 ;
 	       }
+	    m_capacity = new_cap ;
+	    if (new_cap < m_size) m_size = new_cap ;
+	    return ;
 	 }
    protected:
       Chunk**     m_chunks { nullptr } ;// the list of chunks
