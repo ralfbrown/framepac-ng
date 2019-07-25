@@ -56,6 +56,8 @@ class Owned
       T* get() const { return this->m_item ; }
       T* move() { T* s = m_item ; m_item = nullptr ; return s ; }
       void reinit() { reset(new T) ; }
+      template <typename ...Args>
+      void reinit(Args ...args) { reset(new T(args...)) ; }
       void reset(T* ptr) { T* old = m_item ; m_item = ptr ; delete old ; }
       
       T* operator-> () { return this->m_item ; }
