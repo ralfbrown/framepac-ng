@@ -152,6 +152,36 @@ class CFile
       bool verifySignature(const char* sigstring, const char* filename, int& currver, int minver, bool silent = false);
       bool writeSignature(const char* sigstring, int version) ;
 
+      // byte-oriented I/O
+      uint64_t read64LE() ;
+      uint64_t read48LE() ;
+      uint32_t read32LE() ;
+      uint32_t read24LE() ;
+      uint16_t read16LE() ;
+      uint8_t read8() ;
+      bool read64LE(uint64_t&) ;
+      bool read48LE(uint64_t&) ;
+      bool read32LE(uint32_t&) ;
+      bool read24LE(uint32_t&) ;
+      bool read16LE(uint16_t&) ;
+      bool read8(uint8_t&) ;
+      bool read64BE(uint64_t&) ;
+      bool read48BE(uint64_t&) ;
+      bool read32BE(uint32_t&) ;
+      bool read24BE(uint32_t&) ;
+      bool read16BE(uint16_t&) ;
+      bool write64LE(uint64_t) ;
+      bool write48LE(uint64_t) ;
+      bool write32LE(uint32_t) ;
+      bool write24LE(uint32_t) ;
+      bool write16LE(uint16_t) ;
+      bool write8(uint8_t) ;
+      bool write64BE(uint64_t) ;
+      bool write48BE(uint64_t) ;
+      bool write32BE(uint32_t) ;
+      bool write24BE(uint32_t) ;
+      bool write16BE(uint16_t) ;
+
       template <typename T>
       bool readValue(T* val)
 	 {
