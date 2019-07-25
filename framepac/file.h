@@ -94,7 +94,8 @@ class CFile
       enum { default_options = 0,
 	     safe_rewrite = 1,
 	     fail_if_exists = 2,
-	     binary = 4
+	     binary = 4,
+	     no_truncate = 8
            } ;
    public:
       CFile() = default ;
@@ -106,6 +107,7 @@ class CFile
       ~CFile() ;
       void operator= (const CFile&) = delete ;
       CFile& operator= (CFile*) ;  // move semantics!
+      CFile& operator= (CFile&) ;  // move semantics!
       explicit operator bool () const { return m_file != nullptr ; }
       bool operator! () const { return m_file == nullptr ; }
 
