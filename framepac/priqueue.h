@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-07					*/
+/* Version 0.14, last edit 2019-07-26					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2019 Carnegie Mellon University			*/
@@ -40,7 +40,7 @@ namespace Fr {
 class BoundedPriorityQueue
    {
    public:
-      BoundedPriorityQueue(size_t cap) ;
+      BoundedPriorityQueue(size_t cap = 0) ;
       ~BoundedPriorityQueue() ;
 
       size_t size() const { return m_qtail - m_qhead ; }
