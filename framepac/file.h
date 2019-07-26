@@ -91,16 +91,17 @@ class LineBatch
 class CFile
    {
    public:
+      typedef bool OverwriteFn(const char* filename) ;
       enum { default_options = 0,
 	     safe_rewrite = 1,
-	     fail_if_exists = 2,
+	     fail_if_exists = 2,	// if OverwriteFn given, use it to determine whether to clobber file
 	     binary = 4,
-	     no_truncate = 8
+	     no_truncate = 8,
            } ;
    public:
       CFile() = default ;
-      CFile(const char *filename, bool writing, int options = default_options) ;
-      CFile(String *filename, bool writing, int options = default_options) ;
+      CFile(const char *filename, bool writing, int options = default_options, OverwriteFn* = nullptr) ;
+      CFile(String *filename, bool writing, int options = default_options, OverwriteFn* = nullptr) ;
       CFile(const CFile&) = delete ;
       CFile(CFile&& orig) ;
       CFile(FILE*) ;
@@ -142,9 +143,13 @@ class CFile
       bool putNulls(size_t count) ;
       [[gnu::format(gnu_printf,2,0)]] bool printf(const char* fmt, ...) const ;
       off_t tell() const { return ftell(m_file) ; }
+      off_t filesize() const ;
       bool seek(off_t loc, int whence = SEEK_SET) { return fseek(m_file,loc,whence) == 0 ; }
       void flush() { fflush(m_file) ; }
       bool close() ;
+
+      // a default user-prompting function to pass to the ctor when giving fail_if_exists option
+      static bool askOverwrite(const char* filename) ;
 
       void writeJSON(const class List*, int indent, bool recursive) ;
 
@@ -264,7 +269,7 @@ class CFile
 
    protected: // methods
       bool openRead(const char *filename, int options) ;
-      bool openWrite(const char *filenmae, int options) ;
+      bool openWrite(const char *filenmae, int options, OverwriteFn*) ;
 
    protected: // data
       FILE* m_file        { nullptr } ;

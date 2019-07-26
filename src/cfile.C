@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-12					*/
+/* Version 0.14, last edit 2019-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -26,6 +26,7 @@
 #include <string>
 #include <unistd.h>
 #include "framepac/file.h"
+#include "framepac/message.h"
 #include "framepac/stringbuilder.h"
 #include "framepac/texttransforms.h"
 
@@ -155,10 +156,10 @@ static CompressionType check_file_signature(const char *filename)
 /*	Methods for class CFile						*/
 /************************************************************************/
 
-CFile::CFile(const char *filename, bool writing, int options)
+CFile::CFile(const char *filename, bool writing, int options, CFile::OverwriteFn* prompter)
 {
    if (writing)
-      openWrite(filename,options) ;
+      openWrite(filename,options,prompter) ;
    else
       openRead(filename,options) ;
    return ;
@@ -291,15 +292,21 @@ bool CFile::openRead(const char *filename, int options)
 
 //----------------------------------------------------------------------------
 
-bool CFile::openWrite(const char *filename, int options)
+bool CFile::openWrite(const char *filename, int options, CFile::OverwriteFn* prompter)
 {
    if ((options & fail_if_exists) != 0)
       {
-      // check whether the output file exists; if it does, set m_errcode
+      // check whether the output file exists
       if (file_exists(filename))
 	 {
-	 m_errcode = -1 ; //FIXME
-	 return false ;
+	 // if the file exists and we were given a callback function, invoke it to determine
+	 //   whether to clobber the file; if no function or the result is negative, set error code
+	 //   and signal failure
+	 if (!prompter || !prompter(filename))
+	    {
+	    m_errcode = -1 ; //FIXME
+	    return false ;
+	    }
 	 }
       }
    if ((options & safe_rewrite) != 0)
@@ -352,6 +359,13 @@ bool CFile::openWrite(const char *filename, int options)
       m_file = fopen(filename,filemode) ;
       }
    return m_file != nullptr ;
+}
+
+//----------------------------------------------------------------------------
+
+bool CFile::askOverwrite(const char* filename)
+{
+   return SystemMessage::confirmation("File %s exists.  Overwrite (Y/N)? ",filename) ;
 }
 
 //----------------------------------------------------------------------------
@@ -416,6 +430,21 @@ bool CFile::good() const
 int CFile::error() const
 {
    return m_errcode ;
+}
+
+//----------------------------------------------------------------------------
+
+off_t CFile::filesize() const
+{
+   if (m_file)
+      {
+      off_t currpos = ftell(m_file) ;
+      fseek(m_file,0,SEEK_END) ;
+      off_t endpos = ftell(m_file) ;
+      fseek(m_file,currpos,SEEK_SET) ;
+      return endpos ;
+      }
+   return 0 ;
 }
 
 //----------------------------------------------------------------------------

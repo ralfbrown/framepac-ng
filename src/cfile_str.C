@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-12					*/
+/* Version 0.14, last edit 2019-07-25					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -31,10 +31,10 @@ namespace Fr
 
 //----------------------------------------------------------------------------
 
-CFile::CFile(String *filename, bool writing, int options)
+CFile::CFile(String *filename, bool writing, int options, CFile::OverwriteFn* prompter)
 {
    if (writing)
-      openWrite(filename->c_str(),options) ;
+      openWrite(filename->c_str(),options,prompter) ;
    else
       openRead(filename->c_str(),options) ;
    return ;
