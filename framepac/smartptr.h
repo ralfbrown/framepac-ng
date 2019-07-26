@@ -103,6 +103,7 @@ class NewPtr
       void clear() { m_items = nullptr ; }
       void reset(T* ptr) { T* old = m_items ; m_items = ptr ; delete[] old ; }
       T* release() { T* ptr = m_items ; clear() ; return ptr ; }
+      void allocate(size_t N) { reset(new T[N]) ; }
       bool reallocate(size_t prevsize, size_t newsize)
 	 {
 	    T* new_items = new T[newsize] ;
