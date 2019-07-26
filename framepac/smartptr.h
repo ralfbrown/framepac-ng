@@ -99,6 +99,7 @@ class NewPtr
       NewPtr& operator= (T* new_s) { reset(new_s) ; return *this ; }
 
       T* get() const noexcept { return m_items ; }
+      T* at(size_t N) const noexcept { return m_items + N ; }
       T* move() { T* s = m_items ; clear() ; return s ; }
       void clear() { m_items = nullptr ; }
       void reset(T* ptr) { T* old = m_items ; m_items = ptr ; delete[] old ; }
@@ -144,6 +145,7 @@ typedef NewPtr<short> ShortPtr ;
 typedef NewPtr<unsigned short> UShortPtr ;
 typedef NewPtr<int> IntPtr ;
 typedef NewPtr<unsigned> UIntPtr ;
+typedef NewPtr<size_t> SizeTPtr ;
 typedef NewPtr<float> FloatPtr ;
 typedef NewPtr<double> DoublePtr ;
 
