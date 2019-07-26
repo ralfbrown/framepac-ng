@@ -282,7 +282,10 @@ bool ConsoleSystemMessage::showModal(const char* msg)
    if (!msg)
       return false ;
    cerr << msg << endl ;
-   //TODO: wait for user to acknowledge
+   cerr << "Press <Enter> to continue:" << flush  ;
+   int c ;
+   while ((c = fgetc(stdin)) != EOF && c != '\n')
+      ; // loop until Enter pressed
    return true ;
 }
 
@@ -293,7 +296,23 @@ bool ConsoleSystemMessage::showConfirmation(const char* msg)
    if (!msg)
       return false ;
    cerr << msg << endl ;
-   //TODO: wait for user confirmation (Y/N)
+   int c ;
+   while ((c = fgetc(stdin)) != EOF)
+      {
+      c = toupper(c) ;
+      if (c == 'Y')
+	 {
+	 return true ;
+	 }
+      else if (c == 'N')
+	 {
+	 return false ;
+	 }
+      else
+	 {
+	 cerr << "Please answer Y or N." << endl ;
+	 }
+      }
    return true ;
 }
 
