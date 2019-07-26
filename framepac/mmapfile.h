@@ -87,6 +87,7 @@ class MemMappedROFile : public MemMappedFile
    public: // types
       typedef MemMappedFile super ;
    public:
+      MemMappedROFile() = default ;
       MemMappedROFile(const char *filename, off_t start_offset = 0,
 		    off_t length = ~0)
 	 : MemMappedFile(filename,start_offset,length,true) {}
