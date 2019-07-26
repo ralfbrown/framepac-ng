@@ -642,6 +642,24 @@ bool CFile::printf(const char* fmt, ...) const
 
 //----------------------------------------------------------------------------
 
+/************************************************************************/
+/*	Methods for class COutputFile					*/
+/************************************************************************/
+
+COutputFile& COutputFile::operator= (COutputFile& orig)
+{
+   m_file = orig.m_file ;    orig.m_file = nullptr ;
+   m_tempname = orig.m_tempname ;
+   m_finalname = orig.m_finalname ;
+   m_errcode = orig.m_errcode ;
+   m_piped = orig.m_piped ;
+   m_complete = orig.m_complete ;
+   m_keep_backup = orig.m_keep_backup ;
+   return *this ;
+}
+
+//----------------------------------------------------------------------------
+
 
 } // end namespace Fr
 

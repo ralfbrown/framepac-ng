@@ -92,12 +92,13 @@ class CFile
    {
    public:
       typedef bool OverwriteFn(const char* filename) ;
-      enum { default_options = 0,
-	     safe_rewrite = 1,
-	     fail_if_exists = 2,	// if OverwriteFn given, use it to determine whether to clobber file
-	     binary = 4,
-	     no_truncate = 8,
-           } ;
+      enum Options {
+	 default_options = 0,
+	 safe_rewrite = 1,
+	 fail_if_exists = 2,	// if OverwriteFn given, use it to determine whether to clobber file
+	 binary = 4,
+	 no_truncate = 8,
+	 } ;
    public:
       CFile() = default ;
       CFile(const char *filename, bool writing, int options = default_options, OverwriteFn* = nullptr) ;
@@ -300,9 +301,12 @@ class COutputFile : public CFile
    public:
       typedef CFile super ;
    public:
-      COutputFile(const char *filename, int options = default_options) : super(filename,true,options) {}
-      COutputFile(String *filename, int options = default_options) : super(filename,true,options) {}
+      COutputFile(const char* filename, int options = default_options, OverwriteFn* = nullptr)
+	 : super(filename,true,options) {}
+      COutputFile(String* filename, int options = default_options, OverwriteFn* = nullptr)
+	 : super(filename,true,options) {}
       ~COutputFile() = default ;
+      COutputFile& operator= (COutputFile&) ;  // move semantics!
    } ;
 
 //----------------------------------------------------------------------------
