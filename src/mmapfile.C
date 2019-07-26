@@ -89,10 +89,13 @@ void MemMappedFile::init(int fd, off_t start_offset, off_t length, bool readonly
 
 //----------------------------------------------------------------------------
 
-MemMappedFile::~MemMappedFile()
+void MemMappedFile::close()
 {
    if (m_address)
+      {
       (void)munmap(m_address,m_length) ;
+      m_address = nullptr ;
+      }
    return ;
 }
 

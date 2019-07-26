@@ -44,7 +44,7 @@ class MemMappedFile
 	 orig.m_address = nullptr ;
 	 orig.m_length = 0 ;
 	 }
-      ~MemMappedFile() ;
+      ~MemMappedFile() { close() ; }
       MemMappedFile& operator= (const MemMappedFile& orig) = delete ;
       MemMappedFile& operator= (MemMappedFile&& orig)
 	 {
@@ -56,6 +56,7 @@ class MemMappedFile
 	 }
       // instantiate a file mapping into a default-constructed instance
       void open(const char* filename, off_t start_offset = 0, off_t length = ~0, bool readonly = false) ;
+      void close() ;
 
       size_t size() const { return m_length ; }
       explicit operator bool () const { return m_address != nullptr ; }
