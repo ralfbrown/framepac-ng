@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-17					*/
+/* Version 0.14, last edit 2019-07-27					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -425,8 +425,7 @@ void pushlist(Object*, List*&) ;
 Object* poplist(List*&) ;
 Object* poplist(ListPtr&) ;
 
-// end of namespace Fr
-} ;
+} // end of namespace Fr
 
 /************************************************************************/
 /************************************************************************/
@@ -436,7 +435,7 @@ namespace FramepaC
 
 extern template class FramepaC::Object_VMT<Fr::List> ;
 
-} ; // end namespace FramepaC
+} // end namespace FramepaC
 
 #endif /* _Fr_LIST_H_INCLUDED */
 
