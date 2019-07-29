@@ -41,11 +41,16 @@ class BitReverser
 
       static uint8_t reverse(uint8_t N) { return m_reversed[8][N] ; }
       static uint16_t reverse(uint16_t N) { return reverseBits(N,16) ; }
-      static uint32_t reverse(uint32_t N, unsigned numbits)
-	 { return numbits <= table_bits ? m_reversed[numbits][N] : reverseBits(N,numbits) ; }
-      static uint64_t reverse(uint64_t N, unsigned numbits)
-	 { return numbits <= table_bits ? m_reversed[numbits][N] : reverseBits(N,numbits) ; }
-
+      template <typename T>
+      static T reverse(T N, unsigned numbits)
+	 {
+	    if (numbits <= table_bits)
+	       return m_reversed[numbits][N] ;
+	    T mask = (((T)1)<<table_bits)-1 ;
+	    T high = m_reversed[table_bits][N & mask] ;
+	    unsigned extra = numbits - table_bits ;
+	    return (high << extra) | reverseBits(N>>table_bits,extra) ;
+	 }
       template <typename T>
       static T reverseBits(T N, unsigned numbits)
 	 {

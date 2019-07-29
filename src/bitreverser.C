@@ -38,12 +38,21 @@ uint16_t** BitReverser::m_reversed ;
 void BitReverser::StaticInitialization()
 {
    m_reversed = new uint16_t*[table_bits+1] ;
-   for (unsigned i = 0 ; i <= table_bits ; ++i)
+   m_reversed[0] = new uint16_t[1] ;
+   m_reversed[0][0] = 0 ;
+   for (unsigned i = 1 ; i <= table_bits ; ++i)
       {
       m_reversed[i] = new uint16_t[1<<i] ;
-      for (unsigned j = 0 ; j < (1U<<i) ; ++j)
+      // recursively build up the reversed k-bit numbers from the reversed (k-1)-bit numbers
+      unsigned half = 1U << (i-1) ;
+      for (unsigned j = 0 ; j < half ; ++j)
 	 {
-	 m_reversed[i][j] = (uint16_t)reverseBits(j,i) ;
+	 // get the reversed shorter number and shift it to make room for the extra bit
+	 uint16_t rev = m_reversed[i-1][j] << 1 ;
+	 // first half of table has a zero as the lowest reversed bit
+	 m_reversed[i][j] = rev ;
+	 // second half of table has a one as the lowest reversed bit
+	 m_reversed[i][j+half] = rev + 1 ;
 	 }
       }
    return ;
