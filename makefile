@@ -1,6 +1,6 @@
 
 # Makefile for FramepaC-ng, using GCC 4.8+ under Unix/Linux
-# Last change: 25jul2019
+# Last change: 29jul2019
 
 #########################################################################
 # define the locations of all the files
@@ -347,6 +347,7 @@ OBJS = \
 	build/signal$(OBJ) \
 	build/slab$(OBJ) \
 	build/slabgroup$(OBJ) \
+	build/slidingbuf$(OBJ) \
 	build/smallalloc$(OBJ) \
 	build/sparsematrix$(OBJ) \
 	build/spelling$(OBJ) \
@@ -587,6 +588,7 @@ build/set$(OBJ):		src/set$(C) framepac/set.h
 build/signal$(OBJ):		src/signal$(C) framepac/signal.h framepac/message.h
 build/slab$(OBJ):		src/slab$(C) framepac/memory.h
 build/slabgroup$(OBJ):	src/slabgroup$(C) framepac/memory.h framepac/semaphore.h framepac/critsect.h
+build/slidingbuf$(OBJ):	src/slidingbuf$(C) framepac/file.h
 build/smallalloc$(OBJ):	src/smallalloc$(C) framepac/memory.h
 build/sparsematrix$(OBJ):	src/sparsematrix$(C) framepac/matrix.h
 build/spelling$(OBJ):	src/spelling$(C) framepac/spelling.h

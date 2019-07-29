@@ -312,6 +312,36 @@ class COutputFile : public CFile
 
 //----------------------------------------------------------------------------
 
+class SlidingBuffer
+   {
+   public:
+      SlidingBuffer(CFile& f, size_t bufsize, size_t overlap) ;
+      ~SlidingBuffer() = default ;
+
+      size_t overlap() const { return m_overlap ; }
+      off_t currpos() const { return m_curpos ; }
+      off_t totalBytes() const { return m_totalbytes ; }
+      const char* at() const ;
+      const char* at(size_t ofs) { seek(ofs) ; return at() ; }
+      bool seek(off_t ofs) ;
+      bool advance(size_t N = 1) { return seek(m_curpos+N) ; }
+
+   protected:
+      bool refill(size_t shift) ;
+
+   private:
+      CFile&    m_fp ;
+      CharPtr   m_buffer ;
+      size_t    m_alloc ;
+      size_t    m_bufsize ;
+      size_t    m_overlap ;
+      off_t     m_bufpos ;
+      off_t     m_curpos ;
+      off_t     m_totalbytes ;
+   } ;
+
+//----------------------------------------------------------------------------
+
 class FilePath
    {
    public:
