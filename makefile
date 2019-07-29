@@ -268,6 +268,7 @@ OBJS = \
 	build/basisvector_u32flt$(OBJ) \
 	build/bidindex_cstr$(OBJ) \
 	build/bignum$(OBJ) \
+	build/bitreverser$(OBJ) \
 	build/bitvector$(OBJ) \
 	build/bndpriqueue$(OBJ) \
 	build/bufbuilder_char$(OBJ) \
@@ -497,6 +498,7 @@ build/basisvector_u32$(OBJ):	src/basisvector_u32$(C) template/basisvector.cc
 build/basisvector_u32flt$(OBJ):	src/basisvector_u32flt$(C) template/basisvector.cc
 build/bidindex_cstr$(OBJ):	src/bidindex_cstr$(C) template/bidindex.cc framepac/cstring.h
 build/bignum$(OBJ):		src/bignum$(C) framepac/bignum.h
+build/bitreverser$(OBJ):	src/bitreverser$(C) framepac/bits.h
 build/bitvector$(OBJ):	src/bitvector$(C) framepac/bitvector.h framepac/number.h framepac/fasthash64.h
 build/bndpriqueue$(OBJ):	src/bndpriqueue$(C) framepac/priqueue.h
 build/bufbuilder_char$(OBJ):	src/bufbuilder_char$(C) template/bufbuilder.cc
