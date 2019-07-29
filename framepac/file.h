@@ -146,6 +146,7 @@ class CFile
       off_t tell() const { return ftell(m_file) ; }
       off_t filesize() const ;
       bool seek(off_t loc, int whence = SEEK_SET) { return fseek(m_file,loc,whence) == 0 ; }
+      bool skip(unsigned howmany) { return fseek(m_file,howmany,SEEK_CUR) == 0 ; }
       void flush() { fflush(m_file) ; }
       bool close() ;
 
