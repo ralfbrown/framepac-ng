@@ -80,6 +80,16 @@ class VarBitsT
       VarBitsT() = default ;
       VarBitsT(unsigned len, T val = 0) : m_value(val),m_length(len) {}
       VarBitsT(const VarBitsT& orig) = default ;
+      VarBitsT(const VarBitsT& orig, unsigned len2, T val2)
+	 {
+	    m_length = orig.m_length + len2 ;
+	    m_value = (orig.m_value << len2) | (val2 & mask(len2)) ;
+	 }
+      VarBitsT(const VarBitsT& orig1, const VarBitsT& orig2)
+	 {
+	    m_length = orig1.m_length + orig2.m_length ;
+	    m_value = (orig1.m_value << orig2.m_length) | orig2.m_value ;
+	 }
       ~VarBitsT()= default ;
       VarBitsT& operator= (const VarBitsT& other)
 	 {
