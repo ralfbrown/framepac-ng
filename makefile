@@ -343,6 +343,7 @@ OBJS = \
 	build/random$(OBJ) \
 	build/rational$(OBJ) \
 	build/refarray$(OBJ) \
+	build/romanizer$(OBJ) \
 	build/set$(OBJ) \
 	build/signal$(OBJ) \
 	build/slab$(OBJ) \
@@ -584,6 +585,7 @@ build/ptrie_u32$(OBJ):	src/ptrie_u32$(C) template/ptrie.cc
 build/random$(OBJ):		src/random$(C) framepac/message.h framepac/random.h framepac/critsect.h
 build/rational$(OBJ):	src/rational$(C) framepac/rational.h
 build/refarray$(OBJ):	src/refarray$(C) framepac/array.h framepac/fasthash64.h framepac/random.h
+build/romanizer$(OBJ):	src/romanizer$(C) framepac/romanize.h framepac/unicode.h
 build/set$(OBJ):		src/set$(C) framepac/set.h
 build/signal$(OBJ):		src/signal$(C) framepac/signal.h framepac/message.h
 build/slab$(OBJ):		src/slab$(C) framepac/memory.h
