@@ -1996,6 +1996,49 @@ static const ISO9Element primary_table[] =
       { 0x014C, 0 }, { '\'', 0 }, { '`', 0 }, { 0, 0 },		// 0x1FFC-0x1FFF
    } ;
 
+static uint16_t cp_table[] =
+   {
+   // Bopomofo (Chinese phonetic alphabet), from CLDR 32
+   0x3105, 'b', 0,
+   0x3106, 'p', 0,
+   0x3107, 'm', '1', 0,
+   0x3108, 'f', 0,
+   0x3109, 'd', 0,
+   0x310A, 't', 0,
+   0x310B, 'n', 0,   // should actually be 'n1', an additional combining diacritic suppresses the '1'
+   0x310C, 'l', 0,
+   0x310D, 'g', 0,
+   0x310E, 'k', 0,
+   0x310F, 'h', 0,
+   0x3110, 'j', 0,
+   0x3111, 'q', 0,
+   0x3112, 'x', 0,
+   0x3113, 'z', 'h', 'i', '1', 0,
+   0x3114, 'c', 'h', 'i', '1', 0,
+   0x3115, 's', 'h', 'i', '1', 0,
+   0x3116, 'r', 'i', '1', 0,
+   0x3117, 'z', 'i', '1', 0,
+   0x3118, 'c', 'i', '1', 0,
+   0x3119, 's', 'i', '1', 0,
+   0x311A, 'a', 0,	// should actually be 'a1',an additional combining diacritic suppresses the '1'
+   0x311B, 'o', 0,	// should actually be 'o1',an additional combining diacritic suppresses the '1'
+   0x311C, 'e', 0,	// should actually be 'e1',an additional combining diacritic suppresses the '1'
+   0x311D, 'e', 'h', '1', 0,
+   0x311E, 'a', 'i', '1', 0,
+   0x311F, 'e', 'i', '1', 0,
+   0x3120, 'a', 'o', '1', 0,
+   0x3121, 'o', 'u', '1', 0,
+   0x3122, 'a', 'n', '1', 0,
+   0x3123, 'e', 'n', '1', 0,
+   0x3124, 'a', 'n', 'g', '1', 0,
+   0x3125, 'e', 'n', 'g', '1', 0,
+   0x3126, 'e', 'r', '1', 0,
+   0x3127, 'y', 'i', 0,   // should actually be 'yi1',an additional combining diacritic suppresses the '1'
+   0x3128, 'w', 'u', 0,   // should actually be 'wu1',an additional combining diacritic suppresses the '1'
+   0x3129, 'y', 'u', '1', 0 ,
+   // end Bopomofo
+   } ;
+   
 /************************************************************************/
 /*	Helper Functions						*/
 /************************************************************************/
