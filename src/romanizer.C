@@ -2040,14 +2040,10 @@ static uint16_t cp_table[] =
    } ;
    
 /************************************************************************/
-/*	Helper Functions						*/
+/*	Static Members for class Romanizer				*/
 /************************************************************************/
 
-inline bool in_primary_table(wchar_t codepoint)
-{
-   return ((unsigned)codepoint >= ISO843_TABLE_START && 
-	   (unsigned)codepoint < ISO843_TABLE_START + lengthof(primary_table)) ;
-}
+uint16_t Romanizer::s_mapping[] ;
 
 /************************************************************************/
 /*	Methods for class Romanizer					*/
@@ -2115,59 +2111,67 @@ unsigned Romanizer::utf8codepoint(const char *buf, wchar_t &codepoint)
 
 bool Romanizer::romanizable(wchar_t codepoint)
 {
-   if (in_primary_table(codepoint))
-      {
-      if (primary_table[codepoint - ISO843_TABLE_START].codepoint1)
-	 return true ;
-      }
-   return false ;
+   return (unsigned)codepoint < lengthof(s_mapping) && s_mapping[codepoint] != 0 ;
 }
 
 //----------------------------------------------------------------------
 
 int Romanizer::romanize(wchar_t codepoint, char *buffer)
 {
-   wchar_t romanized1 ;
-   wchar_t romanized2 ;
-   int points = romanize(codepoint, romanized1, romanized2) ;
-   int bytes = 0 ;
-   if (points)
+   bool byteswap = false ;
+   if (romanizable(codepoint))
       {
-      bool byteswap = false ;
-      bytes = Fr::Unicode_to_UTF8(romanized1,buffer,byteswap) ;
-      if (points == 2)
+      int bytes = 0 ;
+      for (uint16_t index = s_mapping[codepoint] ; cp_table[index] ; ++index)
+      while (cp_table[index])
 	 {
-	 int bytes2 = Fr::Unicode_to_UTF8(romanized2,buffer+bytes,byteswap) ;
-	 if (bytes2)
-	    bytes += bytes2 ;
-	 else
-	    bytes = 0 ;
+	 bytes += Fr::Unicode_to_UTF8(cp_table[index++],buffer+bytes,byteswap) ;
 	 }
+      return bytes ;
       }
-   return bytes ;
+   else
+      {
+      return Fr::Unicode_to_UTF8(codepoint,buffer,byteswap) ;
+      }
 }
 
 //----------------------------------------------------------------------
 
 unsigned Romanizer::romanize(wchar_t codepoint, wchar_t &romanized1, wchar_t &romanized2)
 {
-   const ISO9Element *table = nullptr ;
-   if (in_primary_table(codepoint))
+   if (romanizable(codepoint))
       {
-      table = primary_table ;
-      codepoint -= ISO843_TABLE_START ;
+      uint16_t index = s_mapping[codepoint] ;
+      romanized1 = cp_table[index] ;
+      romanized2 = cp_table[index+1] ;
+      return romanized2 ? 2 : 1 ;
       }
-   if (table)
+   else
       {
-      romanized1 = table[codepoint].codepoint1 ;
-      if (romanized1)
-	 {
-	 romanized2 = table[codepoint].codepoint2 ;
-	 return romanized2 ? 2 : 1 ;
-	 }
+      romanized1 = codepoint ;
       }
-   romanized1 = codepoint ;
    return 1 ;
+}
+
+//----------------------------------------------------------------------
+
+void Romanizer::StaticInitialization()
+{
+   uint16_t offset = 0 ;
+   while (offset <  lengthof(cp_table))
+      {
+      uint16_t cp = cp_table[offset++] ;
+      if (cp < lengthof(s_mapping))
+	 s_mapping[cp] = offset ;
+      // scan for the terminating zero codepoint
+      while (offset < lengthof(cp_table) && cp_table[offset])
+	 {
+	 ++offset ;
+	 }
+      // skip the terminating zero codepoint
+      ++offset ;
+      }
+   return ;
 }
 
 //----------------------------------------------------------------------

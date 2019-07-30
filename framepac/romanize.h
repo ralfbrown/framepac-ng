@@ -22,6 +22,8 @@
 #ifndef _Fr_ROMANIZE_H_INCLUDED
 #define _Fr_ROMANIZE_H_INCLUDED
 
+#include "framepac/init.h"
+
 namespace Fr
 {
 
@@ -35,6 +37,13 @@ class Romanizer
       static bool romanizable(wchar_t codepoint) ;
       static int romanize(wchar_t codepoint, char* buffer) ;
       static unsigned romanize(wchar_t codepoint, wchar_t& romanized1, wchar_t& romanized2) ;
+
+   public: // to be called only by the initializer
+      static void StaticInitialization() ;
+
+   private:
+      static Initializer<Romanizer> initializer ;
+      static uint16_t s_mapping[32768] ;
    } ;
 
 /************************************************************************/
