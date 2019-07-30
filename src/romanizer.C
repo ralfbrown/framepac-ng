@@ -56,14 +56,9 @@ struct ISO9Element
 #define ISO9984_TABLE_START   0x10D0		// Georgian
 #define ISO843EXT_TABLE_START 0x1F00		// extended Greek
 
-// romanization information for Greek character codepoints
 static const ISO9Element primary_table[] =
    {
    // romanization table for Thai (ISO 11940)
-      { 0, 0 }, { 'k', 0 }, { 'k', 'h' }, { 0x1E33, 'h' },	// 0x0E00-0x0E03
-      { 'k', 'h' }, { 'k', 'h' }, { 0x1E33, 'h' }, { 'n', 'g' }, // 0x0E04-0x0E07
-      { 'c', 0 }, { 'c', 'h' }, { 'c', 'h' }, { 's', 0 },	// 0x0E08-0x0E0B
-      { 'c', 'h' }, { 'y', 0 }, { 0x1E0D, 0 }, { 0x1E6D, 0 },	// 0x0E0C-0x0E0F
       { 0x1E6D, 'h' }, { 0x1E6F, 'h' }, { 't', 'h' }, { 0x1E47, 0 }, // 0x0E10-0x0E13
       { 'd', 0 }, { 't', 0 }, { 't', 'h' }, { 't', 'h' },	// 0x0E14-0x0E17
       { 0x1E6D, 'h' }, { 'n', 0 }, { 'b', 0 }, { 'p', 0 },	// 0x0E18-0x0E1B
@@ -78,12 +73,6 @@ static const ISO9Element primary_table[] =
       { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 },			// 0x0E3C-0x0E3F
       { 'e', 0 }, { 0x00E6, 0 }, { 'o', 0 }, { 0x0131, 0 },	// 0x0E40-0x0E43
       { 0x1ECB, 0 }, { 0x0268, 0 }, { 0x00AB, 0 }, { 0, 0 },	// 0x0E44-0x0E47
-      { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 },			// 0x0E48-0x0E4B
-      { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0x00A7, 0 },		// 0x0E4C-0x0E4F
-      { '0', 0 }, { '1', 0 }, { '2', 0 }, { '3', 0 },		// 0x0E50-0x0E53
-      { '4', 0 }, { '5', 0 }, { '6', 0 }, { '7', 0 },		// 0x0E54-0x0E57
-      { '8', 0 }, { '9', 0 }, { 0x01C1, 0 }, { 0x00BB, 0 },	// 0x0E58-0x0E5B
-      { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 },			// 0x0E5C-0x0E5F
    // romanization information for Georgian (ISO 9984)
       { 'a', 0 },   { 'b', 0 },   { 'g', 0 },   { 'd', 0 },		// 0x10D0-0x10D3
       { 'e', 0 },   { 'v', 0 },   { 'z', 0 },   { 't', '\'' },		// 0x10D4-0x10D7
@@ -956,6 +945,34 @@ static uint16_t cp_table[] =
    // Sinhala from 0x0D80-0x0DFF     TODO
    // Thai (ISO 11940) from 0x0E00-0x0E7F
    0x0E01, 'k', 0,
+   0x0E02, 'k', 'h', 0,
+   0x0E03, 0x1E33, 'h', 0,
+   0x0E04, 'k', 'h', 0,
+   0x0E05, 'k', 'h', 0,
+   0x0E06, 0x1E33, 'h', 0,
+   0x0E07, 'n', 'g', 0,
+   0x0E08, 'c', 0,
+   0x0E09, 'c', 'h', 0,
+   0x0E0A, 'c', 'h', 0,
+   0x0E0B, 's', 0,
+   0x0E0C, 'c', 'h', 0,
+   0x0E0D, 'y', 0,
+   0x0E0E, 0x1E0D, 0,
+   0x0E0F, 0x1E6D, 0,
+   //...
+   0x0E4F, 0x00A7, 0,
+   0x0E50, '0', 0,
+   0x0E51, '1', 0,
+   0x0E52, '2', 0,
+   0x0E53, '3', 0,
+   0x0E54, '4', 0,
+   0x0E55, '5', 0,
+   0x0E56, '6', 0,
+   0x0E57, '7', 0,
+   0x0E58, '8', 0,
+   0x0E59, '9', 0,
+   0x0E5A, 0x01C1, 0,
+   0x0E5B, 0x00BB, 0,
    // Lao from 0x0E80-0x0EFF         TODO
    // Tibetan from 0x0F00-0x0FFF     TODO
    // Myanmar from 0x1000-0x109F
