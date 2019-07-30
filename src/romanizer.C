@@ -92,39 +92,6 @@ static const ISO9Element primary_table[] =
       { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x0974-0x0977
       { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x0978-0x097B
       { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x097C-0x097F
-   // Bengali/Assamese       TODO
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x0980-0x0983
-      { 0, 0 },     { 'a', 0 },   { 0x0101,0 }, { 'i', 0 },		// 0x0984-0x0987
-      { 0x012B,0 }, { 'u', 0 },   { 0x016B,0 }, { 0, 0 },		// 0x0988-0x098B
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x098C-0x098F
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x0990-0x0993
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x0994-0x0997
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x0998-0x099B
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x099C-0x099F
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09A0-0x09A3
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09A4-0x09A7
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09A8-0x09AB
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09AC-0x09AF
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09B0-0x09B3
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09B4-0x09B7
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09B8-0x09BB
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09BC-0x09BF
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09C0-0x09C3
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09C4-0x09C7
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09C8-0x09CB
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09CC-0x09CF
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09D0-0x09D3
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09D4-0x09D7
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09D8-0x09DB
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09DC-0x09DF
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09E0-0x09E3
-      { 0, 0 },     { 0, 0 },     { '0', 0 },   { '1', 0 },		// 0x09E4-0x09E7
-      { '2', 0 },   { '3', 0 },   { '4', 0 },   { '5', 0 },		// 0x09E8-0x09EB
-      { '6', 0 },   { '7', 0 },   { '8', 0 },   { '9', 0 },		// 0x09EC-0x09EF
-      { 'r', 'a' }, { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09F0-0x09F3
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09F4-0x09F7
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09F8-0x09FB
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x09FC-0x09FF
    // romanization table for Thai (ISO 11940)
       { 0, 0 }, { 'k', 0 }, { 'k', 'h' }, { 0x1E33, 'h' },	// 0x0E00-0x0E03
       { 'k', 'h' }, { 'k', 'h' }, { 0x1E33, 'h' }, { 'n', 'g' }, // 0x0E04-0x0E07
@@ -199,12 +166,6 @@ static const ISO9Element primary_table[] =
       { 'y', 'v' }, { 'm', 'v' }, { 0, 0 },     { 0, 0 }, 	// 0x13F4-0x13F7
       { 'y', 'e' }, { 'y', 'i' }, { 'y', 'o' }, { 'y', 'u' }, 	// 0x13F8-0x13FB
       { 'y', 'v' }, { 'm', 'v' }, { 0, 0 },     { 0, 0 }, 	// 0x13FC-0x13FF
-   // begin Ol Chiki
-      { '0', 0 },   { '1', 0 },   { '2', 0 },   { '3', 0 },		// 0x1C50-0x1C53
-      { '4', 0 },   { '5', 0 },   { '6', 0 },   { '7', 0 },		// 0x1C54-0x1C57
-      { '8', 0 },   { '9', 0 },   { 0, 0 },     { 0, 0 },		// 0x1C58-0x1C5B
-   //TODO
-      { 0, 0 },     { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x1C5C-0x1C5F
    // romanization information for extended Greek characters
    //    (treated like ISO 843 after ignoring diacritics)
       { 'a', 0 }, { 'a', 0 }, { 'a', 0 }, { 'a', 0 },		// 0x1F00-0x1F03
@@ -824,6 +785,23 @@ static uint16_t cp_table[] =
    0x0901, 'm', 0x0310, 0,
    // Bengali / Assamese from 0x980-0x09FF    TODO
    0x0985, 'a', 0,
+   0x0986, 0x0101, 0,
+   0x0987, 'i', 0,
+   0x0988, 0x012B, 0,
+   0x0989, 'u', 0,
+   0x098A, 0x016B, 0,
+   //.....
+   0x09E6, '0', 0,
+   0x09E7, '1', 0,
+   0x09E8, '2', 0,
+   0x09E9, '3', 0,
+   0x09EA, '4', 0,
+   0x09EB, '5', 0,
+   0x09EC, '6', 0,
+   0x09ED, '7', 0,
+   0x09EE, '8', 0,
+   0x09EF, '9', 0,
+   0x09F0, 'r', 'a', 0,
    // Gurmuki from 0x0A00-0x0A7F
    // Gujarati from 0x0A80-0x0AFF    TODO
    // Oriya from 0x0B00-0x0B7F       TODO
@@ -870,6 +848,15 @@ static uint16_t cp_table[] =
    // Lepcha from 0x1C00-0x1C4F      TODO
    // Ol Chiki from 0x1C50-0x1C7F    TODO
    0x1C50, '0', 0,
+   0x1C51, '1', 0,
+   0x1C52, '2', 0,
+   0x1C53, '3', 0,
+   0x1C54, '4', 0,
+   0x1C55, '5', 0,
+   0x1C56, '6', 0,
+   0x1C57, '7', 0,
+   0x1C58, '8', 0,
+   0x1C59, '9', 0,
    // Cyrillic Extended-C from 0x1C80-0x1C8F
    // Georgian Extended form 0x1C90-0x1CBF
    // Sundanese Supplement from 0x1CC0-0x1CCF
@@ -881,7 +868,85 @@ static uint16_t cp_table[] =
    0x1FFC, 0x014C, 0,
    0x1FFD, '\'', 0,
    0x1FFE, '`', 0,
-   // Bopomofo (Chinese phonetic alphabet), from CLDR 32
+   // general punctuation from 0x2000-0x206F
+   // superscripts and subscripts from 0x2070-0x209F
+   // currency symbols from 0x20A0-0x20CF
+   // combining diacritical marks for symbols from 0x20D0-0x20FF
+   // letterlike symbols from 0x2100-0x214F
+   // number forms from 0x2150-0x218F
+   // arrows from 0x2190-0x21FF
+   // mathematical operators from 0x2200-0x22FF
+   // miscellaneous technical from 0x2300-0x23FF
+   // control pictures from 0x2400-0x243F
+   // OCR from 0x2440-0x245F
+   // enclosed alphanumerics from 0x2460-0x24FF
+   // box drawing from 0x2500-0x257F
+   // block elements from 0x2580-0x259F
+   // geometric shapes from 0x25A0-0x25FF
+   // miscellaneous symbols from 0x2600-0x26FF
+   // dingbats from 0x2700-0x27BF
+   // Misc Mathematical Symbols-A from 0x27C0-0x27EF
+   // Supplemental Arrows-A from 0x27F0-0x27FF
+   // Braille Patterns from 0x2800-0x28FF
+   // Supplemental Arrows-B from 0x2900-0x297F
+   // Miscellaneous Mathematical Symbols-B  from 0x2980-0x29FF
+   // Supplemental Mathematical Operators  from 0x2A00-0x2AFF
+   // misc symbols and arrows from 0x2B00-0x2BFF
+   // Glagolitic from 0x2C00-0x2C5F
+   // Latin Extended-C from 0x2C60-0x2C7F
+   // Coptic from 0x2C80-0x2CFF
+   0x2C80, 'A', 0,
+   0x2C81, 'a', 0,
+   0x2C82, 'B', 0,
+   0x2C83, 'b', 0,
+   0x2C84, 'G', 0,
+   0x2C85, 'g', 0,
+   0x2C86, 'D', 0,
+   0x2C87, 'd', 0,
+   //.....
+   // Georgian Supplement from 0x2D00-0x2D2F
+   // Tifinagh from 0x2D30-0x2D7F
+   // Ethiopic Extended from 0x2D80-0x2DDF
+   // Cyrillic Extended-A from 0x2DE0-0x2DFF
+   // supplemental punctuation from 0x2E00-0x2E7F
+   // CJK Radicals Supplment from 0x2E80-0x2EFF
+   // Kangxi Radicals from 0x2F00-0x2FDF
+   // Ideographic Description Characters from 0x2FF0-0x2FFF
+   // CJK Symbols and Punctuation from 0x3000-0x303F
+   0x3001, ',', 0,
+   0x3002, '.', 0,
+   0x3021, '1', 0,   // Suzhou numerals
+   0x3022, '2', 0,
+   0x3023, '3', 0,
+   0x3024, '4', 0,
+   0x3025, '5', 0,
+   0x3026, '6', 0,
+   0x3027, '7', 0,
+   0x3028, '8', 0,
+   0x3029, '9', 0,
+   0x3038, '1', '0', 0,
+   0x3039, '2', '0', 0,
+   0x303A, '3', '0', 0,
+   // Hiragana from 0x3040-0x309F
+   0x3041, 'a', 0,
+   0x3042, 'A', 0,
+   0x3043, 'i', 0,
+   0x3044, 'I', 0,
+   //.....
+   0x3096, 'k', 'e', 0,
+   // Katakana from 0x30A0-0x30FF
+   0x30A1, 'a', 0,
+   0x30A2, 'A', 0,
+   0x30A3, 'i', 0,
+   0x30A4, 'I', 0,
+   //....
+   0x30F5, 'k', 'a', 0,
+   0x30F6, 'k', 'e', 0,
+   0x30F7, 'v', 'a', 0,
+   0x30F8, 'v', 'i', 0,
+   0x30F9, 'v', 'e', 0,
+   0x30FA, 'v', 'o', 0,
+   // Bopomofo (Chinese phonetic alphabet), from CLDR 32    0x3100-0x312F
    0x3105, 'b', 0,
    0x3106, 'p', 0,
    0x3107, 'm', '1', 0,
@@ -919,7 +984,197 @@ static uint16_t cp_table[] =
    0x3127, 'y', 'i', 0,   // should actually be 'yi1',an additional combining diacritic suppresses the '1'
    0x3128, 'w', 'u', 0,   // should actually be 'wu1',an additional combining diacritic suppresses the '1'
    0x3129, 'y', 'u', '1', 0 ,
-   // end Bopomofo
+   0x312A, 'v', 0,
+   0x312B, 'n', 'g', 0,
+   0x312C, 'g', 'n', 0,
+   0x312D, 'i', 'h', 0,
+//   0x312E, O-with-dot-above
+   0x312F, 'n', 'n', 0,
+   // Hangul Compatibility Jamo  from 0x3130-0x318F
+   // Kanbun  from 0x3190-0x319F
+   0x3192, '1', 0,
+   0x3193, '2', 0,
+   0x3194, '3', 0,
+   0x3195, '4', 0,
+   // Bopomofo Extended from 0x31A0-0x31BF
+   0x31A0, 'b', 'u', 0,
+   0x31A1, 'z', 'i', 0,
+   0x31A2, 'j', 'i', 0,
+   0x31A3, 'g', 'u', 0,
+   0x31A4, 'e', 'e', 0,
+   0x31A5, 'e', 'n', 'n', 0,
+   0x31A6, 'o', 'o', 0,
+   0x31A7, 'o', 'n', 'n', 0,
+   0x31A8, 'i', 'r', 0,
+   0x31A9, 'a', 'n', 'n', 0,
+   0x31AA, 'i', 'n', 'n', 0,
+   0x31AB, 'u', 'n', 'n', 0,
+   0x31AC, 'i', 'm', 0,
+   0x31AD, 'n', 'g', 'g', 0,
+   0x31AE, 'a', 'i', 'n', 'n', 0,
+   0x31AF, 'a', 'u', 'n', 'n', 0,
+   0x31B0, 'a', 'm', 0,
+   0x31B1, 'o', 'm', 0,
+   0x31B2, 'o', 'n', 'g', 0,
+   0x31B3, 'i', 'n', 'n', 0,
+   0x31B4, 'p', 0,
+   0x31B5, 't', 0,
+   0x31B6, 'k', 0,
+   0x31B7, 'h', 0,
+   0x31B8, 'g', 'h', 0,
+   0x31B9, 'l', 'h', 0,
+   0x31BA, 'z', 'y', 0,
+   // CJK strokesfrom 0x31C0-0x31EF
+   0x31C0, 't', 0,
+   0x31CF, 'n', 0,
+   0x31D0, 'h', 0,
+   0x31D1, 's', 0,
+   0x31D2, 'p', 0,
+   0x31D3, 's', 'p', 0,
+   0x31D4, 'd', 0,
+   0x31D5, 'h', 'z', 0,
+   //....
+   0x31E3, 'q', 0,
+   // Katakana phonetic extensions from 0x31F0-0x31FF
+   0x31F0, 'k', 'u', 0,
+   //...
+   0x31FF, 'r', 'o', 0,
+   // enclosed CJK letters and months from 0x3200-0x32FF
+   // CJK compatibility from 0x3300-0x33FF
+   0x337F, 'I', 'n', 'c', '.', 0,
+   // CJK Unified Ideographs Extension A from 0x3400-0x4DB5
+   // Yijing Hexagram Symbols from 0x4DC0-0x4DFF
+   // CJK Unified Ideographs from 0x4E00-0x9FEF
+   // Yi Syllables from 0xA000-0xA48F
+   // Yi Radicals from 0xA490-0xA4CF
+   // Lisu from 0xA4D0-0xA4FF   -- Latin-like letters
+   // Vai from 0xA500-0xA63F
+   // Cyrillic Extended-B from 0xA640-0xA69F
+   // Bamum from 0xA6A0-0xA6FF
+   // Modifier Tone Letters from 0xA700-0xA71F
+   // Latin Extended-D from 0xA720-0xA7FF
+   // Syloti Nagri from 0xA800-0xA82F
+   0xA800, 'a', 0,
+   0xA801, 'i', 0,
+   //....
+   0xA827, 'o', 'o', 0,
+   // Common Indic Number Forms from 0xA830-0xA83F
+//   0xA830, one-quarter
+//   0xA831, one-half
+//   0xA832, three-quarters
+   0xA833, '1', '/', '1', '6', 0,
+   0xA834, '1', '/', '8', 0,
+//   0xA835, three-sixteenths
+   // Phags-pa from 0xA840-0xA87F
+   // Saurashtra from 0xA880-0xA8DF
+   // Devanagari Extended from 0xA8E0-0xA8FF
+   // Kayah Li from 0xA900-0xA92F
+   0xA900, '0', 0,
+   0xA901, '1', 0,
+   0xA902, '2', 0,
+   0xA903, '3', 0,
+   0xA904, '4', 0,
+   0xA905, '5', 0,
+   0xA906, '6', 0,
+   0xA907, '7', 0,
+   0xA908, '8', 0,
+   0xA909, '9', 0,
+   0xA90A, 'k', 'a', 0,
+   //...
+   0xA92A, 'o', 0,
+   // Rejang from 0xA930-0xA95F
+   0xA930, 'k', 'a', 0,
+   //...
+   0xA946, 'a', 0,
+   //...
+   0xA94E, 'e', 'a', 0,
+   // Hangul Jamo Extended-A from 0xA960-0xA97F
+   // Javanese from 0xA980-0xA9DF
+   0xA984, 'a', 0,
+   //...
+   0xA9B2, 'h', 'a', 0,
+   0xA9D0, '0', 0,
+   0xA9D1, '1', 0,
+   0xA9D2, '2', 0,
+   0xA9D3, '3', 0,
+   0xA9D4, '4', 0,
+   0xA9D5, '5', 0,
+   0xA9D6, '6', 0,
+   0xA9D7, '7', 0,
+   0xA9D8, '8', 0,
+   0xA9D9, '9', 0,
+   // Myanmar Extended-B from 0xA9E0-0xA9FF
+   0xA9F0, '0', 0,	// Tai Laing digits
+   0xA9F1, '1', 0,
+   0xA9F2, '2', 0,
+   0xA9F3, '3', 0,
+   0xA9F4, '4', 0,
+   0xA9F5, '5', 0,
+   0xA9F6, '6', 0,
+   0xA9F7, '7', 0,
+   0xA9F8, '8', 0,
+   0xA9F9, '9', 0,
+   // Cham from 0xAA00-0xAA5F
+   0xAA00, 'a', 0,
+   //...
+   0xAA4B, 's', 's', 0,
+   0xAA4C, 'm', 0,
+   0xAA4D, 'h', 0,
+   0xAA50, '0', 0,
+   0xAA51, '1', 0,
+   0xAA52, '2', 0,
+   0xAA53, '3', 0,
+   0xAA54, '4', 0,
+   0xAA55, '5', 0,
+   0xAA56, '6', 0,
+   0xAA57, '7', 0,
+   0xAA58, '8', 0,
+   0xAA59, '9', 0,
+   // Mymanmar Extended-A from 0xAA60-0xAA7F
+   // Tai Viet from 0xAA80-0xAADF
+   // Meetei Mayek Extensions from 0xAAE0-0xAAFF
+   0xAAE0, 'e', 0,
+   0xAAE1, 'o', 0,
+   // Ethiopic Extended-A from 0xAB00-0xAB2F
+   // Latin Extended-E from 0xAB30-0xAB6F
+   // Cherokee Supplement from 0xAB70-0xABBF
+   // Meetei Mayek from 0xABC0-0xABFF
+   0xABF0, '0', 0,
+   0xABF1, '1', 0,
+   0xABF2, '2', 0,
+   0xABF3, '3', 0,
+   0xABF4, '4', 0,
+   0xABF5, '5', 0,
+   0xABF6, '6', 0,
+   0xABF7, '7', 0,
+   0xABF8, '8', 0,
+   0xABF9, '9', 0,
+   // Hangul Syllables from 0xAC00-0xD7AF
+   // Hangul Jamo Extended-B from 0xD7B0-0xD7FF
+   // High Surrogate Area from 0xD800-0xDBFF
+   // Low Surrogate Area from 0xDC00-0xDFFF
+   // Private Use Area from 0xE000-0xF8FF
+   // CJK Compatibility Ideograps from 0xF900-0xFAFF
+   // Alphabetic Presentation Forms fro 0xFB00-0xFB4F
+   // Arabic Presentation Forms-A from 0xFB50-0xFDFF
+   // Variation Selectors from 0xFE00-0xFE0F
+   // Vertical Forms from 0xFE10-0xFE1F
+   // Combining Half Marks from 0xFE20-0xFE2F
+   // CJK Compatibility Forms from 0xFE30-0xFE4F
+   // Small Form Variants from 0xFE50-0xFE6F
+   // Arabic Presentation Forms-B from 0xFE70-0xFEFF
+   // Half-Width and Full-Width Forms from 0xFF00-0xFFEF
+   0xFF10, '0', 0,
+   0xFF11, '1', 0,
+   0xFF12, '2', 0,
+   0xFF13, '3', 0,
+   0xFF14, '4', 0,
+   0xFF15, '5', 0,
+   0xFF16, '6', 0,
+   0xFF17, '7', 0,
+   0xFF18, '8', 0,
+   0xFF19, '9', 0,
+   // Specials from 0xFFF0-0xFFFD
    } ;
    
 /************************************************************************/

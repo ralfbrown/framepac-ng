@@ -43,7 +43,7 @@ class Romanizer
 
    private:
       static Initializer<Romanizer> initializer ;
-      static uint16_t s_mapping[32768] ;
+      static uint16_t s_mapping[0xFF20] ;
    } ;
 
 /************************************************************************/
