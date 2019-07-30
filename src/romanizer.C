@@ -961,7 +961,58 @@ static uint16_t cp_table[] =
    // Myanmar from 0x1000-0x109F
    // Georgian (ISO 9984) from 0x10A0-0x10FF
    0x10D0, 'a', 0,
-   // Hangul Jamo from 0x1100-0x11FF TODO
+   // Hangul Jamo from 0x1100-0x11FF (CLDR 32)
+   0x1100, 'g', 0,
+   //...
+   0x1161, 'a', 0,
+   0x1162, 'a', 'e', 0,
+   0x1163, 'y', 'a', 0,
+   0x1164, 'y', 'a', 'e', 0,
+   0x1165, 'e', 'o', 0,
+   0x1166, 'e', 0,
+   0x1167, 'y', 'e', 'o', 0,
+   0x1168, 'y', 'e', 0,
+   0x1169, 'o', 0,
+   0x116A, 'w', 'a', 0,
+   0x116B, 'w', 'a', 'e', 0,
+   0x116C, 'o', 'e', 0,
+   0x116D, 'y', 'o', 0,
+   0x116E, 'u', 0,
+   0x116F, 'w', 'o', 0,
+   0x1170, 'w', 'e', 0,
+   0x1171, 'w', 'i', 0,
+   0x1172, 'y', 'u', 0,
+   0x1173, 'e', 'u', 0,
+   0x1174, 'u', 'i', 0,
+   0x1175, 'i', 0,
+   //...
+   0x11A8, 'g', 0,
+   0x11A9, 'k', 'k', 0,
+   0x11AA, 'g', 's', 0,
+   0x11AB, 'n', 0,
+   0x11AC, 'n', 'j', 0,
+   0x11AD, 'n', 'h', 0,
+   0x11AE, 'd', 0,
+   0x11AF, 'l', 0,
+   0x11B0, 'l', 'g', 0,
+   0x11B1, 'l', 'm', 0,
+   0x11B2, 'l', 'b', 0,
+   0x11B3, 'l', 's', 0,
+   0x11B4, 'l', 't', 0,
+   0x11B5, 'l', 'p', 0,
+   0x11B6, 'l', 'h', 0,
+   0x11B7, 'm', 0,
+   0x11B8, 'b', 0,
+   0x11B9, 'b', 's', 0,
+   0x11BA, 's', 0,
+   0x11BB, 's', 's', 0,
+   0x11BC, 'n', 'g', 0,
+   0x11BD, 'j', 0,
+   0x11BE, 'c', 'h', 0,
+   0x11BF, 'k', 0,
+   0x11C0, 't', 0,
+   0x11C1, 'p', 0,
+   0x11C2, 'h', 0,
    // Ethiopic (Amharic) from 0x1200-0x137F  TODO
    0x1200, 'h', 'a', 0,
    0x137B, '1', '0', '0', 0,
@@ -1465,6 +1516,12 @@ static uint16_t cp_table[] =
    0xABF8, '8', 0,
    0xABF9, '9', 0,
    // Hangul Syllables from 0xAC00-0xD7AF
+   0xAC00, 'g', 'a', 0,
+   0xAC01, 'g', 'a', 'g', 0,
+   0xAC02, 'g', 'a', 'k', 'k', 0,
+   0xAC03, 'g', 'a', 'g', 's', 0,
+   //....
+   0xD750, 'h', 'e', 'u', 0,
    // Hangul Jamo Extended-B from 0xD7B0-0xD7FF
    // High Surrogate Area from 0xD800-0xDBFF
    // Low Surrogate Area from 0xDC00-0xDFFF
