@@ -59,16 +59,6 @@ struct ISO9Element
 // romanization information for Greek character codepoints
 static const ISO9Element primary_table[] =
    {
-   // romanization table for Syriac
-      { '\'', 0 },  { 0, 0 },     { 'b', 0 },   { 'g', 0 },		// 0x0710-0x0713
-      { 'g', 0 },   { 'd', 0 },   { 'd', 0 },   { 'h', 0 },		// 0x0714-0x0717
-      { 'w', 0 },   { 'z', 0 },   { 0x1E25,0 }, { 0x1E6D,0 },		// 0x0718-0x071B
-      { 0x1E6D,0 }, { 'y', 0 },   { 'y', 0 },   { 'k', 0 },		// 0x071C-0x071F
-      { 'l', 0 },   { 'm', 0 },   { 'n', 0 },   { 's', 0 },		// 0x0720-0x0723
-      { 's', 0 },   { 'e', 0 },   { 'p', 0 },   { 'p', 0 },		// 0x0724-0x0727
-      { 0x1E63,0 }, { 'q', 0 },   { 'r', 0 },   { 0x0161,0 },		// 0x0728-0x072B
-      { 't', 0 },   { 0, 0 },     { 0, 0 },     { 0, 0 },		// 0x072C-0x072F
-   // end of Syriac
    // romanization data for NKo / Mande
       { '0', 0 },   { '1', 0 },   { '2', 0 },   { '3', 0 },		// 0x07C0-0x07C3
       { '4', 0 },   { '5', 0 },   { '6', 0 },   { '7', 0 },		// 0x07C4-0x07C7
@@ -762,6 +752,33 @@ static uint16_t cp_table[] =
    0x06AF, 'G', 0,
    // Syriac
    0x0710, '\'', 0,
+   0x0712, 'b', 0,
+   0x0713, 'g', 0,
+   0x0714, 'g', 0,
+   0x0715, 'd', 0,
+   0x0716, 'd', 0,
+   0x0717, 'h', 0,
+   0x0718, 'w', 0,
+   0x0719, 'z', 0,
+   0x071A, 0x1E25, 0,
+   0x071B, 0x1E6D, 0,
+   0x071C, 0x1E6D, 0,
+   0x071D, 'y', 0,
+   0x071E, 'y', 0,
+   0x071F, 'k', 0,
+   0x0720, 'l', 0,
+   0x0721, 'm', 0,
+   0x0722, 'n', 0,
+   0x0723, 's', 0,
+   0x0724, 's', 0,
+   0x0725, 'e', 0,
+   0x0726, 'p', 0,
+   0x0727, 'p', 0,
+   0x0728, 0x1E63, 0,
+   0x0729, 'q', 0,
+   0x072A, 'r', 0,
+   0x072B, 0x0161, 0,
+   0x072C, 't', 0,
    // Arabic Supplement from 0x0750-0x077F)
    // Thaana from 0x0780-0x07BF
    // NKo / Mande
