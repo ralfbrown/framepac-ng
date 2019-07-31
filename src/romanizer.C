@@ -798,7 +798,61 @@ static uint16_t cp_table[] =
    0x0988, 0x012B, 0,
    0x0989, 'u', 0,
    0x098A, 0x016B, 0,
-   //.....
+   0x098B, 'r', 0x0325, 0,
+   0x098C, 'l', 0x0325, 0,
+   0x098F, 0x0113, 0,
+   0x0990, 'a', 'i', 0,
+   0x0993, 0x014D, 0,
+   0x0994, 'a', 'u', 0,
+   0x0995, 'k', 'a', VOWEL|SPECIAL,
+   0x0996, 'k', 'h', 'a', 0,
+   0x0997, 'g', 'a', VOWEL,
+   0x0998, 'g', 'h', 'a', 0,
+   0x0999, 0x1E45, 'a', 0,
+   0x099A, 'c', 'a', VOWEL,
+   0x099B, 'c', 'h', 'a', 0,
+   0x099C, 'j', 'a', VOWEL|SPECIAL,
+   0x099D, 'j', 'h', 'a', 0,
+   0x099E, 0x00F1, 'a', 0,
+   0x099F, 0x1E6D, 'a', 0,
+   0x09A0, 0x1E6D, 'h', 'a', 0,
+   0x09A1, 0x1E0D, 'a', 0,
+   0x09A2, 0x1E0D, 'h', 'a', 0,
+   0x09A3, 0x1E47, 'a', 0,
+   0x09A4, 't', 'a', VOWEL,
+   0x09A5, 't', 'h', 'a', 0,
+   0x09A6, 'd', 'a', VOWEL,
+   0x09A7, 'd', 'h', 'a', 0,
+   0x09A8, 'n', 'a', VOWEL,
+   0x09AA, 'p', 'a', VOWEL,
+   0x09AB, 'p', 'h', 'a', SPECIAL,
+   0x09AC, 'b', 'a', VOWEL,
+   0x09AD, 'b', 'h', 'a', 0,
+   0x09AE, 'm', 'a', VOWEL,
+   0x09AF, 'y', 'a', VOWEL,
+   0x09B0, 'r', 'a', VOWEL,
+   0x09B2, 'l', 'a', VOWEL,
+   0x09B6, 0x015B, 'a', 0,
+   0x09B7, 0x1E63, 'a', 0,
+   0x09B8, 's', 'a', VOWEL,
+   0x09B9, 'h', 'a', VOWEL,
+   0x09BD, 0x0315, 0,
+   0x09BE, 0x0314, 0x0101, 0,
+   0x09BF, 0x0314, 'i', 0,
+   0x09C0, 0x0314, 0x012B, 0,
+   0x09C1, 0x0314, 'u', 0,
+   0x09C2, 0x0314, 0x016B, 0,
+   0x09C3, 0x0314, 'r', 0x0325, 0,
+   0x09C4, 0x0314, 'r', 0x0325, 0,
+   0x09C7, 0x0314, 0x113, 0,
+   0x09C8, 0x0314, 'a', 'i', 0,
+   0x09CB, 0x0314, 0x014D, 0,
+   0x09CC, 0x0314, 'a', 'u', 0,
+   0x09CE, 0x1E6F, 0,
+   0x09E0, 'r', 0x0325, 0x0304, 0,
+   0x09E1, 'l', 0x0325, 0,
+   0x09E2, 0x0314, 'l', 0x0325, 0,
+   0x09E3, 0x0314, 'l', 0x0325, 0,
    0x09E6, '0', 0,
    0x09E7, '1', 0,
    0x09E8, '2', 0,
@@ -810,6 +864,7 @@ static uint16_t cp_table[] =
    0x09EE, '8', 0,
    0x09EF, '9', 0,
    0x09F0, 'r', 'a', 0,
+   0x09F1, 'r', 'a', 0,
    // Gurmuki from 0x0A00-0x0A7F (CLDR 32)
    0x0A01, 'm', 0x0310, 0,
    0x0A02, 0x1E41, 0,
@@ -2153,7 +2208,23 @@ static uint16_t cp_table[] =
    0xFF19, '9', 0,
    // Specials from 0xFFF0-0xFFFD
    } ;
-   
+
+static uint16_t suppressors[] =
+   {
+   // mask/block  codepoint
+   0xFF80,0x0980, 0x09CD,
+   } ;
+
+static uint16_t spec_table[] =
+   {
+   0x0995,0x09BC,0x09CD,0, 'q', 0,
+   0x0995,0x09CD,0x09B8,0, 'k','s','a', 0,
+   0x099C,0x09BC,0x09CD,0, 'z', 0,
+   0x09AB,0x09BC,0x09CD,0, 'f', 0,
+   // sentinel terminating the list
+   0
+   } ;
+
 /************************************************************************/
 /*	Static Members for class Romanizer				*/
 /************************************************************************/
@@ -2279,6 +2350,18 @@ static unsigned check_flags(uint16_t index)
  
 //----------------------------------------------------------------------
 
+static uint16_t vowel_suppressor(uint16_t cp)
+{
+   for (size_t i = 0; i < lengthof(suppressors) ; i += 3)
+      {
+      if ((cp & suppressors[i]) == suppressors[i+1])
+	 return suppressors[i+2] ;
+      }
+   return 0 ;
+}
+   
+//----------------------------------------------------------------------
+
 CharPtr Romanizer::romanize(const char* utf8string)
 {
    if (!utf8string)
@@ -2300,10 +2383,14 @@ CharPtr Romanizer::romanize(const char* utf8string)
       if (flags & SPECIAL)
 	 {
 	 //TODO: check whether the codepoint actually starts one of the special sequences that override cp_table
+	 (void)spec_table ;
 	 }
       if (flags & VOWEL)
 	 {
-	 //TODO: check next codepoint to see if it suppresses the final vowel
+	 // check next codepoint to see if it suppresses the final vowel
+	 auto supp = vowel_suppressor(cp) ;
+	 //TODO!
+	 (void)supp;
 	 }
       // iterate through the codepoints of the romanization for the input codepoint
       while (cp_table[index] & ~FLAGS)
