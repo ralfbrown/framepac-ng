@@ -3107,7 +3107,12 @@ uint16_t Romanizer::s_mapping[] ;
 static wchar_t get_codepoint(const char*& s)
 {
    auto cp = UTF8_to_codepoint(s) ;
-   if (cp >= 0xFF01 && cp <= 0xFF5E)
+   if (cp == -1)
+      {
+      // broken UTF8, so just consume a single byte and return it as the codepoint
+      return *s++ ;
+      }
+   else if (cp >= 0xFF01 && cp <= 0xFF5E)
       {
       // full-width presentation form of ASCII
       cp -= (0xFF01-0x0021) ;
