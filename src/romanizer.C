@@ -2697,10 +2697,21 @@ static uint16_t cp_table[] =
    // CJK Unified Ideographs from 0x4E00-0x9FEF
    0x4E00, 'y', 0x012B, 0,
    //...
+   0x5B50, 'z', 'i', 0,
+   //..
+   0x738B, 'w', 'a', 'n', 'g', 0,
+   //...
    // Yi Syllables from 0xA000-0xA48F
+   0xA000, 'i', 't', 0,
+   0xA001, 'i', 'x', 0,
+   //...
    // Yi Radicals from 0xA490-0xA4CF
+   0xA490, 'q', 'o', 't', 0,
+   //...
    // Lisu from 0xA4D0-0xA4FF   -- Latin-like letters
    // Vai from 0xA500-0xA63F
+   0xA500, 'e', 'e', 0,
+   //...
    // Cyrillic Extended-B from 0xA640-0xA69F
    // Bamum from 0xA6A0-0xA6FF
    // Modifier Tone Letters from 0xA700-0xA71F
@@ -2718,7 +2729,13 @@ static uint16_t cp_table[] =
    0xA834, 0x215B, 0,  // one-eighth
    0xA835, '3', '/', '1', '6', 0,
    // Phags-pa from 0xA840-0xA87F
+   0xA840, 'k', 'a', 0,
+   //...
    // Saurashtra from 0xA880-0xA8DF
+   0xA882, 'a', 0,
+   0xA883, 'a', 'a', 0,
+   0xA884, 'i', 0,
+   //...
    // Devanagari Extended from 0xA8E0-0xA8FF
    // Kayah Li from 0xA900-0xA92F
    0xA900, '0', 0,
@@ -2991,7 +3008,7 @@ static uint16_t cp_table[] =
    // Low Surrogate Area from 0xDC00-0xDFFF
    // Private Use Area from 0xE000-0xF8FF
    // CJK Compatibility Ideograps from 0xF900-0xFAFF
-   // Alphabetic Presentation Forms fro 0xFB00-0xFB4F
+   // Alphabetic Presentation Forms from 0xFB00-0xFB4F
    // Arabic Presentation Forms-A from 0xFB50-0xFDFF
    // Variation Selectors from 0xFE00-0xFE0F
    // Vertical Forms from 0xFE10-0xFE1F
@@ -3000,16 +3017,7 @@ static uint16_t cp_table[] =
    // Small Form Variants from 0xFE50-0xFE6F
    // Arabic Presentation Forms-B from 0xFE70-0xFEFF
    // Half-Width and Full-Width Forms from 0xFF00-0xFFEF
-   0xFF10, '0', 0,
-   0xFF11, '1', 0,
-   0xFF12, '2', 0,
-   0xFF13, '3', 0,
-   0xFF14, '4', 0,
-   0xFF15, '5', 0,
-   0xFF16, '6', 0,
-   0xFF17, '7', 0,
-   0xFF18, '8', 0,
-   0xFF19, '9', 0,
+   // --> FF01-FF5E map directly to ASCII 0021-007E
    // Specials from 0xFFF0-0xFFFD
    } ;
 
@@ -3091,6 +3099,88 @@ static uint16_t spec_table[] =
 
 Initializer<Romanizer> Romanizer::initializer ;
 uint16_t Romanizer::s_mapping[] ;
+
+/************************************************************************/
+/*	Helper functions						*/
+/************************************************************************/
+
+static wchar_t get_codepoint(const char*& s)
+{
+   auto cp = UTF8_to_codepoint(s) ;
+   if (cp >= 0xFF01 && cp <= 0xFF5E)
+      {
+      // full-width presentation form of ASCII
+      cp -= (0xFF01-0x0021) ;
+      }
+   return cp ;
+}
+
+//----------------------------------------------------------------------
+
+static unsigned check_flags(uint16_t index)
+{
+   while (cp_table[index] & ~FLAGS)
+      ++index ;
+   return cp_table[index] ;
+}
+ 
+//----------------------------------------------------------------------
+
+static uint16_t vowel_suppressor(uint16_t cp)
+{
+   for (size_t i = 0; i < lengthof(suppressors) ; i += 3)
+      {
+      if ((cp & suppressors[i]) == suppressors[i+1])
+	 return suppressors[i+2] ;
+      }
+   return 0 ;
+}
+   
+//----------------------------------------------------------------------
+
+static uint16_t next_override(uint16_t index)
+{
+   // skip to the zero marking the end of the input sequence
+   while (spec_table[index])
+      index++ ;
+   // skip that zero
+   ++index ;
+   // skip to the zero marking the end of the output sequence
+   while (spec_table[index])
+      index++ ;
+   // and return the position past that marker
+   return index+1 ;
+}
+
+//----------------------------------------------------------------------
+
+static uint16_t find_override(wchar_t cp, const char*& s)
+{
+   for (uint16_t index = 0 ; index < lengthof(spec_table) ; index = next_override(index))
+      {
+      if (spec_table[index] != cp)
+	 continue ;
+      uint16_t entry = index + 1 ;
+      const char* input = s ;
+      while (spec_table[entry])
+	 {
+	 auto next_cp = get_codepoint(input) ;
+	 if (next_cp != spec_table[entry])
+	    break ;
+	 ++entry ;
+	 }
+      // check whether we got a complete match
+      if (spec_table[entry] == 0)
+	 {
+	 // we got a complete match, so update the input string (so that we consume the entire sequence) and
+	 //   return the index found
+	 s = input ;
+	 return entry+1 ;
+	 }
+      }
+   return 0 ;
+}
+
 
 /************************************************************************/
 /*	Methods for class Romanizer					*/
@@ -3201,27 +3291,6 @@ unsigned Romanizer::romanize(wchar_t codepoint, wchar_t &romanized1, wchar_t &ro
 
 //----------------------------------------------------------------------
 
-static unsigned check_flags(uint16_t index)
-{
-   while (cp_table[index] & ~FLAGS)
-      ++index ;
-   return cp_table[index] ;
-}
- 
-//----------------------------------------------------------------------
-
-static uint16_t vowel_suppressor(uint16_t cp)
-{
-   for (size_t i = 0; i < lengthof(suppressors) ; i += 3)
-      {
-      if ((cp & suppressors[i]) == suppressors[i+1])
-	 return suppressors[i+2] ;
-      }
-   return 0 ;
-}
-   
-//----------------------------------------------------------------------
-
 CharPtr Romanizer::romanize(const char* utf8string)
 {
    if (!utf8string)
@@ -3231,7 +3300,7 @@ CharPtr Romanizer::romanize(const char* utf8string)
    bool byteswap = false ;
    while (*utf8string)
       {
-      auto cp = UTF8_to_codepoint(utf8string) ;
+      auto cp = get_codepoint(utf8string) ;
       if (!romanizable(cp))
 	 {
 	 auto bytes = Unicode_to_UTF8(cp,roman,byteswap) ;
@@ -3242,8 +3311,19 @@ CharPtr Romanizer::romanize(const char* utf8string)
       auto flags = check_flags(index) ;
       if (flags & SPECIAL)
 	 {
-	 //TODO: check whether the codepoint actually starts one of the special sequences that override cp_table
-	 (void)spec_table ;
+	 // check whether the codepoint actually starts one of the special sequences that override cp_table
+	 auto repl_index = find_override(cp,utf8string) ;
+	 if (repl_index)
+	    {
+	    // iterate through the codepoints of the override sequence
+	    while (spec_table[repl_index])
+	       {
+	       auto bytes = Unicode_to_UTF8(spec_table[repl_index],roman,byteswap) ;
+	       sb.append(roman,bytes) ;
+	       ++repl_index ;
+	       }
+	    continue ;			// skip standard processing of this input codepoint
+	    }
 	 }
       if (flags & VOWEL)
 	 {
@@ -3252,7 +3332,7 @@ CharPtr Romanizer::romanize(const char* utf8string)
 	 if (supp)
 	    {
 	    auto string = utf8string ;
-	    auto next_cp = UTF8_to_codepoint(string) ;
+	    auto next_cp = get_codepoint(string) ;
 	    if (next_cp == supp)	// is the next codepoint the vowel suppressor?
 	       {
 	       // iterate through all of the codepoints of the romanization EXCEPT the last
