@@ -2295,6 +2295,8 @@ static uint16_t cp_table[] =
    // Cyrillic Extended-A from 0x2DE0-0x2DFF
    // supplemental punctuation from 0x2E00-0x2E7F
    // CJK Radicals Supplment from 0x2E80-0x2EFF
+   0x2E85, 'r', 0x00E9, 'n', 0,
+   //...
    // Kangxi Radicals from 0x2F00-0x2FDF
    // Ideographic Description Characters from 0x2FF0-0x2FFF
    // CJK Symbols and Punctuation from 0x3000-0x303F
@@ -2492,11 +2494,11 @@ static uint16_t cp_table[] =
    // Bopomofo (Chinese phonetic alphabet), from CLDR 32    0x3100-0x312F
    0x3105, 'b', 0,
    0x3106, 'p', 0,
-   0x3107, 'm', '1', 0,
+   0x3107, 'm', '1', VOWEL,
    0x3108, 'f', 0,
    0x3109, 'd', 0,
    0x310A, 't', 0,
-   0x310B, 'n', 0,   // should actually be 'n1', an additional combining diacritic suppresses the '1'
+   0x310B, 'n', '1', VOWEL,
    0x310C, 'l', 0,
    0x310D, 'g', 0,
    0x310E, 'k', 0,
@@ -2511,9 +2513,9 @@ static uint16_t cp_table[] =
    0x3117, 'z', 'i', '1', 0,
    0x3118, 'c', 'i', '1', 0,
    0x3119, 's', 'i', '1', 0,
-   0x311A, 'a', 0,	// should actually be 'a1',an additional combining diacritic suppresses the '1'
-   0x311B, 'o', 0,	// should actually be 'o1',an additional combining diacritic suppresses the '1'
-   0x311C, 'e', 0,	// should actually be 'e1',an additional combining diacritic suppresses the '1'
+   0x311A, 'a', '1', VOWEL,
+   0x311B, 'o', '1', VOWEL,
+   0x311C, 'e', '1', VOWEL,
    0x311D, 'e', 'h', '1', 0,
    0x311E, 'a', 'i', '1', 0,
    0x311F, 'e', 'i', '1', 0,
@@ -2524,8 +2526,8 @@ static uint16_t cp_table[] =
    0x3124, 'a', 'n', 'g', '1', 0,
    0x3125, 'e', 'n', 'g', '1', 0,
    0x3126, 'e', 'r', '1', 0,
-   0x3127, 'y', 'i', 0,   // should actually be 'yi1',an additional combining diacritic suppresses the '1'
-   0x3128, 'w', 'u', 0,   // should actually be 'wu1',an additional combining diacritic suppresses the '1'
+   0x3127, 'y', 'i', '1', VOWEL,
+   0x3128, 'w', 'u', '1', VOWEL,
    0x3129, 'y', 'u', '1', 0 ,
    0x312A, 'v', 0,
    0x312B, 'n', 'g', 0,
@@ -2586,8 +2588,13 @@ static uint16_t cp_table[] =
    // CJK compatibility from 0x3300-0x33FF
    0x337F, 'I', 'n', 'c', '.', 0,
    // CJK Unified Ideographs Extension A from 0x3400-0x4DB5
+   0x341C, 'c', 'h', 0x00F3, 'u', 0,
+   0x3421, 'n', 'u', 0x00F2, 0,
+   //...
    // Yijing Hexagram Symbols from 0x4DC0-0x4DFF
    // CJK Unified Ideographs from 0x4E00-0x9FEF
+   0x4E00, 'y', 0x012B, 0,
+   //...
    // Yi Syllables from 0xA000-0xA48F
    // Yi Radicals from 0xA490-0xA4CF
    // Lisu from 0xA4D0-0xA4FF   -- Latin-like letters
@@ -2916,6 +2923,7 @@ static uint16_t suppressors[] =
    0xFF80,0x0C00, 0x0C4D,	// Telugu
    0xFF80,0x0C80, 0x0CCD,	// Kannada
    0xFF80,0x0D00, 0x0D4D,	// Malayalam
+   0xFFC0,0x3100, 0x02D9,	// Bopomofo
    } ;
 
 static uint16_t spec_table[] =
