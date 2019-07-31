@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.15, last edit 2019-07-29					*/
+/* Version 0.15, last edit 2019-07-31					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2019 Carnegie Mellon University			*/
@@ -1104,6 +1104,7 @@ static uint16_t cp_table[] =
    0x0B6E, '8', 0,
    0x0B6F, '9', 0,
    0x0B71, 0x1E87, 'a', 0,
+   0x0B76, 0x215B, 0,  // one-eighth
    // Tamil from 0x0B80-0x0BFF (CLDR 32)
    0x0B82, 0x1E41, 0,
    0x0B85, 'a', 0,
@@ -2609,12 +2610,12 @@ static uint16_t cp_table[] =
    //....
    0xA827, 'o', 'o', 0,
    // Common Indic Number Forms from 0xA830-0xA83F
-//   0xA830, one-quarter
-//   0xA831, one-half
-//   0xA832, three-quarters
+   0xA830, 0x00BC, 0,  // one-quarter
+   0xA831, 0x00BD, 0,  // one-half
+   0xA832, 0x00BE, 0,  // three-quarters
    0xA833, '1', '/', '1', '6', 0,
-   0xA834, '1', '/', '8', 0,
-//   0xA835, three-sixteenths
+   0xA834, 0x215B, 0,  // one-eighth
+   0xA835, '3', '/', '1', '6', 0,
    // Phags-pa from 0xA840-0xA87F
    // Saurashtra from 0xA880-0xA8DF
    // Devanagari Extended from 0xA8E0-0xA8FF
@@ -2700,7 +2701,7 @@ static uint16_t cp_table[] =
    0xABF8, '8', 0,
    0xABF9, '9', 0,
    // Hangul Syllables from 0xAC00-0xD7AF
-   0xAC00, 'g', 'a', SPECIAL,
+   0xAC00, 'g', 'a', 0,
    0xAC01, 'g', 'a', 'g', 0,
    0xAC02, 'g', 'a', 'k', 'k', 0,
    0xAC03, 'g', 'a', 'g', 's', 0,
@@ -2928,59 +2929,58 @@ static uint16_t suppressors[] =
 
 static uint16_t spec_table[] =
    {
-   // Armenian
+//***** Armenian *****
    0x0548,0x0552,0,        'U', 0,
    0x0578,0x0582,0,        'u', 0,
-   // Devanagari
+//***** Devanagari *****
    0x0915,0x093C,0x094D,0, 'q', 0,
    0x0915,0x094D,0x0938,0, 'k','s','a', 0,
    0x091C,0x093C,0x094D,0, 'z', 0,
    0x092B,0x093C,0x094D,0, 'f', 0,
-   // Bengali, Assamese
+//***** Bengali, Assamese *****
    0x0995,0x09BC,0x09CD,0, 'q', 0,
    0x0995,0x09CD,0x09B8,0, 'k','s','a', 0,
    0x099C,0x09BC,0x09CD,0, 'z', 0,
    0x09AB,0x09BC,0x09CD,0, 'f', 0,
-   // Gurmuki
+//***** Gurmuki *****
    0x0A15,0x0A3C,0x0A4D,0, 'q', 0,
    0x0A15,0x0A4D,0x0A38,0, 'k', 's', 'a', 0,
    0x0A1C,0x0A3C,0x0A4D,0, 'z', 0,
    0x0A2B,0x0A3C,0x0A4D,0, 'f', 0,
-   // Gujarati
+//***** Gujarati *****
    0x0A95,0x0ABC,0x0ACD,0, 'q', 0,
    0x0A95,0x0ACD,0x0AB8,0, 'k','s','a', 0,
    0x0A9C,0x0ABC,0x0ACD,0, 'z', 0,
    0x0AAB,0x0ABC,0x0ACD,0, 'f', 0,
-   // Oriya
+//***** Oriya *****
    0x0B15,0x0B3C,0x0B4D,0, 'q', 0,
    0x0B15,0x0B4D,0x0B38,0, 'k', 's', 'a', 0,
    0x0B1C,0x0B3C,0x0B4D,0, 'z', 0,
    0x0B2B,0x0B3C,0x0B4D,0, 'f', 0,
-   // Tamil
-//   0x0B95,0x0BBC,0x0BCD,0, 'q', 0,
+//***** Tamil *****
+   //0x0B95,0x0BBC,0x0BCD,0, 'q', 0,
    0x0B95,0x0BCD,0x0BB8,0, 'k','s','a', 0,
    0x0B9C,0x0BBC,0x0BCD,0, 'z', 0,
-//   0x0BAB,0x0BBC,0x0BCD,0, 'f', 0,
-   // Telugu
-//   0x0C15,0x0C3C,0x0C4D,0, 'q', 0,
+   //0x0BAB,0x0BBC,0x0BCD,0, 'f', 0,
+//***** Telugu *****
+   //0x0C15,0x0C3C,0x0C4D,0, 'q', 0,
    0x0C15,0x0C4D,0x0C38,0, 'k', 's', 'a', 0,
-//   0x0C1C,0x0C3C,0x0C4D,0, 'z', 0,
-//   0x0C2B,0x0C3C,0x0C4D,0, 'f', 0,
-   // Kannada
-//   0x0C95,0x0CBC,0x0CCD,0, 'q', 0,
+   //0x0C1C,0x0C3C,0x0C4D,0, 'z', 0,
+   //0x0C2B,0x0C3C,0x0C4D,0, 'f', 0,
+//***** Kannada *****
+   //0x0C95,0x0CBC,0x0CCD,0, 'q', 0,
    0x0C95,0x0CCD,0x0CB8,0, 'k','s','a', 0,
-//   0x0C9C,0x0CBC,0x0CCD,0, 'z', 0,
-//   0x0CAB,0x0CBC,0x0CCD,0, 'f', 0,
-   // Malayalam
-//   0x0D15,0x0D3C,0x0D4D,0, 'q', 0,
+   //0x0C9C,0x0CBC,0x0CCD,0, 'z', 0,
+   //0x0CAB,0x0CBC,0x0CCD,0, 'f', 0,
+//***** Malayalam *****
+   //0x0D15,0x0D3C,0x0D4D,0, 'q', 0,
    0x0D15,0x0D4D,0x0D38,0, 'k', 's', 'a', 0,
-//   0x0D1C,0x0D3C,0x0D4D,0, 'z', 0,
-//   0x0D2B,0x0D3C,0x0D4D,0, 'f', 0,
-   // Hangul syllables
-   0xAC00,0xAE4C,0,        'g','a','k','k','a', 0,
+   //0x0D1C,0x0D3C,0x0D4D,0, 'z', 0,
+   //0x0D2B,0x0D3C,0x0D4D,0, 'f', 0,
+//***** Hangul syllables *****
    //0xAC00,...
    
-   // sentinel terminating the list
+// sentinel terminating the list
    0
    } ;
 
@@ -3148,8 +3148,23 @@ CharPtr Romanizer::romanize(const char* utf8string)
 	 {
 	 // check next codepoint to see if it suppresses the final vowel
 	 auto supp = vowel_suppressor(cp) ;
-	 //TODO!
-	 (void)supp;
+	 if (supp)
+	    {
+	    auto string = utf8string ;
+	    auto next_cp = UTF8_to_codepoint(string) ;
+	    if (next_cp == supp)	// is the next codepoint the vowel suppressor?
+	       {
+	       // iterate through all of the codepoints of the romanization EXCEPT the last
+	       while (cp_table[index+1] & ~FLAGS)
+		  {
+		  auto bytes = Unicode_to_UTF8(cp_table[index],roman,byteswap) ;
+		  sb.append(roman,bytes) ;
+		  ++index ;
+		  }
+	       utf8string = string ;	// skip the next codepoint
+	       continue  ;		// skip the standard processing, go right to the next input codepoint
+	       }
+	    }
 	 }
       // iterate through the codepoints of the romanization for the input codepoint
       while (cp_table[index] & ~FLAGS)
@@ -3174,7 +3189,7 @@ void Romanizer::StaticInitialization()
       if (cp < lengthof(s_mapping))
 	 s_mapping[cp] = offset ;
       // scan for the terminating zero codepoint
-      while (offset < lengthof(cp_table) && cp_table[offset])
+      while (offset < lengthof(cp_table) && (cp_table[offset] & ~FLAGS) != 0)
 	 {
 	 ++offset ;
 	 }
