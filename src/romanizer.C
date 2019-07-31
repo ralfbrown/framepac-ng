@@ -801,13 +801,34 @@ static uint16_t cp_table[] =
    0x09EE, '8', 0,
    0x09EF, '9', 0,
    0x09F0, 'r', 'a', 0,
-   // Gurmuki from 0x0A00-0x0A7F
-   // Gujarati from 0x0A80-0x0AFF    TODO
-   // Oriya from 0x0B00-0x0B7F       TODO
-   // Tamil from 0x0B80-0x0BFF       TODO
-   // Telugu from 0x0C00-0x0C7F      TODO
-   // Kannada from 0x0C80-0x0CFF     TODO
-   // Malayalam from 0x0D00-0x0D7F   TODO
+   // Gurmuki from 0x0A00-0x0A7F (CLDR 32)     TODO
+   0x0A01, 'm', 0x0310, 0,
+   0x0A02, 0x1E41, 0,
+   //...
+   // Gujarati from 0x0A80-0x0AFF (CLDR 32)    TODO
+   0x0A81, 'm', 0x0310, 0,
+   0x0A82, 0x1E41, 0,
+   0x0A83, 0x1E25, 0,
+   //....
+   // Oriya from 0x0B00-0x0B7F  (CLDR 32)      TODO
+   0x0B01, 'm', 0x0310, 0,
+   0x0B02, 0x1E41, 0,
+   0x0B03, 0x1E25, 0,
+   //....
+   // Tamil from 0x0B80-0x0BFF (CLDR 32)       TODO
+   0x0B82, 0x1E41, 0,
+   //...
+   // Telugu from 0x0C00-0x0C7F (CLDR 32)      TODO
+   0x0C01, 'm', 0x0310, 0,
+   //...
+   // Kannada from 0x0C80-0x0CFF (CLDR 32)     TODO
+   0x0C82, 0x1E41, 0,
+   0x0C83, 0x1E25, 0,
+   //...
+   // Malayalam from 0x0D00-0x0D7F (CLDR 32)   TODO
+   0x0D02, 0x1E41, 0,
+   0x0D03, 0x1E25, 0,
+   //...
    // Sinhala from 0x0D80-0x0DFF     TODO
    // Thai (ISO 11940) from 0x0E00-0x0E7F
    0x0E01, 'k', 0,
