@@ -28,6 +28,14 @@ namespace Fr
 {
 
 /************************************************************************/
+/*	Manifest Constants						*/
+/************************************************************************/
+
+#define VOWEL   0x8000		// final vowel can be suppressed by next codepoint
+#define SPECIAL 0x4000		// this codepoint is the first of one or more special sequences
+#define FLAGS (VOWEL|SPECIAL)
+
+/************************************************************************/
 /*	Types local to this module					*/
 /************************************************************************/
 
@@ -2230,7 +2238,7 @@ int Romanizer::romanize(wchar_t codepoint, char *buffer)
    if (romanizable(codepoint))
       {
       int bytes = 0 ;
-      for (uint16_t index = s_mapping[codepoint] ; cp_table[index] ; ++index)
+      for (uint16_t index = s_mapping[codepoint] ; cp_table[index] & ~FLAGS ; ++index)
 	 {
 	 bytes += Unicode_to_UTF8(cp_table[index],buffer+bytes,byteswap) ;
 	 }
@@ -2262,6 +2270,15 @@ unsigned Romanizer::romanize(wchar_t codepoint, wchar_t &romanized1, wchar_t &ro
 
 //----------------------------------------------------------------------
 
+static unsigned check_flags(uint16_t index)
+{
+   while (cp_table[index] & ~FLAGS)
+      ++index ;
+   return cp_table[index] ;
+}
+ 
+//----------------------------------------------------------------------
+
 CharPtr Romanizer::romanize(const char* utf8string)
 {
    if (!utf8string)
@@ -2278,8 +2295,25 @@ CharPtr Romanizer::romanize(const char* utf8string)
 	 sb.append(roman,bytes) ;
 	 continue ;
 	 }
-      //TODO
+      uint16_t index = s_mapping[cp] ;
+      auto flags = check_flags(index) ;
+      if (flags & SPECIAL)
+	 {
+	 //TODO: check whether the codepoint actually starts one of the special sequences that override cp_table
+	 }
+      if (flags & VOWEL)
+	 {
+	 //TODO: check next codepoint to see if it suppresses the final vowel
+	 }
+      // iterate through the codepoints of the romanization for the input codepoint
+      while (cp_table[index] & ~FLAGS)
+	 {
+	 auto bytes = Unicode_to_UTF8(cp_table[index],roman,byteswap) ;
+	 sb.append(roman,bytes) ;
+	 ++index ;
+	 }
       }
+   sb.append('\0') ;
    return sb.move() ;
 }
 
