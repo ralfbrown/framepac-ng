@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-07					*/
+/* Version 0.15, last edit 2019-07-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2019 Carnegie Mellon University			*/
@@ -28,7 +28,7 @@
 namespace Fr
 {
 
-wchar_t UTF8_to_codepoint(char*& buffer) ;
+wchar_t UTF8_to_codepoint(const char*& buffer) ;
 int UTF8_to_codepoints(const char*& buffer, wchar_t* codepoints) ;
 
 int Unicode_to_UTF8(wchar_t codepoint, char *buffer, bool &byteswap, bool use_surrogates = false) ;
