@@ -801,10 +801,70 @@ static uint16_t cp_table[] =
    0x09EE, '8', 0,
    0x09EF, '9', 0,
    0x09F0, 'r', 'a', 0,
-   // Gurmuki from 0x0A00-0x0A7F (CLDR 32)     TODO
+   // Gurmuki from 0x0A00-0x0A7F (CLDR 32)
    0x0A01, 'm', 0x0310, 0,
    0x0A02, 0x1E41, 0,
-   //...
+   0x0A05, 'a', 0,
+   0x0A06, 0x0101, 0,
+   0x0A07, 'i', 0,
+   0x0A08, 0x012B, 0,
+   0x0A09, 'u', 0,
+   0x0A0A, 0x016B, 0,
+   0x0A0F, 0x0113, 0,
+   0x0A10, 'a', 'i', 0,
+   0x0A13, 0x014D, 0,
+   0x0A14, 'a', 'u', 0,
+   0x0A15, 'k', 'a', 0,
+   0x0A16, 'k', 'h', 'a', 0,
+   0x0A17, 'g', 'a', 0,
+   0x0A18, 'g', 'h', 'a', 0,
+   0x0A19, 0x1E45, 'a', 0,
+   0x0A1A, 'c', 'a', 0,
+   0x0A1B, 'c', 'h', 'a', 0,
+   0x0A1C, 'j', 'a', 0,
+   0x0A1D, 'j', 'h', 'a', 0,
+   0x0A1E, 0x00F1, 'a', 0,
+   0x0A1F, 0x1E6D, 'a', 0,
+   0x0A20, 0x1E6D, 'h', 'a', 0,
+   0x0A21, 0x1E0D, 'a', 0,
+   0x0A22, 0x1E0D, 'h', 'a', 0,
+   0x0A23, 0x1E47, 'a', 0,
+   0x0A24, 't', 'a', 0,
+   0x0A25, 't', 'h', 'a', 0,
+   0x0A26, 'd', 'a', 0,
+   0x0A27, 'd', 'h', 'a', 0,
+   0x0A28, 'n', 'a', 0,
+   0x0A2A, 'p', 'a', 0,
+   0x0A2B, 'p', 'h', 'a', 0,
+   0x0A2C, 'b', 'a', 0,
+   0x0A2D, 'b', 'h', 'a', 0,
+   0x0A2E, 'm', 'a', 0,
+   0x0A2F, 'y', 'a', 0,
+   0x0A30, 'r', 'a', 0,
+   0x0A32, 'l', 'a', 0,
+   0x0A35, 'v', 'a', 0,
+   0x0A38, 's', 'a', 0,
+   0x0A39, 'h', 'a', 0,
+   0x0A3E, 0x0314, 0x0101, 0,
+   0x0A3F, 0x0314, 'i', 0,
+   0x0A40, 0x0314, 0x012B, 0,
+   0x0A41, 0x014, 'u', 0,
+   0x0A42, 0x0314, 0x016B, 0,
+   0x0A47, 0x0314, 0x0113, 0,
+   0x0A48, 0x0314, 'a', 'i', 0,
+   0x0A4B, 0x0314, 0x014D, 0,
+   0x0A4C, 0x0314, 'a', 'u', 0,
+   0x0A5C, 0x1E5B, 'a', 0,
+   0x0A66, '0', 0,
+   0x0A67, '1', 0,
+   0x0A68, '2', 0,
+   0x0A69, '3', 0,
+   0x0A6A, '4', 0,
+   0x0A6B, '5', 0,
+   0x0A6C, '6', 0,
+   0x0A6D, '7', 0,
+   0x0A6E, '8', 0,
+   0x0A6F, '9', 0,
    // Gujarati from 0x0A80-0x0AFF (CLDR 32)    TODO
    0x0A81, 'm', 0x0310, 0,
    0x0A82, 0x1E41, 0,
@@ -1906,6 +1966,7 @@ static uint16_t cp_table[] =
 /*	Static Members for class Romanizer				*/
 /************************************************************************/
 
+Initializer<Romanizer> Romanizer::initializer ;
 uint16_t Romanizer::s_mapping[] ;
 
 /************************************************************************/
@@ -1986,9 +2047,8 @@ int Romanizer::romanize(wchar_t codepoint, char *buffer)
       {
       int bytes = 0 ;
       for (uint16_t index = s_mapping[codepoint] ; cp_table[index] ; ++index)
-      while (cp_table[index])
 	 {
-	 bytes += Fr::Unicode_to_UTF8(cp_table[index++],buffer+bytes,byteswap) ;
+	 bytes += Fr::Unicode_to_UTF8(cp_table[index],buffer+bytes,byteswap) ;
 	 }
       return bytes ;
       }
