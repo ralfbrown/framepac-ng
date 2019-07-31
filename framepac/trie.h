@@ -61,6 +61,10 @@ class TrieNodeValueless
       IdxT  m_children[1<<bits] ;
    } ;
 
+// keep linker happy on debug builds:
+template <typename IdxT, unsigned bits>
+constexpr IdxT TrieNodeValueless<IdxT,bits>::NULL_INDEX; 
+
 //----------------------------------------------------------------------------
 
 template <typename T, typename IdxT, unsigned bits>
