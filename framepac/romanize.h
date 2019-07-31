@@ -22,6 +22,7 @@
 #ifndef _Fr_ROMANIZE_H_INCLUDED
 #define _Fr_ROMANIZE_H_INCLUDED
 
+#include <cstdint>
 #include "framepac/init.h"
 
 namespace Fr
@@ -43,7 +44,7 @@ class Romanizer
 
    private:
       static Initializer<Romanizer> initializer ;
-      static uint16_t s_mapping[0xFF20] ;
+      static std::uint16_t s_mapping[0xFF20] ;
    } ;
 
 /************************************************************************/
