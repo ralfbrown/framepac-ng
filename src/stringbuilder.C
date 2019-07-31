@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.01, last edit 2017-07-13					*/
+/* Version 0.15, last edit 2019-07-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017 Carnegie Mellon University			*/
+/* (c) Copyright 2016,2017,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -59,6 +59,17 @@ void StringBuilder::append(const char *s)
       {
       while (*s)
 	 append(*s++) ;
+      }
+   return ;
+}
+
+//----------------------------------------------------------------------------
+
+void StringBuilder::append(const char *s, size_t N)
+{
+   while (N-- >  0)
+      {
+      append(*s++) ;
       }
    return ;
 }

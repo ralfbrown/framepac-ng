@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-17					*/
+/* Version 0.15, last edit 2019-07-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -45,6 +45,7 @@ class StringBuilder : public BufferBuilder<char>
       ~StringBuilder() {}
       using BufferBuilder<char>::append ;
       void append(const char* s) ;
+      void append(const char* s, size_t N) ;
       using BufferBuilder<char>::operator+= ;
       StringBuilder& operator += (const char* s) { append(s) ; return *this ; }
       StringPtr string() const { return String::create(currentBuffer(),currentLength()) ; }
