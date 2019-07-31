@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.15, last edit 2019-07-29					*/
+/* Version 0.15, last edit 2019-07-30					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2019 Carnegie Mellon University			*/
@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include "framepac/init.h"
+#include "framepac/smartptr.h"
 
 namespace Fr
 {
@@ -34,6 +35,8 @@ namespace Fr
 class Romanizer
    {
    public:
+      static CharPtr romanize(const char* utf8string) ;
+
       static unsigned utf8codepoint(const char* buf, wchar_t& codepoint) ;
       static bool romanizable(wchar_t codepoint) ;
       static int romanize(wchar_t codepoint, char* buffer) ;

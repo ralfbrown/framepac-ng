@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include "framepac/romanize.h"
+#include "framepac/stringbuilder.h"
 #include "framepac/unicode.h"
 
 namespace Fr
@@ -2231,13 +2232,13 @@ int Romanizer::romanize(wchar_t codepoint, char *buffer)
       int bytes = 0 ;
       for (uint16_t index = s_mapping[codepoint] ; cp_table[index] ; ++index)
 	 {
-	 bytes += Fr::Unicode_to_UTF8(cp_table[index],buffer+bytes,byteswap) ;
+	 bytes += Unicode_to_UTF8(cp_table[index],buffer+bytes,byteswap) ;
 	 }
       return bytes ;
       }
    else
       {
-      return Fr::Unicode_to_UTF8(codepoint,buffer,byteswap) ;
+      return Unicode_to_UTF8(codepoint,buffer,byteswap) ;
       }
 }
 
@@ -2257,6 +2258,29 @@ unsigned Romanizer::romanize(wchar_t codepoint, wchar_t &romanized1, wchar_t &ro
       romanized1 = codepoint ;
       }
    return 1 ;
+}
+
+//----------------------------------------------------------------------
+
+CharPtr Romanizer::romanize(const char* utf8string)
+{
+   if (!utf8string)
+      return nullptr ;
+   StringBuilder sb ;
+   char roman[32] ; // the longest romanization is five codepoints, none of which need more than 3 bytes as UTF8
+   bool byteswap = false ;
+   while (*utf8string)
+      {
+      auto cp = UTF8_to_codepoint(utf8string) ;
+      if (!romanizable(cp))
+	 {
+	 auto bytes = Unicode_to_UTF8(cp,roman,byteswap) ;
+	 sb.append(roman,bytes) ;
+	 continue ;
+	 }
+      //TODO
+      }
+   return sb.move() ;
 }
 
 //----------------------------------------------------------------------
