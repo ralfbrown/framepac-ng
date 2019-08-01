@@ -1396,6 +1396,16 @@ static uint16_t cp_table[] =
    0x0D6E, '8', 0,
    0x0D6F, '9', 0,
    // Sinhala from 0x0D80-0x0DFF     TODO
+   0x0DE6, '0', 0,
+   0x0DE7, '1', 0,
+   0x0DE8, '2', 0,
+   0x0DE9, '3', 0,
+   0x0DEA, '4', 0,
+   0x0DEB, '5', 0,
+   0x0DEC, '6', 0,
+   0x0DED, '7', 0,
+   0x0DEE, '8', 0,
+   0x0DEF, '9', 0,
    // Thai (ISO 11940) from 0x0E00-0x0E7F
    0x0E01, 'k', 0,
    0x0E02, 'k', 'h', 0,
@@ -1475,8 +1485,48 @@ static uint16_t cp_table[] =
    0x0E5A, 0x01C1, 0,
    0x0E5B, 0x00BB, 0,
    // Lao from 0x0E80-0x0EFF         TODO
+   0x0ED0, '0', 0,
+   0x0ED1, '1', 0,
+   0x0ED2, '2', 0,
+   0x0ED3, '3', 0,
+   0x0ED4, '4', 0,
+   0x0ED5, '5', 0,
+   0x0ED6, '6', 0,
+   0x0ED7, '7', 0,
+   0x0ED8, '8', 0,
+   0x0ED9, '9', 0,
    // Tibetan from 0x0F00-0x0FFF     TODO
+   0x0F20, '0', 0,
+   0x0F21, '1', 0,
+   0x0F22, '2', 0,
+   0x0F23, '3', 0,
+   0x0F24, '4', 0,
+   0x0F25, '5', 0,
+   0x0F26, '6', 0,
+   0x0F27, '7', 0,
+   0x0F28, '8', 0,
+   0x0F29, '9', 0,
    // Myanmar from 0x1000-0x109F
+   0x1040, '0', 0,
+   0x1041, '1', 0,
+   0x1042, '2', 0,
+   0x1043, '3', 0,
+   0x1044, '4', 0,
+   0x1045, '5', 0,
+   0x1046, '6', 0,
+   0x1047, '7', 0,
+   0x1048, '8', 0,
+   0x1049, '9', 0,
+   0x1090, '0', 0,	// Myanmar Shan
+   0x1091, '1', 0,
+   0x1092, '2', 0,
+   0x1093, '3', 0,
+   0x1094, '4', 0,
+   0x1095, '5', 0,
+   0x1096, '6', 0,
+   0x1097, '7', 0,
+   0x1098, '8', 0,
+   0x1099, '9', 0,
    // Georgian (ISO 9984) from 0x10A0-0x10FF
    0x10D0, 'a', 0,
    0x10D1, 'b', 0,
@@ -2099,19 +2149,99 @@ static uint16_t cp_table[] =
    // Buhi from 0x1740-0x175F
    // Tagbanwa from 0x1760-0x17FF
    // Khmer from 0x1780-0x17FF       TODO
+   0x17E0, '0', 0,
+   0x17E1, '1', 0,
+   0x17E2, '2', 0,
+   0x17E3, '3', 0,
+   0x17E4, '4', 0,
+   0x17E5, '5', 0,
+   0x17E6, '6', 0,
+   0x17E7, '7', 0,
+   0x17E8, '8', 0,
+   0x17E9, '9', 0,
    // Mongolian from 0x1800-0x18AF   TODO
+   0x1810, '0', 0,
+   0x1811, '1', 0,
+   0x1812, '2', 0,
+   0x1813, '3', 0,
+   0x1814, '4', 0,
+   0x1815, '5', 0,
+   0x1816, '6', 0,
+   0x1817, '7', 0,
+   0x1818, '8', 0,
+   0x1819, '9', 0,
    // Unified Canadian Aboriginal Syllabics Extended from 0x18B0-0x18FF
    // Limbu from 0x1900-0x194F       TODO
+   0x1940, '0', 0,
+   0x1941, '1', 0,
+   0x1942, '2', 0,
+   0x1943, '3', 0,
+   0x1944, '4', 0,
+   0x1945, '5', 0,
+   0x1946, '6', 0,
+   0x1947, '7', 0,
+   0x1948, '8', 0,
+   0x1949, '9', 0,
    // Tai Le from 0x1950-0x197F
    // New Tai Lue from 0x1980-0x19DF
+   0x19D0, '0', 0,
+   0x19D1, '1', 0,
+   0x19D2, '2', 0,
+   0x19D3, '3', 0,
+   0x19D4, '4', 0,
+   0x19D5, '5', 0,
+   0x19D6, '6', 0,
+   0x19D7, '7', 0,
+   0x19D8, '8', 0,
+   0x19D9, '9', 0,
    // Khmer symbols from 0x19E0-0x19FF
    // Buginese from 0x1A00-0x1A1F
    // Tai Tham from 0x1A20-0x1AAF
+   0x1A80, '0', 0,	// Tai Tham Hora
+   0x1A81, '1', 0,
+   0x1A82, '2', 0,
+   0x1A83, '3', 0,
+   0x1A84, '4', 0,
+   0x1A85, '5', 0,
+   0x1A86, '6', 0,
+   0x1A87, '7', 0,
+   0x1A88, '8', 0,
+   0x1A89, '9', 0,
+   0x1A90, '0', 0,	// Tai Tham Tham
+   0x1A91, '1', 0,
+   0x1A92, '2', 0,
+   0x1A93, '3', 0,
+   0x1A94, '4', 0,
+   0x1A95, '5', 0,
+   0x1A96, '6', 0,
+   0x1A97, '7', 0,
+   0x1A98, '8', 0,
+   0x1A99, '9', 0,
    // combining diacritical marks from 0x1AB0-0x1AFF
    // Balinese from 0x1B00-01B7F     TODO
+   0x1B50, '0', 0,
+   0x1B51, '1', 0,
+   0x1B52, '2', 0,
+   0x1B53, '3', 0,
+   0x1B54, '4', 0,
+   0x1B55, '5', 0,
+   0x1B56, '6', 0,
+   0x1B57, '7', 0,
+   0x1B58, '8', 0,
+   0x1B59, '9', 0,
    // Sundanese from 0x1B80-0x1BBF
+   0x1BB0, '0', 0,
+   0x1BB1, '1', 0,
+   0x1BB2, '2', 0,
+   0x1BB3, '3', 0,
+   0x1BB4, '4', 0,
+   0x1BB5, '5', 0,
+   0x1BB6, '6', 0,
+   0x1BB7, '7', 0,
+   0x1BB8, '8', 0,
+   0x1BB9, '9', 0,
    // Batak from 0x1BC0-0x1BFF       TODO
-   // Lepcha from 0x1C00-0x1C4F      TODO
+   // Lepcha from 0x1C00-0x1C4F
    0x1C00, 'k', 'a', 0,
    0x1C01, 'k', 'l', 'a', 0,
    0x1C02, 'k', 'h', 'a', 0,
@@ -2420,6 +2550,8 @@ static uint16_t cp_table[] =
    // combining diacritical marks for symbols from 0x20D0-0x20FF
    // letterlike symbols from 0x2100-0x214F
    // number forms from 0x2150-0x218F
+   0x218A, '2', 0,
+   0x218B, '3', 0,
    // arrows from 0x2190-0x21FF
    // mathematical operators from 0x2200-0x22FF
    // miscellaneous technical from 0x2300-0x23FF
@@ -2770,6 +2902,16 @@ static uint16_t cp_table[] =
    // Lisu from 0xA4D0-0xA4FF   -- Latin-like letters
    // Vai from 0xA500-0xA63F
    0xA500, 'e', 'e', 0,
+   0xA620, '0', 0,
+   0xA621, '1', 0,
+   0xA622, '2', 0,
+   0xA623, '3', 0,
+   0xA624, '4', 0,
+   0xA625, '5', 0,
+   0xA626, '6', 0,
+   0xA627, '7', 0,
+   0xA628, '8', 0,
+   0xA629, '9', 0,
    //...
    // Cyrillic Extended-B from 0xA640-0xA69F
    // Bamum from 0xA6A0-0xA6FF
@@ -2794,8 +2936,32 @@ static uint16_t cp_table[] =
    0xA882, 'a', 0,
    0xA883, 'a', 'a', 0,
    0xA884, 'i', 0,
+   0xA8D0, '0', 0,
+   0xA8D1, '1', 0,
+   0xA8D2, '2', 0,
+   0xA8D3, '3', 0,
+   0xA8D4, '4', 0,
+   0xA8D5, '5', 0,
+   0xA8D6, '6', 0,
+   0xA8D7, '7', 0,
+   0xA8D8, '8', 0,
+   0xA8D9, '9', 0,
    //...
    // Devanagari Extended from 0xA8E0-0xA8FF
+   0xA8E0, '0', 0,
+   0xA8E1, '1', 0,
+   0xA8E2, '2', 0,
+   0xA8E3, '3', 0,
+   0xA8E4, '4', 0,
+   0xA8E5, '5', 0,
+   0xA8E6, '6', 0,
+   0xA8E7, '7', 0,
+   0xA8E8, '8', 0,
+   0xA8E9, '9', 0,
+   0xA8EA, 'a', 0,  // combining
+   0xA8EB, 'u', 0,  // combining
+   0xA8F5, '2', 0,  // combining
+   0xA8F6, '3', 0,  // combining
    // Kayah Li from 0xA900-0xA92F
    0xA900, '0', 0,
    0xA901, '1', 0,
