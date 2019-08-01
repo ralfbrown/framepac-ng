@@ -3262,6 +3262,8 @@ static uint16_t suppressors[] =
    } ;
 
 static uint16_t spec_table[] =
+   // this table must be in sorted order by the first codepoint, then longest-match first if any match is
+   //   a prefix of another
    {
 //***** Armenian *****
    0x0548,0x0552,0,        'U', 0,
@@ -3397,8 +3399,10 @@ static uint16_t find_override(wchar_t cp, const char*& s)
 {
    for (uint16_t index = 0 ; index < lengthof(spec_table) ; index = next_override(index))
       {
-      if (spec_table[index] != cp)
+      if (spec_table[index] < cp)
 	 continue ;
+      else if (spec_table[index] > cp)
+	 break ;
       uint16_t entry = index + 1 ;
       const char* input = s ;
       while (spec_table[entry])
