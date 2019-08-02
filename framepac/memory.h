@@ -285,7 +285,7 @@ class Allocator
 	    FramepaC::Slab* m_freelist ;
 	    FramepaC::Slab* m_foreignfree ;
 	 } ;
-      class SharedInfo
+      class alignas(alignof(double)) SharedInfo
 	 {
 	 public:
 	    SharedInfo() = default ;
@@ -294,17 +294,16 @@ class Allocator
 	       {
 		  if (objsize < alignof(double)) m_alignment = objsize ;
 	       }
-	    SharedInfo(const FramepaC::ObjectVMT* vmt, FramepaC::alloc_size_t objsize,
-	       unsigned alignment)
-	       : m_vmt(vmt), m_objsize(objsize), m_alignment(alignment)
+	    SharedInfo(const FramepaC::ObjectVMT* vmt, FramepaC::alloc_size_t objsize, unsigned alignment)
+	       : m_vmt(vmt), m_alignment(alignment), m_objsize(objsize)
 	       {
 	       }
 	    ~SharedInfo() {}
 	 public: // data members
 	    const FramepaC::ObjectVMT*  m_vmt ;
 	    Fr::Atomic<FramepaC::Slab*> m_orphans { nullptr } ;  // slabs which used to belong to terminated threads
+	    unsigned		        m_alignment ;
 	    FramepaC::alloc_size_t      m_objsize ;
-	    unsigned		        m_alignment { alignof(double) } ;
 	 } ;
       
    public:
