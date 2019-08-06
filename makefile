@@ -302,6 +302,7 @@ OBJS = \
 	build/filename$(OBJ) \
 	build/float$(OBJ) \
 	build/frame$(OBJ) \
+	build/graph_obj_u32_flt$(OBJ) \
 	build/hashset_obj$(OBJ) \
 	build/hashset_sym$(OBJ) \
 	build/hashset_u32$(OBJ) \
@@ -540,6 +541,7 @@ build/filename$(OBJ):	src/filename$(C) framepac/file.h framepac/texttransforms.h
 build/float$(OBJ):		src/float$(C) framepac/number.h framepac/fasthash64.h
 build/frame$(OBJ):		src/frame$(C) framepac/frame.h
 build/globaldata$(OBJ):	src/globaldata$(C)
+build/graph_obj_u32_flt$(OBJ):	template/graph.cc
 build/hashset_obj$(OBJ):	src/hashset_obj$(C) template/hashtable.cc
 build/hashset_sym$(OBJ):	src/hashset_sym$(C) template/hashtable.cc
 build/hashset_u32$(OBJ):	src/hashset_u32$(C) template/hashtable.cc
@@ -700,6 +702,9 @@ template/contextcoll.cc:	framepac/contextcoll.h
 template/densevector.cc:	framepac/vector.h template/bufbuilder.cc
 	$(TOUCH) $@ $(BITBUCKET)
 
+template/graph.cc:		framepac/graph.h
+	$(TOUCH) $@ $(BITBUCKET)
+
 template/hashtable.cc:	framepac/hashtable.h framepac/message.h framepac/fasthash64.h
 	$(TOUCH) $@ $(BITBUCKET)
 
@@ -812,6 +817,9 @@ framepac/file.h:		framepac/config.h framepac/smartptr.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/frame.h:		framepac/object.h
+	$(TOUCH) $@ $(BITBUCKET)
+
+framepac/graph.h:		framepac/itempool.h framepac/object.h framepac/smartptr.h
 	$(TOUCH) $@ $(BITBUCKET)
 
 framepac/hashhelper.h:	framepac/queue_mpsc.h framepac/semaphore.h

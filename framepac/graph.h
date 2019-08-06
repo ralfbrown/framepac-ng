@@ -40,7 +40,7 @@ class GraphEdgeT
    {
    public:
       GraphEdgeT() {}
-      GraphEdgeT(Videx from_vertex, Vidx to_vertex, L len)
+      GraphEdgeT(Vidx from_vertex, Vidx to_vertex, L len)
 	 : m_from(from_vertex), m_to(to_vertex), m_length(len) {}
       ~GraphEdgeT() = default ;
 
@@ -61,21 +61,21 @@ template <typename Vidx>
 class EdgeListT
    {
    public:
-      EdgeList(Vidx cap = 0) { m_edges = new Vidx[cap+2] ; m_edges[0] = 0; m_edges[1] = cap ; }
-      ~EdgeList() { delete[] m_edges ; delete[] m_lengths ; }
+      EdgeListT(Vidx cap = 0) : m_edges(cap), m_size(0), m_capacity(cap) {}
+      ~EdgeListT() = default ;
 
       // accessors
       size_t size() const { return m_size ; }
-      size_t capacity() const { return m_capacity ; ]
+      size_t capacity() const { return m_capacity ; }
       Vidx edge(size_t N) const { return m_edges[N] ; }
 
       // manipulators
       bool addEdge(Vidx edgenum) ;
 
    protected:
-      Vidx* m_edges ;
-      Vidx  m_size ;
-      Vidx  m_capacity ;
+      Owned<Vidx> m_edges ;
+      Vidx        m_size ;
+      Vidx        m_capacity ;
    } ;
 
 /************************************************************************/
@@ -85,7 +85,7 @@ template <typename V,typename Vidx, typename L>
 class SubgraphT ;
 
 template <typename V, typename Vidx, typename L>
-class GraphT<V,Vidx,L>
+class GraphT
    {
    public:
       typedef GraphEdgeT<Vidx,L> Edge ;
@@ -105,9 +105,11 @@ class GraphT<V,Vidx,L>
 	    return false ; 		// error to change after edges have been added
 	 }
       bool reserve(Vidx extra_cap) ;
-      void addVertex(V vertex) ;
+      Vidx addVertex(V vertex) ;
       void addEdge(Vidx from, Vidx to, L length) ;
       void shrink_to_fit() ;
+      void optimize() ;
+      void computeEdgeMatrix() ;
 
       // accessors
       size_t size() const { return m_size ; }
@@ -134,7 +136,7 @@ class GraphT<V,Vidx,L>
       //    (used by parallel algorithms)
       Subgraph** split(size_t num_segments) const ;
       // return a list of edges forming a minimum spanning tree over the graph
-      EdgeList&& minSpanningTreePrims() const ;
+      NewPtr<Vidx> minSpanningTreePrims() const ;
 
    protected:
       V*             m_vertices ;		// array of vertices
@@ -149,7 +151,7 @@ class GraphT<V,Vidx,L>
       bool           m_directed  { true } ;
    } ;
 
-typedef GraphT<typename T=Object*,uint32_t,float> Graph ;
+typedef GraphT<Object*,uint32_t,float> Graph ;
 
 /************************************************************************/
 /************************************************************************/
@@ -159,16 +161,16 @@ class SubgraphT
    {
    public:
       typedef GraphT<V,Vidx,L> Graph ;
-      typedef Graph::EdgeList EdgeList ;
-      typedef Graph::Edge Edge ;
+      typedef typename Graph::EdgeList EdgeList ;
+      typedef typename Graph::Edge Edge ;
    public:
-      Subgraph() ;
-      Subgraph(Graph* parent, const Vidx* vertices) ;
-      Subgraph(Graph* parent, Vidx first, Vidx last) ; // make subgraph from contiguous range of vertices
-      ~Subgraph() ;
+      SubgraphT() ;
+      SubgraphT(Graph* parent, const Vidx* vertices) ;
+      SubgraphT(Graph* parent, Vidx first, Vidx last) ; // make subgraph from contiguous range of vertices
+      ~SubgraphT() ;
 
    private:
-      GraphT<T,VidxT,L>* m_parent ;
+      GraphT<V,Vidx,L>* m_parent ;
       Vidx*     m_vertices ;		// which vertices of the parent are part of the subgraph?
       EdgeList* m_outbound ;		// outbound edges (within subgraph) for each vertex
       EdgeList* m_inbound ;		// inbound edges (within subgraph) for each vertex
@@ -176,7 +178,8 @@ class SubgraphT
       Vidx      m_num_vertices ;
    } ;
 
-typedef SubgraphT<typename T=Object*,uint32_t,float> Subgraph ;
+typedef SubgraphT<Object*,uint32_t,float> Subgraph ;
+extern template class SubgraphT<Object*,uint32_t,float> ;
 
 /************************************************************************/
 /************************************************************************/
