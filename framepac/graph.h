@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.15, last edit 2019-04-18					*/
+/* Version 0.15, last edit 2019-08-05					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2019 Carnegie Mellon University			*/
@@ -22,8 +22,9 @@
 #ifndef _Fr_GRAPH_H_INCLUDED
 #define _Fr_GRAPH_H_INCLUDED
 
-#include "framepac/builder.h"
+#include "framepac/itempool.h"
 #include "framepac/object.h"
+#include "framepac/smartptr.h"
 
 /************************************************************************/
 /************************************************************************/
@@ -34,75 +35,62 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
-template <typename T>
-class GraphEdgeT<T>
+template <typename Vidx, typename L = float>
+class GraphEdgeT
    {
    public:
       GraphEdgeT() {}
-      GraphEdgeT(T from_vertex, T to_vertex) : m_from(from_vertext), m_to(to_vertex) {}
+      GraphEdgeT(Videx from_vertex, Vidx to_vertex, L len)
+	 : m_from(from_vertex), m_to(to_vertex), m_length(len) {}
       ~GraphEdgeT() = default ;
 
-      T from() const { return m_from ; }
-      T to() const { return m_to ; }
-      
-   protected:
-      T m_from ;
-      T m_to ;
-   } ;
-
-typedef GraphEdgeT<GraphNode*> GraphEdge ;
-typedef GraphEdgeT<uint16_t> GraphEdge16 ;
-typedef GraphEdgeT<uint32_t> GraphEdge32 ;
-typedef GraphEdgeT<uint64_t> GraphEdge64 ;
-
-/************************************************************************/
-/************************************************************************/
-
-template <typename T, typename L>
-class GraphEdgeLengthT<T> : public GraphEdgeT<T>
-   {
-   public:
-      typedef GraphEdgeT<T> super ;
-   public:
-      GraphEdgeLengthT() : super() {}
-      GraphEdgeLengthT(T from_vertex, T to_vertex, L len) : super(from_vertex,to_vertex), m_length(len) {}
-      ~GraphEdgeLengthT() = default ;
-
+      Vidx from() const { return m_from ; }
+      Vidx to() const { return m_to ; }
       L length() const { return m_length ; }
+
    protected:
+      Vidx m_from ;
+      Vidx m_to ;
       L m_length ;
    } ;
 
-typedef GraphEdgeLengthT<GraphNode*,double> GraphEdgeLength ;
-typedef GraphEdgeLengthT<uint32_t,float> GraphEdge32Length ;
-
 /************************************************************************/
 /************************************************************************/
 
-template <typename T = Object*>
-class GraphVertex<T>
+template <typename Vidx>
+class EdgeListT
    {
    public:
-      GraphVertex() {}
-      GraphVertex(const T vert) : m_vertex(vert) {}
-      ~GraphVertex() = default ;
+      EdgeList(Vidx cap = 0) { m_edges = new Vidx[cap+2] ; m_edges[0] = 0; m_edges[1] = cap ; }
+      ~EdgeList() { delete[] m_edges ; delete[] m_lengths ; }
 
-      T& vertex() const { return &m_vertex ; }
+      // accessors
+      size_t size() const { return m_size ; }
+      size_t capacity() const { return m_capacity ; ]
+      Vidx edge(size_t N) const { return m_edges[N] ; }
+
+      // manipulators
+      bool addEdge(Vidx edgenum) ;
+
    protected:
-      T m_vertex ;
+      Vidx* m_edges ;
+      Vidx  m_size ;
+      Vidx  m_capacity ;
    } ;
 
 /************************************************************************/
 /************************************************************************/
 
-template <typename V, typename Eidx, typename L>
-class GraphT<V,Eidx,L>
+template <typename V,typename Vidx, typename L>
+class SubgraphT ;
+
+template <typename V, typename Vidx, typename L>
+class GraphT<V,Vidx,L>
    {
    public:
-      typedef GraphVertex<V> Vertex ;
-      typedef GraphEdgeLengthT<Eidx,L> Edge ;
-      typedef BufferBuilder<Vertex,1> VertexList ;
-      typedef BufferBuilder<Edge,1> EdgeList ;
+      typedef GraphEdgeT<Vidx,L> Edge ;
+      typedef EdgeListT<Vidx> EdgeList ;
+      typedef SubgraphT<V,Vidx,L> Subgraph ;
    public:
       GraphT()
 	 {
@@ -116,40 +104,79 @@ class GraphT<V,Eidx,L>
 	    if (numEdges() == 0) { m_directed = false ; return true ; }
 	    return false ; 		// error to change after edges have been added
 	 }
+      bool reserve(Vidx extra_cap) ;
       void addVertex(V vertex) ;
-      void addEdge(const Edge& edge) ;
-      void addEdge(Eidx from, Eidx to) ;
+      void addEdge(Vidx from, Vidx to, L length) ;
+      void shrink_to_fit() ;
 
       // accessors
+      size_t size() const { return m_size ; }
+      size_t capacity() const { return m_capacity ; }
+      size_t numVertices() const { return m_size ; }
+      size_t numEdges() const { return m_total_edges ; }
       bool isDirected() const { return m_directed ; }
-      bool isSubgraph() const { return m_is_subgraph ; }
-      size_t numVertices() const { return m_vertices.currentLength() ; }
-      size_t numEdges() const { return m_edges.currentLength() ; }
-      V* vertex(size_t index) const { return m_vertices[index] ; }
-      Edge* edge(size_t index) const { return m_edges[index] ; }
+      V& vertex(Vidx v) const { return m_vertices[v] ; }
+      Edge& edge(size_t e) const { return m_edges[e] ; }
+      Edge& outboundEdge(size_t v, size_t e) const { return m_edges[m_outbound[v].edge(e)] ; }
+      Edge& inboundEdge(size_t v, size_t e) const { return m_edges[m_inbound[v].edge(e)] ; }
+      bool haveEdge(Vidx from, Vidx to) const ;
 
       // iterator support
-      const Vertex* beginVert() const { return m_vertices.begin() ; }
-      const Vertex* endVert() const { return m_vertices.end() ; }
-      const Edge* beginEdge() const { return m_edges.begin() ; }
-      const Edge* endEdge() const { return m_edges.end() ; }
+      const V* begin() const { return m_vertices ; }
+      const V* end() const { return m_vertices + size() ; }
+      const Edge* beginE() const { return m_edges ; }
+      const Edge* endE() const { return m_edges + numEdges() ; }
 
       // algorithms
+      // return a new subgraph containing only the listed vertices
+      Owned<Subgraph> makeSubgraph(const Vidx* vertex_list) const ;
       // return an array of subgraphs such that each has roughly the same number of vertices
       //    (used by parallel algorithms)
-      GraphT** split(size_t num_segments) const ;
+      Subgraph** split(size_t num_segments) const ;
       // return a list of edges forming a minimum spanning tree over the graph
       EdgeList&& minSpanningTreePrims() const ;
 
    protected:
-      VertexList m_vertices ;
-      EdgeList m_edges ;
-      EdgeList m_leaving_edges ;	// in a subgraph, the edges leading to vertices outside the subgraph
-      bool m_directed  { true } ;
-      bool m_is_subgraph { false } ;
+      V*             m_vertices ;		// array of vertices
+      ItemPool<Edge> m_edges ;			// array of edges
+      EdgeList*      m_outbound ;		// list of outbound edge-indices for each vertex
+      EdgeList*      m_inbound ;		// list of inbound edge-indices for each vertex
+      bool*          m_edge_matrix { nullptr };	// used by haveEdge()
+      size_t         m_total_edges ;
+      size_t         m_alloc_edges ;
+      Vidx           m_size ; 			// number of vertices
+      Vidx           m_capacity ;		// number of vertex slots allocated in m_outbound and m_inbound
+      bool           m_directed  { true } ;
    } ;
 
-typedef GraphT<typename T,uint32_t,float> Graph ;
+typedef GraphT<typename T=Object*,uint32_t,float> Graph ;
+
+/************************************************************************/
+/************************************************************************/
+
+template <typename V,typename Vidx, typename L>
+class SubgraphT
+   {
+   public:
+      typedef GraphT<V,Vidx,L> Graph ;
+      typedef Graph::EdgeList EdgeList ;
+      typedef Graph::Edge Edge ;
+   public:
+      Subgraph() ;
+      Subgraph(Graph* parent, const Vidx* vertices) ;
+      Subgraph(Graph* parent, Vidx first, Vidx last) ; // make subgraph from contiguous range of vertices
+      ~Subgraph() ;
+
+   private:
+      GraphT<T,VidxT,L>* m_parent ;
+      Vidx*     m_vertices ;		// which vertices of the parent are part of the subgraph?
+      EdgeList* m_outbound ;		// outbound edges (within subgraph) for each vertex
+      EdgeList* m_inbound ;		// inbound edges (within subgraph) for each vertex
+      EdgeList* m_leaving_edges ;	// the edges leading to vertices outside the subgraph, for each vertex
+      Vidx      m_num_vertices ;
+   } ;
+
+typedef SubgraphT<typename T=Object*,uint32_t,float> Subgraph ;
 
 /************************************************************************/
 /************************************************************************/
