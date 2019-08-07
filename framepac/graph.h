@@ -165,9 +165,18 @@ class SubgraphT
       typedef typename Graph::Edge Edge ;
    public:
       SubgraphT() ;
-      SubgraphT(Graph* parent, const Vidx* vertices) ;
-      SubgraphT(Graph* parent, Vidx first, Vidx last) ; // make subgraph from contiguous range of vertices
+      SubgraphT(Graph* parent, const Vidx* vertices, size_t num_vertices) ;
+      SubgraphT(Graph* parent, Vidx first, Vidx past_last) ; // make subgraph from contiguous range of vertices
       ~SubgraphT() ;
+
+      // accessors
+      size_t numVertices() const { return m_num_vertices ; }
+
+      // return a list of edges forming a minimum spanning tree over the graph
+      NewPtr<Vidx> minSpanningTreePrims() const ;
+
+   private:
+      void setEdges() ;
 
    private:
       GraphT<V,Vidx,L>* m_parent ;

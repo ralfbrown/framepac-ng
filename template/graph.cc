@@ -19,6 +19,7 @@
 /*									*/
 /************************************************************************/
 
+#include <numeric>
 #include "framepac/graph.h"
 
 namespace Fr
@@ -130,6 +131,61 @@ NewPtr<Vidx> GraphT<V,Vidx,L>::minSpanningTreePrims() const
 /************************************************************************/
 /*	Methods for template class SubgraphT				*/
 /************************************************************************/
+
+template <typename V, typename Vidx, typename L>
+SubgraphT<V,Vidx,L>::SubgraphT()
+   : m_parent(nullptr), m_vertices(nullptr), m_outbound(nullptr), m_inbound(nullptr), m_leaving_edges(nullptr),
+     m_num_vertices(0)
+{
+   return ;
+}
+
+//----------------------------------------------------------------------
+
+template <typename V, typename Vidx, typename L>
+SubgraphT<V,Vidx,L>::SubgraphT(GraphT<V,Vidx,L>* parent, const Vidx* vertices, size_t num_vertices)
+   : m_parent(parent), m_num_vertices(num_vertices)
+{
+   m_vertices = new Vidx[num_vertices] ;
+   std::copy_n(vertices,num_vertices,m_vertices) ;
+   setEdges() ;
+   return ;
+}
+
+//----------------------------------------------------------------------
+
+template <typename V, typename Vidx, typename L>
+SubgraphT<V,Vidx,L>::SubgraphT(GraphT<V,Vidx,L>* parent, Vidx first, Vidx past_last)
+   : m_parent(parent), m_num_vertices(past_last-first)
+{
+   m_vertices = new Vidx[m_num_vertices] ;
+   std::iota(m_vertices,m_vertices+m_num_vertices,first) ;
+   setEdges() ;
+   return ;
+}
+
+//----------------------------------------------------------------------
+
+template <typename V, typename Vidx, typename L>
+void SubgraphT<V,Vidx,L>::setEdges()
+{
+   m_outbound = new EdgeList[m_num_vertices] ;
+   m_inbound = new EdgeList[m_num_vertices] ;
+   m_leaving_edges = new EdgeList[m_num_vertices] ;
+   //TODO
+
+   return ;
+}
+
+//----------------------------------------------------------------------
+
+template <typename V, typename Vidx, typename L>
+NewPtr<Vidx> SubgraphT<V,Vidx,L>::minSpanningTreePrims() const
+{
+   NewPtr<Vidx> shortest_arcs(m_num_vertices) ;
+   //TODO
+   return nullptr ;
+}
 
 
 } // end namespace Fr
