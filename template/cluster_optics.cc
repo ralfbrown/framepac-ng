@@ -28,6 +28,15 @@ namespace Fr
 /************************************************************************/
 /************************************************************************/
 
+/* parallel version of OPTICS described in
+      Md. Mostofa Ali Patwary, Diana Palsetia, Anikt Agrawal, Wei-keng Liao, Frederik Manne, and Alok Choudhary,
+      "Scalable Parallel OPTICS Data Clustering Using Graph Algorithmic Techniques".  In Proceedings fo the
+      International Conference on High Performance Computing, Networking, Storage and Analysis (Supercomputing,
+      SC'13), pp.49:1-49:12 (2013).
+   source code to accompany the paper available at
+       http://cucis.ece.northwestern.edu/projects/Clustering/download_code_optics.html
+*/
+
 template <typename IdxT, typename ValT>
 class ClusteringAlgoOPTICS : public ClusteringAlgo<IdxT,ValT>
    {
