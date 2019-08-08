@@ -72,6 +72,9 @@ class EdgeListT
       // manipulators
       bool addEdge(Vidx edgenum) ;
 
+      // iterator support
+      const Vidx* begin() const { return &m_edges ; }
+      const Vidx* end() const { return &m_edges + m_size ; }
    protected:
       Owned<Vidx> m_edges ;
       Vidx        m_size ;
@@ -138,6 +141,10 @@ class GraphT
       // return a list of edges forming a minimum spanning tree over the graph
       NewPtr<Vidx> minSpanningTreePrims() const ;
 
+   private:
+      bool PrimsAlgoSegment(Vidx first, Vidx past_last, Vidx* MST) const ;
+      bool PrimsAlgoMerge(Vidx subgraph_size, Vidx num_subgraphs, Vidx* MST) const ;
+
    protected:
       V*             m_vertices ;		// array of vertices
       ItemPool<Edge> m_edges ;			// array of edges
@@ -171,9 +178,6 @@ class SubgraphT
 
       // accessors
       size_t numVertices() const { return m_num_vertices ; }
-
-      // return a list of edges forming a minimum spanning tree over the graph
-      NewPtr<Vidx> minSpanningTreePrims() const ;
 
    private:
       void setEdges() ;
