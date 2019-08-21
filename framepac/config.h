@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.13, last edit 2018-09-19					*/
+/* Version 0.15, last edit 2019-08-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2016,2017,2018 Carnegie Mellon University		*/
+/* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -225,8 +225,9 @@ namespace Fr
 class NullObject
    {
    public:
-      NullObject() {}
-      NullObject(int) {}
+      constexpr NullObject() {}
+      constexpr NullObject(int) {}
+      constexpr NullObject(const NullObject&) {}
       operator bool() { return false ; }
 
       NullObject& operator = (const NullObject) { return *this ; }

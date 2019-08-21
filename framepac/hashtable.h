@@ -419,6 +419,7 @@ class HashTable : public HashTableBase
 
 	 // constructors/destructors
 	 Entry() if_INTERLEAVED(: m_info()) { init() ; }
+	 Entry(const Entry&) = default ;
 	 ~Entry() {}
 
 	 // variable-setting functions

@@ -1,12 +1,12 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /*  FramepaC-ng  -- frame manipulation in C++				*/
-/*  Version 0.13, last edit 2018-09-19					*/
+/*  Version 0.15, last edit 2019-08-21					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /*  File atomic.h		atomic operations on simple variables	*/
 /*									*/
-/*  (c) Copyright 2015,2016,2017,2018 Carnegie Mellon University	*/
+/*  (c) Copyright 2015,2016,2017,2018,2019 Carnegie Mellon University	*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -80,10 +80,12 @@ template <typename T>
 class Atomic
    {
    public:
-      Atomic() {}
+      constexpr Atomic() {}
       Atomic(T value) { v = value ; }
+      Atomic(const Atomic&) = default ;
       ~Atomic() {}
 
+      Atomic& operator= (const Atomic& orig) = default ;
       T& operator= (T& newval) noexcept { v = newval ; return newval ; }
       T& operator= (T& newval) volatile noexcept { v = newval ; return newval ; }
       const T& operator= (const T& newval) noexcept { v = newval ; return newval ; }
@@ -467,6 +469,7 @@ class Atomic
       Atomic(const Atomic<T>& value) { store(value.load(std::memory_order_acquire)) ; }
       ~Atomic() {}
 
+      Atomic& operator= (const Atomic& orig) { store(orig.load()) ; return *this ; } 
       T& operator= (T& value) noexcept { ref().store(value,std::memory_order_release) ; return value ; }
       T& operator= (T& value) volatile noexcept { ref().store(value,std::memory_order_release) ; return value ; }
       const T& operator= (const T& value) noexcept { ref().store(value,std::memory_order_release) ; return value ; }
