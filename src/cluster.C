@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-15					*/
+/* Version 0.15, last edit 2019-08-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2018,2019 Carnegie Mellon University			*/
@@ -100,7 +100,7 @@ static void show_known_names(const char* itemdesc, const char* optvalue, ListPtr
       sb += ' ' ;
       sb += name->printableName() ;
       }
-   SystemMessage::status(sb.c_str()) ;
+   SystemMessage::status("%s",*sb.c_str()) ;
    return  ;
 }
 
