@@ -115,7 +115,7 @@ static void error(int arg)
    errmsg[18] += (signum%10) ;
    errmsg[20] += ((arg/10)%10) ;
    errmsg[21] += (arg%10) ;
-   SystemMessage::fatal(errmsg) ;
+   SystemMessage::fatal("%s",errmsg) ;
    std::abort() ;
 }
 
