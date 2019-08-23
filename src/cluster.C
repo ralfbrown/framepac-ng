@@ -100,7 +100,7 @@ static void show_known_names(const char* itemdesc, const char* optvalue, ListPtr
       sb += ' ' ;
       sb += name->printableName() ;
       }
-   SystemMessage::status("%s",sb.c_str()) ;
+   SystemMessage::status("%s",*sb.c_str()) ;
    return  ;
 }
 

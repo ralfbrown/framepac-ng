@@ -1,7 +1,7 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-25					*/
+/* Version 0.15, last edit 2019-08-22					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
 /* (c) Copyright 2016,2017,2018,2019 Carnegie Mellon University		*/
@@ -78,7 +78,8 @@ static FILE *open_piped_input(CompressionType comp, const char *filename,
       default:				return nullptr ;
       }
    char *cmd = nullptr ;
-   (void)asprintf(&cmd,pipe_command,fn.c_str()) ;
+   int cmdlen = asprintf(&cmd,pipe_command,fn.c_str()) ;
+   (void)cmdlen ;
    FILE *fp = nullptr ;
 #if defined(unix) || defined(__linux__)
    fp = popen(cmd,"r") ;
@@ -100,7 +101,8 @@ static FILE *open_piped_output(const char *pipe_command, const char *filename,
    if (access(fn.c_str(),F_OK) != 0)
       return nullptr ;
    char *cmd = nullptr ;
-   (void)asprintf(&cmd,pipe_command,fn.c_str()) ;
+   int cmdlen = asprintf(&cmd,pipe_command,fn.c_str()) ;
+   (void)cmdlen ;
    FILE *fp = nullptr ;
 #if defined(unix) || defined(__linux__)
    fp = popen(cmd,"w") ;
