@@ -209,7 +209,7 @@ RM = rm -f
 CP = cp -p
 ZIP = zip -q
 ZIPFLAGS = -qo9
-BITBUCKET = 2>1 >/dev/null
+BITBUCKET = 2>&1 >/dev/null
 TOUCH = touch
 
 #########################################################################
