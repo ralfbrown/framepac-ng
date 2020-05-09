@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.11, last edit 2018-09-11					*/
+/* Version 0.14, last edit 2020-03-28					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2017,2018 Carnegie Mellon University			*/
+/* (c) Copyright 2017,2018,2020 Carnegie Mellon University		*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -175,30 +175,17 @@ NewPtr<bool> RandomSample(size_t total, size_t sample)
       SystemMessage::no_memory("generating random sample") ;
       return nullptr ;
       }
-   bool unsampled = false ;
-   bool sampled = true ;
-   // if we're asked to sample more than half of the total space, it's
-   //   faster (due to fewer collisions) to select everything and then
-   //   UNsample
-   if (sample > total / 2)
+   RandomFloat rand(1.0) ;
+   size_t unsampled = total ;
+   for (size_t i = 0 ; i < total ; ++i)
       {
-      unsampled = true ;
-      sampled = false ;
-      sample = total - sample ;
-      }
-   std::fill(selected,selected+total,unsampled) ;
-   RandomInteger rand(total) ;
-   for (size_t i = 1 ; i <= sample ; i++)
-      {
-      for ( ; ; )
+      if (rand() * unsampled < sample)
 	 {
-	 size_t r = rand() ;
-	 if (selected[r] == unsampled)
-	    {
-	    selected[r] = sampled ;
-	    break ;
-	    }
+	 selected[i] = true ;
+	 if (--sample == 0)
+	    break  ;			// no more selections needed
 	 }
+      --unsampled ;
       }
    return selected ;
 }
