@@ -19,10 +19,12 @@ hashtest=bin/parhash
 #   '' = FramepaC (object)
 #tables="-i -H -I ''"
 tables="-i -H -I"
+tables="-i -H"
 
 # the number of threads to use
-threads="1 2 3 4 6 9 12 24 48 96 192 384"	# hex-core w/ HT
+#threads="1 2 3 4 6 9 12 24 48 96 192 384"	# hex-core w/ HT
 #threads="1 2 4 8 14 20 28 42 56 112 224 448"	# dual 14-core w/ HT
+threads="512 256 128 64 56 48 40 32 28 24 20 16 14 12 10 8 7 6 5 4 3 2 1"  # 32C/64T
 
 # the concurrency for Hopscotch
 concurrency="16 32 64 128 256"
