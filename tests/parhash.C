@@ -271,7 +271,7 @@ class STLset : public unordered_set<INTEGER_TYPE>
       bool add(INTEGER_TYPE key)
 	 {
 	    ScopedWriteLock _(m_lock) ;
-	    return insert(key).second ;
+	    return !insert(key).second ;
 	 }
       bool contains(INTEGER_TYPE key)
 	 {
