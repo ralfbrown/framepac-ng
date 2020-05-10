@@ -128,8 +128,22 @@ ifeq ($(CPU),99)
   # auto-detection, assuming at least AMD "K8" level of features (any
   #  x64 processor qualifies); requires GCC 4.2+
   CPUDEF=-march=native -D__886__ -D__BITS__=$(BITS)
+else ifeq ($(CPU),18)
+  CPUDEF=-march=zenver2 -D__886__ -D__BITS__=$(BITS)
+else ifeq ($(CPU),17)
+  CPUDEF=-march=zenver1 -D__886__ -D__BITS__=$(BITS)
+else ifeq ($(CPU),16)
+  CPUDEF=-march=btver2 -D__886__ -D__BITS__=$(BITS)
+else ifeq ($(CPU),15)
+  CPUDEF=-march=bdver1 -D__886__ -D__BITS__=$(BITS)
+else ifeq ($(CPU),13)
+  CPUDEF=-march=skylake -D__886__ -D__BITS__=$(BITS)
+else ifeq ($(CPU),12)
+  CPUDEF=-march=haswell -D__886__ -D__BITS__=$(BITS)
+else ifeq ($(CPU),11)
+  CPUDEF=-march=sandybridge -D__886__ -D__BITS__=$(BITS)
 else ifeq ($(CPU),10)
-  # newest AMD chips: "Barcelona", PhenomII
+  # AMD chips: "Barcelona", PhenomII
   CPUDEF=-march=amdfam10 -D__886__ -D__BITS__=$(BITS)
 else ifeq ($(CPU),8)
   CPUDEF=-march=k8 -msse -D__BITS__=$(BITS)
@@ -141,9 +155,6 @@ else
   # we won't bother supporting anything less than a Pentium
   CPU=5
   CPUDEF=-march=i586 -mtune=i586
-endif
-ifneq ($(CPU),99)
-CPUDEF += -D__$(CPU)86__
 endif
 
 #########################################################################
