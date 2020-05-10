@@ -283,6 +283,7 @@ class STLset : public unordered_set<INTEGER_TYPE>
 	    ScopedWriteLock _(m_lock) ;
 	    return erase(key) != 0 ;
 	 }
+      size_t maxCapacity() const { return this->bucket_count() ; }
       size_t* chainLengths(size_t& max_length) const { max_length = 0 ; return nullptr ; }
       size_t* neighborhoodDensities(size_t& num_densities) const { num_densities = 0 ; return nullptr ; }
       using unordered_set<INTEGER_TYPE>::begin ;
@@ -409,6 +410,7 @@ class HopscotchMap
       bool contains(INTEGER_TYPE key) { return ht.containsKey(key) ; }
       bool remove(INTEGER_TYPE key) { (void)ht.remove(key) ; return false; }
       size_t size() const { return ht.size() ; }
+      size_t maxCapacity() const { return 0 ; } //DUMMY
       size_t* chainLengths(size_t& max_length) const { max_length = 0 ; return nullptr ; }
       size_t* neighborhoodDensities(size_t& num_densities) const { num_densities = 0 ; return nullptr ; }
       static void threadInit() {}
@@ -1093,8 +1095,8 @@ static void hash_test(ThreadPool* user_pool, ostream& out, const char* heading, 
       pretty_print((size_t)(ops / walltime_noreclaim),out) ;
       out << " ops/sec)" << endl ;
       }
-   // verify success
-   if (verify)
+   // optionally verify correct operation if not read-only actions
+   if (verify && op != Op_CHECK)
       {
       size_t size = ht ? ht->currentSize() : 0 ;
       size_t count = ht ? ht->countItems() : 0 ;
