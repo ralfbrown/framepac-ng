@@ -1,10 +1,10 @@
 /****************************** -*- C++ -*- *****************************/
 /*									*/
 /* FramepaC-ng								*/
-/* Version 0.14, last edit 2019-07-15					*/
+/* Version 0.14, last edit 2020-05-09					*/
 /*	by Ralf Brown <ralf@cs.cmu.edu>					*/
 /*									*/
-/* (c) Copyright 2015,2017,2018,2019 Carnegie Mellon University		*/
+/* (c) Copyright 2015,2017,2018,2019,2020 Carnegie Mellon University	*/
 /*	This program may be redistributed and/or modified under the	*/
 /*	terms of the GNU General Public License, version 3, or an	*/
 /*	alternative license agreement as detailed in the accompanying	*/
@@ -452,7 +452,9 @@ class HopscotchMap
 /************************************************************************/
 
 static atom_bool stop_run { false } ;
+static bool reverse_test_order { false } ;
 static bool show_neighbors { false } ;
+static bool verify { true } ;
 static int time_limit { 4 } ;
       
 /************************************************************************/
@@ -1092,22 +1094,31 @@ static void hash_test(ThreadPool* user_pool, ostream& out, const char* heading, 
       out << " ops/sec)" << endl ;
       }
    // verify success
-   size_t size = ht ? ht->currentSize() : 0 ;
-   size_t count = ht ? ht->countItems() : 0 ;
-   size_t deleted = ht ? ht->countDeletedItems() : 0 ;
-   if (size != count)
+   if (verify)
       {
-      out << "'size' and 'count' disagree!  " << size << " vs " << count << endl ;
-      }
-   if (op == Op_ADD)
-      {
-      if (size > maxsize)
-	 out << "   " << (size-maxsize) <<  " spurious additions to hash table!" << endl ;
-      else if (size < maxsize)
-	 out << "   Failed to add " << (maxsize-size) << " items to hash table!" << endl ;
+      size_t size = ht ? ht->currentSize() : 0 ;
+      size_t count = ht ? ht->countItems() : 0 ;
+      if (size != count)
+	 {
+	 out << "'size' and 'count' disagree!  " << size << " vs " << count << endl ;
+	 }
+      if (op == Op_ADD)
+	 {
+	 if (size > maxsize)
+	    out << "   " << (size-maxsize) <<  " spurious additions to hash table!" << endl ;
+	 else if (size < maxsize)
+	    out << "   Failed to add " << (maxsize-size) << " items to hash table!" << endl ;
+	 }
+      if (op == Op_REMOVE)
+	 {
+	 if (size != 0)
+	    out << "   Hash table was not emptied!  " << size << " items remain (activeitems="
+		<< count << ")." << endl ;
+	 }
       }
    if (op == Op_RANDOM)
       {
+      size_t deleted = ht ? ht->countDeletedItems() : 0 ;
       if (deleted > 0)
 	 {
 	 reclaim_deletions(ht,tpool,hashorders,slices) ;
@@ -1115,12 +1126,6 @@ static void hash_test(ThreadPool* user_pool, ostream& out, const char* heading, 
 	     << (ht ? ht->countDeletedItems() : 0) << " after reclamation"
 	     << endl ;
 	 }
-      }
-   if (op == Op_REMOVE)
-      {
-      if (size != 0)
-	 out << "   Hash table was not emptied!  " << size << " items remain (activeitems="
-	     << count << ")." << endl ;
       }
    if (!user_pool)
       delete tpool ;
@@ -1352,12 +1357,26 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
    hash_test(&tpool,out,"Lookups (0% present)",threads,cycles,&ht,maxsize,keys+maxsize,Op_CHECKMISS,terse,overhead) ;
    if (throughput >= 0)
       {
-      hash_test(&tpool,out,"Timed throughput test (10%)",threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,10,false,randnums) ;
-      hash_test(&tpool,out,"Timed throughput test (30%)",threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,30,false,randnums) ;
-      hash_test(&tpool,out,"Timed throughput test (50%)",threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,50,false,randnums) ;
-      hash_test(&tpool,out,"Timed throughput test (70%)",threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,70,false,randnums) ;
-      hash_test(&tpool,out,"Timed throughput test (90%)",threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,90,false,randnums) ;
-      if (throughput != 10 && throughput != 30 && throughput != 50 && throughput != 70 && throughput != 90)
+      bool old_verify = verify ;
+      verify = false ;
+      // ensure proper randomization of contents so that the first "real" run doesn't have misleading timings
+      hash_test(&tpool,out,"Timed throughput test (0%%)",threads,(timelimit+1)/2,&ht,maxsize,keys,Op_THROUGHPUT,terse,0,false,randnums);
+      int start = 10, past_end = 110, step = 20;
+      if (reverse_test_order)
+	 {
+	 start = 90 ; past_end = -10; step = -20;
+	 CharPtr heading { Fr::aprintf("Timed throughput test (%d%%)",throughput) } ;
+	 hash_test(&tpool,out,*heading,threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,throughput,false,randnums) ;
+	 throughput = 10 ;
+	 }
+      for (int percent = start ; percent != past_end ; percent += step)
+	 {
+	 CharPtr heading { Fr::aprintf("Timed throughput test (%d%%)",percent) } ;
+	 hash_test(&tpool,out,*heading,threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,percent,false,randnums) ;
+	 if (throughput == percent)
+	    throughput = 10 ;
+	 }
+      if (throughput != 10)
 	 {
 	 CharPtr heading { Fr::aprintf("Timed throughput test (%d%%)",throughput) } ;
 	 hash_test(&tpool,out,*heading,threads,timelimit,&ht,maxsize,keys,Op_THROUGHPUT,terse,throughput,false,randnums) ;
@@ -1366,6 +1385,7 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
 	 {
 	 (void)ht->remove(keys[maxsize+i]) ;
 	 }
+      verify = old_verify ;
       }
    hash_test(&tpool,out,"Emptying hash table",writethreads,1,&ht,maxsize,keys,Op_REMOVE,terse,overhead,throughput < 0) ;
    if (throughput < 0)
@@ -1587,6 +1607,7 @@ int main(int argc, char** argv)
       .add(key_order,"k","keys","key order: 0=seq, 1=random, 2=fixrandom, 3=stride, 4=fasthash64",0,4)
       .add(show_neighbors,"N","densities","show densities within neighborhoods of hash buckets")
       .add(repetitions,"r","reps","number of repetitions to run")
+      .add(reverse_test_order,"R","reverse","run tests in reverse order")
       .add(start_size,"s","initsize","initial size of hash table")
       .add(stride,"S","stride","")
       .add(throughput,"T","throughput","do a timed throughput test with N% loookups",0,100)
