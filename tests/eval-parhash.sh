@@ -10,8 +10,6 @@ hashtest=bin/parhash
 #   '' = FramepaC (object)
 #tables="-i -H -I ''"
 tables="-i -H -I"
-tables="-i -H"
-tables="-i"
 
 # default test size (small, med, big, huge)
 sz=small
