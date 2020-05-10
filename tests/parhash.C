@@ -1360,7 +1360,7 @@ static void run_tests(size_t threads, size_t writethreads, size_t startsize, siz
       bool old_verify = verify ;
       verify = false ;
       // ensure proper randomization of contents so that the first "real" run doesn't have misleading timings
-      hash_test(&tpool,out,"Timed throughput test (0%%)",threads,(timelimit+1)/2,&ht,maxsize,keys,Op_THROUGHPUT,terse,0,false,randnums);
+      hash_test(&tpool,out,"Timed throughput test (0%)",threads,(timelimit+1)/2,&ht,maxsize,keys,Op_THROUGHPUT,terse,0,false,randnums);
       int start = 10, past_end = 110, step = 20;
       if (reverse_test_order)
 	 {
