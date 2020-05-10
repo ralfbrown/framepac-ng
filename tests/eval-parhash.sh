@@ -1,14 +1,5 @@
 #!/bin/bash
 
-sz=small
-if [ "x$1" == x-med ]; then
-    sz=med
-elif [ "x$1" == x-big ]; then
-    sz=big
-elif [ "x$1" == x-huge ]; then
-    sz=huge
-fi
-
 # the program to be run
 hashtest=bin/parhash
 
@@ -20,6 +11,10 @@ hashtest=bin/parhash
 #tables="-i -H -I ''"
 tables="-i -H -I"
 tables="-i -H"
+tables="-i"
+
+# default test size (small, med, big, huge)
+sz=small
 
 # the number of threads to use
 #threads="1 2 3 4 6 9 12 24 48 96 192 384"	# hex-core w/ HT
@@ -33,7 +28,11 @@ concurrency="16 32 64 128 256"
 reps=5
 
 # how long to run each throughput test
-seconds=5
+seconds=8
+
+# should throughput-test order be reversed
+rev=""		# default order
+#rev="-R"	# reversed order
 
 # maximum seconds to allow the test program to run (auto-kill on hang)
 timelimit=600
@@ -43,6 +42,67 @@ timelimit=600
 keys="-k 1"	# default (pseudo-random sequence)
 #keys="-k 2"	# fixed pseudo-random sequence
 #keys="-k 4"	# apply Fasthash64 to sequential integers (may cause inadvertent duplication)
+
+usage()
+{
+    echo "Usage: $(basename $1) [options]"
+    echo "Options:"
+    echo "  -small     use 2**24 hash table"
+    echo "  -med       use 2**26 hash table"
+    echo "  -big       use 2**28 hash table"
+    echo "  -huge      use 2**30 hash table"
+    echo "  -reps N    run N repetions of each test case"
+    echo "  -time N    run timed throughput tests for N seconds"
+    echo "  -rev       run timed throughput tests in reverse order"
+    echo "  -thr T     run with T threads (space-separated list)"
+    echo "  -keys K    use keys K (0=seq, 1=rand, 2=fixed-rand, 4=FastHash64)"
+    exit 1
+}
+
+## parse the command line
+argv0="$0"
+while [[ $# -gt 0 && "x$1" == x-* ]]
+do
+    case "$1" in
+	 "-small" )
+	     sz=small
+	     ;;
+	 "-med" )
+	     sz=med
+	     ;;
+	 "-big" )
+	     sz=big
+	     ;;
+	 "-huge" )
+	     sz=huge
+	     ;;
+	 "-reps" )
+	     reps="$2"
+	     shift
+	     ;;
+	 "-time" )
+	     seconds="$2"
+	     shift
+	     ;;
+	 "-rev" )
+	     rev="-R"
+	     ;;
+	 "-thr" )
+	     threads="$2"
+	     shift
+	     ;;
+	 "-keys" )
+	     keys="-k $2"
+	     shift
+	     ;;
+	 * )
+	     echo "Unrecognized option $1"
+	     usage $argv0
+	     exit 1
+	     ;;
+    esac
+    shift
+done
 
 # the hash array size and number of items to put in the hash table, as a function of the requested test size
 # number of items is selected to yield a fill factor just under 75% after the initial fill
@@ -67,7 +127,7 @@ invoke_hash()
     algo=$1
     thr=$2
     concur=$3
-    timeout -k5 $timelimit $hashtest -T100 --time $seconds -j-$thr -s$size -g$count $concur $keys $algo
+    timeout -k5 $timelimit $hashtest -T100 --time $seconds -j-$thr $rev -s$size -g$count $concur $keys $algo
     return
 }
 
